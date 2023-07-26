@@ -6,11 +6,13 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "serve": "npx serve .output/public"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
     "@types/node": "^18.17.0",
+    "@vite-pwa/nuxt": "^0.1.0",
     "nuxt": "^3.6.5"
   },
   "dependencies": {
