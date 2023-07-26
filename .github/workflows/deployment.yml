@@ -12,19 +12,10 @@ jobs:
         node-version: [16.x]
     steps:
       - uses: actions/checkout@v3
-      - run: yarn && yarn build
+      - run: yarn && yarn generate
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LST_NAVIGATOR }}'
           projectId: lst-navigator
           channelId: '${{ github.event.deployment.environment }}'
-      
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node-version }}
-      - uses: jsryudev/deploy-firebase-functions@v0.0.2
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          FIREBASE_PROJECT: ${{ secrets.FIREBASE_PROJECT }}

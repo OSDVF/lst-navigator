@@ -25,9 +25,6 @@
                 "-f",
                 "description='Deploy request from dev machine'"
             ],
-            "problemMatcher": [
-                "$tsc"
-            ],
             "presentation": {
                 "reveal": "always"
             },
