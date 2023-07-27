@@ -1,3 +1,3 @@
 <template>
-  Asd
+  info
 </template>
