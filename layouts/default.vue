@@ -1,26 +1,26 @@
 <template>
-  <div>
-    <Head>
-      <Title>{{ title }}</Title>
-    </Head>
-    <main>
-      <slot />
-    </main>
-    <aside class="navigation">
-      <NuxtLink to="/info">
-        <IconCSS name="mdi:information" size="2rem" />
-        {{ config.public.title }}
-      </NuxtLink>
-      <NuxtLink to="/">
-        <IconCSS name="mdi:calendar-text" size="2rem" />
-        Program
-      </NuxtLink>
-      <NuxtLink to="/settings">
-        <IconCSS name="mdi:cog" size="2rem" />
-        Nastavení
-      </NuxtLink>
-    </aside>
-  </div>
+    <div>
+        <Head>
+            <Title>{{ title }}</Title>
+        </Head>
+        <main>
+            <slot />
+        </main>
+        <nav class="navigation" role="navigation">
+            <NuxtLink to="/info">
+                <IconCSS name="mdi:information" size="2rem" />
+                {{ config.public.title }}
+            </NuxtLink>
+            <NuxtLink to="/">
+                <IconCSS name="mdi:calendar-text" size="2rem" />
+                Program
+            </NuxtLink>
+            <NuxtLink to="/settings">
+                <IconCSS name="mdi:cog" size="2rem" />
+                Nastavení
+            </NuxtLink>
+        </nav>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -29,8 +29,9 @@ const route = useRoute()
 
 const title = computed(() => {
     if (route.meta.title) {
-        return `${config.title} · ${route.meta.title}`
+        return `${route.meta.title} · ${config.public.title}`
     }
+    return config.public.title
 })
 
 </script>
@@ -38,7 +39,7 @@ const title = computed(() => {
 <style lang="scss">
 @import "@/assets/styles/constants.scss";
 
-aside.navigation {
+nav.navigation {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -54,6 +55,10 @@ aside.navigation {
         &>span {
             display: block;
             margin: auto;
+        }
+
+        &:focus {
+            outline: 0;
         }
     }
 }

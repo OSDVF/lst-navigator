@@ -12,7 +12,16 @@ jobs:
         node-version: [16.x]
     steps:
       - uses: actions/checkout@v3
+
+      - 
+        name: Inject secrets
+        run: echo '${{ secrets.DOTENV }}' > .env
+
+      - name: Inject SSR service account
+        run: echo '${{ secrets.SSR_SERVICE_ACCOUNT }}' > service-account.json
+        
       - run: yarn && yarn generate
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'

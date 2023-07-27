@@ -13,6 +13,9 @@ module.exports = {
     extends: ['@nuxtjs/eslint-config-typescript'],
     plugins: [],
     rules: {
-        indent: ['error', 4]
+        indent: ['error', 4],
+        'comma-dangle': ['error', 'never'],
+        'space-before-function-paren': ['error', 'never'],
+        'vue/html-indent': ['error', 4]
     }
 }
