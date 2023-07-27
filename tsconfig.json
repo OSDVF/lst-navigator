@@ -6,6 +6,9 @@
       "ESNext",
       "DOM",
       "WebWorker",
-    ]
-  }
+    ],
+  },
+  "types": [
+    "./global.d.ts"
+  ]
 }
