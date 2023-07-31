@@ -28,6 +28,8 @@ export const useCloudStore = defineStore('cloud', () => {
         : null)
     const eventTitle = computed(() => metaDoc.value?.title)
     const eventSubtitle = computed(() => metaDoc.value?.subtitle)
+    const eventDescription = computed(() => metaDoc.value?.description)
+    const eventWeb = computed(() => metaDoc.value?.web)
     const networkError = computed(() => metaDoc.error.value)
     const networkLoading = computed(() => metaDoc.pending.value)
 
@@ -39,6 +41,8 @@ export const useCloudStore = defineStore('cloud', () => {
         eventImage,
         eventTitle,
         eventSubtitle,
+        eventDescription,
+        eventWeb,
         networkError,
         networkLoading
     }

@@ -22,7 +22,7 @@
             </NuxtLink>
         </nav>
         <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
-            <IconCSS name="mdi:offline" /> Problém s připojením
+            <IconCSS name="mdi:cloud-off" /> Problém s připojením
         </div>
         <ProgressBar :class="{ backgroundLoading: true, visible: !!cloudStore.networkLoading }" />
         <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
