@@ -2,20 +2,32 @@
 import { icons } from './icons.json'
 
 export default defineNuxtConfig({
-    ssr: false,
+    app: {
+        head: {
+            title: process.env.APP_SHORT_NAME,
+            link: [
+                { rel: 'icon', type: 'image/png', href: '/android/android-launchericon-96-96.png' },
+                // Add web app manifest
+                { rel: 'manifest', href: '/manifest.webmanifest' }
+            ]
+        }
+    },
+    css: ['~/assets/styles/base.scss'],
     devtools: {
         enabled: true,
         timeline: {
             enabled: true
         }
     },
-    css: ['~/assets/styles/base.scss'],
     modules: [
         '@vite-pwa/nuxt',
         'nuxt-icon',
         '@pinia/nuxt',
         'nuxt-vuefire',
         '@vueuse/nuxt'
+    ],
+    plugins: [
+        { src: '~/plugins/lightbox.ts', mode: 'client' }
     ],
     pwa: {
         includeAssets: ['icon.jpg'],
@@ -51,14 +63,5 @@ export default defineNuxtConfig({
             imageCacheFirst: process.env.NODE_ENV !== 'production'
         }
     },
-    app: {
-        head: {
-            title: process.env.APP_SHORT_NAME,
-            link: [
-                { rel: 'icon', type: 'image/png', href: '/android/android-launchericon-96-96.png' },
-                // Add web app manifest
-                { rel: 'manifest', href: '/manifest.webmanifest' }
-            ]
-        }
-    }
+    ssr: false
 })

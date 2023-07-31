@@ -24,12 +24,15 @@
         <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
             <IconCSS name="mdi:offline" /> Problém s připojením
         </div>
-        <ProgressBar :class="{backgroundLoading:true, visible: !!cloudStore.networkLoading}" />
+        <ProgressBar :class="{ backgroundLoading: true, visible: !!cloudStore.networkLoading }" />
+        <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
+import { useUI } from '@/stores/ui'
+const ui = useUI()
 const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -67,13 +70,17 @@ nav.navigation {
         }
     }
 }
-.networkError, .backgroundLoading, nav.navigation {
+
+.networkError,
+.backgroundLoading,
+nav.navigation {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     transition: transfom .2s ease;
 }
+
 .networkError {
     height: 1rem;
     transform: translateY(1rem);
