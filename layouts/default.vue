@@ -1,5 +1,6 @@
 <template>
     <div>
+
         <Head>
             <Title>{{ title }}</Title>
         </Head>
@@ -20,12 +21,19 @@
                 Nastavení
             </NuxtLink>
         </nav>
+        <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
+            <IconCSS name="mdi:offline" /> Problém s připojením
+        </div>
+        <ProgressBar :class="{backgroundLoading:true, visible: !!cloudStore.networkLoading}" />
     </div>
 </template>
 
 <script setup lang="ts">
+import { useCloudStore } from '@/stores/cloud'
+const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
 const route = useRoute()
+
 
 const title = computed(() => {
     if (route.meta.title) {
@@ -40,12 +48,9 @@ const title = computed(() => {
 @import "@/assets/styles/constants.scss";
 
 nav.navigation {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
     display: flex;
     border-top: 1px solid rgba($link-background, 0.1);
+    backdrop-filter: blur(15px) grayscale(50%);
 
     &>a {
         flex-basis: 33%;
@@ -60,6 +65,29 @@ nav.navigation {
         &:focus {
             outline: 0;
         }
+    }
+}
+.networkError, .backgroundLoading, nav.navigation {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transition: transfom .2s ease;
+}
+.networkError {
+    height: 1rem;
+    transform: translateY(1rem);
+
+    &.visible {
+        transform: translateY(0);
+    }
+}
+
+.backgroundLoading {
+    transform: translateY(3px);
+
+    &.visible {
+        transform: translateY(0);
     }
 }
 </style>

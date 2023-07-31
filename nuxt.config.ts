@@ -14,7 +14,8 @@ export default defineNuxtConfig({
         '@vite-pwa/nuxt',
         'nuxt-icon',
         '@pinia/nuxt',
-        'nuxt-vuefire'
+        'nuxt-vuefire',
+        '@vueuse/nuxt'
     ],
     pwa: {
         includeAssets: ['icon.jpg'],
@@ -46,7 +47,8 @@ export default defineNuxtConfig({
     runtimeConfig: {
         public: {
             title: process.env.VITE_APP_SHORT_NAME,
-            dbCollectionName: process.env.VITE_APP_SELECTED_EVENT_COLLECTION
+            dbCollectionName: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
+            imageCacheFirst: process.env.NODE_ENV !== 'production'
         }
     },
     app: {

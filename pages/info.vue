@@ -1,24 +1,29 @@
 <template>
     <div>
-        <img v-if="eventImage" :src="eventImage">
-        <h1>{{ eventTitle }}</h1>
-        <h2>{{ eventSubtitle }}</h2>
+        <img v-if="eventImage" class="eventImage" crossorigin="anonymous" :src="eventImage" @load="saveCacheImage('eventImage', $event)">
+        <h1>{{ cloudStore.eventTitle }}</h1>
+        <h2>{{ cloudStore.eventSubtitle }}</h2>
     </div>
 </template>
 
 <script setup lang="ts">
-import { useStorageFileUrl } from 'vuefire'
-import { ref as storageRef } from '@firebase/storage'
+import { computedAsync } from '@vueuse/core'
 import { useCloudStore } from '@/stores/cloud'
+import { saveCacheImage } from '@/utils/imageCache'
 const cloudStore = useCloudStore()
+
+const evaluating = ref(false)
+
+const eventImage = computedAsync(async () => await getCacheImage('eventImage', cloudStore.eventImage), null, { lazy: true, evaluating })
 
 definePageMeta({
     title: 'Informace'
 })
 
-const metaDoc = useDocument(cloudStore.metaDocument)
-const eventImage = computed(() => metaDoc.value?.image ? useStorageFileUrl(storageRef(cloudStore.firebaseStorage, metaDoc.value?.image)).url.value : null)
-const eventTitle = computed(() => metaDoc.value?.title)
-const eventSubtitle = computed(() => metaDoc.value?.subtitle)
-
 </script>
+
+<style lang="scss">
+.eventImage {
+    max-width: 600px;
+}
+</style>
