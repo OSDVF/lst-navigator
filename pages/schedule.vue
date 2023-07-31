@@ -1,16 +1,18 @@
 <template>
-    <article>
+    <div>
         <nav role="navigation" class="days">
             <NuxtLink
                 v-for="(day, index) in cloudStore.scheduleParts" :key="day?.name ?? `day${index}`" :style="{
                     background: day?.color
                 }"
+                :to="`/schedule/${index}`"
             >
                 {{ day?.name ?? index }}
             </NuxtLink>
         </nav>
         <ProgressBar :class="{ daysLoading: true, visible: cloudStore.scheduleLoading }" />
-    </article>
+        <NuxtPage />
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -22,8 +24,9 @@ const cloudStore = useCloudStore()
 
 <style lang="scss">
 @import "@/assets/styles/constants.scss";
+
 main {
-    margin-top: 3rem;
+    margin-top: 4rem;
 }
 nav.days {
     position: fixed;

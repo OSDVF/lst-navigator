@@ -56,6 +56,11 @@ export default defineNuxtConfig({
             key: process.env.VITE_APP_RECAPTCHA!
         }
     },
+    routeRules: {
+        '/': {
+            redirect: '/schedule'
+        }
+    },
     runtimeConfig: {
         public: {
             title: process.env.VITE_APP_SHORT_NAME,

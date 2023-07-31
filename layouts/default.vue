@@ -50,11 +50,13 @@ const title = computed(() => {
 </script>
 
 <style lang="scss">
+@use "sass:math";
 @import "@/assets/styles/constants.scss";
 
 nav {
     display: flex;
     backdrop-filter: $blurred-background;
+    background: #0000000d;
 
     &>a {
         flex-basis: 33%;
@@ -96,7 +98,7 @@ nav {
     transform: translateY($errorBannerHeight);
     height: $errorBannerHeight;
     margin-top: -$errorBannerHeight;
-    padding: $errorBannerHeight / 5.0;
+    padding: math.div($errorBannerHeight, 5.0);
 
     &.visible {
         transform: translateY(0rem);
