@@ -1,16 +1,14 @@
 <template>
-    <div>
-        <img
-            v-if="eventImage"
-            class="eventImage"
-            crossorigin="anonymous"
-            :src="eventImage"
-            @click="ui.showLightBox(eventImage)"
-            @load="saveCacheImage('eventImage', $event)"
-        >
+    <article role="article">
+        <div class="eventBanner">
+            <img
+                v-if="eventImage" class="eventImage" crossorigin="anonymous" :src="eventImage"
+                @click="ui.showLightBox(eventImage)" @load="saveCacheImage('eventImage', $event)"
+            >
+        </div>
         <h1>{{ cloudStore.eventTitle }}</h1>
         <h2>{{ cloudStore.eventSubtitle }}</h2>
-    </div>
+    </article>
 </template>
 
 <script setup lang="ts">
@@ -35,6 +33,36 @@ definePageMeta({
 
 <style lang="scss">
 .eventImage {
+    object-fit: cover;
     max-width: 600px;
+    display: block;
+    margin: auto;
+    border-radius: 8px;
+
+    @media screen and (max-width: 600px) {
+        max-width: 95%;
+    }
+
+    &:hover {
+        cursor: pointer;
+        filter: brightness(0.9);
+    }
+}
+
+.eventBanner {
+    max-height: 50vh;
+    overflow: hidden;
+    position: relative;
+
+    &::after {
+        content: '';
+        height: 2rem;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgb(255, 255, 255) 100%);
+        position: absolute;
+        bottom: 0;
+        z-index: 2;
+        left: 0;
+        right: 0;
+    }
 }
 </style>

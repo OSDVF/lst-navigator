@@ -26,9 +26,9 @@ export const useCloudStore = defineStore('cloud', () => {
     const eventImage = computed(() => metaDoc.value?.image
         ? useStorageFileUrl(storageRef(firebaseStorage, metaDoc.value?.image)).url.value
         : null)
-    const eventTitle = shallowRef(metaDoc.value?.title)
-    const eventSubtitle = shallowRef(metaDoc.value?.subtitle)
-    const networkError = shallowRef(metaDoc.error.value)
+    const eventTitle = computed(() => metaDoc.value?.title)
+    const eventSubtitle = computed(() => metaDoc.value?.subtitle)
+    const networkError = computed(() => metaDoc.error.value)
     const networkLoading = computed(() => metaDoc.pending.value)
 
     return {
