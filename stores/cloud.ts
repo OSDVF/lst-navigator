@@ -31,7 +31,12 @@ export const useCloudStore = defineStore('cloud', () => {
     const eventDescription = computed(() => metaDoc.value?.description)
     const eventWeb = computed(() => metaDoc.value?.web)
     const networkError = computed(() => metaDoc.error.value)
-    const networkLoading = computed(() => metaDoc.pending.value)
+    const metaLoading = computed(() => metaDoc.pending.value)
+
+    const scheduleDocument = shallowRef(getDocument('schedule'))
+    const scheduleDoc = shallowRef(useDocument(scheduleDocument.value, { once: true, snapshotListenOptions: { includeMetadataChanges: false } }))
+    const scheduleParts = computed(() => scheduleDoc.value?.parts)
+    const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
     return {
         eventDbName,
@@ -44,6 +49,8 @@ export const useCloudStore = defineStore('cloud', () => {
         eventDescription,
         eventWeb,
         networkError,
-        networkLoading
+        metaLoading,
+        scheduleParts,
+        scheduleLoading
     }
 })

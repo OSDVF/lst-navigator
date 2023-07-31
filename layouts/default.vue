@@ -7,24 +7,26 @@
         <main>
             <slot />
         </main>
-        <nav class="navigation" role="navigation">
-            <NuxtLink to="/info">
-                <IconCSS name="mdi:information" size="2rem" />
-                {{ config.public.title }}
-            </NuxtLink>
-            <NuxtLink to="/">
-                <IconCSS name="mdi:calendar-text" size="2rem" />
-                Program
-            </NuxtLink>
-            <NuxtLink to="/settings">
-                <IconCSS name="mdi:cog" size="2rem" />
-                Nastavení
-            </NuxtLink>
-        </nav>
-        <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
-            <IconCSS name="mdi:cloud-off" /> Problém s připojením
+        <div class="navigation">
+            <nav role="navigation">
+                <NuxtLink to="/info">
+                    <IconCSS name="mdi:information" size="2rem" />
+                    {{ config.public.title }}
+                </NuxtLink>
+                <NuxtLink to="/">
+                    <IconCSS name="mdi:calendar-text" size="2rem" />
+                    Program
+                </NuxtLink>
+                <NuxtLink to="/settings">
+                    <IconCSS name="mdi:cog" size="2rem" />
+                    Nastavení
+                </NuxtLink>
+            </nav>
+            <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
+                <IconCSS name="mdi:cloud-off" /> Problém s připojením
+            </div>
         </div>
-        <ProgressBar :class="{ backgroundLoading: true, visible: !!cloudStore.networkLoading }" />
+        <ProgressBar :class="{ backgroundLoading: true, visible: cloudStore.metaLoading }" />
         <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
     </div>
 </template>
@@ -50,20 +52,14 @@ const title = computed(() => {
 <style lang="scss">
 @import "@/assets/styles/constants.scss";
 
-nav.navigation {
+nav {
     display: flex;
-    border-top: 1px solid rgba($link-background, 0.1);
-    backdrop-filter: blur(15px) grayscale(50%);
+    backdrop-filter: $blurred-background;
 
     &>a {
         flex-basis: 33%;
         padding: .5rem;
         text-align: center;
-
-        &>span {
-            display: block;
-            margin: auto;
-        }
 
         &:focus {
             outline: 0;
@@ -71,26 +67,45 @@ nav.navigation {
     }
 }
 
-.networkError,
+.navigation {
+    border-top: 1px solid rgba($link-background, 0.1);
+
+    &>nav>a>span {
+        display: block;
+        margin: auto;
+    }
+}
+
 .backgroundLoading,
-nav.navigation {
-    position: fixed;
+.navigation {
     bottom: 0;
     left: 0;
     right: 0;
-    transition: transfom .2s ease;
+    position: fixed;
 }
 
 .networkError {
-    height: 1rem;
-    transform: translateY(1rem);
+    flex-basis: 100%;
+    flex-grow: 1;
+    backdrop-filter: $blurred-background;
+    background: rgba($link-background, 0.2);
+    text-align: center;
+    transition: transform .2s ease, margin-top .2s ease;
+    $errorBannerHeight: 2.5rem;
+
+    transform: translateY($errorBannerHeight);
+    height: $errorBannerHeight;
+    margin-top: -$errorBannerHeight;
+    padding: $errorBannerHeight / 5.0;
 
     &.visible {
-        transform: translateY(0);
+        transform: translateY(0rem);
+        margin-top: 0;
     }
 }
 
 .backgroundLoading {
+    transition: transfom .2s ease;
     transform: translateY(3px);
 
     &.visible {
