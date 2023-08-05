@@ -19,6 +19,10 @@
 import { useCloudStore } from '@/stores/cloud'
 
 const cloudStore = useCloudStore()
+const router = useRouter()
+if (typeof router.currentRoute.value.params.schedulePart === 'undefined') {
+    router.replace('/schedule/0')
+}
 
 </script>
 

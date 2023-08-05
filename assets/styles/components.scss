@@ -1,0 +1,20 @@
+@import "constants.scss";
+//
+// Navigation bars
+//
+nav {
+    display: flex;
+    backdrop-filter: $blurred-background;
+    background: #0000000d;
+    justify-content: stretch;
+
+    &>a {
+        flex-grow: 1;
+        padding: .5rem;
+        text-align: center;
+
+        &:focus {
+            outline: 0;
+        }
+    }
+}

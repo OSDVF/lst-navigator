@@ -1,5 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import * as fs from 'fs'
 import { icons } from './icons.json'
+
+const installStepCount = fs.readdirSync('./pages/install').length
 
 export default defineNuxtConfig({
     app: {
@@ -12,7 +15,10 @@ export default defineNuxtConfig({
             ]
         }
     },
-    css: ['~/assets/styles/base.scss'],
+    css: [
+        '~/assets/styles/base.scss',
+        '~/assets/styles/components.scss'
+    ],
     devtools: {
         enabled: true,
         timeline: {
@@ -25,9 +31,6 @@ export default defineNuxtConfig({
         '@pinia/nuxt',
         'nuxt-vuefire',
         '@vueuse/nuxt'
-    ],
-    plugins: [
-        { src: '~/plugins/lightbox.ts', mode: 'client' }
     ],
     pwa: {
         includeAssets: ['icon.jpg'],
@@ -64,8 +67,10 @@ export default defineNuxtConfig({
     runtimeConfig: {
         public: {
             title: process.env.VITE_APP_SHORT_NAME,
+            longName: process.env.VITE_APP_NAME,
             dbCollectionName: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
-            imageCacheFirst: process.env.NODE_ENV !== 'production'
+            imageCacheFirst: process.env.NODE_ENV !== 'production',
+            installStepCount
         }
     },
     ssr: false

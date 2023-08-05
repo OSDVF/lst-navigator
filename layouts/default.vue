@@ -13,7 +13,7 @@
                     <IconCSS name="mdi:information" size="2rem" />
                     {{ config.public.title }}
                 </NuxtLink>
-                <NuxtLink to="/">
+                <NuxtLink to="/schedule">
                     <IconCSS name="mdi:calendar-text" size="2rem" />
                     Program
                 </NuxtLink>
@@ -34,11 +34,21 @@
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
+import { useSettings } from '@/stores/settings'
 const ui = useUI()
 const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
 const route = useRoute()
+const router = useRouter()
+const settings = useSettings()
+const installStep = settings.getInstallStep()
 
+installStep.then((step) => {
+    const safeStep = step ?? 0
+    if (safeStep < config.public.installStepCount) {
+        router.push('/install/' + safeStep)
+    }
+})
 
 const title = computed(() => {
     if (route.meta.title) {
@@ -52,22 +62,6 @@ const title = computed(() => {
 <style lang="scss">
 @use "sass:math";
 @import "@/assets/styles/constants.scss";
-
-nav {
-    display: flex;
-    backdrop-filter: $blurred-background;
-    background: #0000000d;
-
-    &>a {
-        flex-basis: 33%;
-        padding: .5rem;
-        text-align: center;
-
-        &:focus {
-            outline: 0;
-        }
-    }
-}
 
 .navigation {
     border-top: 1px solid rgba($link-background, 0.1);
@@ -108,7 +102,7 @@ nav {
 
 .backgroundLoading {
     transition: transfom .2s ease;
-    transform: translateY(3px);
+    transform: translateY(6px);
 
     &.visible {
         transform: translateY(0);
