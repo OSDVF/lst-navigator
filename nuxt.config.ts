@@ -37,13 +37,22 @@ export default defineNuxtConfig({
         '@vueuse/nuxt'
     ],
     pwa: {
-        includeAssets: ['icon.jpg'],
+        injectManifest: {
+            globIgnores: [
+                '**/node_modules/**/*',
+                '**/public/audio/silence.zip'
+            ]
+        },
         strategies: 'injectManifest',
         filename: 'sw.ts',
         manifest: {
             name: process.env.VITE_APP_NAME,
             short_name: process.env.VITE_APP_SHORT_NAME,
             icons
+        },
+        devOptions: {
+            enabled: true,
+            type: 'module'
         }
     },
     vuefire: {
@@ -61,11 +70,6 @@ export default defineNuxtConfig({
             isTokenAutoRefreshEnabled: true,
             provider: 'ReCaptchaV3',
             key: process.env.VITE_APP_RECAPTCHA!
-        }
-    },
-    routeRules: {
-        '/': {
-            redirect: '/schedule'
         }
     },
     runtimeConfig: {

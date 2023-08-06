@@ -35,6 +35,8 @@
 import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
 import { useSettings } from '@/stores/settings'
+
+const app = useNuxtApp()
 const ui = useUI()
 const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
@@ -43,12 +45,19 @@ const router = useRouter()
 const settings = useSettings()
 const installStep = settings.getInstallStep()
 
+///
+/// Redirection guards
+///
 installStep.then((step) => {
     const safeStep = step ?? 0
     if (safeStep < config.public.installStepCount) {
         router.push('/install/' + safeStep)
     }
 })
+
+if (app.$pwa.needRefresh) {
+    router.push('/update')
+}
 
 const title = computed(() => {
     if (route.meta.title) {

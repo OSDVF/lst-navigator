@@ -2,4 +2,18 @@
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": true
     },
+    "[typescript]": {
+        "foldEnd": "/* #endregion */",
+        "foldEndRegex": "/\\*[\\s]*#endregion",
+        "foldStart": "/* #region [NAME] */",
+        "foldStartRegex": "^[\\s]*/\\*[\\s]*#region[\\s]*(.*)[\\s]*\\*/[\\s]*$",
+        "defaultFoldStartRegex": "^[\\s]*/\\*[\\s]*#region[\\s]*default\\s(.*)[\\s]*\\*/[\\s]*$",
+        "foldDefinitions": [
+            {
+                "foldEndRegex": "\\*+/[\\s]*$",
+                "foldStartRegex": "^[\\s]*/\\*\\*+",
+                "isFoldedByDefault": true
+            }
+        ]
+    }
 }

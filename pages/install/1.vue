@@ -14,6 +14,12 @@
             <br><br>
             Nebo někoho zavolejte a on vám pomůže.
         </p>
+        <p v-if="$pwa.swActivated">
+            <IconCSS name="mdi:check" /> Příprava
+        </p>
+        <p v-if="$pwa.offlineReady">
+            <IconCSS name="mdi:check" /> Stažení
+        </p>
     </article>
 </template>
 <script setup lang="ts">
