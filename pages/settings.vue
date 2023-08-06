@@ -22,6 +22,15 @@
                 </button>
             </span>
         </fieldset>
+        <h4>O aplikaci</h4>
+        <fieldset>
+            Verze
+            <p>{{ new Date(parseInt(config.public.compileTime)).toLocaleString() }}{{ leadingPlus(parseInt(config.public.compileTimeZone)/60) }}</p>
+        </fieldset>
+        <fieldset>
+            Poslední aktualizace
+            <small>{{ config.public.commitMessageTime }}</small>
+        </fieldset>
     </article>
 </template>
 
@@ -32,8 +41,12 @@ definePageMeta({
 })
 
 const settings = useSettings()
+const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
+function leadingPlus(value: number) {
+    return value > 0 ? `+${value}` : value
+}
 function uploadCustomClick() {
     uploading.value = true
     audioInputField.value?.click()

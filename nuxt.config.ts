@@ -1,8 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import * as fs from 'fs'
+import fs from 'fs'
+import childProcess from 'child_process'
 import { icons } from './icons.json'
 
 const installStepCount = fs.readdirSync('./pages/install').length
+const commitMessageTime = childProcess.execSync('git log -1 --pretty="%B %cI"').toString().trim()
+const compileTime = new Date().getTime().toString()
+const compileTimeZone = new Date().getTimezoneOffset().toString()
 
 export default defineNuxtConfig({
     app: {
@@ -70,7 +74,10 @@ export default defineNuxtConfig({
             longName: process.env.VITE_APP_NAME,
             dbCollectionName: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
             imageCacheFirst: process.env.NODE_ENV !== 'production',
-            installStepCount
+            installStepCount,
+            compileTime,
+            compileTimeZone,
+            commitMessageTime
         }
     },
     ssr: false
