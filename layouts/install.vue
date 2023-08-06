@@ -12,7 +12,7 @@
                 <IconCSS name="material-symbols:arrow-circle-right-outline" size="2rem" />
                 Další
             </NuxtLink>
-            <NuxtLink v-else to="/schedule">
+            <NuxtLink v-else to="/schedule" @click="settings.setInstallStep(partIndex + 1)">
                 <IconCSS name="material-symbols:trending-up" size="2rem" />
                 Začít
             </NuxtLink>
