@@ -22,6 +22,16 @@
                 </button>
             </span>
         </fieldset>
+        <fieldset>
+            <label>Skupina</label>
+            <span>
+                <select v-model="settings.selectedGroup">
+                    <option v-for="(groupName, index) in cloud.groupNames" :key="groupName" :value="index - 1">
+                        {{ groupName }}
+                    </option>
+                </select>
+            </span>
+        </fieldset>
         <h4>O aplikaci</h4>
         <fieldset>
             Verze
@@ -36,11 +46,13 @@
 
 <script setup lang="ts">
 import { useSettings } from '@/stores/settings'
+import { useCloudStore } from '@/stores/cloud'
 definePageMeta({
     title: 'Nastavení'
 })
 
 const settings = useSettings()
+const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)

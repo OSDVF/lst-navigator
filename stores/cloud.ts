@@ -32,6 +32,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const eventWeb = computed(() => metaDoc.value?.web)
     const networkError = computed(() => metaDoc.error.value)
     const metaLoading = computed(() => metaDoc.pending.value)
+    const groupNames = computed(() => metaDoc.value?.groups ?? [])
 
     const scheduleDocument = shallowRef(getDocument('schedule'))
     const scheduleDoc = shallowRef(useDocument(scheduleDocument.value, { once: true, snapshotListenOptions: { includeMetadataChanges: false } }))
@@ -51,6 +52,7 @@ export const useCloudStore = defineStore('cloud', () => {
         networkError,
         metaLoading,
         scheduleParts,
-        scheduleLoading
+        scheduleLoading,
+        groupNames
     }
 })

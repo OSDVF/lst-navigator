@@ -137,6 +137,8 @@ export const useSettings = defineStore('settings', () => {
         }
     }
 
+    const selectedGroup = useStorage<number>('selectedGroup', 0)
+
     return {
         getInstallStep,
         setInstallStep,
@@ -149,6 +151,7 @@ export const useSettings = defineStore('settings', () => {
         toggleSelectedAudio,
         isSelectedAudioCustom,
         isPlaying,
-        audio
+        audio,
+        selectedGroup
     }
 })
