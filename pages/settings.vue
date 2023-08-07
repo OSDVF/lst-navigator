@@ -32,6 +32,10 @@
                 </select>
             </span>
         </fieldset>
+        <fieldset>
+            <label>Jméno / Podpis do zpětných vazeb</label>
+            <input v-model="settings.userNickname">
+        </fieldset>
         <h4>O aplikaci</h4>
         <fieldset>
             Verze
