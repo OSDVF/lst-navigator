@@ -24,6 +24,7 @@ if (typeof router.currentRoute.value.params.schedulePart === 'undefined') {
     router.replace('/schedule/0')
 }
 
+
 </script>
 
 <style lang="scss">

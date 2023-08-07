@@ -1,10 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
 import childProcess from 'child_process'
+import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { icons } from './icons.json'
 
 const installStepCount = fs.readdirSync('./pages/install').length
 const commitMessageTime = childProcess.execSync('git log -1 --pretty="%B %cI"').toString().trim()
+const commitHash = childProcess.execSync('git rev-parse HEAD').toString().trim()
 const compileTime = new Date().getTime().toString()
 const compileTimeZone = new Date().getTimezoneOffset().toString()
 
@@ -55,6 +57,26 @@ export default defineNuxtConfig({
             type: 'module'
         }
     },
+    sourcemap: {
+        server: true,
+        client: true
+    },
+    vite: {
+        build: {
+            sourcemap: true
+        },
+        plugins: [
+            sentryVitePlugin({
+                authToken: process.env.SENTRY_AUTH_TOKEN,
+                org: process.env.SENTRY_ORG,
+                project: process.env.SENTRY_PROJECT,
+                disable: process.env.NODE_ENV !== 'production',
+                release: {
+                    name: commitHash
+                }
+            })
+        ]
+    },
     vuefire: {
         config: {
             apiKey: process.env.VITE_APP_APIKEY,
@@ -81,7 +103,12 @@ export default defineNuxtConfig({
             installStepCount,
             compileTime,
             compileTimeZone,
-            commitMessageTime
+            commitMessageTime,
+            commitHash,
+            ENV: process.env.NODE_ENV ?? 'production',
+            SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
+            SENTRY_DSN: process.env.SENTRY_DSN,
+            SENTRY_TRACE_PROPAGATION_TARGET: process.env.SENTRY_TRACE_PROPAGATION_TARGET
         }
     },
     ssr: false

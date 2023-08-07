@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <NuxtErrorBoundary @error="captureError">
 
         <Head>
             <Title>{{ title }}</Title>
@@ -28,7 +28,22 @@
         </div>
         <ProgressBar :class="{ backgroundLoading: true, visible: cloudStore.metaLoading }" />
         <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
-    </div>
+
+        <template #error="{ error, clearError }">
+            <main>
+                <article>
+                    <h1>Chyba</h1>
+                    <p>
+                        <code>{{ error }}</code>
+                    </p>
+                    <button @click="clearError">
+                        Zkusit znovu
+                    </button>
+                </article>
+            </main>
+
+        </template>
+    </NuxtErrorBoundary>
 </template>
 
 <script setup lang="ts">
@@ -44,6 +59,7 @@ const route = useRoute()
 const router = useRouter()
 const settings = useSettings()
 const installStep = settings.getInstallStep()
+const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
 
 ///
 /// Redirection guards
@@ -65,6 +81,12 @@ const title = computed(() => {
     }
     return config.public.title
 })
+
+function captureError(error: unknown) {
+    // eslint-disable-next-line no-console
+    console.error(error)
+    Sentry.captureException(error)
+}
 
 </script>
 
@@ -116,5 +138,4 @@ const title = computed(() => {
     &.visible {
         transform: translateY(0);
     }
-}
-</style>
+}</style>
