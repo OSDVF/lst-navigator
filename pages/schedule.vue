@@ -99,17 +99,21 @@ const onTrainsitionAfterLeave = () => {
 }
 
 const dragHandler = ({ movement: [x], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
+    const partIndex = parseInt(schedulePartIndex.value)
     if (transitioning.value) {
         return
     }
     if (swipe[0] !== 0) {
         currentTransition.value = swipe[0] > 0 ? 'slide-right' : 'slide-left'
         transitioning.value = true
-        router.push(`/schedule/${parseInt(schedulePartIndex.value) - swipe[0]}`)
+        router.push(`/schedule/${partIndex - swipe[0]}`)
         return
     } else if (!dragging) {
         moving.value = false
         translateX.value = 0
+        return
+    }
+    if ((x > 0 && partIndex === 0) || (x < 0 && partIndex === cloudStore.scheduleParts.length - 1)) {
         return
     }
     moving.value = true
