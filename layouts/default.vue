@@ -138,4 +138,5 @@ function captureError(error: unknown) {
     &.visible {
         transform: translateY(0);
     }
-}</style>
+}
+</style>

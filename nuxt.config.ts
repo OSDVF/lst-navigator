@@ -9,6 +9,7 @@ const commitMessageTime = childProcess.execSync('git log -1 --pretty="%B %cI"').
 const commitHash = childProcess.execSync('git rev-parse HEAD').toString().trim()
 const compileTime = new Date().getTime().toString()
 const compileTimeZone = new Date().getTimezoneOffset().toString()
+const isDevMode = process.env.NODE_ENV !== 'production'
 
 export default defineNuxtConfig({
     app: {
@@ -36,7 +37,8 @@ export default defineNuxtConfig({
         'nuxt-icon',
         '@pinia/nuxt',
         'nuxt-vuefire',
-        '@vueuse/nuxt'
+        '@vueuse/nuxt',
+        '@vueuse/motion/nuxt'
     ],
     pwa: {
         injectManifest: {
@@ -52,10 +54,12 @@ export default defineNuxtConfig({
             short_name: process.env.VITE_APP_SHORT_NAME,
             icons
         },
-        devOptions: {
-            enabled: true,
-            type: 'module'
-        }
+        devOptions: isDevMode
+            ? {
+                enabled: true,
+                type: 'module'
+            }
+            : undefined
     },
     sourcemap: {
         server: true,
@@ -70,7 +74,7 @@ export default defineNuxtConfig({
                 authToken: process.env.SENTRY_AUTH_TOKEN,
                 org: process.env.SENTRY_ORG,
                 project: process.env.SENTRY_PROJECT,
-                disable: process.env.NODE_ENV !== 'production',
+                disable: isDevMode,
                 release: {
                     name: commitHash
                 }
@@ -88,7 +92,7 @@ export default defineNuxtConfig({
             measurementId: process.env.VITE_APP_MEASUREMENTID
         },
         appCheck: {
-            debug: process.env.NODE_ENV !== 'production',
+            debug: isDevMode,
             isTokenAutoRefreshEnabled: true,
             provider: 'ReCaptchaV3',
             key: process.env.VITE_APP_RECAPTCHA!
@@ -99,7 +103,7 @@ export default defineNuxtConfig({
             title: process.env.VITE_APP_SHORT_NAME,
             longName: process.env.VITE_APP_NAME,
             dbCollectionName: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
-            imageCacheFirst: process.env.NODE_ENV !== 'production',
+            imageCacheFirst: isDevMode,
             installStepCount,
             compileTime,
             compileTimeZone,
