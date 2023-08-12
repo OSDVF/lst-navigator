@@ -16,11 +16,14 @@
                         </h5>
                     </div>
                 </summary>
-                <div>
+                <NuxtLink :to="`/schedule/${selectedPart}/${index}`">
                     <IconCSS class="icon" :name="entry.icon ?? 'mdi:chevron-right'" />
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description ?? 'Žádné detaily'" />
-                </div>
+                    <span class="more">
+                        Feedback a detaily <IconCSS class="icon" name="mdi:rss" />
+                    </span>
+                </NuxtLink>
             </details>
         </div>
     </div>
@@ -43,6 +46,8 @@ function toHumanTime(time: number) {
 </script>
 
 <style lang="scss">
+@import "@/assets/styles/constants.scss";
+
 .schedule {
     &>div {
 
@@ -56,13 +61,30 @@ function toHumanTime(time: number) {
 details {
     background: var(--color);
 
-    .icon {
-        margin-left: 2.9rem;
-    }
-    .content {
+    .content,
+    .more {
         display: inline-block;
         margin: .5rem .5rem .5rem .2rem;
     }
+
+    &>a {
+        display: block;
+        &>.icon {
+            margin-left: 2.9rem;
+        }
+    }
+
+    &:hover {
+        .more {
+            opacity: 1;
+        }
+    }
+}
+
+.more {
+    color: rgba(26, 71, 106, 0.586);
+    opacity: 0;
+    float: right;
 }
 
 summary {
@@ -87,5 +109,4 @@ summary {
     h5 {
         margin: 0;
     }
-}
-</style>
+}</style>

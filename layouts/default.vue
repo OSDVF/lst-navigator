@@ -4,7 +4,12 @@
         <Head>
             <Title>{{ title }}</Title>
         </Head>
-        <main :style="trainsitioning ? 'overflow-x:hidden' : undefined">
+        <main
+            :style="{
+                'background': globalBackground ? `linear-gradient(0deg, transparent, ${globalBackground})` : undefined,
+                'overflow-x': trainsitioning ? 'hidden' : undefined,
+            }"
+        >
             <slot />
         </main>
         <div class="navigation">
@@ -88,6 +93,8 @@ const title = computed(() => {
 
 const trainsitioning = ref(false)
 provide('trainsitioning', trainsitioning)
+const globalBackground = ref('')
+provide('globalBackground', globalBackground)
 
 function captureError(error: unknown) {
     // eslint-disable-next-line no-console
