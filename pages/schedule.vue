@@ -21,7 +21,7 @@
             }"
         >
             <div>
-                <NuxtPage :transition="{name: currentTransition, duration: {enter: 200, leave: 100}, appear: true, onAfterLeave: onTrainsitionAfterLeave}" />
+                <NuxtPage :transition="{name: currentTransition, duration: {enter: 200, leave: 100}, appear: true, onAfterLeave: onTrainsitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTrainsitionBeforeLeave}" />
             </div>
         </div>
     </div>
@@ -89,13 +89,22 @@ function backgroundFor(day: any, index: number) {
 }
 
 const currentTransition = ref('slide-left')
+const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
 const transitioning = ref(false)
 const moving = ref(false)
 const translateX = ref(0)
 
-const onTrainsitionAfterLeave = () => {
+function onTrainsitionAfterLeave () {
     transitioning.value = false
     translateX.value = 0
+}
+
+function onTransitionAfterEnter() {
+    movingOrTrainsitioning.value = false
+}
+
+function onTrainsitionBeforeLeave() {
+    movingOrTrainsitioning.value = true
 }
 
 const dragHandler = ({ movement: [x], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
@@ -117,6 +126,7 @@ const dragHandler = ({ movement: [x], dragging, swipe }: { movement: number[], d
         return
     }
     moving.value = true
+    movingOrTrainsitioning.value = true
     translateX.value = x
 }
 

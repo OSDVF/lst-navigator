@@ -26,6 +26,20 @@ isSupported().then((supported) => {
                 ...swConfig.messaging,
                 ...payload.notification
             })
+
+        self.clients.matchAll({ type: 'window' }).then((clients) => {
+            let foundMatchingClient = false
+            for (let i = 0; i < clients.length; i++) {
+                const client = clients[i]
+                if (client.url === payload.data?.url) {
+                    foundMatchingClient = true
+                    return client.focus()
+                }
+            }
+            if (!foundMatchingClient && self.clients.openWindow) {
+                self.clients.openWindow(payload.data?.url ?? '/')
+            }
+        })
     })
 })
 addEventListener('message', (event: MessageEvent) => {

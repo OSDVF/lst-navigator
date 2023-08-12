@@ -47,7 +47,8 @@ export default async function () {
     const responses: { [key: string]: any } = {}
     const errors: { [key: string]: any } = {}
     const promises: Promise<void | Response>[] = []
-    for (const part of scheduleParts as DocumentReference[]) {
+    for (let partIndex = 0; partIndex < scheduleParts.length; partIndex++) {
+        const part = scheduleParts[partIndex] as DocumentReference
         const partData = await (await getDoc(part)).data()
         if (typeof partData === 'undefined') {
             continue
@@ -58,7 +59,8 @@ export default async function () {
         if (date.getDate() !== now.getDate() || date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) {
             continue
         }
-        for (const event of partData.program) {
+        for (let eventIndex = 0; eventIndex < partData.program.length; eventIndex++) {
+            const event = partData.program[eventIndex]
             const eventTime = new Date()
             eventTime.setHours(Math.floor(event.time / 100))
             eventTime.setMinutes(event.time % 100)
@@ -83,6 +85,9 @@ export default async function () {
                             notification: {
                                 title: event.title,
                                 body: event.subtitle ?? event.description
+                            },
+                            data: {
+                                url: `/schedule/${partIndex}/${eventIndex}`
                             },
                             webpush: {
                                 headers: {

@@ -4,7 +4,7 @@
         <Head>
             <Title>{{ title }}</Title>
         </Head>
-        <main>
+        <main :style="trainsitioning ? 'overflow-x:hidden' : undefined">
             <slot />
         </main>
         <div class="navigation">
@@ -85,6 +85,9 @@ const title = computed(() => {
     }
     return config.public.title
 })
+
+const trainsitioning = ref(false)
+provide('trainsitioning', trainsitioning)
 
 function captureError(error: unknown) {
     // eslint-disable-next-line no-console
