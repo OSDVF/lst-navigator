@@ -14,13 +14,25 @@
 </template>
 
 <script setup lang="ts">
+const { $pwa, $Sentry } = useNuxtApp()
 const prevRoute = ref<string | null>(null)
 
 onBeforeRouteUpdate((updateGuard) => {
     prevRoute.value = updateGuard.fullPath
 })
 
-function download() {
-    useNuxtApp().$pwa.updateServiceWorker().then(() => { location.href = '/schedule' })
+async function download() {
+    $pwa.updateServiceWorker()
+    const regs = await navigator.serviceWorker.getRegistrations()
+    for (const reg of regs) {
+        try {
+            reg.waiting?.postMessage({ type: 'CLIENTS_CLAIM' })
+            reg.waiting?.postMessage({ type: 'SKIP_WAITING' })
+        } catch (e) {
+            console.error(e)
+            $Sentry.captureException(e)
+        }
+    }
+    location.href = '/schedule/0'
 }
 </script>

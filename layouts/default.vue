@@ -75,6 +75,10 @@ if (app.$pwa.needRefresh) {
     router.push('/update')
 }
 
+app.$onUpdateCallback(() => {
+    router.push('/update')
+})
+
 const title = computed(() => {
     if (route.meta.title) {
         return `${route.meta.title} · ${config.public.title}`

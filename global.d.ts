@@ -1,3 +1,6 @@
+import type { PwaInjection } from "@vite-pwa/nuxt";
+import * as Sentry from '@sentry/vue'
+
 export { }
 
 // define environment variables here
@@ -43,5 +46,15 @@ declare global {
      */
     prompt(): Promise<void>;
 
+  }
+}
+
+declare module 'nuxt/dist/app/nuxt' {
+  interface NuxtApp {
+    $deferredPrompt: () => BeforeInstallPromptEvent | null
+    $installPromptSupport: () => boolean,
+    $onUpdateCallback: (callback: (reg?: ServiceWorkerRegistration) => void) => void,
+    $pwa: PwaInjection,
+    $Sentry: typeof Sentry
   }
 }

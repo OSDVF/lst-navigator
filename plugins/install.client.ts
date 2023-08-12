@@ -10,14 +10,50 @@ window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => 
     // can have buttons in different locations, or wait to prompt
     // as part of a critical journey
 })
+const onUpdateCallback = ref((_reg?: ServiceWorkerRegistration) => { })
+let updateFound = false
 
 export default defineNuxtPlugin({
     parallel: true,
+    hooks: {
+        async 'app:mounted'(app) {
+            const firebaseApp = useFirebaseApp()
+            const swRegistraions = await navigator.serviceWorker.getRegistrations()
+            for (const registration of swRegistraions) {
+                registration?.addEventListener('updatefound', () => {
+                    onUpdateCallback.value(registration)
+                    updateFound = true
+                })
+                if (registration.waiting) {
+                    onUpdateCallback.value(registration)
+                    updateFound = true
+                }
+                try {
+                    registration.active?.postMessage({
+                        type: 'INITIALIZE_APP',
+                        config: {
+                            ...firebaseApp.options,
+                            defaultNotification: { ...app.$nuxt.$config.public.messagingConfig }
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                    app.$nuxt.$Sentry.captureException(e)
+                }
+            }
+        }
+    },
     setup() {
         return {
             provide: {
                 deferredPrompt() { return deferredPrompt },
-                installPromptSupport() { return 'BeforeInstallPromptEvent' in window }
+                installPromptSupport() { return 'BeforeInstallPromptEvent' in window },
+                onUpdateCallback(callback: () => void) {
+                    onUpdateCallback.value = callback
+                    if (updateFound) {
+                        callback()
+                    }
+                }
             }
         }
     }

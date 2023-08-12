@@ -136,7 +136,7 @@ nav.days {
     z-index: 1;
 
     border-bottom: 1px solid rgba($link-background, 0.1);
-    overflow: scroll;
+    overflow-x: auto;
     width: 100vw;
 }
 

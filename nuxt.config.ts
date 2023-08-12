@@ -11,16 +11,19 @@ const compileTime = new Date().getTime().toString()
 const compileTimeZone = new Date().getTimezoneOffset().toString()
 const isDevMode = process.env.NODE_ENV !== 'production'
 
-export default defineNuxtConfig({
+const config = defineNuxtConfig({
     app: {
         head: {
             title: process.env.APP_SHORT_NAME,
             link: [
-                { rel: 'icon', type: 'image/png', href: '/android/android-launchericon-96-96.png' },
-                // Add web app manifest
-                { rel: 'manifest', href: '/manifest.webmanifest' }
+                { rel: 'icon', type: 'image/png', href: '/android/android-launchericon-96-96.png' }
             ]
         }
+    },
+    build: {
+        transpile: [
+            '~/utils/sw.ts'
+        ]
     },
     css: [
         '~/assets/styles/base.scss',
@@ -38,7 +41,8 @@ export default defineNuxtConfig({
         '@pinia/nuxt',
         'nuxt-vuefire',
         '@vueuse/nuxt',
-        '@vueuse/motion/nuxt'
+        '@vueuse/motion/nuxt',
+        'nuxt-scheduler'
     ],
     pwa: {
         injectManifest: {
@@ -48,6 +52,7 @@ export default defineNuxtConfig({
             ]
         },
         strategies: 'injectManifest',
+        srcDir: 'utils',
         filename: 'sw.ts',
         manifest: {
             name: process.env.VITE_APP_NAME,
@@ -57,7 +62,7 @@ export default defineNuxtConfig({
         devOptions: isDevMode
             ? {
                 enabled: true,
-                type: 'module'
+                type: 'classic'
             }
             : undefined
     },
@@ -74,7 +79,7 @@ export default defineNuxtConfig({
                 authToken: process.env.SENTRY_AUTH_TOKEN,
                 org: process.env.SENTRY_ORG,
                 project: process.env.SENTRY_PROJECT,
-                disable: isDevMode,
+                disable: isDevMode || !!process.env.SENTRY_DISABLE,
                 release: {
                     name: commitHash
                 }
@@ -109,11 +114,25 @@ export default defineNuxtConfig({
             compileTimeZone,
             commitMessageTime,
             commitHash,
+            messagingConfig: {
+                title: process.env.VITE_APP_SHORT_NAME,
+                body: process.env.VITE_APP_DEFAULT_NOTIFICATION_BODY,
+                image: process.env.VITE_APP_DEFAULT_NOTIFICATION_IMAGE,
+                icon: process.env.VITE_APP_DEFAULT_NOTIFICATION_ICON,
+                vapidKey: process.env.VAPID_PUBLIC
+            },
             ENV: process.env.NODE_ENV ?? 'production',
             SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
-            SENTRY_DSN: process.env.SENTRY_DSN,
-            SENTRY_TRACE_PROPAGATION_TARGET: process.env.SENTRY_TRACE_PROPAGATION_TARGET
+            SENTRY_DSN: process.env.VITE_APP_DSN,
+            SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET
         }
     },
     ssr: false
 })
+
+fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
+    firebase: config.vuefire?.config,
+    messaging: config.runtimeConfig!.public!.messagingConfig
+})}`)
+
+export default config

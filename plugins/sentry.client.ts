@@ -7,15 +7,18 @@ export default defineNuxtPlugin({
     setup() {
         const config = useRuntimeConfig()
         const nuxtApp = useNuxtApp()
-
-        Sentry.init({
+        const sentryConfig = {
             enabled: config.public.SENTRY_ENABLED,
-            app: nuxtApp.vueApp,
             autoSessionTracking: true,
             debug: config.public.ENV !== 'production',
             dsn: config.public.SENTRY_DSN,
             release: config.public.commitHash,
-            environment: config.public.ENV,
+            environment: config.public.ENV
+        }
+
+        Sentry.init({
+            ...sentryConfig,
+            app: nuxtApp.vueApp,
             integrations: [
                 new Sentry.BrowserTracing({
                     routingInstrumentation: Sentry.vueRouterInstrumentation(nuxtApp.$router as Router),
@@ -34,6 +37,11 @@ export default defineNuxtPlugin({
             // plus for 100% of sessions with an error
             replaysSessionSampleRate: 0.1,
             replaysOnErrorSampleRate: 1
+        })
+
+        navigator.serviceWorker.controller?.postMessage({
+            type: 'INITIALIZE_SENTRY',
+            config: sentryConfig
         })
 
         return {
