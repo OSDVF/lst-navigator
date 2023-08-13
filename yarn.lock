@@ -7680,6 +7680,14 @@ nuxt-icon@^0.4.2:
     "@iconify/vue" "^4.1.1"
     "@nuxt/kit" "^3.6.1"
 
+nuxt-rating@^0.0.15:
+  version "0.0.15"
+  resolved "https://registry.yarnpkg.com/nuxt-rating/-/nuxt-rating-0.0.15.tgz#bdf82e7d8571b50f3c8e4ccbd8b702c287eb6e00"
+  integrity sha512-K/yehNfcXL/GUgvuCv0GZ4Gk8OWt09xUsMcJYjg0d5xBDxWyxrFUnK4YgvFvxkBLzAMkj+BkW8U4nUF0Ed2rgg==
+  dependencies:
+    "@nuxt/kit" "^3.6.1"
+    sass "^1.63.6"
+
 nuxt-scheduler@^0.0.16:
   version "0.0.16"
   resolved "https://registry.yarnpkg.com/nuxt-scheduler/-/nuxt-scheduler-0.0.16.tgz#4ba45062bdecdbbbd03f527656761f269e26a345"
@@ -8930,6 +8938,15 @@ safe-regex@^2.1.1:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
+
+sass@^1.63.6:
+  version "1.65.1"
+  resolved "https://registry.yarnpkg.com/sass/-/sass-1.65.1.tgz#8f283b0c26335a88246a448d22e1342ba2ea1432"
+  integrity sha512-9DINwtHmA41SEd36eVPQ9BJKpn7eKDQmUHmpI0y5Zv2Rcorrh0zS+cFrt050hdNbmmCNKTW3hV5mWfuegNRsEA==
+  dependencies:
+    chokidar ">=3.0.0 <4.0.0"
+    immutable "^4.0.0"
+    source-map-js ">=0.6.2 <2.0.0"
 
 sass@^1.64.1:
   version "1.64.1"

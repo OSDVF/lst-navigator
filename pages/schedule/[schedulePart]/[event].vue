@@ -1,34 +1,75 @@
 <template>
     <article>
         <h1>{{ eventData?.title }}</h1>
-        <h2>{{ eventData?.subtitle }}</h2>
+        <h3>{{ eventData?.subtitle }}</h3>
         <p>{{ eventData?.description }}</p>
 
-        <h1>Feedback</h1>
+        <h1>
+            <IconCSS name="mdi:rss" /> Zpětná vazba
+        </h1>
+        <small>Odpovídáš jako <NuxtLink to="/settings" title="Jméno je možné nastavit v nastavení">{{ settings.userNickname
+            || 'anonym' }}</NuxtLink></small>
+        <FeedbackForm
+            v-if="eventData?.feedback" :data="eventData?.feedback[settings.userIdentifier.value]"
+            @set-data="setFeedback"
+        />
+        <p v-else>
+            Není k dispozici
+        </p>
+        <ProgressBar v-if="fetching" />
+        <p v-if="couldNotFetch">
+            Nepodařilo se uložit vaši odpověď
+        </p>
     </article>
 </template>
 
 <script setup lang="ts">
+import { DocumentReference, doc, getDoc, setDoc } from 'firebase/firestore'
 import { useCloudStore } from '@/stores/cloud'
+import { useSettings } from '@/stores/settings'
+import type { Feedback } from '@/components/FeedbackForm.vue'
 
-const cloudStore = useCloudStore()
+const firestore = useFirestore()
 const route = useRoute()
+const partIndex = parseInt(route.params.schedulePart as string ?? 0)
+const cloudStore = useCloudStore()
+const currentSchedulePartDoc = getDoc(doc(firestore, `${cloudStore.eventDbName}/schedule`)).then(document => document.data()?.parts[partIndex])
+const settings = useSettings()
 const eventData = computed(() => {
-    const program = cloudStore.scheduleParts ? cloudStore.scheduleParts[parseInt(route.params.schedulePart as string ?? 0)]?.program : []
-    if (route.params.event) {
-        return program[route.params.event as string ?? 0]
+    const program = cloudStore.scheduleParts ? cloudStore.scheduleParts[partIndex]?.program : []
+    if (route.params.event && program) {
+        const eventData = program[route.params.event as string ?? 0]
+        globalBackground.value = darkenColor(colorToHex(eventData?.color ?? 'gray'), -0.2)
+        return eventData
     }
+    return undefined
 })
+const fetching = ref(false)
+const couldNotFetch = ref(false)
+
+async function setFeedback(value: Feedback) {
+    fetching.value = true
+    setDoc(await currentSchedulePartDoc as DocumentReference, {
+        feedback: {
+            [settings.userIdentifier.value]: value
+        }
+    }, {
+        merge: true
+    }).then(() => { fetching.value = couldNotFetch.value = false })
+    setTimeout(() => {
+        couldNotFetch.value = fetching.value
+        fetching.value = false
+    }, 7000)
+}
 
 const globalBackground = inject('globalBackground') as Ref<string>
-globalBackground.value = darkenColor(colorToHex(eventData.value?.color), -0.2)
 
 onBeforeRouteLeave(() => {
     globalBackground.value = ''
 })
 
 // https://stackoverflow.com/questions/1573053/javascript-function-to-convert-color-names-to-hex-codes
-function colorToRGBA(color:string) {
+function colorToRGBA(color: string) {
     // Returns the color as an array of [r, g, b, a] -- all range from 0 - 255
     // color must be a valid canvas fillStyle. This will cover most anything
     // you'd want to use.
@@ -44,19 +85,19 @@ function colorToRGBA(color:string) {
     return ctx!.getImageData(0, 0, 1, 1).data
 }
 
-function byteToHex(num:number) {
+function byteToHex(num: number) {
     // Turns a number (0-255) into a 2-character hex number (00-ff)
     return ('0' + num.toString(16)).slice(-2)
 }
 
-function colorToHex(color:string) {
+function colorToHex(color: string) {
     // Convert any CSS color to a hex representation
     // Examples:
     // colorToHex('red')            # '#ff0000'
     // colorToHex('rgb(255, 0, 0)') # '#ff0000'
     const rgba = colorToRGBA(color)
     const hex = [0, 1, 2].map(
-        function(idx) { return byteToHex(rgba[idx]) }
+        function (idx) { return byteToHex(rgba[idx]) }
     ).join('')
     return '#' + hex
 }

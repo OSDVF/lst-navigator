@@ -39,6 +39,7 @@
     "firebase": "^10.1.0",
     "firebase-messaging": "^1.0.6",
     "localforage": "^1.10.0",
+    "nuxt-rating": "^0.0.15",
     "pinia": "^2.1.6",
     "vue-easy-lightbox": "^1.16.0",
     "vuefire": "^3.1.12"

@@ -42,7 +42,8 @@ const config = defineNuxtConfig({
         'nuxt-vuefire',
         '@vueuse/nuxt',
         '@vueuse/motion/nuxt',
-        'nuxt-scheduler'
+        'nuxt-scheduler',
+        'nuxt-rating'
     ],
     pwa: {
         injectManifest: {

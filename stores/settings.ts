@@ -3,6 +3,16 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { unzip } from 'unzipit'
 
+let uniqueIdentifier = new Date().getTime().toString(36)
+try {
+    const prevIdentifier = localStorage.getItem('uniqueIdentifier')
+    if (!prevIdentifier) {
+        localStorage.setItem('uniqueIdentifier', uniqueIdentifier)
+    } else {
+        uniqueIdentifier = prevIdentifier
+    }
+} catch (e) { }
+
 async function getUncompressedSilenceFile() {
     const compressed = '/audio/silence.zip'
     const { entries } = await unzip(compressed)
@@ -103,7 +113,7 @@ export const useSettings = defineStore('settings', () => {
     function playListener() {
         isPlaying.value = true
     }
-    function pauseListener () {
+    function pauseListener() {
         document.removeEventListener('click', pauseListener)
         isPlaying.value = false
         silenceFile.then((silence) => {
@@ -139,6 +149,7 @@ export const useSettings = defineStore('settings', () => {
 
     const selectedGroup = useStorage<number>('selectedGroup', 0)
     const userNickname = useStorage<string>('userNickname', '')
+    const userIdentifier = computed(() => userNickname || uniqueIdentifier)
 
     return {
         getInstallStep,
@@ -154,6 +165,7 @@ export const useSettings = defineStore('settings', () => {
         isPlaying,
         audio,
         selectedGroup,
-        userNickname
+        userNickname,
+        userIdentifier
     }
 })
