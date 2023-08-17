@@ -5,6 +5,8 @@ import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
 import { SeverityLevel } from '@sentry/browser'
+import localforage from 'localforage'
+import { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
 
 declare let self: ServiceWorkerGlobalScope
@@ -18,28 +20,46 @@ isSupported().then((supported) => {
         return
     }
     const messagingInstance = getMessaging(app)
-    onBackgroundMessage(messagingInstance, (payload: MessagePayload) => {
-        console.log('[SW] Received message ', payload)
+    onBackgroundMessage(messagingInstance, async (payload: MessagePayload) => {
+        if (await localforage.getItem('doNotifications') !== 'false') {
+            console.log('[SW] Received message ', payload)
+            const payloadData = payload.data as NotificationPayload | undefined
 
-        self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.title ?? 'Notification',
-            {
-                ...swConfig.messaging,
-                ...payload.notification
-            })
+            const eventTime = new Date()
+            if (payloadData) {
+                const [year, month, day] = payloadData.date.split('-').map((x:string) => parseInt(x, 10))
+                eventTime.setFullYear(year)
+                eventTime.setMonth(month - 1)
+                eventTime.setDate(day)
+                eventTime.setMinutes(payloadData.time % 100)
+                eventTime.setHours(Math.floor(payloadData.time / 100))
+            }
 
-        self.clients.matchAll({ type: 'window' }).then((clients) => {
-            let foundMatchingClient = false
-            for (let i = 0; i < clients.length; i++) {
-                const client = clients[i]
-                if (client.url === payload.data?.url) {
-                    foundMatchingClient = true
-                    return client.focus()
+            if (new Date().getTime() - eventTime.getTime() > 1000 * 60 * 10) { // 10 minutes timeout
+                return// discard old messages
+            }
+            self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.title ?? 'Notification',
+                {
+                    ...swConfig.messaging,
+                    ...payload.notification
+                })
+
+            self.clients.matchAll({ type: 'window' }).then((clients) => {
+                let foundMatchingClient = false
+                for (let i = 0; i < clients.length; i++) {
+                    const client = clients[i]
+                    if (client.url === payloadData?.url) {
+                        foundMatchingClient = true
+                        return client.focus()
+                    }
                 }
-            }
-            if (!foundMatchingClient && self.clients.openWindow) {
-                self.clients.openWindow(payload.data?.url ?? '/')
-            }
-        })
+                if (!foundMatchingClient && self.clients.openWindow) {
+                    self.clients.openWindow(payloadData?.url ?? '/')
+                }
+            })
+        } else {
+            console.log('[SW] Not showing message ', payload)
+        }
     })
 })
 addEventListener('message', (event: MessageEvent) => {

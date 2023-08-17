@@ -2,6 +2,7 @@ import localforage from 'localforage'
 import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { unzip } from 'unzipit'
+import { set } from 'firebase/database'
 
 let uniqueIdentifier = new Date().getTime().toString(36)
 try {
@@ -149,7 +150,17 @@ export const useSettings = defineStore('settings', () => {
 
     const selectedGroup = useStorage<number>('selectedGroup', 0)
     const userNickname = useStorage<string>('userNickname', '')
-    const userIdentifier = computed(() => userNickname || uniqueIdentifier)
+    const userIdentifier = computed(() => {
+        if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
+    })
+    const doNotifications = computed<Promise<boolean | null> | boolean>({
+        get(): Promise<boolean | null> {
+            return localforage.getItem<boolean>('doNotifications')
+        },
+        async set(value: boolean | Promise<boolean | null>) {
+            localforage.setItem('doNotifications', value instanceof Promise ? await value : value)
+        }
+    })
 
     return {
         getInstallStep,
@@ -166,6 +177,7 @@ export const useSettings = defineStore('settings', () => {
         audio,
         selectedGroup,
         userNickname,
-        userIdentifier
+        userIdentifier,
+        doNotifications
     }
 })

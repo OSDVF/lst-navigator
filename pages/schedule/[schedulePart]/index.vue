@@ -21,7 +21,12 @@
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description ?? 'Žádné detaily'" />
                     <span class="more">
-                        Feedback a detaily <IconCSS class="icon" name="mdi:rss" />
+                        <IconCSS class="icon" name="mdi:rss" />
+                        <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
+                        <NuxtRating
+                            v-else :rating-value="getFeedback(entry, index)"
+                            :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
+                        />
                     </span>
                 </NuxtLink>
             </details>
@@ -30,17 +35,31 @@
 </template>
 
 <script setup lang="ts">
+import { doc } from 'firebase/firestore'
 import { useCloudStore } from '@/stores/cloud'
+import { useSettings } from '@/stores/settings'
+import { Feedback, FeedbackType } from '@/components/FeedbackForm.vue'
+import { toHumanTime } from '@/utils/types'
 const route = useRoute()
 const selectedPart = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
 const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPart.value]?.program : [])
 const cloudStore = useCloudStore()
+const settings = useSettings()
 
-// Format: 1700 => 17:00
-function toHumanTime(time: number) {
-    const hours = Math.floor(time / 100)
-    const minutes = time % 100
-    return `${hours}:${minutes.toString().padStart(2, '0')}`
+const firestore = useFirestore()
+const currentFeedbackDoc = doc(firestore, `${cloudStore.eventDbName}/feedback`)
+const currentFeedbackValue = useDocument(currentFeedbackDoc)
+
+function getFeedback(entry: any, index: number) {
+    const feedback: Feedback = currentFeedbackValue.value?.[selectedPart.value]?.[index]?.[settings.userIdentifier]
+    if (!feedback) { return false }
+    switch (entry.feedbackType as FeedbackType) {
+    case 'basic':
+        return feedback.basic
+    case 'complicated':
+        return feedback.complicated ? feedback.complicated.reduce((prev, cur) => prev + cur) / feedback.complicated.length : false
+    }
+    return false
 }
 
 </script>
@@ -65,10 +84,14 @@ details {
     .more {
         display: inline-block;
         margin: .5rem .5rem .5rem .2rem;
+        &>ul {
+            display: inline-block;
+        }
     }
 
     &>a {
         display: block;
+
         &>.icon {
             margin-left: 2.9rem;
         }
@@ -109,4 +132,5 @@ summary {
     h5 {
         margin: 0;
     }
-}</style>
+}
+</style>

@@ -115,7 +115,7 @@ export default async function () {
         }
     }
     await Promise.all(promises)
-    console.log(responses)
+    console.log(new Date(), responses)
     console.error(errors)
     return responses
 }
