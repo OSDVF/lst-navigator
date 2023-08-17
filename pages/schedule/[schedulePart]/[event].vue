@@ -1,5 +1,9 @@
 <template>
-    <article>
+    <article
+        :style="{
+            'overflow-x': movingOrTrainsitioning ? 'hidden' : undefined,
+        }"
+    >
         <h1>{{ eventData?.title }}&ensp;
             <span class="muted">
                 {{ toHumanTime(eventData?.time) }}
@@ -12,25 +16,39 @@
         <h1>
             <IconCSS name="mdi:rss" /> Zpětná vazba
         </h1>
-        <small>Odpovídáš jako <NuxtLink to="/settings" title="Jméno je možné nastavit v nastavení">
-            {{ settings?.userNickname || 'anonym' }}</NuxtLink></small>
-        <FeedbackForm
-            v-if="eventData?.feedbackType" :data="currentFeedbackValue?.[partIndex]?.[route.params.event as string]?.[settings.userIdentifier]"
-            :type="eventData?.feedbackType" :complicated-questions="eventData?.questions" @set-data="setFeedback"
-        />
+        <template v-if="eventData?.feedbackType">
+            <small>Odpovídáš jako <NuxtLink to="/settings" title="Jméno je možné nastavit v nastavení">
+                {{ settings?.userNickname || 'anonym' }}</NuxtLink></small>
+            <FeedbackForm
+                :data="currentFeedbackValue" :type="eventData?.feedbackType"
+                :complicated-questions="eventData?.questions" @set-data="setFeedback"
+            />
+            <ProgressBar v-if="fetching" />
+            <p v-if="couldNotFetch">
+                Nepodařilo se uložit tvou odpověď
+                <br>
+                {{ error }}
+                <br>
+                <button v-if="lastNewFeedback" @click="setFeedback(lastNewFeedback)">
+                    Uložit
+                </button>
+            </p>
+        </template>
         <p v-else>
             Není k dispozici
         </p>
-        <ProgressBar v-if="fetching" />
-        <p v-if="couldNotFetch">
-            Nepodařilo se uložit tvou odpověď
-            <br>
-            {{ error }}
-            <br>
-            <button @click="setFeedback(lastNewFeedback)">
-                Uložit
-            </button>
-        </p>
+        <nav class="eventItemNav">
+            <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${partIndex}/${eventItemIndex - 1}`">
+                <IconCSS name="mdi:chevron-left" /> {{ previousEventData?.title ?? previousEventData?.subtitle }}
+            </NuxtLink>
+            <NuxtLink
+                v-if="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1"
+                :to="`/schedule/${partIndex}/${eventItemIndex + 1}`"
+            >
+                {{ nextEventData?.title ?? nextEventData?.subtitle }}
+                <IconCSS name="mdi:chevron-right" />
+            </NuxtLink>
+        </nav>
     </article>
 </template>
 
@@ -39,38 +57,44 @@ import { doc, setDoc } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
-import type { Feedback } from '@/components/FeedbackForm.vue'
 import { toHumanTime } from '@/utils/types'
+import type { Feedback } from '@/components/FeedbackForm.vue'
 
 const route = useRoute()
 const settings = useSettings()
 const partIndex = parseInt(route.params.schedulePart as string ?? 0)
+const eventItemIndex = parseInt(route.params.event as string ?? 0)
 const cloudStore = useCloudStore()
 const globalBackground = inject('globalBackground') as Ref<string>
 const eventData = computed(() => {
     const program = cloudStore.scheduleParts ? cloudStore.scheduleParts[partIndex]?.program : []
-    if (route.params.event && program) {
-        const eventData = program[route.params.event as string ?? 0]
+    if (program) {
+        const eventData = program[eventItemIndex]
         globalBackground.value = darkenColor(colorToHex(eventData?.color ?? 'gray'), -0.2)
         return eventData
     }
     return undefined
 })
+const previousEventData = cloudStore.scheduleParts?.[partIndex]?.program[eventItemIndex - 1]
+const nextEventData = cloudStore.scheduleParts?.[partIndex]?.program[eventItemIndex + 1]
 const error = ref()
 const fetching = ref(false)
 const couldNotFetch = ref(false)
 
-const lastNewFeedback = ref<Feedback>(eventData.value?.feedback[settings.userIdentifier])
 const firestore = useFirestore()
 const currentFeedbackDoc = doc(firestore, `${cloudStore.eventDbName}/feedback`)
-const currentFeedbackValue = useDocument(currentFeedbackDoc)
+const currentFeedbackRef = useDocument(currentFeedbackDoc)
+const currentFeedbackValue = currentFeedbackRef.value?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined
+const lastNewFeedback = ref(currentFeedbackValue)
+const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
+
 function setFeedback(value: Feedback) {
     fetching.value = true
     lastNewFeedback.value = value
 
     setDoc(currentFeedbackDoc, {
         [partIndex]: {
-            [route.params.event as string]: {
+            [eventItemIndex]: {
                 [settings.userIdentifier]: value
             }
         }
@@ -137,7 +161,10 @@ article {
     overflow-x: auto;
 }
 
-.muted {
-    opacity: .5
+.eventItemNav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    margin-top: 2rem;
 }
 </style>
