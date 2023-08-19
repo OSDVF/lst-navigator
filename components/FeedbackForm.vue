@@ -14,12 +14,29 @@
             </tr>
         </thead>-->
         <tbody>
-            <tr v-if="type === 'basic'">
+            <tr v-if="type === 'parallel'">
+                <td>
+                    Účastnil*a jsem se
+                </td>
+                <td>
+                    <select v-model="syncParallel">
+                        <option v-for="parallelEvent in parallelEvents" :key="parallelEvent" :value="parallelEvent">
+                            {{ parallelEvent }}
+                        </option>
+                    </select>
+                </td>
+                <td>
+                    <button title="Resetovat odpověd" @click="syncParallel = undefined">
+                        <IconCSS name="mdi:trash" />
+                    </button>
+                </td>
+            </tr>
+            <tr v-if="type === 'basic' || type === 'parallel'">
                 <td>Celkový dojem</td>
                 <td>
                     <NuxtRating
-                        v-if="updatedRating/* a hack to re-render on props update */"
-                        inactive-color="#ccc" :read-only="false" :rating-value="props.data?.basic ?? 0"
+                        v-if="updatedRating/* a hack to re-render on props update */" inactive-color="#ccc"
+                        :read-only="false" :rating-value="props.data?.basic ?? 0"
                         :class="{ 'null': props.data?.basic === null || typeof props.data?.basic === 'undefined' }"
                         @rating-selected="syncBasic"
                     />
@@ -35,9 +52,7 @@
                     <td>{{ question }}</td>
                     <td>
                         <NuxtRating
-                            v-if="updatedRating"
-                            inactive-color="#ccc"
-                            :read-only="false"
+                            v-if="updatedRating" inactive-color="#ccc" :read-only="false"
                             :class="{ 'null': props.data.complicated?.[index] === null || typeof props.data.complicated?.[index] === 'undefined' }"
                             :rating-value="props.data.complicated?.[index] ?? 0"
                             @rating-selected="(value: number) => syncComplicated(index, value)"
@@ -70,7 +85,8 @@ import { FeedbackType } from '@/stores/cloud'
 export type Feedback = {
     basic?: number | FieldValue,
     detail?: string | FieldValue,
-    complicated?: (number | null)[]
+    complicated?: (number | null)[],
+    parallel?: string | FieldValue
 }
 
 
@@ -98,6 +114,11 @@ const props = defineProps({
             'Srozumitelnost'
         ]
     },
+    parallelEvents: {
+        type: Array as PropType<string[]>,
+        required: false,
+        default: () => []
+    },
     detailQuestion: {
         type: String,
         required: false,
@@ -117,6 +138,18 @@ const syncDetail = computed({
         props.onSetData({
             ...props.data,
             detail: typeof value === 'undefined' ? deleteField() : value
+        })
+    }
+})
+
+const syncParallel = computed({
+    get() {
+        return props.data?.parallel
+    },
+    set(value: string | undefined | FieldValue) {
+        props.onSetData({
+            ...props.data,
+            parallel: typeof value === 'undefined' ? deleteField() : value
         })
     }
 })
@@ -165,7 +198,7 @@ function syncComplicated(index: number, value?: number) {
 
     &.null::before {
         background-image:
-        linear-gradient(90deg, var(--active-color) var(--percent), transparent var(--percent)),
+            linear-gradient(90deg, var(--active-color) var(--percent), transparent var(--percent)),
             /* tint image */
             linear-gradient(to right, rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0)),
             /* checkered effect */

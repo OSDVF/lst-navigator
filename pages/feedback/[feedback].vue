@@ -24,10 +24,17 @@
                 <legend>
                     <h3>{{ entry.title }}</h3>
                 </legend>
-                <h4>{{ entry.subtitle }}</h4>
+                <details class="hoverable">
+                    <summary><h4 class="inline-block">
+                        {{ entry.subtitle }}
+                    </h4></summary>
+                    <!-- eslint-disable-next-line vue/no-v-html -->
+                    <p v-html="entry.description ?? 'Žádné detaily'" />
+                </details>
                 <FeedbackForm
-                    :detail-question="entry.detailQuestion" :type="entry.type" :data="entry.data"
+                    :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data"
                     :complicated-questions="entry.questions"
+                    :parallel-events="getParallelEvents(entry)"
                     @set-data="(data: Feedback) => setData(subPart.schedulePartIndex, entry.scheduleEntryIndex, data)"
                 />
             </fieldset>
@@ -55,7 +62,7 @@
                     >
                         <IconCSS v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
                         {{ feedbackPart.title }}
-                        <IconCSS v-if="fIndex > feedbackPartIndex" name="mdi:chevron-right" />
+                        <IconCSS v-if="fIndex >= feedbackPartIndex" name="mdi:chevron-right" />
                     </NuxtLink>
                 </nav>
             </Teleport>
@@ -68,6 +75,7 @@ import { setDoc } from 'firebase/firestore'
 import { useCloudStore } from '@/stores/cloud'
 import { Feedback } from '@/components/FeedbackForm.vue'
 import { useSettings } from '@/stores/settings'
+import { getParallelEvents } from '@/utils/types'
 const router = useRouter()
 const cloudStore = useCloudStore()
 const settings = useSettings()
@@ -87,11 +95,7 @@ const currentPart = computed(() => {
                 const eventEntry = schedulePart.program[eventIndex]
                 if (eventEntry.title?.match(config.group)) {
                     entries.push({
-                        title: eventEntry.title,
-                        subtitle: eventEntry.subtitle,
-                        type: eventEntry.feedbackType,
-                        questions: eventEntry.questions,
-                        detailQuestion: eventEntry.detailQuestion,
+                        ...eventEntry,
                         data: cloudStore.feedbackRef?.[scheduleIndex]?.[eventIndex]?.[settings.userIdentifier],
                         scheduleEntryIndex: eventIndex
                     })
@@ -150,3 +154,15 @@ function setAllData() {
 }
 
 </script>
+<style lang="scss">
+.hoverable {
+    padding: 1rem;
+    border-radius: .5rem;
+    cursor: pointer;
+    &:hover, &:focus, &:focus-within {
+        background: #0000000a;
+    }
+    h4 {
+        margin: .1rem 0;
+    }
+}</style>

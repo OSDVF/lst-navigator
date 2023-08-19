@@ -25,7 +25,8 @@
                 {{ settings?.userNickname || 'anonym' }}</NuxtLink></small>
             <FeedbackForm
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
-                :complicated-questions="eventData?.questions" @set-data="setFeedback"
+                :complicated-questions="eventData?.questions" :parallel-events="getParallelEvents(eventData)"
+                @set-data="setFeedback"
             />
             <div v-if="fetchingFeedback">
                 <IconCSS name="mdi:save" />&ensp;
@@ -77,7 +78,7 @@ import { useDocument } from 'vuefire'
 import { useStorage } from '@vueuse/core'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
-import { toHumanTime } from '@/utils/types'
+import { toHumanTime, getParallelEvents } from '@/utils/types'
 import type { Feedback } from '@/components/FeedbackForm.vue'
 
 const route = useRoute()

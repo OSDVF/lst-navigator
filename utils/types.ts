@@ -1,3 +1,5 @@
+import type { ScheduleEvent } from '@/stores/cloud'
+
 export type NotificationPayload = {
     title: string,
     body: string,
@@ -14,4 +16,8 @@ export function toHumanTime(time?: number) {
     const hours = Math.floor(time / 100)
     const minutes = time % 100
     return `${hours}:${minutes.toString().padStart(2, '0')}`
+}
+
+export function getParallelEvents(eventItem: ScheduleEvent) {
+    return eventItem.subtitle?.split(',').map(x => x.trim()) ?? []
 }

@@ -5,17 +5,17 @@ import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel'
-export type Schedule = {
+export type ScheduleEvent = {
     color?: string
     notify?: string[]
     subtitle?: string
     title?: string
-    time: number
-    feedbackType: FeedbackType,
-    detailQuestion: string,
+    time?: number
+    feedbackType?: FeedbackType,
+    detailQuestion?: string,
     description?: string,
-    questions: [],
-    icon: string // iconify code
+    questions?: [],
+    icon?: string // iconify code
 }
 
 export const useCloudStore = defineStore('cloud', () => {
@@ -60,7 +60,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const scheduleParts = computed<{
         date: string,
         name: string,
-        program: Schedule[]
+        program: ScheduleEvent[]
     }[]>(() => scheduleDoc.value?.parts)
     const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
