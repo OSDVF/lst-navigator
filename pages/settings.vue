@@ -32,9 +32,20 @@
                 </select>
             </span>
         </fieldset>
+        <h4>Individuální nastavení</h4>
         <fieldset>
             <label>Jméno / Podpis do zpětných vazeb</label>
             <input v-model="settings.userNickname">
+        </fieldset>
+        <fieldset>
+            <label>Datum synchronizace poznámek</label>
+            {{ settings.notesDirtyTime ?? 'Nikdy' }}
+        </fieldset>
+        <fieldset>
+            <label>Odeslat znovu</label>
+            <button @click="syncNotes">
+                <IconCSS name="mdi:reload" />
+            </button>
         </fieldset>
         <h4>O aplikaci</h4>
         <fieldset>
@@ -49,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { setDoc } from 'firebase/firestore'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
 definePageMeta({
@@ -77,6 +89,25 @@ function uploadAudio(e: Event) {
 }
 function deleteCustomAudio() {
     settings.deleteCustomAudio(settings.selectedAudioName)
+}
+function syncNotes() {
+    if (cloud.notesDocument) {
+        for (const key in localStorage) {
+            if (key.startsWith('note.')) {
+                const value = localStorage.getItem(key)
+                const indexes = key.split('.')
+                setDoc(cloud.notesDocument, {
+                    [indexes[1]]: {
+                        [indexes[2]]: {
+                            [settings.userIdentifier]: value
+                        }
+                    }
+                })
+            }
+        }
+    } else {
+        alert('Nepodařilo se připojit k úložišti poznámek')
+    }
 }
 </script>
 

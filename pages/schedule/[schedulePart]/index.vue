@@ -16,8 +16,11 @@
                         </h5>
                     </div>
                 </summary>
-                <NuxtLink :to="`/schedule/${selectedPart}/${index}`">
-                    <IconCSS class="icon" :name="entry.icon ?? 'mdi:chevron-right'" />
+                <NuxtLink :to="`/schedule/${selectedPart}/${index}`" style="position: relative">
+                    <IconCSS
+                        v-if="!(entry.description?.match('<br|<ol|<ul') ?? false)" class="icon"
+                        :name="entry.icon ?? 'mdi:chevron-right'"
+                    />
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description ?? 'Žádné detaily'" />
                     <span class="more">
@@ -25,6 +28,8 @@
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
                         <NuxtRating
                             v-else :rating-value="getFeedback(entry, index)"
+                            rating-size="1.2rem"
+                            inactive-color="#ccc"
                             :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
                         />
                     </span>
@@ -82,11 +87,14 @@ details {
 
     .content,
     .more {
-        display: inline-block;
         margin: .5rem .5rem .5rem .2rem;
+
         &>ul {
             display: inline-block;
         }
+    }
+    .content {
+        display: inline-block;
     }
 
     &>a {
@@ -102,12 +110,24 @@ details {
             opacity: 1;
         }
     }
+
+    ol li+li ul {
+        margin-top: .5rem;
+    }
 }
 
 .more {
-    color: rgba(26, 71, 106, 0.586);
-    opacity: 0;
-    float: right;
+    color: #1a476ac0;
+
+    @media (hover: fine) {
+        opacity: 0
+    }
+
+    position: absolute;
+    right: 0;
+    top:0;
+    display: flex;
+    align-items: center;
 }
 
 summary {

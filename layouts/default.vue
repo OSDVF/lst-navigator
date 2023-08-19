@@ -13,6 +13,7 @@
             <slot />
         </main>
         <div class="navigation">
+            <div id="additionalNav" />
             <nav role="navigation">
                 <NuxtLink to="/info">
                     <IconCSS name="mdi:information" size="2rem" />
@@ -115,6 +116,14 @@ function captureError(error: unknown) {
         display: block;
         margin: auto;
     }
+
+    .router-link-active {
+        background: #00000016;
+    }
+}
+
+#additionalNav {
+    flex-basis: 100%;
 }
 
 .backgroundLoading,

@@ -34,6 +34,8 @@
     "unzipit": "^1.4.3"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-build-classic": "^39.0.1",
+    "@ckeditor/ckeditor5-vue": "^5.1.0",
     "@pinia/nuxt": "^0.4.11",
     "@sentry/vue": "^7.61.1",
     "firebase": "^10.1.0",

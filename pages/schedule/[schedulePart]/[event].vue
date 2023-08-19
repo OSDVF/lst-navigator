@@ -17,44 +17,62 @@
             <IconCSS name="mdi:rss" /> Zpětná vazba
         </h1>
         <template v-if="eventData?.feedbackType">
-            <small>Odpovídáš jako <NuxtLink to="/settings" title="Jméno je možné nastavit v nastavení">
+            <h4>Tvá zpětná vazba</h4>
+            <small>Odpovídáš jako <NuxtLink
+                class="dotted-underline" to="/settings"
+                title="Jméno je možné nastavit v nastavení"
+            >
                 {{ settings?.userNickname || 'anonym' }}</NuxtLink></small>
             <FeedbackForm
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
                 :complicated-questions="eventData?.questions" @set-data="setFeedback"
             />
-            <ProgressBar v-if="fetching" />
+            <div v-if="fetchingFeedback">
+                <IconCSS name="mdi:save" />&ensp;
+                <ProgressBar />
+            </div>
             <p v-if="couldNotFetch">
                 Nepodařilo se uložit tvou odpověď
                 <br>
                 {{ error }}
                 <br>
                 <button v-if="lastNewFeedback" @click="setFeedback(lastNewFeedback)">
-                    Uložit
+                    Zkusit uložit znovu
                 </button>
             </p>
         </template>
         <p v-else>
             Není k dispozici
         </p>
-        <nav class="eventItemNav">
-            <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${partIndex}/${eventItemIndex - 1}`">
-                <IconCSS name="mdi:chevron-left" /> {{ previousEventData?.title ?? previousEventData?.subtitle }}
-            </NuxtLink>
-            <NuxtLink
-                v-if="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1"
-                :to="`/schedule/${partIndex}/${eventItemIndex + 1}`"
-            >
-                {{ nextEventData?.title ?? nextEventData?.subtitle }}
-                <IconCSS name="mdi:chevron-right" />
-            </NuxtLink>
-        </nav>
+        <h1>Tvé poznámky&ensp;<IconCSS title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" /></h1>
+        <p>
+            <ckeditor v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
+            <ProgressBar v-if="fetchingNote" />
+        </p>
+        <ClientOnly>
+            <Teleport to="#additionalNav">
+                <nav class="eventItemNav">
+                    <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${partIndex}/${eventItemIndex - 1}`">
+                        <IconCSS name="mdi:chevron-left" /> {{ previousEventData?.title ?? previousEventData?.subtitle }}
+                    </NuxtLink>
+                    <NuxtLink
+                        v-if="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1"
+                        :to="`/schedule/${partIndex}/${eventItemIndex + 1}`"
+                    >
+                        {{ nextEventData?.title ?? nextEventData?.subtitle }}
+                        <IconCSS name="mdi:chevron-right" />
+                    </NuxtLink>
+                </nav>
+            </Teleport>
+        </ClientOnly>
     </article>
 </template>
 
 <script setup lang="ts">
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
 import { doc, setDoc } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
+import { useStorage } from '@vueuse/core'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
@@ -75,11 +93,15 @@ const eventData = computed(() => {
     }
     return undefined
 })
-const previousEventData = cloudStore.scheduleParts?.[partIndex]?.program[eventItemIndex - 1]
-const nextEventData = cloudStore.scheduleParts?.[partIndex]?.program[eventItemIndex + 1]
+
+const previousEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex - 1])
+const nextEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex + 1])
 const error = ref()
-const fetching = ref(false)
+const noteError = ref()
+const fetchingFeedback = ref(false)
+const fetchingNote = ref(false)
 const couldNotFetch = ref(false)
+const couldNotFetchNote = ref(false)
 
 const firestore = useFirestore()
 const currentFeedbackDoc = doc(firestore, `${cloudStore.eventDbName}/feedback`)
@@ -87,9 +109,10 @@ const currentFeedbackRef = useDocument(currentFeedbackDoc)
 const currentFeedbackValue = currentFeedbackRef.value?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined
 const lastNewFeedback = ref(currentFeedbackValue)
 const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
+const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
 
 function setFeedback(value: Feedback) {
-    fetching.value = true
+    fetchingFeedback.value = true
     lastNewFeedback.value = value
 
     setDoc(currentFeedbackDoc, {
@@ -100,15 +123,59 @@ function setFeedback(value: Feedback) {
         }
     }, {
         merge: true
-    }).then(() => { fetching.value = couldNotFetch.value = false }).catch((e) => { error.value = e })
+    }).then(() => { fetchingFeedback.value = couldNotFetch.value = false }).catch((e) => { error.value = e })
     setTimeout(() => {
-        couldNotFetch.value = fetching.value
-        fetching.value = false
+        couldNotFetch.value = fetchingFeedback.value
+        fetchingFeedback.value = false
     }, 7000)
 }
 
+const notesDocument = useDocument(cloudStore.notesDocument)
+const offlineNote = useStorage(`note.${partIndex}.${eventItemIndex}`, { time: new Date(), note: '' })
+let noteSaving : NodeJS.Timeout | null
+
+const noteModel = computed({
+    get() {
+        const onlineVal = notesDocument.data.value?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier]
+        const onlineDate = new Date(onlineVal?.time ?? 0)
+        if (onlineDate > offlineNote.value.time) {
+            return onlineVal.note
+        }
+        return offlineNote.value.note
+    },
+    set(value: string) {
+        const newValue = {
+            time: settings.notesDirtyTime = new Date(),
+            note: value
+        }
+        offlineNote.value = newValue
+        if (!noteSaving) {
+            noteSaving = setTimeout(() => {
+                if (cloudStore.notesDocument) {
+                    fetchingNote.value = true
+                    setDoc(cloudStore.notesDocument, {
+                        [partIndex]: {
+                            [eventItemIndex]: {
+                                [settings.userIdentifier]: newValue
+                            }
+                        }
+                    }, {
+                        merge: true
+                    }).then(() => { fetchingNote.value = couldNotFetchNote.value = false }).catch((e) => { noteError.value = e })
+                    setTimeout(() => {
+                        couldNotFetchNote.value = fetchingNote.value
+                        fetchingFeedback.value = false
+                    }, 7000)
+                }
+                noteSaving = null
+            }, 2000)
+        }
+    }
+})
+
 onBeforeRouteLeave(() => {
     globalBackground.value = ''
+    permitSwipe.value = true
 })
 
 // https://stackoverflow.com/questions/1573053/javascript-function-to-convert-color-names-to-hex-codes
@@ -159,12 +226,5 @@ function darkenColor(color: string, amount: number) {
 article {
     padding: 1rem;
     overflow-x: auto;
-}
-
-.eventItemNav {
-    position: fixed;
-    left: 0;
-    right: 0;
-    margin-top: 2rem;
 }
 </style>

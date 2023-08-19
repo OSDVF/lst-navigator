@@ -2,7 +2,6 @@ import localforage from 'localforage'
 import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { unzip } from 'unzipit'
-import { set } from 'firebase/database'
 
 let uniqueIdentifier = new Date().getTime().toString(36)
 try {
@@ -161,6 +160,7 @@ export const useSettings = defineStore('settings', () => {
             localforage.setItem('doNotifications', value instanceof Promise ? await value : value)
         }
     })
+    const notesDirtyTime = useStorage('notesDirtyTime', new Date(0))
 
     return {
         getInstallStep,
@@ -178,6 +178,7 @@ export const useSettings = defineStore('settings', () => {
         selectedGroup,
         userNickname,
         userIdentifier,
-        doNotifications
+        doNotifications,
+        notesDirtyTime
     }
 })

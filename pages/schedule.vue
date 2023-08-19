@@ -40,6 +40,8 @@ const eventIndex = computed(() => parseInt(router.currentRoute.value.params.even
 
 const currentTransition = ref('slide-left')
 const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
+const permitSwipe = ref(false)
+provide('permitSwipe', permitSwipe)
 const transitioning = ref(false)
 const moving = ref(false)
 const translateX = ref(0)
@@ -69,7 +71,7 @@ function onTrainsitionBeforeLeave() {
 //
 const dragHandler = ({ movement: [x], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
     const partIndex = parseInt(schedulePartIndex.value)
-    if (transitioning.value) {
+    if (transitioning.value || !permitSwipe.value) {
         return
     }
     if (swipe[0] !== 0) {

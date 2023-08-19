@@ -42,6 +42,8 @@ export const useCloudStore = defineStore('cloud', () => {
     const scheduleParts = computed(() => scheduleDoc.value?.parts)
     const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
+    const notesDocument = shallowRef(getDocument('notes'))
+
     navigator.serviceWorker.getRegistration().then((registration) => {
         getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {
             if (token && subscriptionsDocument.value) {
@@ -67,6 +69,7 @@ export const useCloudStore = defineStore('cloud', () => {
         metaLoading,
         scheduleParts,
         scheduleLoading,
-        groupNames
+        groupNames,
+        notesDocument
     }
 })
