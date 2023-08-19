@@ -17,7 +17,12 @@
             <tr v-if="type === 'basic'">
                 <td>Celkový dojem</td>
                 <td>
-                    <NuxtRating inactive-color="#ccc" :read-only="false" :rating-value="props.data?.basic ?? 2.5" @rating-selected="syncBasic" />
+                    <NuxtRating
+                        v-if="updatedRating/* a hack to re-render on props update */"
+                        inactive-color="#ccc" :read-only="false" :rating-value="props.data?.basic ?? 0"
+                        :class="{ 'null': props.data?.basic === null || typeof props.data?.basic === 'undefined' }"
+                        @rating-selected="syncBasic"
+                    />
                 </td>
                 <td>
                     <button title="Resetovat odpověd" @click="syncBasic(undefined)">
@@ -30,8 +35,11 @@
                     <td>{{ question }}</td>
                     <td>
                         <NuxtRating
+                            v-if="updatedRating"
                             inactive-color="#ccc"
-                            :read-only="false" :rating-value="props.data.complicated?.[index] ?? 2.5"
+                            :read-only="false"
+                            :class="{ 'null': props.data.complicated?.[index] === null || typeof props.data.complicated?.[index] === 'undefined' }"
+                            :rating-value="props.data.complicated?.[index] ?? 0"
                             @rating-selected="(value: number) => syncComplicated(index, value)"
                         />
                     </td>
@@ -56,12 +64,15 @@
     </table>
 </template>
 <script setup lang="ts">
+import { FieldValue, deleteField } from 'firebase/firestore'
+import { FeedbackType } from '@/stores/cloud'
+
 export type Feedback = {
-    basic?: number,
-    detail?: string,
-    complicated?: number[]
+    basic?: number | FieldValue,
+    detail?: string | FieldValue,
+    complicated?: (number | null)[]
 }
-export type FeedbackType = 'basic' | 'complicated' | 'parallel'
+
 
 const props = defineProps({
     data: {
@@ -81,7 +92,11 @@ const props = defineProps({
     complicatedQuestions: {
         type: Array as PropType<string[]>,
         required: false,
-        default: () => []
+        default: () => [
+            'Rečník',
+            'Osobní přínos',
+            'Srozumitelnost'
+        ]
     },
     detailQuestion: {
         type: String,
@@ -96,42 +111,43 @@ const props = defineProps({
 
 const syncDetail = computed({
     get(): string | undefined {
-        return props.data?.detail
+        return props.data?.detail as string | undefined
     },
     set(value: string | undefined): void {
-        if (typeof value === 'undefined') {
-            const prev = props.data
-            delete prev.detail
-            props.onSetData(prev)
-            return
-        }
         props.onSetData({
             ...props.data,
-            detail: value
+            detail: typeof value === 'undefined' ? deleteField() : value
         })
     }
 })
 
 function syncBasic(value?: number) {
-    if (typeof value === 'undefined') {
-        const prev = props.data
-        delete prev.basic
-        props.onSetData(prev)
-        return
-    }
     props.onSetData({
         ...props.data,
-        basic: value
+        basic: typeof value === 'undefined' ? deleteField() : value
     })
 }
 
+const updatedRating = ref(true)
+watch(props, () => {
+    updatedRating.value = false
+    nextTick(() => {
+        updatedRating.value = true
+    })
+})
 function syncComplicated(index: number, value?: number) {
-    const prevComplicated = props.data.complicated ?? []
+    const prevComplicated = new Array(props.complicatedQuestions.length).fill(null) as (number | null)[]
+    if (props.data.complicated) {
+        for (const i in props.data.complicated) {
+            prevComplicated[i] = props.data.complicated[i]
+        }
+    }
     if (typeof value !== 'undefined') {
         prevComplicated[index] = value
-    } else {
-        delete prevComplicated[index]
+    } else if (typeof prevComplicated[index] !== 'undefined') {
+        prevComplicated[index] = null
     }
+
     props.onSetData({
         ...props.data,
         complicated: prevComplicated
@@ -141,9 +157,24 @@ function syncComplicated(index: number, value?: number) {
 </script>
 
 <style lang="scss">
-.average-rating::before {
-    //nuxt-rating has this class for some reason
-    position: static;
+.average-rating {
+    &::before {
+        //nuxt-rating has this class for some reason
+        position: static;
+    }
+
+    &.null::before {
+        background-image:
+        linear-gradient(90deg, var(--active-color) var(--percent), transparent var(--percent)),
+            /* tint image */
+            linear-gradient(to right, rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0)),
+            /* checkered effect */
+            linear-gradient(to right, black 50%, white 50%),
+            linear-gradient(to bottom, black 50%, white 50%);
+        background-blend-mode: normal, normal, exclusion, saturation;
+        background-size: auto, 5px 5px, 5px 5px, 5px 5px;
+        background-clip: text;
+    }
 }
 
 .feedbackTable {
@@ -155,6 +186,7 @@ function syncComplicated(index: number, value?: number) {
             border: 2px solid transparent;
             background: transparent;
             cursor: pointer;
+
             &:hover {
                 color: #454545
             }

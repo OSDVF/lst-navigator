@@ -41,9 +41,9 @@
 
 <script setup lang="ts">
 import { doc } from 'firebase/firestore'
-import { useCloudStore } from '@/stores/cloud'
+import { FeedbackType, useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
-import { Feedback, FeedbackType } from '@/components/FeedbackForm.vue'
+import { Feedback } from '@/components/FeedbackForm.vue'
 import { toHumanTime } from '@/utils/types'
 const route = useRoute()
 const selectedPart = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)

@@ -44,7 +44,9 @@
         <p v-else>
             Není k dispozici
         </p>
-        <h1>Tvé poznámky&ensp;<IconCSS title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" /></h1>
+        <h1>Tvé poznámky&ensp;
+            <IconCSS title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
+        </h1>
         <p>
             <ckeditor v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
             <ProgressBar v-if="fetchingNote" />
@@ -70,7 +72,7 @@
 
 <script setup lang="ts">
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
-import { doc, setDoc } from 'firebase/firestore'
+import { setDoc } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
 import { useStorage } from '@vueuse/core'
 import { useCloudStore } from '@/stores/cloud'
@@ -103,11 +105,8 @@ const fetchingNote = ref(false)
 const couldNotFetch = ref(false)
 const couldNotFetchNote = ref(false)
 
-const firestore = useFirestore()
-const currentFeedbackDoc = doc(firestore, `${cloudStore.eventDbName}/feedback`)
-const currentFeedbackRef = useDocument(currentFeedbackDoc)
-const currentFeedbackValue = currentFeedbackRef.value?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined
-const lastNewFeedback = ref(currentFeedbackValue)
+const currentFeedbackValue = computed(() => cloudStore.feedbackRef?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
+const lastNewFeedback = ref(currentFeedbackValue.value)
 const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
 const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
 
@@ -115,7 +114,7 @@ function setFeedback(value: Feedback) {
     fetchingFeedback.value = true
     lastNewFeedback.value = value
 
-    setDoc(currentFeedbackDoc, {
+    setDoc(cloudStore.feedbackDoc!, {
         [partIndex]: {
             [eventItemIndex]: {
                 [settings.userIdentifier]: value
@@ -132,7 +131,7 @@ function setFeedback(value: Feedback) {
 
 const notesDocument = useDocument(cloudStore.notesDocument)
 const offlineNote = useStorage(`note.${partIndex}.${eventItemIndex}`, { time: new Date(), note: '' })
-let noteSaving : NodeJS.Timeout | null
+let noteSaving: NodeJS.Timeout | null
 
 const noteModel = computed({
     get() {

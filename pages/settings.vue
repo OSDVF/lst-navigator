@@ -1,9 +1,9 @@
 <template>
     <article>
         <fieldset>
-            <label>Zvuk upozornění</label>
+            <label for="selectedAudioName">Zvuk upozornění</label>
             <span>
-                <select v-model="settings.selectedAudioName">
+                <select id="selectedAudioName" v-model="settings.selectedAudioName">
                     <option v-for="audioItem in settings.audioList" :key="audioItem.name" :value="audioItem.name">
                         {{ audioItem.name }}
                     </option>
@@ -23,9 +23,9 @@
             </span>
         </fieldset>
         <fieldset>
-            <label>Skupina</label>
+            <label for="group">Skupina</label>
             <span>
-                <select v-model="settings.selectedGroup">
+                <select id="group" v-model="settings.selectedGroup">
                     <option v-for="(groupName, index) in cloud.groupNames" :key="groupName" :value="index - 1">
                         {{ groupName }}
                     </option>
@@ -34,26 +34,29 @@
         </fieldset>
         <h4>Individuální nastavení</h4>
         <fieldset>
-            <label>Jméno / Podpis do zpětných vazeb</label>
-            <input v-model="settings.userNickname">
+            <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
+            <input id="nickname" v-model="settings.userNickname">
         </fieldset>
         <fieldset>
             <label>Datum synchronizace poznámek</label>
-            {{ settings.notesDirtyTime ?? 'Nikdy' }}
+            {{ settings.notesDirtyTime.getTime() === 0 ? 'Nikdy' : settings.notesDirtyTime }}
         </fieldset>
         <fieldset>
             <label>Odeslat znovu</label>
-            <button @click="syncNotes">
-                <IconCSS name="mdi:reload" />
-            </button>
+            <span>
+                <button @click="syncNotes">
+                    <IconCSS name="mdi:reload" />
+                </button>
+            </span>
         </fieldset>
         <h4>O aplikaci</h4>
         <fieldset>
-            Verze
-            <p>{{ new Date(parseInt(config.public.compileTime)).toLocaleString() }}{{ leadingPlus(parseInt(config.public.compileTimeZone)/60) }}</p>
+            <p>Verze</p>
+            <p>{{ new Date(parseInt(config.public.compileTime)).toLocaleString() }}{{
+                leadingPlus(parseInt(config.public.compileTimeZone) / 60) }}</p>
         </fieldset>
         <fieldset>
-            Poslední aktualizace
+            <span>Poslední aktualizace</span>
             <small>{{ config.public.commitMessageTime }}</small>
         </fieldset>
     </article>
@@ -111,16 +114,23 @@ function syncNotes() {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @use "sass:color";
 @import "@/assets/styles/constants.scss";
 
 fieldset {
     display: flex;
-    justify-content: space-between;
+    justify-content: stretch;
     align-items: center;
     padding: 1rem;
     border: 0;
     border-bottom: 1px solid rgba(color.adjust($link-background, $lightness: -50%), .2);
+
+    &>* {
+        flex-grow: 1;
+        &:not(:first-child) {
+            text-align: end;
+        }
+    }
 }
 </style>

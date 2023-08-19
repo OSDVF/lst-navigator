@@ -4,6 +4,20 @@ import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
 
+export type FeedbackType = 'basic' | 'complicated' | 'parallel'
+export type Schedule = {
+    color?: string
+    notify?: string[]
+    subtitle?: string
+    title?: string
+    time: number
+    feedbackType: FeedbackType,
+    detailQuestion: string,
+    description?: string,
+    questions: [],
+    icon: string // iconify code
+}
+
 export const useCloudStore = defineStore('cloud', () => {
     const firebaseApp = useFirebaseApp()
     const firestore = initializeFirestore(firebaseApp, {
@@ -36,10 +50,18 @@ export const useCloudStore = defineStore('cloud', () => {
     const networkError = computed(() => metaDoc.error.value)
     const metaLoading = computed(() => metaDoc.pending.value)
     const groupNames = computed(() => metaDoc.value?.groups ?? [])
+    const feedbackConfig = computed(() => metaDoc.value?.feedback)
 
     const scheduleDocument = shallowRef(getDocument('schedule'))
     const scheduleDoc = shallowRef(useDocument(scheduleDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } }))
-    const scheduleParts = computed(() => scheduleDoc.value?.parts)
+    const feedbackDoc = shallowRef(getDocument('feedback'))
+    const feedbackRef = shallowRef(useDocument(feedbackDoc.value))
+
+    const scheduleParts = computed<{
+        date: string,
+        name: string,
+        program: Schedule[]
+    }[]>(() => scheduleDoc.value?.parts)
     const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
     const notesDocument = shallowRef(getDocument('notes'))
@@ -70,6 +92,9 @@ export const useCloudStore = defineStore('cloud', () => {
         scheduleParts,
         scheduleLoading,
         groupNames,
-        notesDocument
+        notesDocument,
+        feedbackConfig,
+        feedbackDoc,
+        feedbackRef
     }
 })

@@ -8,7 +8,15 @@
         </div>
         <h1>{{ cloudStore.eventTitle }}</h1>
         <h2>{{ cloudStore.eventSubtitle }}</h2>
-        <h6><a :href="cloudStore.eventWeb"><Icon name="mdi:link" size="1rem" style="rotate:45deg" /> {{ cloudStore.eventWeb }}</a></h6>
+        <h6>
+            <a :href="cloudStore.eventWeb"><Icon name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{ cloudStore.eventWeb }}</a>
+            &ensp;
+            <NuxtLink to="/feedback">
+                <button style="float:right">
+                    <IconCSS name="mdi:rss" /> Feedbackový dotazník
+                </button>
+            </NuxtLink>
+        </h6>
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div v-html="cloudStore.eventDescription ?? 'Žádný popis'" />
     </article>
