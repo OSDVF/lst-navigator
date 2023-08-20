@@ -2,7 +2,9 @@ import { useScheduler } from '#scheduler'
 import notify from '~~/server/app/services/notify'
 
 export default defineNitroPlugin(() => {
-    startScheduler()
+    if (process.env.NOTIFICATIONS !== 'false') {
+        startScheduler()
+    }
 })
 
 function startScheduler() {

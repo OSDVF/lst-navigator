@@ -4,7 +4,17 @@ import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
 
-export type FeedbackType = 'basic' | 'complicated' | 'parallel'
+export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select'
+export type FeedbackConfig = {
+    group?: string | RegExp, // title of parts of schedule to group by
+    title: string,
+    individual: {
+        name: string,
+        questions: string[]
+        type?: FeedbackType,
+        description?: string
+    }[],
+}
 export type ScheduleEvent = {
     color?: string
     notify?: string[]
@@ -14,7 +24,7 @@ export type ScheduleEvent = {
     feedbackType?: FeedbackType,
     detailQuestion?: string,
     description?: string,
-    questions?: [],
+    questions?: string[],
     icon?: string // iconify code
 }
 
@@ -50,7 +60,8 @@ export const useCloudStore = defineStore('cloud', () => {
     const networkError = computed(() => metaDoc.error.value)
     const metaLoading = computed(() => metaDoc.pending.value)
     const groupNames = computed(() => metaDoc.value?.groups ?? [])
-    const feedbackConfig = computed(() => metaDoc.value?.feedback)
+    const feedbackConfig = computed<FeedbackConfig[]>(() => metaDoc.value?.feedback)
+    const feedbackInfoText = computed(() => metaDoc.value?.feedbackInfo)
 
     const scheduleDocument = shallowRef(getDocument('schedule'))
     const scheduleDoc = shallowRef(useDocument(scheduleDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } }))
@@ -95,6 +106,7 @@ export const useCloudStore = defineStore('cloud', () => {
         notesDocument,
         feedbackConfig,
         feedbackDoc,
-        feedbackRef
+        feedbackRef,
+        feedbackInfoText
     }
 })

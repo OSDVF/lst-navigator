@@ -35,7 +35,21 @@
         <h4>Individuální nastavení</h4>
         <fieldset>
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
-            <input id="nickname" v-model="settings.userNickname">
+            <span>
+                <input id="nickname" v-model="userNickname" :disabled="!!userNickname">
+                <button
+                    v-if="!!userNickname"
+                    @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? userNickname = '' : null"
+                >
+                    <IconCSS name="mdi:alert" /> Změnit
+                </button>
+                <button
+                    v-else
+                    @click="confirmDialog('Jméno by mělo být v rámci akce unikátní. Jeho změna v budoucnu může způsobit ztrátu přístupu k tvému feedbacku a poznámkám.') ? settings.userNickname = tempNickname : null"
+                >
+                    <IconCSS name="material-symbols:save" /> Uložit
+                </button>
+            </span>
         </fieldset>
         <fieldset>
             <label>Datum synchronizace poznámek</label>
@@ -75,6 +89,18 @@ const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
+const tempNickname = shallowRef(settings.userNickname)
+const userNickname = computed({
+    get() {
+        return tempNickname.value
+    },
+    set(value: string) {
+        tempNickname.value = value
+    }
+})
+function confirmDialog(message: string) {
+    return window.confirm(message)
+}
 function leadingPlus(value: number) {
     return value > 0 ? `+${value}` : value
 }
@@ -128,9 +154,9 @@ fieldset {
 
     &>* {
         flex-grow: 1;
+
         &:not(:first-child) {
             text-align: end;
         }
     }
-}
-</style>
+}</style>

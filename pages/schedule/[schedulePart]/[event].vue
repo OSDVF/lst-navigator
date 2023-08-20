@@ -25,11 +25,11 @@
                 {{ settings?.userNickname || 'anonym' }}</NuxtLink></small>
             <FeedbackForm
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
-                :complicated-questions="eventData?.questions" :parallel-events="getParallelEvents(eventData)"
+                :complicated-questions="eventData?.questions" :select-options="getParallelEvents(eventData)"
                 @set-data="setFeedback"
             />
             <div v-if="fetchingFeedback">
-                <IconCSS name="mdi:save" />&ensp;
+                <IconCSS name="material-symbols:save" />&ensp;
                 <ProgressBar />
             </div>
             <p v-if="couldNotFetch">

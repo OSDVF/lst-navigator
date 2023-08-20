@@ -19,14 +19,29 @@
                     Účastnil*a jsem se
                 </td>
                 <td>
-                    <select v-model="syncParallel">
-                        <option v-for="parallelEvent in parallelEvents" :key="parallelEvent" :value="parallelEvent">
+                    <select v-model="syncSelect">
+                        <option v-for="parallelEvent in selectOptions" :key="parallelEvent" :value="parallelEvent">
                             {{ parallelEvent }}
                         </option>
                     </select>
                 </td>
                 <td>
-                    <button title="Resetovat odpověd" @click="syncParallel = undefined">
+                    <button title="Odstranit odpověd" @click="syncSelect = undefined">
+                        <IconCSS name="mdi:trash" />
+                    </button>
+                </td>
+            </tr>
+            <tr v-if="type === 'select'">
+                <td>Vyberte odpověd</td>
+                <td>
+                    <select v-model="syncSelect">
+                        <option v-for="selectOption in selectOptions" :key="selectOption" :value="selectOption">
+                            {{ selectOption }}
+                        </option>
+                    </select>
+                </td>
+                <td>
+                    <button title="Odstranit odpověd" @click="syncSelect = undefined">
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -42,7 +57,7 @@
                     />
                 </td>
                 <td>
-                    <button title="Resetovat odpověd" @click="syncBasic(undefined)">
+                    <button title="Odstranit odpověd" @click="syncBasic(undefined)">
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -59,18 +74,18 @@
                         />
                     </td>
                     <td>
-                        <button title="Resetovat odpověd" @click="syncComplicated(index, undefined)">
+                        <button title="Odstranit odpověd" @click="syncComplicated(index, undefined)">
                             <IconCSS name="mdi:trash" />
                         </button>
                     </td>
                 </tr>
             </template>
-            <tr>
+            <tr v-if="type !== 'select'">
                 <td colspan="2">
                     <textarea v-model.lazy="syncDetail" :placeholder="props.detailQuestion" />
                 </td>
                 <td>
-                    <button title="Resetovat odpověd" @click="syncDetail = undefined">
+                    <button title="Odstranit odpověd" @click="syncDetail = undefined">
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -86,7 +101,7 @@ export type Feedback = {
     basic?: number | FieldValue,
     detail?: string | FieldValue,
     complicated?: (number | null)[],
-    parallel?: string | FieldValue
+    select?: string | FieldValue
 }
 
 
@@ -114,7 +129,7 @@ const props = defineProps({
             'Srozumitelnost'
         ]
     },
-    parallelEvents: {
+    selectOptions: {
         type: Array as PropType<string[]>,
         required: false,
         default: () => []
@@ -142,14 +157,14 @@ const syncDetail = computed({
     }
 })
 
-const syncParallel = computed({
+const syncSelect = computed({
     get() {
-        return props.data?.parallel
+        return props.data?.select
     },
     set(value: string | undefined | FieldValue) {
         props.onSetData({
             ...props.data,
-            parallel: typeof value === 'undefined' ? deleteField() : value
+            select: typeof value === 'undefined' ? deleteField() : value
         })
     }
 })

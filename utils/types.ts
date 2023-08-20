@@ -19,5 +19,5 @@ export function toHumanTime(time?: number) {
 }
 
 export function getParallelEvents(eventItem: ScheduleEvent) {
-    return eventItem.subtitle?.split(',').map(x => x.trim()) ?? []
+    return eventItem.subtitle?.split(',')?.map(x => x.trim()) ?? []
 }

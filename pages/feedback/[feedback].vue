@@ -6,7 +6,7 @@
             </NuxtLink>
         </h1>
         <NuxtLink v-if="feedbackPartIndex > 0" :to="`/feedback/${feedbackPartIndex + 1}`">
-            <IconCSS name="mdi:chevron-left" /> Vrátit se na předchozí část
+            <IconCSS name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;
         </NuxtLink>
         <NuxtLink
             v-if="feedbackPartIndex < cloudStore.feedbackConfig?.length - 1"
@@ -16,16 +16,16 @@
             <IconCSS name="mdi:chevron-right" />
         </NuxtLink>
         <br>
-        Každá tvá změna je hned uložena.
+        Každá tvá změna je hned uložena. {{ cloudStore.feedbackInfoText }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`">
             <h3>{{ subPart.title }}</h3>
             <fieldset v-for="(entry, eIndex) in subPart.entries" :key="`e${sIndex}${eIndex}`">
-                <legend>
+                <legend v-if="entry.title">
                     <h3>{{ entry.title }}</h3>
                 </legend>
-                <details class="hoverable">
-                    <summary><h4 class="inline-block">
+                <details v-if="entry.subtitle || entry.description" class="hoverable">
+                    <summary v-if="entry.subtitle"><h4 class="inline-block">
                         {{ entry.subtitle }}
                     </h4></summary>
                     <!-- eslint-disable-next-line vue/no-v-html -->
@@ -34,8 +34,8 @@
                 <FeedbackForm
                     :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data"
                     :complicated-questions="entry.questions"
-                    :parallel-events="getParallelEvents(entry)"
-                    @set-data="(data: Feedback) => setData(subPart.schedulePartIndex, entry.scheduleEntryIndex, data)"
+                    :select-options="entry.selectOptions"
+                    @set-data="(data: Feedback) => setData(subPart.primaryIndex, entry.secondaryIndex, data)"
                 />
             </fieldset>
         </div>
@@ -51,18 +51,25 @@
             <IconCSS name="mdi:check" />
             Dokončit
         </button>
+        <p v-if="couldNotFetch" style="color:red">
+            {{ error || 'Nepodařilo se uložit tvou odpověď' }}
+            <button @click="setAllData">
+                <IconCSS name="material-symbols:save" /> Zkusit znovu
+            </button>
+        </p>
         <br>
         <br>
         <ClientOnly>
             <Teleport to="#additionalNav">
+                <ProgressBar v-if="fetchingFeedback" />
                 <nav class="eventItemNav">
                     <NuxtLink
-                        v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig?.filter((_x: any, i: number) => i != feedbackPartIndex)"
-                        :key="feedbackPart.title" :to="`/feedback/${feedbackPartIndex - 1}`"
+                        v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig"
+                        :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : null"
                     >
                         <IconCSS v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
-                        {{ feedbackPart.title }}
-                        <IconCSS v-if="fIndex >= feedbackPartIndex" name="mdi:chevron-right" />
+                        {{ fIndex === feedbackPartIndex ? '• ' : null }}<span class="muted">#{{ fIndex + 1 }}</span>&ensp;{{ feedbackPart.title }}
+                        <IconCSS v-if="fIndex > feedbackPartIndex" name="mdi:chevron-right" />
                     </NuxtLink>
                 </nav>
             </Teleport>
@@ -72,7 +79,7 @@
 
 <script setup lang="ts">
 import { setDoc } from 'firebase/firestore'
-import { useCloudStore } from '@/stores/cloud'
+import { FeedbackConfig, useCloudStore, ScheduleEvent } from '@/stores/cloud'
 import { Feedback } from '@/components/FeedbackForm.vue'
 import { useSettings } from '@/stores/settings'
 import { getParallelEvents } from '@/utils/types'
@@ -80,14 +87,11 @@ const router = useRouter()
 const cloudStore = useCloudStore()
 const settings = useSettings()
 const feedbackPartIndex = parseInt(router.currentRoute.value.params.feedback as string) || 0
-type FeedbackConfig = {
-    group: string | RegExp, // title of parts of schedule to group by
-    title: string
-}
 const currentPart = computed(() => {
     const config: FeedbackConfig | undefined = cloudStore.feedbackConfig?.[feedbackPartIndex]
+    const subparts: {title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & {data: Feedback, secondaryIndex: number | string, selectOptions: string[]})[]}[] = []
+
     if (config?.group) {
-        const subparts = []
         for (const scheduleIndex in cloudStore.scheduleParts) {
             const schedulePart = cloudStore.scheduleParts[scheduleIndex]
             const entries = []
@@ -97,22 +101,40 @@ const currentPart = computed(() => {
                     entries.push({
                         ...eventEntry,
                         data: cloudStore.feedbackRef?.[scheduleIndex]?.[eventIndex]?.[settings.userIdentifier],
-                        scheduleEntryIndex: eventIndex
+                        secondaryIndex: eventIndex,
+                        selectOptions: getParallelEvents(eventEntry)
                     })
                 }
             }
             if (entries.length > 0) {
                 subparts.push({
                     title: schedulePart.name,
-                    schedulePartIndex: scheduleIndex,
+                    primaryIndex: scheduleIndex,
                     entries
                 })
             }
         }
-        return {
-            title: config.title,
-            subparts
+    }
+
+    if (config?.individual) {
+        for (const individualQuest of config.individual) {
+            subparts.push({
+                title: individualQuest.name,
+                primaryIndex: individualQuest.name,
+                entries: [{
+                    secondaryIndex: 0,
+                    feedbackType: individualQuest.type,
+                    detailQuestion: individualQuest.description,
+                    selectOptions: individualQuest.questions,
+                    questions: individualQuest.questions,
+                    data: cloudStore.feedbackRef?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier]
+                }]
+            })
         }
+    }
+    return {
+        title: config.title,
+        subparts
     }
 })
 
@@ -154,7 +176,7 @@ function setAllData() {
 }
 
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .hoverable {
     padding: 1rem;
     border-radius: .5rem;
@@ -165,4 +187,8 @@ function setAllData() {
     h4 {
         margin: .1rem 0;
     }
-}</style>
+}
+fieldset {
+    border-radius: .5rem;
+}
+</style>

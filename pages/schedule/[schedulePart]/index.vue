@@ -18,7 +18,7 @@
                 </summary>
                 <NuxtLink :to="`/schedule/${selectedPart}/${index}`" style="position: relative">
                     <IconCSS
-                        v-if="!(entry.description?.match('<br|<ol|<ul') ?? false)" class="icon"
+                        v-if="!(entry.description?.match('<p|<br|<ol|<ul') ?? false)" class="icon"
                         :name="entry.icon ?? 'mdi:chevron-right'"
                     />
                     <!-- eslint-disable-next-line vue/no-v-html -->
@@ -27,10 +27,8 @@
                         <IconCSS class="icon" name="mdi:rss" />
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
                         <NuxtRating
-                            v-else :rating-value="getFeedback(entry, index)"
-                            rating-size="1.2rem"
-                            inactive-color="#ccc"
-                            :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
+                            v-else :rating-value="getFeedback(entry, index)" rating-size="1.2rem"
+                            inactive-color="#ccc" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
                         />
                     </span>
                 </NuxtLink>
@@ -62,7 +60,7 @@ function getFeedback(entry: any, index: number) {
     case 'basic':
         return feedback.basic
     case 'complicated':
-        return feedback.complicated ? feedback.complicated.reduce((prev, cur) => prev + cur) / feedback.complicated.length : false
+        return feedback.complicated ? (feedback.complicated.reduce((prev, cur) => prev! + cur!, 0) ?? 0) / feedback.complicated.length : false
     }
     return false
 }
@@ -80,6 +78,30 @@ function getFeedback(entry: any, index: number) {
             backdrop-filter: brightness(0.9);
         }
     }
+
+    summary {
+        cursor: pointer;
+        background: transparent;
+        transition: background .15s ease;
+        padding: .5rem;
+
+        &:hover {
+            background: #0001;
+        }
+
+        &::marker {
+            content: '';
+        }
+
+        h4 {
+            margin: 0;
+            display: inline;
+        }
+
+        h5 {
+            margin: 0;
+        }
+    }
 }
 
 details {
@@ -87,12 +109,21 @@ details {
 
     .content,
     .more {
-        margin: .5rem .5rem .5rem .2rem;
+        margin: .5rem;
+
+        &>p:first-child {
+            margin-top: 1.7rem;
+        }
+
+        p {
+            margin: 1rem .5rem
+        }
 
         &>ul {
             display: inline-block;
         }
     }
+
     .content {
         display: inline-block;
     }
@@ -128,29 +159,5 @@ details {
     top:0;
     display: flex;
     align-items: center;
-}
-
-summary {
-    cursor: pointer;
-    background: transparent;
-    transition: background .15s ease;
-    padding: .5rem;
-
-    &:hover {
-        background: #0001;
-    }
-
-    &::marker {
-        content: '';
-    }
-
-    h4 {
-        margin: 0;
-        display: inline;
-    }
-
-    h5 {
-        margin: 0;
-    }
 }
 </style>
