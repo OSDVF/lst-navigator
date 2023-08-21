@@ -50,7 +50,9 @@
             <IconCSS title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
         </h1>
         <p>
-            <ckeditor v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
+            <ClientOnly>
+                <ckeditor v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
+            </ClientOnly>
             <ProgressBar v-if="fetchingNote" />
         </p>
         <p />
@@ -114,13 +116,13 @@ const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(fal
 const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
 
 const notesDocument = useDocument(cloudStore.notesDocument)
-const offlineNote = useStorage(`note.${partIndex}.${eventItemIndex}`, { time: new Date(), note: '' })
+const offlineNote = useStorage(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 
 const noteModel = computed({
     get() {
         const onlineVal = notesDocument.data.value?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier]
-        const onlineDate = new Date(onlineVal?.time ?? 0)
+        const onlineDate = new Date(onlineVal?.time ?? 0).getTime()
         if (onlineDate > offlineNote.value.time) {
             return onlineVal.note
         }
@@ -128,7 +130,7 @@ const noteModel = computed({
     },
     set(value: string) {
         const newValue = {
-            time: settings.notesDirtyTime = new Date(),
+            time: settings.notesDirtyTime = new Date().getTime(),
             note: value
         }
         offlineNote.value = newValue
@@ -169,13 +171,16 @@ function colorToRGBA(color: string) {
     // Examples:
     // colorToRGBA('red')  # [255, 0, 0, 255]
     // colorToRGBA('#f00') # [255, 0, 0, 255]
-    const cvs = document.createElement('canvas')
-    cvs.height = 1
-    cvs.width = 1
-    const ctx = cvs.getContext('2d')
-    ctx!.fillStyle = color
-    ctx!.fillRect(0, 0, 1, 1)
-    return ctx!.getImageData(0, 0, 1, 1).data
+    if (process.client) {
+        const cvs = document.createElement('canvas')
+        cvs.height = 1
+        cvs.width = 1
+        const ctx = cvs.getContext('2d')
+        ctx!.fillStyle = color
+        ctx!.fillRect(0, 0, 1, 1)
+        return ctx!.getImageData(0, 0, 1, 1).data
+    }
+    return [0, 0, 0, 0]
 }
 
 function byteToHex(num: number) {

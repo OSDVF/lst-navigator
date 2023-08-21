@@ -7,9 +7,11 @@
             <IconCSS name="mdi:download" />&ensp;Stáhnout
         </button>
         <br>
-        <button @click="$pwa.cancelInstall; prevRoute !== null ? $router.back() : $router.replace('/schedule/0')">
-            <IconCSS name="mdi:sync-off" />&ensp;Ignorovat
-        </button>
+        <ClientOnly>
+            <button @click="$pwa.cancelInstall(); prevRoute !== null ? $router.back() : $router.replace('/schedule/0')">
+                <IconCSS name="mdi:sync-off" />&ensp;Ignorovat
+            </button>
+        </ClientOnly>
     </article>
 </template>
 
@@ -23,16 +25,18 @@ onBeforeRouteUpdate((updateGuard) => {
 
 async function download() {
     $pwa.updateServiceWorker()
-    const regs = await navigator.serviceWorker.getRegistrations()
-    for (const reg of regs) {
-        try {
-            reg.waiting?.postMessage({ type: 'CLIENTS_CLAIM' })
-            reg.waiting?.postMessage({ type: 'SKIP_WAITING' })
-        } catch (e) {
-            console.error(e)
-            $Sentry.captureException(e)
+    if (process.client) {
+        const regs = await navigator.serviceWorker.getRegistrations()
+        for (const reg of regs) {
+            try {
+                reg.waiting?.postMessage({ type: 'CLIENTS_CLAIM' })
+                reg.waiting?.postMessage({ type: 'SKIP_WAITING' })
+            } catch (e) {
+                console.error(e)
+                $Sentry.captureException(e)
+            }
         }
+        location.href = '/schedule/0'
     }
-    location.href = '/schedule/0'
 }
 </script>

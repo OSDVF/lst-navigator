@@ -38,11 +38,12 @@ export default defineNuxtPlugin({
             replaysSessionSampleRate: 0.1,
             replaysOnErrorSampleRate: 1
         })
-
-        navigator.serviceWorker.controller?.postMessage({
-            type: 'INITIALIZE_SENTRY',
-            config: sentryConfig
-        })
+        if (process.client) {
+            navigator.serviceWorker.controller?.postMessage({
+                type: 'INITIALIZE_SENTRY',
+                config: sentryConfig
+            })
+        }
 
         return {
             provide: {

@@ -1,7 +1,7 @@
-import localforage from 'localforage'
 import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { unzip } from 'unzipit'
+import lf from '~/utils/lf'
 
 let uniqueIdentifier = new Date().getTime().toString(36)
 try {
@@ -24,18 +24,18 @@ async function getUncompressedSilenceFile() {
 
 export const useSettings = defineStore('settings', () => {
     function getInstallStep() {
-        return localforage.getItem<number>('installStep')
+        return lf.getItem<number>('installStep')
     }
 
     function setInstallStep(newValue: number) {
-        localforage.setItem('installStep', newValue)
+        lf.setItem('installStep', newValue)
     }
 
     async function getUploadedAudio() {
         const audioList: { name: string, url: string }[] = []
-        const list = await localforage.getItem<string[]>('uploadedAudioList') || []
+        const list = await lf.getItem<string[]>('uploadedAudioList') || []
         for (const item of list) {
-            const blob = await localforage.getItem<Blob>(item)
+            const blob = await lf.getItem<Blob>(item)
             if (blob) {
                 const url = URL.createObjectURL(blob)
                 audioList.push({ name: item, url })
@@ -83,22 +83,22 @@ export const useSettings = defineStore('settings', () => {
         reader.onload = async () => {
             const blob = new Blob([reader.result as ArrayBuffer], { type: file.type })
             const niceName = file.name.replace(/\.[^/.]+$/, '')
-            await localforage.setItem(niceName, blob)
-            const list = await localforage.getItem<string[]>('uploadedAudioList') || []
+            await lf.setItem(niceName, blob)
+            const list = await lf.getItem<string[]>('uploadedAudioList') || []
             list.push(niceName)
-            await localforage.setItem('uploadedAudioList', list)
+            await lf.setItem('uploadedAudioList', list)
             audioList.value.push({ name: niceName, url: URL.createObjectURL(blob) })
             selectedAudio.value = audioList.value.length - 1
         }
     }
 
     async function deleteCustomAudio(name: string) {
-        localforage.removeItem(name)
-        const list = await localforage.getItem<string[]>('uploadedAudioList') || []
+        lf.removeItem(name)
+        const list = await lf.getItem<string[]>('uploadedAudioList') || []
         const index = list.findIndex(item => item === name)
         if (index !== -1) {
             list.splice(index, 1)
-            localforage.setItem('uploadedAudioList', list)
+            lf.setItem('uploadedAudioList', list)
         }
         const audioIndex = audioList.value.findIndex(item => item.name === name)
         if (audioIndex !== -1) {
@@ -108,40 +108,43 @@ export const useSettings = defineStore('settings', () => {
     }
 
     const isPlaying = ref(false)
-    const audioElem = new Audio()
-    const silenceFile = audioElem.canPlayType('audio/ogg') ? Promise.resolve('/audio/silence.ogg') : getUncompressedSilenceFile()
+    const audioElem = process.client ? new Audio() : undefined
+    const silenceFile = process.client ? (audioElem!.canPlayType('audio/ogg') ? Promise.resolve('/audio/silence.ogg') : getUncompressedSilenceFile()) : null
     function playListener() {
         isPlaying.value = true
     }
     function pauseListener() {
-        document.removeEventListener('click', pauseListener)
-        isPlaying.value = false
-        silenceFile.then((silence) => {
-            audio.value.src = silence
-            audioElem.removeEventListener('play', playListener)
-            audio.value.play()
-            setTimeout(() => {
-                audioElem.addEventListener('play', playListener)
-            }, 100)
-        })
+        if (process.client) {
+            document.removeEventListener('click', pauseListener)
+            isPlaying.value = false
+            silenceFile!.then((silence) => {
+                audioElem!.src = silence
+                audioElem!.removeEventListener('play', playListener)
+                audioElem!.play()
+                setTimeout(() => {
+                    audioElem!.addEventListener('play', playListener)
+                }, 100)
+            })
+        }
     }
 
-    document.addEventListener('click', pauseListener)
-    audioElem.addEventListener('pause', pauseListener)
-    audioElem.addEventListener('play', playListener)
+    if (process.client) {
+        document.addEventListener('click', pauseListener)
+        audioElem!.addEventListener('pause', pauseListener)
+        audioElem!.addEventListener('play', playListener)
+    }
 
-    const audio = ref(audioElem)
     function playSelectedAudio() {
-        audioElem.removeEventListener('pause', pauseListener)
-        audio.value.pause()
-        audioElem.addEventListener('pause', pauseListener)
-        audio.value.src = selectedAudioUrl.value
-        audio.value.play()
+        audioElem!.removeEventListener('pause', pauseListener)
+        audioElem!.pause()
+        audioElem!.addEventListener('pause', pauseListener)
+        audioElem!.src = selectedAudioUrl.value
+        audioElem!.play()
     }
 
     function toggleSelectedAudio() {
         if (isPlaying.value) {
-            audio.value.pause()
+            audioElem!.pause()
         } else {
             playSelectedAudio()
         }
@@ -153,16 +156,16 @@ export const useSettings = defineStore('settings', () => {
         if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
     })
 
-    useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
+    if (process.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
     const doNotifications = computed<Promise<boolean | null> | boolean>({
         get(): Promise<boolean | null> {
-            return localforage.getItem<boolean>('doNotifications')
+            return lf.getItem<boolean>('doNotifications')
         },
         async set(value: boolean | Promise<boolean | null>) {
-            localforage.setItem('doNotifications', value instanceof Promise ? await value : value)
+            lf.setItem('doNotifications', value instanceof Promise ? await value : value)
         }
     })
-    const notesDirtyTime = useStorage('notesDirtyTime', new Date(0))
+    const notesDirtyTime = useStorage('notesDirtyTime', new Date(0).getTime())
 
     return {
         getInstallStep,
@@ -176,7 +179,7 @@ export const useSettings = defineStore('settings', () => {
         toggleSelectedAudio,
         isSelectedAudioCustom,
         isPlaying,
-        audio,
+        audio: ref(audioElem!),
         selectedGroup,
         userNickname,
         userIdentifier,

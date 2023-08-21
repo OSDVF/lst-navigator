@@ -2,6 +2,7 @@
 import fs from 'fs'
 import childProcess from 'child_process'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
+import topLevelAwait from 'vite-plugin-top-level-await'
 import { icons } from './icons.json'
 
 const installStepCount = fs.readdirSync('./pages/install').length
@@ -22,7 +23,8 @@ const config = defineNuxtConfig({
     },
     build: {
         transpile: [
-            '~/utils/sw.ts'
+            '~/utils/sw.ts',
+            'lru-cache'
         ]
     },
     css: [
@@ -79,6 +81,12 @@ const config = defineNuxtConfig({
             sourcemap: true
         },
         plugins: [
+            topLevelAwait({
+                // The export name of top-level await promise for each chunk module
+                promiseExportName: '__tla',
+                // The function to generate import names of top-level await promise in each chunk module
+                promiseImportName: (i:any) => `__tla_${i}`
+            }),
             sentryVitePlugin({
                 authToken: process.env.SENTRY_AUTH_TOKEN,
                 org: process.env.SENTRY_ORG,

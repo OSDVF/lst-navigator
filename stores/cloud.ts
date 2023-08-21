@@ -40,18 +40,20 @@ export type Feedback = {
 export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
     const firebaseApp = useFirebaseApp()
-    const firestore = initializeFirestore(firebaseApp, {
-        localCache:
+
+    const firestore = process.client
+        ? initializeFirestore(firebaseApp, {
+            localCache:
             persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
-    })
+        })
+        : useFirestore()
     const firebaseStorage = useFirebaseStorage()
-    const messaging = getMessaging()
     const config = useRuntimeConfig()
 
     const eventDbName = ref(config.public.dbCollectionName)
 
     function getDocument(docName: string, ...pathSegments: string[]) {
-        if (typeof eventDbName.value === 'undefined') {
+        if (typeof eventDbName.value === 'undefined' || process.server) {
             return null
         }
         return doc(collection(firestore, eventDbName.value), docName, ...pathSegments)
@@ -87,14 +89,14 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const notesDocument = shallowRef(getDocument('notes'))
     const offlineFeedback = useStorage<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback } } }>('lastNewFeedback', {})
-    const feedbackDirtyTime = useStorage('feedbackDirtyTime', new Date(0))
+    const feedbackDirtyTime = useStorage('feedbackDirtyTime', new Date(0).getTime())
     const fetchingFeedback = ref(false)
     const couldNotFetchFeedback = ref(false)
     const feedbackError = ref()
     function setFeedbackData(sIndex: number | string, eIndex: number | string, data: Feedback) {
         fetchingFeedback.value = true
         offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
-        feedbackDirtyTime.value = new Date()
+        feedbackDirtyTime.value = new Date().getTime()
 
         setDoc(feedbackDoc.value!, {
             [sIndex]: {
@@ -113,7 +115,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     function hydrateOfflineFeedback(onlineFeedback:any) {
-        if (new Date(onlineFeedback?.[settings.userIdentifier] ?? 0) > feedbackDirtyTime.value) {
+        if (new Date(onlineFeedback?.[settings.userIdentifier] ?? 0).getTime() > feedbackDirtyTime.value) {
             for (const sIndex in onlineFeedback) {
                 const sPart = onlineFeedback[sIndex]
                 for (const eIndex in sPart) {
@@ -149,22 +151,24 @@ export const useCloudStore = defineStore('cloud', () => {
         return uploadingPromise
     }
 
-    navigator.serviceWorker.getRegistration().then((registration) => {
-        getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {
-            if (token && subscriptionsDocument.value) {
-                setDoc(subscriptionsDocument.value, {
-                    tokens: [
-                        token
-                    ]
-                }, { merge: true })
-            }
+    if (process.client) {
+        navigator.serviceWorker.getRegistration().then((registration) => {
+            const messaging = getMessaging()
+            getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {
+                if (token && subscriptionsDocument.value) {
+                    setDoc(subscriptionsDocument.value, {
+                        tokens: [
+                            token
+                        ]
+                    }, { merge: true })
+                }
+            })
         })
-    })
+    }
     return {
         eventDbName,
         getDocument,
         metaDocument,
-        firebaseStorage,
         eventImage,
         eventTitle,
         eventSubtitle,

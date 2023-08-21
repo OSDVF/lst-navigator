@@ -33,7 +33,9 @@
             </div>
         </div>
         <ProgressBar :class="{ backgroundLoading: true, visible: cloudStore.metaLoading }" />
-        <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
+        <ClientOnly>
+            <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
+        </ClientOnly>
 
         <template #error="{ error, clearError }">
             <main>
@@ -76,15 +78,15 @@ installStep.then((step) => {
         router.push('/install/' + safeStep)
     }
 })
-watch(app.$pwa.needRefresh, (refresh) => {
-    if (refresh) {
+if (process.client) {
+    if (app.$pwa.needRefresh) {
         router.push('/update')
     }
-})
 
-app.$onUpdateCallback(() => {
-    router.push('/update')
-})
+    app.$onUpdateCallback(() => {
+        router.push('/update')
+    })
+}
 
 const title = computed(() => {
     if (route.meta.title) {

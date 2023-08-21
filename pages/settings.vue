@@ -54,7 +54,7 @@
         <fieldset>
             <label>Datum synchronizace poznámek</label>
             <span>
-                <small>{{ settings.notesDirtyTime.getTime() === 0 ? 'Nikdy' : settings.notesDirtyTime }}</small>
+                <small>{{ settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime) }}</small>
                 &ensp;
                 <button @click="syncNotes">
                     <IconCSS name="mdi:reload" /> Odeslat znovu
@@ -64,7 +64,7 @@
         <fieldset>
             <label>Datum synchronizace feedbacku</label>
             <span>
-                <small>{{ cloud.feedbackDirtyTime.getTime() === 0 ? 'Nikdy' : cloud.feedbackDirtyTime }}</small>
+                <small>{{ cloud.feedbackDirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedbackDirtyTime) }}</small>
                 &ensp;
                 <button @click="cloud.saveAgainAllFeedback">
                     <IconCSS name="mdi:reload" /> Odeslat znovu

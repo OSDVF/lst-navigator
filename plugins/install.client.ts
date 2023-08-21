@@ -18,7 +18,7 @@ export default defineNuxtPlugin({
     hooks: {
         async 'app:mounted'(app) {
             const firebaseApp = useFirebaseApp()
-            const swRegistraions = await navigator.serviceWorker.getRegistrations()
+            const swRegistraions = process.client ? await navigator.serviceWorker.getRegistrations() : []
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {
                     onUpdateCallback.value(registration)
