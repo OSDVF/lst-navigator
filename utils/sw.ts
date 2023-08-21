@@ -1,6 +1,7 @@
-import { precacheAndRoute } from 'workbox-precaching'
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 import { registerRoute, Route } from 'workbox-routing'
 import { StaleWhileRevalidate } from 'workbox-strategies'
+import { clientsClaim, skipWaiting } from 'workbox-core'
 import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
@@ -9,10 +10,16 @@ import localforage from 'localforage'
 import { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
 
+
 declare let self: ServiceWorkerGlobalScope
 
+cleanupOutdatedCaches()
 // Precaching behaviour
 precacheAndRoute(self.__WB_MANIFEST)
+
+// Service worker lifecycle
+skipWaiting()
+clientsClaim()
 
 const app = firebase.initializeApp(swConfig.firebase)
 isSupported().then((supported) => {

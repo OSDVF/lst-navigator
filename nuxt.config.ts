@@ -35,7 +35,6 @@ const config = defineNuxtConfig({
             enabled: true
         }
     },
-    spaLoadingTemplate: '~/assets/loading.html',
     modules: [
         '@vite-pwa/nuxt',
         'nuxt-icon',
@@ -100,12 +99,6 @@ const config = defineNuxtConfig({
             messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID,
             appId: process.env.VITE_APP_APPID,
             measurementId: process.env.VITE_APP_MEASUREMENTID
-        },
-        appCheck: {
-            debug: isDevMode,
-            isTokenAutoRefreshEnabled: true,
-            provider: 'ReCaptchaV3',
-            key: process.env.VITE_APP_RECAPTCHA!
         }
     },
     runtimeConfig: {
@@ -132,7 +125,7 @@ const config = defineNuxtConfig({
             SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET
         }
     },
-    ssr: false
+    ssr: true
 })
 
 fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
