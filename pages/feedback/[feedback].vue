@@ -132,7 +132,7 @@ const currentPart = computed(() => {
         }
     }
     return {
-        title: config.title,
+        title: config?.title,
         subparts
     }
 })

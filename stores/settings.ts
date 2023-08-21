@@ -152,6 +152,8 @@ export const useSettings = defineStore('settings', () => {
     const userIdentifier = computed(() => {
         if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
     })
+
+    useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
     const doNotifications = computed<Promise<boolean | null> | boolean>({
         get(): Promise<boolean | null> {
             return localforage.getItem<boolean>('doNotifications')

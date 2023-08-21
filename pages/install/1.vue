@@ -14,16 +14,16 @@
             <br><br>
             Nebo někoho zavolejte a on vám pomůže.
         </p>
-        <p v-if="$pwa.registrationError">
+        <p v-if="$pwa.registrationError.value">
             <IconCSS name="mdi:alert" /> Nepodařilo se zaregistrovat aplikaci do systému
         </p>
         <p v-if="$pwa.getSWRegistration()">
             <IconCSS name="mdi:check" /> Aplikace zaregistrována
         </p>
-        <p v-if="$pwa.swActivated">
+        <p v-if="$pwa.swActivated.value">
             <IconCSS name="mdi:check" /> Aktivováno
         </p>
-        <p v-if="$pwa.offlineReady">
+        <p v-if="$pwa.offlineReady.value">
             <IconCSS name="mdi:check" /> Stažení
         </p>
     </article>
