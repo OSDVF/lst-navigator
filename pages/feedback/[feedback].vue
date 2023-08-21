@@ -35,33 +35,34 @@
                     :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data"
                     :complicated-questions="entry.questions"
                     :select-options="entry.selectOptions"
-                    @set-data="(data: Feedback) => setData(subPart.primaryIndex, entry.secondaryIndex, data)"
+                    @set-data="(data: Feedback) => cloudStore.setFeedbackData(subPart.primaryIndex, entry.secondaryIndex, data)"
                 />
             </fieldset>
         </div>
         <br>
         <button
             v-if="feedbackPartIndex < cloudStore.feedbackConfig?.length - 1" class="large d-block m-left-auto"
-            @click="setAllData().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))"
+            @click="cloudStore.saveAgainAllFeedback().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))"
         >
             Pokračovat na další část
             <IconCSS name="mdi:chevron-right" />
         </button>
-        <button v-else class="large d-block m-left-auto" @click="setAllData().then(() => router.push('/info'))">
+        <button v-else class="large d-block m-left-auto" @click="cloudStore.saveAgainAllFeedback().then(() => router.push('/info'))">
             <IconCSS name="mdi:check" />
             Dokončit
         </button>
-        <p v-if="couldNotFetch" style="color:red">
-            {{ error || 'Nepodařilo se uložit tvou odpověď' }}
-            <button @click="setAllData">
+        <p v-if="cloudStore.couldNotFetchFeedback" style="color:red">
+            {{ cloudStore.feedbackError || 'Nepodařilo se uložit tvou odpověď' }}
+            <button @click="cloudStore.saveAgainAllFeedback">
                 <IconCSS name="material-symbols:save" /> Zkusit znovu
             </button>
         </p>
         <br>
         <br>
+        <br>
         <ClientOnly>
             <Teleport to="#additionalNav">
-                <ProgressBar v-if="fetchingFeedback" />
+                <ProgressBar v-if="cloudStore.fetchingFeedback" />
                 <nav class="eventItemNav">
                     <NuxtLink
                         v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig"
@@ -78,9 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { setDoc } from 'firebase/firestore'
-import { FeedbackConfig, useCloudStore, ScheduleEvent } from '@/stores/cloud'
-import { Feedback } from '@/components/FeedbackForm.vue'
+import { FeedbackConfig, useCloudStore, ScheduleEvent, Feedback } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { getParallelEvents } from '@/utils/types'
 const router = useRouter()
@@ -100,7 +99,7 @@ const currentPart = computed(() => {
                 if (eventEntry.title?.match(config.group)) {
                     entries.push({
                         ...eventEntry,
-                        data: cloudStore.feedbackRef?.[scheduleIndex]?.[eventIndex]?.[settings.userIdentifier],
+                        data: cloudStore.offlineFeedback?.[scheduleIndex]?.[eventIndex]?.[settings.userIdentifier],
                         secondaryIndex: eventIndex,
                         selectOptions: getParallelEvents(eventEntry)
                     })
@@ -127,7 +126,7 @@ const currentPart = computed(() => {
                     detailQuestion: individualQuest.description,
                     selectOptions: individualQuest.questions,
                     questions: individualQuest.questions,
-                    data: cloudStore.feedbackRef?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier]
+                    data: cloudStore.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier]
                 }]
             })
         }
@@ -137,43 +136,6 @@ const currentPart = computed(() => {
         subparts
     }
 })
-
-const fetchingFeedback = ref(false)
-const couldNotFetch = ref(false)
-const error = ref()
-const lastNewFeedback = ref<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback } } }>({})
-
-function setData(sIndex: number | string, eIndex: number | string, data: Feedback) {
-    fetchingFeedback.value = true
-    lastNewFeedback.value[sIndex] = { ...lastNewFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
-
-    setDoc(cloudStore.feedbackDoc!, {
-        [sIndex]: {
-            [eIndex]: {
-                [settings.userIdentifier]: data
-            }
-        }
-    }, {
-        merge: true
-    }).then(() => { fetchingFeedback.value = couldNotFetch.value = false }).catch((e) => { error.value = e })
-    setTimeout(() => {
-        couldNotFetch.value = fetchingFeedback.value
-        fetchingFeedback.value = false
-    }, 5000)
-}
-
-function setAllData() {
-    fetchingFeedback.value = true
-    const uploadingPromise = setDoc(cloudStore.feedbackDoc!, lastNewFeedback.value, {
-        merge: true
-    }).then(() => { fetchingFeedback.value = couldNotFetch.value = false })
-    setTimeout(() => {
-        couldNotFetch.value = fetchingFeedback.value
-        fetchingFeedback.value = false
-    }, 5000)
-    uploadingPromise.catch((e) => { error.value = e })
-    return uploadingPromise
-}
 
 </script>
 <style lang="scss" scoped>

@@ -22,7 +22,7 @@
                 </button>
             </span>
         </fieldset>
-        <fieldset>
+        <!--<fieldset>
             <label for="group">Skupina</label>
             <span>
                 <select id="group" v-model="settings.selectedGroup">
@@ -31,15 +31,15 @@
                     </option>
                 </select>
             </span>
-        </fieldset>
+        </fieldset>-->
         <h4>Individuální nastavení</h4>
         <fieldset>
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
-            <span>
-                <input id="nickname" v-model="userNickname" :disabled="!!userNickname">
+            <form @submit.prevent>
+                <input id="nickname" v-model="tempNickname" :disabled="!!settings.userNickname">
                 <button
-                    v-if="!!userNickname"
-                    @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? userNickname = '' : null"
+                    v-if="!!settings.userNickname"
+                    @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"
                 >
                     <IconCSS name="mdi:alert" /> Změnit
                 </button>
@@ -49,17 +49,25 @@
                 >
                     <IconCSS name="material-symbols:save" /> Uložit
                 </button>
-            </span>
+            </form>
         </fieldset>
         <fieldset>
             <label>Datum synchronizace poznámek</label>
-            {{ settings.notesDirtyTime.getTime() === 0 ? 'Nikdy' : settings.notesDirtyTime }}
+            <span>
+                <small>{{ settings.notesDirtyTime.getTime() === 0 ? 'Nikdy' : settings.notesDirtyTime }}</small>
+                &ensp;
+                <button @click="syncNotes">
+                    <IconCSS name="mdi:reload" /> Odeslat znovu
+                </button>
+            </span>
         </fieldset>
         <fieldset>
-            <label>Odeslat znovu</label>
+            <label>Datum synchronizace feedbacku</label>
             <span>
-                <button @click="syncNotes">
-                    <IconCSS name="mdi:reload" />
+                <small>{{ cloud.feedbackDirtyTime.getTime() === 0 ? 'Nikdy' : cloud.feedbackDirtyTime }}</small>
+                &ensp;
+                <button @click="cloud.saveAgainAllFeedback">
+                    <IconCSS name="mdi:reload" /> Odeslat znovu
                 </button>
             </span>
         </fieldset>
@@ -89,15 +97,7 @@ const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
-const tempNickname = shallowRef(settings.userNickname)
-const userNickname = computed({
-    get() {
-        return tempNickname.value
-    },
-    set(value: string) {
-        tempNickname.value = value
-    }
-})
+const tempNickname = ref(toRaw(settings.userNickname))
 function confirmDialog(message: string) {
     return window.confirm(message)
 }
@@ -159,4 +159,5 @@ fieldset {
             text-align: end;
         }
     }
-}</style>
+}
+</style>

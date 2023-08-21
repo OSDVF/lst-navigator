@@ -26,19 +26,20 @@
             <FeedbackForm
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
                 :complicated-questions="eventData?.questions" :select-options="getParallelEvents(eventData)"
-                @set-data="setFeedback"
+                :detail-question="eventData?.detailQuestion"
+                @set-data="(data: Feedback) => cloudStore.setFeedbackData(partIndex, eventItemIndex, data)"
             />
             <div v-if="fetchingFeedback">
                 <IconCSS name="material-symbols:save" />&ensp;
                 <ProgressBar />
             </div>
-            <p v-if="couldNotFetch">
+            <p v-if="cloudStore.couldNotFetchFeedback">
                 Nepodařilo se uložit tvou odpověď
                 <br>
-                {{ error }}
+                {{ cloudStore.feedbackError }}
                 <br>
-                <button v-if="lastNewFeedback" @click="setFeedback(lastNewFeedback)">
-                    Zkusit uložit znovu
+                <button @click="cloudStore.saveAgainAllFeedback">
+                    <IconCSS name="material-symbols:save" /> Zkusit uložit znovu
                 </button>
             </p>
         </template>
@@ -52,17 +53,20 @@
             <ckeditor v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
             <ProgressBar v-if="fetchingNote" />
         </p>
+        <p />
+        <br>
         <ClientOnly>
             <Teleport to="#additionalNav">
                 <nav class="eventItemNav">
                     <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${partIndex}/${eventItemIndex - 1}`">
-                        <IconCSS name="mdi:chevron-left" /> {{ previousEventData?.title ?? previousEventData?.subtitle }}
+                        <IconCSS name="mdi:chevron-left" /> <span class="muted">{{ toHumanTime(previousEventData?.time) ||
+                            'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        v-if="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1"
-                        :to="`/schedule/${partIndex}/${eventItemIndex + 1}`"
+                        :to="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.scheduleParts?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : null)"
                     >
-                        {{ nextEventData?.title ?? nextEventData?.subtitle }}
+                        <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
+                            nextEventData?.title ?? nextEventData?.subtitle }}
                         <IconCSS name="mdi:chevron-right" />
                     </NuxtLink>
                 </nav>
@@ -76,10 +80,9 @@ import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
 import { setDoc } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
 import { useStorage } from '@vueuse/core'
-import { useCloudStore } from '@/stores/cloud'
+import { Feedback, useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime, getParallelEvents } from '@/utils/types'
-import type { Feedback } from '@/components/FeedbackForm.vue'
 
 const route = useRoute()
 const settings = useSettings()
@@ -91,7 +94,9 @@ const eventData = computed(() => {
     const program = cloudStore.scheduleParts ? cloudStore.scheduleParts[partIndex]?.program : []
     if (program) {
         const eventData = program[eventItemIndex]
-        globalBackground.value = darkenColor(colorToHex(eventData?.color ?? 'gray'), -0.2)
+        const hexColor = colorToHex(eventData?.color ?? 'gray')
+        const darkened = darkenColor(hexColor, -0.2)
+        globalBackground.value = darkened === '#ffffff' ? hexColor : darkened
         return eventData
     }
     return undefined
@@ -99,36 +104,14 @@ const eventData = computed(() => {
 
 const previousEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex - 1])
 const nextEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex + 1])
-const error = ref()
 const noteError = ref()
 const fetchingFeedback = ref(false)
 const fetchingNote = ref(false)
-const couldNotFetch = ref(false)
 const couldNotFetchNote = ref(false)
 
-const currentFeedbackValue = computed(() => cloudStore.feedbackRef?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
-const lastNewFeedback = ref(currentFeedbackValue.value)
+const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
 const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
 const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
-
-function setFeedback(value: Feedback) {
-    fetchingFeedback.value = true
-    lastNewFeedback.value = value
-
-    setDoc(cloudStore.feedbackDoc!, {
-        [partIndex]: {
-            [eventItemIndex]: {
-                [settings.userIdentifier]: value
-            }
-        }
-    }, {
-        merge: true
-    }).then(() => { fetchingFeedback.value = couldNotFetch.value = false }).catch((e) => { error.value = e })
-    setTimeout(() => {
-        couldNotFetch.value = fetchingFeedback.value
-        fetchingFeedback.value = false
-    }, 7000)
-}
 
 const notesDocument = useDocument(cloudStore.notesDocument)
 const offlineNote = useStorage(`note.${partIndex}.${eventItemIndex}`, { time: new Date(), note: '' })

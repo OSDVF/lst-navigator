@@ -48,9 +48,9 @@
             </tr>
             <tr v-if="type === 'basic' || type === 'parallel'">
                 <td>Celkový dojem</td>
-                <td>
+                <td @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                     <NuxtRating
-                        v-if="updatedRating/* a hack to re-render on props update */" inactive-color="#ccc"
+                        v-if="updatedRating/* a hack to re-render on props update */" inactive-color="#aaa"
                         :read-only="false" :rating-value="props.data?.basic ?? 0"
                         :class="{ 'null': props.data?.basic === null || typeof props.data?.basic === 'undefined' }"
                         @rating-selected="syncBasic"
@@ -65,9 +65,9 @@
             <template v-if="type === 'complicated'">
                 <tr v-for="(question, index) in complicatedQuestions" :key="`q${index}`">
                     <td>{{ question }}</td>
-                    <td>
+                    <td @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                         <NuxtRating
-                            v-if="updatedRating" inactive-color="#ccc" :read-only="false"
+                            v-if="updatedRating" inactive-color="#aaa" :read-only="false"
                             :class="{ 'null': props.data.complicated?.[index] === null || typeof props.data.complicated?.[index] === 'undefined' }"
                             :rating-value="props.data.complicated?.[index] ?? 0"
                             @rating-selected="(value: number) => syncComplicated(index, value)"
@@ -95,15 +95,7 @@
 </template>
 <script setup lang="ts">
 import { FieldValue, deleteField } from 'firebase/firestore'
-import { FeedbackType } from '@/stores/cloud'
-
-export type Feedback = {
-    basic?: number | FieldValue,
-    detail?: string | FieldValue,
-    complicated?: (number | null)[],
-    select?: string | FieldValue
-}
-
+import { FeedbackType, Feedback } from '@/stores/cloud'
 
 const props = defineProps({
     data: {
@@ -183,6 +175,9 @@ watch(props, () => {
         updatedRating.value = true
     })
 })
+
+const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
+
 function syncComplicated(index: number, value?: number) {
     const prevComplicated = new Array(props.complicatedQuestions.length).fill(null) as (number | null)[]
     if (props.data.complicated) {
@@ -209,6 +204,7 @@ function syncComplicated(index: number, value?: number) {
     &::before {
         //nuxt-rating has this class for some reason
         position: static;
+        -webkit-text-stroke: 1px #000000d0;
     }
 
     &.null::before {

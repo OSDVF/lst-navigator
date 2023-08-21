@@ -35,6 +35,7 @@ const config = defineNuxtConfig({
             enabled: true
         }
     },
+    spaLoadingTemplate: '~/assets/loading.html',
     modules: [
         '@vite-pwa/nuxt',
         'nuxt-icon',

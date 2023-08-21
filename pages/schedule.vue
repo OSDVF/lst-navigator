@@ -40,7 +40,7 @@ const eventIndex = computed(() => parseInt(router.currentRoute.value.params.even
 
 const currentTransition = ref('slide-left')
 const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
-const permitSwipe = ref(false)
+const permitSwipe = ref(true)
 provide('permitSwipe', permitSwipe)
 const transitioning = ref(false)
 const moving = ref(false)

@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
-import { collection, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
+import { FieldValue, collection, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
+import { useStorage } from '@vueuse/core'
+import { useSettings } from '@/stores/settings'
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select'
 export type FeedbackConfig = {
@@ -28,7 +30,15 @@ export type ScheduleEvent = {
     icon?: string // iconify code
 }
 
+export type Feedback = {
+    basic?: number | FieldValue,
+    detail?: string | FieldValue,
+    complicated?: (number | null)[],
+    select?: string | FieldValue
+}
+
 export const useCloudStore = defineStore('cloud', () => {
+    const settings = useSettings()
     const firebaseApp = useFirebaseApp()
     const firestore = initializeFirestore(firebaseApp, {
         localCache:
@@ -66,7 +76,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const scheduleDocument = shallowRef(getDocument('schedule'))
     const scheduleDoc = shallowRef(useDocument(scheduleDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } }))
     const feedbackDoc = shallowRef(getDocument('feedback'))
-    const feedbackRef = shallowRef(useDocument(feedbackDoc.value))
+    const onlineFeedbackRef = shallowRef(useDocument(feedbackDoc.value))
 
     const scheduleParts = computed<{
         date: string,
@@ -76,6 +86,68 @@ export const useCloudStore = defineStore('cloud', () => {
     const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
     const notesDocument = shallowRef(getDocument('notes'))
+    const offlineFeedback = useStorage<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback } } }>('lastNewFeedback', {})
+    const feedbackDirtyTime = useStorage('feedbackDirtyTime', new Date(0))
+    const fetchingFeedback = ref(false)
+    const couldNotFetchFeedback = ref(false)
+    const feedbackError = ref()
+    function setFeedbackData(sIndex: number | string, eIndex: number | string, data: Feedback) {
+        fetchingFeedback.value = true
+        offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
+        feedbackDirtyTime.value = new Date()
+
+        setDoc(feedbackDoc.value!, {
+            [sIndex]: {
+                [eIndex]: {
+                    [settings.userIdentifier]: data
+                }
+            },
+            [settings.userIdentifier]: feedbackDirtyTime.value
+        }, {
+            merge: true
+        }).then(() => { fetchingFeedback.value = couldNotFetchFeedback.value = false }).catch((e) => { feedbackError.value = e })
+        setTimeout(() => {
+            couldNotFetchFeedback.value = fetchingFeedback.value
+            fetchingFeedback.value = false
+        }, 5000)
+    }
+
+    function hydrateOfflineFeedback(onlineFeedback:any) {
+        if (new Date(onlineFeedback?.[settings.userIdentifier] ?? 0) > feedbackDirtyTime.value) {
+            for (const sIndex in onlineFeedback) {
+                const sPart = onlineFeedback[sIndex]
+                for (const eIndex in sPart) {
+                    const ePart = sPart[eIndex]
+                    const uPart = ePart[settings.userIdentifier]
+                    if (uPart) {
+                        let offSPart = offlineFeedback.value[sIndex]
+                        if (!offSPart) { offSPart = {} }
+                        let offEPart = offSPart[eIndex]
+                        if (!offEPart) { offEPart = {} }
+                        offEPart[settings.userIdentifier] = uPart
+                        offSPart[eIndex] = offEPart
+                        offlineFeedback.value[sIndex] = offSPart
+                    }
+                }
+            }
+        }
+    }
+
+    watch(onlineFeedbackRef, hydrateOfflineFeedback)
+    hydrateOfflineFeedback(onlineFeedbackRef.value)
+
+    function saveAgainAllFeedback() {
+        fetchingFeedback.value = true
+        const uploadingPromise = setDoc(feedbackDoc.value!, offlineFeedback.value, {
+            merge: true
+        }).then(() => { fetchingFeedback.value = couldNotFetchFeedback.value = false })
+        setTimeout(() => {
+            couldNotFetchFeedback.value = fetchingFeedback.value
+            fetchingFeedback.value = false
+        }, 5000)
+        uploadingPromise.catch((e) => { feedbackError.value = e })
+        return uploadingPromise
+    }
 
     navigator.serviceWorker.getRegistration().then((registration) => {
         getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {
@@ -106,7 +178,13 @@ export const useCloudStore = defineStore('cloud', () => {
         notesDocument,
         feedbackConfig,
         feedbackDoc,
-        feedbackRef,
-        feedbackInfoText
+        offlineFeedback,
+        feedbackInfoText,
+        setFeedbackData,
+        saveAgainAllFeedback,
+        couldNotFetchFeedback,
+        feedbackError,
+        fetchingFeedback,
+        feedbackDirtyTime
     }
 })

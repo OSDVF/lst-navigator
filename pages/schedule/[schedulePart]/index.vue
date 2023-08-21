@@ -28,7 +28,7 @@
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
                         <NuxtRating
                             v-else :rating-value="getFeedback(entry, index)" rating-size="1.2rem"
-                            inactive-color="#ccc" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
+                            inactive-color="#aaa" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
                         />
                     </span>
                 </NuxtLink>
@@ -39,9 +39,8 @@
 
 <script setup lang="ts">
 import { doc } from 'firebase/firestore'
-import { FeedbackType, useCloudStore } from '@/stores/cloud'
+import { Feedback, FeedbackType, useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
-import { Feedback } from '@/components/FeedbackForm.vue'
 import { toHumanTime } from '@/utils/types'
 const route = useRoute()
 const selectedPart = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
