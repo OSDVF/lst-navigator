@@ -47,26 +47,29 @@ const config = defineNuxtConfig({
         'nuxt-rating'
     ],
     pwa: {
+        devOptions: isDevMode
+            ? {
+                enabled: true,
+                type: 'classic'
+            }
+            : undefined,
+        filename: 'sw.ts',
         injectManifest: {
             globIgnores: [
                 '**/node_modules/**/*',
                 '**/public/audio/silence.zip'
             ]
         },
-        strategies: 'injectManifest',
-        srcDir: 'utils',
-        filename: 'sw.ts',
         manifest: {
             name: process.env.VITE_APP_NAME,
             short_name: process.env.VITE_APP_SHORT_NAME,
             icons
         },
-        devOptions: isDevMode
-            ? {
-                enabled: true,
-                type: 'classic'
-            }
-            : undefined
+        strategies: 'injectManifest',
+        srcDir: 'utils',
+        workbox: {
+            sourcemap: true
+        }
     },
     sourcemap: {
         server: true,
@@ -134,7 +137,8 @@ const config = defineNuxtConfig({
 
 fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
     firebase: config.vuefire?.config,
-    messaging: config.runtimeConfig!.public!.messagingConfig
+    messaging: config.runtimeConfig!.public!.messagingConfig,
+    commitHash
 })}`)
 
 export default config

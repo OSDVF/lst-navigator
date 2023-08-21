@@ -74,6 +74,7 @@ addEventListener('message', (event: MessageEvent) => {
             break
         case 'INITIALIZE_SENTRY':
             Sentry.init(event.data.config)
+            Sentry.setTag('commitHash', swConfig.commitHash)
             break
         }
     }

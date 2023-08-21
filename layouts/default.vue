@@ -76,10 +76,11 @@ installStep.then((step) => {
         router.push('/install/' + safeStep)
     }
 })
-
-if (app.$pwa.needRefresh) {
-    router.push('/update')
-}
+watch(app.$pwa.needRefresh, (refresh) => {
+    if (refresh) {
+        router.push('/update')
+    }
+})
 
 app.$onUpdateCallback(() => {
     router.push('/update')
