@@ -3,7 +3,10 @@
         <div role="list" class="schedule">
             <details
                 v-for="(entry, index) in selectedProgram" :key="`e${index}`" role="listitem"
-                :style="{ '--color': entry.color }"
+                :style="{
+                    '--color': entry.color,
+                    'border-left': parseInt(cloudStore.scheduleParts[selectedPart].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
+                }"
             >
                 <summary>
                     <span class="align-top mr-1">
@@ -47,6 +50,11 @@ const selectedPart = computed(() => typeof route.params.schedulePart === 'string
 const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPart.value]?.program : [])
 const cloudStore = useCloudStore()
 const settings = useSettings()
+const now = ref(new Date())
+setInterval(() => {
+    now.value = new Date()
+}, 1000 * 60)// Automatic time update
+const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
 const firestore = process.client ? useFirestore() : null
 const currentFeedbackDoc = firestore ? doc(firestore, `${cloudStore.eventDbName}/feedback`) : null

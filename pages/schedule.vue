@@ -4,6 +4,7 @@
             <NuxtLink
                 v-for="(day, index) in cloudStore.scheduleParts" :key="day?.name ?? `day${index}`" :style="{
                     'backdrop-filter': index === parseInt(schedulePartIndex) ? 'brightness(0.8)' : undefined,
+                    'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
                 }" :to="`/schedule/${index}`"
                 @click="currentTransition = index > parseInt(schedulePartIndex) ? 'slide-left' : 'slide-right'"
             >
@@ -12,7 +13,7 @@
         </nav>
         <ProgressBar :class="{ daysLoading: true, visible: cloudStore.scheduleLoading }" />
         <div
-            ref="swipableContent" v-drag="dragHandler" :style="{
+            v-drag="dragHandler" :style="{
                 transition: transitioning || moving ? 'none' : 'transform .2s ease',
                 transform: `translateX(${translateX}px)`
             }"
@@ -33,8 +34,21 @@ import { useCloudStore } from '@/stores/cloud'
 const cloudStore = useCloudStore()
 const router = useRouter()
 const schedulePartIndex = computed(() => router.currentRoute.value.params.schedulePart as string)
+const now = new Date()
+function isToday(schedulePart: typeof cloudStore.scheduleParts[0]) {
+    const [year, month, day] = schedulePart.date?.split('-') ?? [0, 0, 0]
+    return (now.getFullYear() === parseInt(year) && now.getMonth() + 1 === parseInt(month) && now.getDate() === parseInt(day))
+}
 if (typeof schedulePartIndex.value === 'undefined') {
-    router.replace('/schedule/0')
+    let index : number | string = 0
+    for (const i in cloudStore.scheduleParts) {
+        const schedulePart = cloudStore.scheduleParts[i]
+        if (isToday(schedulePart)) {
+            index = i
+            break
+        }
+    }
+    router.replace(`/schedule/${index}`)
 }
 const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string))
 
@@ -75,7 +89,7 @@ const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[]
     if (transitioning.value || !permitSwipe.value) {
         return
     }
-    if (Math.abs(y) > 30) {
+    if (Math.abs(y) > 50 && (Math.abs(y) > 5 && Math.abs(y) > Math.abs(x))) {
         lastVerticalScroll = new Date().getTime()
     }
     const wasNearScrol = (new Date().getTime() - lastVerticalScroll) < 1000 * 0.500
@@ -111,7 +125,7 @@ const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[]
         // on event item detail page
         return
     }
-    if (Math.abs(x) > 5) {
+    if (Math.abs(x) > 3) {
         moving.value = true
         movingOrTrainsitioning.value = true
         translateX.value = x
