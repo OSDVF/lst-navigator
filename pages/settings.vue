@@ -112,6 +112,11 @@ const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
 const tempNickname = ref(toRaw(settings.userNickname))
+watch(settings, (s) => {
+    if (s.userNickname !== tempNickname.value) {
+        tempNickname.value = s.userNickname
+    }
+})
 function confirmDialog(message: string) {
     if (process.server) { return false }
     return window.confirm(message)
