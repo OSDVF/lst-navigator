@@ -18,6 +18,9 @@ const config = defineNuxtConfig({
             title: process.env.APP_SHORT_NAME,
             link: [
                 { rel: 'icon', type: 'image/png', href: '/android/android-launchericon-96-96.png' }
+            ],
+            meta: [
+                { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no' }
             ]
         }
     },

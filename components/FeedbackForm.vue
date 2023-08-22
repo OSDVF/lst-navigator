@@ -26,7 +26,10 @@
                     </select>
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncSelect = undefined">
+                    <button
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
+                        @click="syncSelect = undefined"
+                    >
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -41,7 +44,10 @@
                     </select>
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncSelect = undefined">
+                    <button
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
+                        @click="syncSelect = undefined"
+                    >
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -57,7 +63,10 @@
                     />
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncBasic(undefined)">
+                    <button
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
+                        @click="syncBasic(undefined)"
+                    >
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -74,7 +83,10 @@
                         />
                     </td>
                     <td>
-                        <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncComplicated(index, undefined)">
+                        <button
+                            title="Odstranit odpověd" @pointerenter="permitSwipe = false"
+                            @pointerleave="permitSwipe = true" @click="syncComplicated(index, undefined)"
+                        >
                             <IconCSS name="mdi:trash" />
                         </button>
                     </td>
@@ -82,10 +94,16 @@
             </template>
             <tr v-if="type !== 'select'">
                 <td colspan="2">
-                    <textarea v-model.lazy="syncDetail" :placeholder="props.detailQuestion" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" />
+                    <textarea
+                        v-model.lazy="syncDetail" :placeholder="props.detailQuestion"
+                        @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
+                    />
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncDetail = undefined">
+                    <button
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
+                        @click="syncDetail = undefined"
+                    >
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -222,6 +240,8 @@ function syncComplicated(index: number, value?: number) {
 }
 
 .feedbackTable {
+    width: 100%;
+
     td {
         border: 2px solid transparent;
 
@@ -236,5 +256,10 @@ function syncComplicated(index: number, value?: number) {
             }
         }
     }
-}
-</style>
+
+    textarea,
+    select {
+        width: 100%;
+        font-size: 1.1rem;
+    }
+}</style>

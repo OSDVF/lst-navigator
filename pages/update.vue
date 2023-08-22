@@ -26,7 +26,7 @@ onBeforeRouteUpdate((updateGuard) => {
 async function download() {
     $pwa.updateServiceWorker()
     if (process.client) {
-        const regs = await navigator.serviceWorker.getRegistrations()
+        const regs = await navigator.serviceWorker?.getRegistrations()
         for (const reg of regs) {
             try {
                 reg.waiting?.postMessage({ type: 'CLIENTS_CLAIM' })

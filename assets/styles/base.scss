@@ -12,6 +12,17 @@
         .vel-modal {
             filter: invert(100%);
         }
+
+        textarea {
+            filter: invert(100%);
+            background: black;
+            color: white;
+            border: 1px solid white;;
+        }
+
+        .ck-editor__main {
+            filter: invert(100%);
+        }
     }
 }
 

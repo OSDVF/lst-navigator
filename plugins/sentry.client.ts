@@ -39,7 +39,7 @@ export default defineNuxtPlugin({
             replaysOnErrorSampleRate: 1
         })
         if (process.client) {
-            navigator.serviceWorker.controller?.postMessage({
+            navigator.serviceWorker?.controller?.postMessage({
                 type: 'INITIALIZE_SENTRY',
                 config: sentryConfig
             })

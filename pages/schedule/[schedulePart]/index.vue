@@ -48,8 +48,8 @@ const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.sch
 const cloudStore = useCloudStore()
 const settings = useSettings()
 
-const firestore = useFirestore()
-const currentFeedbackDoc = doc(firestore, `${cloudStore.eventDbName}/feedback`)
+const firestore = process.client ? useFirestore() : null
+const currentFeedbackDoc = firestore ? doc(firestore, `${cloudStore.eventDbName}/feedback`) : null
 const currentFeedbackValue = useDocument(currentFeedbackDoc)
 
 function getFeedback(entry: any, index: number) {

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { FieldValue, collection, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
+import { FieldValue, Firestore, collection, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
@@ -41,12 +41,17 @@ export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
     const firebaseApp = useFirebaseApp()
 
-    const firestore = process.client
-        ? initializeFirestore(firebaseApp, {
-            localCache:
-            persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
-        })
-        : useFirestore()
+    let firestore : Firestore | null = null
+    if (process.client) {
+        try {
+            firestore = initializeFirestore(firebaseApp, {
+                localCache:
+                persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
+            })
+        } catch (e) {
+            firestore = useFirestore()
+        }
+    }
     const firebaseStorage = useFirebaseStorage()
     const config = useRuntimeConfig()
 
@@ -54,7 +59,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     function getDocument(docName: string, ...pathSegments: string[]) {
         return computed(() => {
-            if (typeof eventDbName.value === 'undefined' || process.server) {
+            if (typeof eventDbName.value === 'undefined' || process.server || !firestore) {
                 return null
             }
             return doc(collection(firestore, eventDbName.value), docName, ...pathSegments)
@@ -154,7 +159,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     if (process.client) {
-        navigator.serviceWorker.getRegistration().then((registration) => {
+        navigator.serviceWorker?.getRegistration().then((registration) => {
             if (registration?.active) {
                 const messaging = getMessaging(firebaseApp)
                 getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {

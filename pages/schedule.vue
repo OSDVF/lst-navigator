@@ -66,15 +66,20 @@ function onTrainsitionBeforeLeave() {
     movingOrTrainsitioning.value = true
 }
 
+let lastVerticalScroll = new Date().getTime()
 //
 // Swipe Navigation
 //
-const dragHandler = ({ movement: [x], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
+const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
     const partIndex = parseInt(schedulePartIndex.value)
     if (transitioning.value || !permitSwipe.value) {
         return
     }
-    if (swipe[0] !== 0) {
+    if (Math.abs(y) > 30) {
+        lastVerticalScroll = new Date().getTime()
+    }
+    const wasNearScrol = (new Date().getTime() - lastVerticalScroll) < 1000 * 0.500
+    if (swipe[0] !== 0 && !wasNearScrol) {
         currentTransition.value = swipe[0] > 0 ? 'slide-right' : 'slide-left'
         transitioning.value = true
 
@@ -92,7 +97,7 @@ const dragHandler = ({ movement: [x], dragging, swipe }: { movement: number[], d
             router.push(`/schedule/${partIndex - swipe[0]}`)
         }
         return
-    } else if (!dragging) {
+    } else if (!dragging || wasNearScrol) {
         moving.value = false
         translateX.value = 0
         return
@@ -106,9 +111,11 @@ const dragHandler = ({ movement: [x], dragging, swipe }: { movement: number[], d
         // on event item detail page
         return
     }
-    moving.value = true
-    movingOrTrainsitioning.value = true
-    translateX.value = x
+    if (Math.abs(x) > 5) {
+        moving.value = true
+        movingOrTrainsitioning.value = true
+        translateX.value = x
+    }
 }
 
 </script>
