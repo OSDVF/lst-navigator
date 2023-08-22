@@ -19,14 +19,14 @@
                     Účastnil*a jsem se
                 </td>
                 <td>
-                    <select v-model="syncSelect">
+                    <select v-model="syncSelect" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                         <option v-for="parallelEvent in selectOptions" :key="parallelEvent" :value="parallelEvent">
                             {{ parallelEvent }}
                         </option>
                     </select>
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @click="syncSelect = undefined">
+                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncSelect = undefined">
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -34,14 +34,14 @@
             <tr v-if="type === 'select'">
                 <td>Vyberte odpověd</td>
                 <td>
-                    <select v-model="syncSelect">
+                    <select v-model="syncSelect" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                         <option v-for="selectOption in selectOptions" :key="selectOption" :value="selectOption">
                             {{ selectOption }}
                         </option>
                     </select>
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @click="syncSelect = undefined">
+                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncSelect = undefined">
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -57,7 +57,7 @@
                     />
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @click="syncBasic(undefined)">
+                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncBasic(undefined)">
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
@@ -74,7 +74,7 @@
                         />
                     </td>
                     <td>
-                        <button title="Odstranit odpověd" @click="syncComplicated(index, undefined)">
+                        <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncComplicated(index, undefined)">
                             <IconCSS name="mdi:trash" />
                         </button>
                     </td>
@@ -82,10 +82,10 @@
             </template>
             <tr v-if="type !== 'select'">
                 <td colspan="2">
-                    <textarea v-model.lazy="syncDetail" :placeholder="props.detailQuestion" />
+                    <textarea v-model.lazy="syncDetail" :placeholder="props.detailQuestion" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" />
                 </td>
                 <td>
-                    <button title="Odstranit odpověd" @click="syncDetail = undefined">
+                    <button title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" @click="syncDetail = undefined">
                         <IconCSS name="mdi:trash" />
                     </button>
                 </td>
