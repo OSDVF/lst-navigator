@@ -153,16 +153,18 @@ export const useCloudStore = defineStore('cloud', () => {
 
     if (process.client) {
         navigator.serviceWorker.getRegistration().then((registration) => {
-            const messaging = getMessaging()
-            getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {
-                if (token && subscriptionsDocument.value) {
-                    setDoc(subscriptionsDocument.value, {
-                        tokens: [
-                            token
-                        ]
-                    }, { merge: true })
-                }
-            })
+            if (registration?.active) {
+                const messaging = getMessaging(firebaseApp)
+                getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {
+                    if (token && subscriptionsDocument.value) {
+                        setDoc(subscriptionsDocument.value, {
+                            tokens: [
+                                token
+                            ]
+                        }, { merge: true })
+                    }
+                })
+            }
         })
     }
     return {

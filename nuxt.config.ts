@@ -23,7 +23,6 @@ const config = defineNuxtConfig({
     },
     build: {
         transpile: [
-            '~/utils/sw.ts',
             'lru-cache'
         ]
     },
@@ -56,6 +55,7 @@ const config = defineNuxtConfig({
             : undefined,
         filename: 'sw.ts',
         injectManifest: {
+            rollupFormat: 'iife',
             globIgnores: [
                 '**/node_modules/**/*',
                 '**/public/audio/silence.zip'
@@ -67,6 +67,7 @@ const config = defineNuxtConfig({
             icons
         },
         strategies: 'injectManifest',
+        injectRegister: 'inline',
         srcDir: 'utils',
         workbox: {
             sourcemap: true

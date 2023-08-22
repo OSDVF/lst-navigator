@@ -1,5 +1,5 @@
 export default (process.client
-    ? await import('localforage')
+    ? (await import('localforage')).default
     : {
         getItem<T>() {
             return Promise.resolve() as Promise<T>
