@@ -35,26 +35,32 @@
         <h4>Individuální nastavení</h4>
         <fieldset>
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
-            <form @submit.prevent>
-                <input id="nickname" v-model="tempNickname" :disabled="!!settings.userNickname">
-                <button
-                    v-if="!!settings.userNickname"
-                    @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"
-                >
-                    <IconCSS name="mdi:alert" /> Změnit
-                </button>
-                <button
-                    v-else
-                    @click="confirmDialog('Jméno by mělo být v rámci akce unikátní. Jeho změna v budoucnu může způsobit ztrátu přístupu k tvému feedbacku a poznámkám.') ? settings.userNickname = tempNickname : null"
-                >
-                    <IconCSS name="material-symbols:save" /> Uložit
-                </button>
-            </form>
+            <ClientOnly>
+                <form @submit.prevent>
+                    <input id="nickname" v-model="tempNickname" :disabled="!!settings.userNickname">
+                    <button
+                        v-if="!!settings.userNickname"
+                        @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"
+                    >
+                        <IconCSS name="mdi:alert" /> Změnit
+                    </button>
+                    <button
+                        v-else
+                        @click="confirmDialog('Jméno by mělo být v rámci akce unikátní. Jeho změna v budoucnu může způsobit ztrátu přístupu k tvému feedbacku a poznámkám.') ? settings.userNickname = tempNickname : null"
+                    >
+                        <IconCSS name="material-symbols:save" /> Uložit
+                    </button>
+                </form>
+            </ClientOnly>
         </fieldset>
         <fieldset>
             <label>Datum synchronizace poznámek</label>
             <span>
-                <small>{{ settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime) }}</small>
+                <small>
+                    <ClientOnly>
+                        {{ settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime) }}
+                    </ClientOnly>
+                </small>
                 &ensp;
                 <button @click="syncNotes">
                     <IconCSS name="mdi:reload" /> Odeslat znovu
@@ -64,7 +70,11 @@
         <fieldset>
             <label>Datum synchronizace feedbacku</label>
             <span>
-                <small>{{ cloud.feedbackDirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedbackDirtyTime) }}</small>
+                <small>
+                    <ClientOnly>
+                        {{ cloud.feedbackDirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedbackDirtyTime) }}
+                    </ClientOnly>
+                </small>
                 &ensp;
                 <button @click="cloud.saveAgainAllFeedback">
                     <IconCSS name="mdi:reload" /> Odeslat znovu
@@ -74,8 +84,12 @@
         <h4>O aplikaci</h4>
         <fieldset>
             <p>Verze</p>
-            <p>{{ new Date(parseInt(config.public.compileTime)).toLocaleString() }}{{
-                leadingPlus(parseInt(config.public.compileTimeZone) / 60) }}</p>
+            <p>
+                <ClientOnly>
+                    {{ new Date(parseInt(config.public.compileTime)).toLocaleString() }}
+                    {{ leadingPlus(parseInt(config.public.compileTimeZone) / 60) }}
+                </ClientOnly>
+            </p>
         </fieldset>
         <fieldset>
             <span>Poslední aktualizace</span>
@@ -99,6 +113,7 @@ const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
 const tempNickname = ref(toRaw(settings.userNickname))
 function confirmDialog(message: string) {
+    if (process.server) { return false }
     return window.confirm(message)
 }
 function leadingPlus(value: number) {

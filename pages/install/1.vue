@@ -42,7 +42,7 @@ onNextButtonClick?.(() => $deferredPrompt()?.prompt())
 
 const skipToNextIf = inject<(ref: Ref) => void>('skipToNextIf')
 skipToNextIf?.(asyncComputed(async () => {
-    if (window.matchMedia('(display-mode: standalone)').matches) { return true }
+    if (process.client && window.matchMedia('(display-mode: standalone)').matches) { return true }
     const p = $deferredPrompt()
     return p !== null && (await p.userChoice).outcome === 'accepted'
 }, false))

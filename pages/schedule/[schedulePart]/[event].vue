@@ -51,7 +51,7 @@
         </h1>
         <p>
             <ClientOnly>
-                <ckeditor v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
+                <ckeditor v-if="ClassicEditor" v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
             </ClientOnly>
             <ProgressBar v-if="fetchingNote" />
         </p>
@@ -78,13 +78,19 @@
 </template>
 
 <script setup lang="ts">
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic'
 import { setDoc } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
-import { useStorage } from '@vueuse/core'
 import { Feedback, useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime, getParallelEvents } from '@/utils/types'
+import { usePersistentRef } from '@/utils/storage'
+
+const ClassicEditor = ref()
+if (process.client) {
+    import('@ckeditor/ckeditor5-build-classic').then((c) => {
+        ClassicEditor.value = c.default
+    })
+}
 
 const route = useRoute()
 const settings = useSettings()
@@ -116,7 +122,7 @@ const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(fal
 const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
 
 const notesDocument = useDocument(cloudStore.notesDocument)
-const offlineNote = useStorage(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
+const offlineNote = usePersistentRef(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 
 const noteModel = computed({

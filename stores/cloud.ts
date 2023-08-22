@@ -3,8 +3,8 @@ import { FieldValue, collection, doc, initializeFirestore, persistentLocalCache,
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { useStorage } from '@vueuse/core'
 import { useSettings } from '@/stores/settings'
+import { usePersistentRef } from '@/utils/storage'
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select'
 export type FeedbackConfig = {
@@ -53,15 +53,17 @@ export const useCloudStore = defineStore('cloud', () => {
     const eventDbName = ref(config.public.dbCollectionName)
 
     function getDocument(docName: string, ...pathSegments: string[]) {
-        if (typeof eventDbName.value === 'undefined' || process.server) {
-            return null
-        }
-        return doc(collection(firestore, eventDbName.value), docName, ...pathSegments)
+        return computed(() => {
+            if (typeof eventDbName.value === 'undefined' || process.server) {
+                return null
+            }
+            return doc(collection(firestore, eventDbName.value), docName, ...pathSegments)
+        })
     }
 
-    const metaDocument = shallowRef(getDocument('meta'))
-    const subscriptionsDocument = shallowRef(getDocument('subscriptions'))
-    const metaDoc = shallowRef(useDocument(metaDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } }))
+    const metaDocument = getDocument('meta')
+    const subscriptionsDocument = getDocument('subscriptions')
+    const metaDoc = useDocument(metaDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
     const eventImage = computed(() => metaDoc.value?.image
         ? useStorageFileUrl(storageRef(firebaseStorage, metaDoc.value?.image)).url.value
         : null)
@@ -75,10 +77,10 @@ export const useCloudStore = defineStore('cloud', () => {
     const feedbackConfig = computed<FeedbackConfig[]>(() => metaDoc.value?.feedback)
     const feedbackInfoText = computed(() => metaDoc.value?.feedbackInfo)
 
-    const scheduleDocument = shallowRef(getDocument('schedule'))
-    const scheduleDoc = shallowRef(useDocument(scheduleDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } }))
-    const feedbackDoc = shallowRef(getDocument('feedback'))
-    const onlineFeedbackRef = shallowRef(useDocument(feedbackDoc.value))
+    const scheduleDocument = getDocument('schedule')
+    const scheduleDoc = useDocument(scheduleDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
+    const feedbackDoc = getDocument('feedback')
+    const onlineFeedbackRef = useDocument(feedbackDoc.value)
 
     const scheduleParts = computed<{
         date: string,
@@ -87,9 +89,9 @@ export const useCloudStore = defineStore('cloud', () => {
     }[]>(() => scheduleDoc.value?.parts)
     const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
-    const notesDocument = shallowRef(getDocument('notes'))
-    const offlineFeedback = useStorage<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback } } }>('lastNewFeedback', {})
-    const feedbackDirtyTime = useStorage('feedbackDirtyTime', new Date(0).getTime())
+    const notesDocument = getDocument('notes')
+    const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback } } }>('lastNewFeedback', {})
+    const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
     const fetchingFeedback = ref(false)
     const couldNotFetchFeedback = ref(false)
     const feedbackError = ref()

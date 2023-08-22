@@ -10078,6 +10078,11 @@ ts-api-utils@^1.0.1:
   resolved "https://registry.yarnpkg.com/ts-api-utils/-/ts-api-utils-1.0.2.tgz#7c094f753b6705ee4faee25c3c684ade52d66d99"
   integrity sha512-Cbu4nIqnEdd+THNEsBdkolnOXhg0I8XteoHaEKgvsxpsbWda4IsUut2c187HxywQCvveojow0Dgw/amxtSKVkQ==
 
+ts-localstorage@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/ts-localstorage/-/ts-localstorage-3.0.0.tgz#c32f6f858b43e240fb99acd69063ba016a4888e8"
+  integrity sha512-HdCNBzkXFSEbt590llhDsXx3dIXsnC5QQzMdglVr1kcSa0Af4HT2LKxaRnVsuEL52OxOF/lxG9cyVDrM+XBBRg==
+
 tsconfig-paths@^3.14.2:
   version "3.14.2"
   resolved "https://registry.yarnpkg.com/tsconfig-paths/-/tsconfig-paths-3.14.2.tgz#6e32f1f79412decd261f92d633a9dc1cfa99f088"

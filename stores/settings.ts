@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
-import { useStorage } from '@vueuse/core'
 import { unzip } from 'unzipit'
+import { usePersistentRef } from '@/utils/storage'
 import lf from '~/utils/lf'
 
 let uniqueIdentifier = new Date().getTime().toString(36)
@@ -53,7 +53,7 @@ export const useSettings = defineStore('settings', () => {
         audioList.value = defaultAudioList.concat(uploadedAudioList)
     })
 
-    const selectedAudio = useStorage<number | string>('selectedAudio', 0)
+    const selectedAudio = usePersistentRef<number | string>('selectedAudio', 0)
     const selectedAudioName = computed({
         get() {
             if (typeof selectedAudio.value === 'number') { return audioList.value[selectedAudio.value]?.name }
@@ -150,8 +150,8 @@ export const useSettings = defineStore('settings', () => {
         }
     }
 
-    const selectedGroup = useStorage<number>('selectedGroup', 0)
-    const userNickname = useStorage<string>('userNickname', '')
+    const selectedGroup = usePersistentRef<number>('selectedGroup', 0)
+    const userNickname = usePersistentRef<string>('userNickname', '')
     const userIdentifier = computed(() => {
         if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
     })
@@ -165,7 +165,7 @@ export const useSettings = defineStore('settings', () => {
             lf.setItem('doNotifications', value instanceof Promise ? await value : value)
         }
     })
-    const notesDirtyTime = useStorage('notesDirtyTime', new Date(0).getTime())
+    const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
     return {
         getInstallStep,

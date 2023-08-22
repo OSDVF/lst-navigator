@@ -60,6 +60,7 @@
         <br>
         <br>
         <br>
+        <br>
         <ClientOnly>
             <Teleport to="#additionalNav">
                 <ProgressBar v-if="cloudStore.fetchingFeedback" />
