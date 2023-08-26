@@ -129,14 +129,14 @@ const currentPart = computed(() => {
         for (const individualQuest of config.individual) {
             subparts.push({
                 title: individualQuest.name,
-                primaryIndex: individualQuest.name,
+                primaryIndex: config.title,
                 entries: [{
-                    secondaryIndex: 0,
+                    secondaryIndex: individualQuest.name,
                     feedbackType: individualQuest.type,
                     detailQuestion: individualQuest.description,
                     selectOptions: individualQuest.questions,
                     questions: individualQuest.questions,
-                    data: cloudStore.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier]
+                    data: cloudStore.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier] ?? cloudStore.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier]
                 }]
             })
         }
