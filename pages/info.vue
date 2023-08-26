@@ -2,7 +2,8 @@
     <article role="article">
         <div class="eventBanner">
             <img
-                v-if="eventImage" class="eventImage" :src="eventImage"
+                v-if="eventImage"
+                crossorigin="anonymous" class="eventImage" :src="eventImage"
                 @click="ui.showLightBox(eventImage)" @load="saveCacheImage('eventImage', $event)"
             >
         </div>

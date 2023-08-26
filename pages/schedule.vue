@@ -39,17 +39,19 @@ function isToday(schedulePart: typeof cloudStore.scheduleParts[0]) {
     const [year, month, day] = schedulePart?.date?.split('-') ?? [0, 0, 0]
     return (now.getFullYear() === parseInt(year) && now.getMonth() + 1 === parseInt(month) && now.getDate() === parseInt(day))
 }
-if (typeof schedulePartIndex.value === 'undefined') {
-    let index : number | string = 0
-    for (const i in cloudStore.scheduleParts) {
-        const schedulePart = cloudStore.scheduleParts[i]
-        if (isToday(schedulePart)) {
-            index = i
-            break
-        }
+//
+// Automatic redirect when no day is selected
+//
+watch(cloudStore, (newCloud) => {
+    if (typeof schedulePartIndex.value === 'undefined' && newCloud.scheduleLoading === false) {
+        findToday(newCloud)
     }
-    router.replace(`/schedule/${index}`)
-}
+})
+onMounted(() => {
+    if (typeof schedulePartIndex.value === 'undefined' && cloudStore?.scheduleLoading === false) {
+        findToday(cloudStore)
+    }
+})
 const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string))
 
 const currentTransition = ref('slide-left')
@@ -66,6 +68,18 @@ onBeforeRouteLeave((leaveGuard) => {
         currentTransition.value = targetEventItemIndex > eventIndex.value ? 'slide-left' : 'slide-right'
     }
 })
+
+function findToday(newCloud: typeof cloudStore) {
+    let index: number | string = 0
+    for (const i in newCloud.scheduleParts) {
+        const schedulePart = newCloud.scheduleParts[i]
+        if (isToday(schedulePart)) {
+            index = i
+            break
+        }
+    }
+    router.replace(`/schedule/${index}`)
+}
 
 function onTrainsitionAfterLeave() {
     transitioning.value = false
