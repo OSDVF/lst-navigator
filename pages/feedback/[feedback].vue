@@ -70,9 +70,9 @@
         <ClientOnly>
             <Teleport to="#additionalNav">
                 <ProgressBar v-if="cloudStore.fetchingFeedback" />
-                <span v-if="cloudStore.couldNotFetchFeedback">
+                <nav v-if="cloudStore.couldNotFetchFeedback">
                     {{ cloudStore.feedbackError || 'Nepodařilo se odeslat tvou odpověď' }}
-                </span>
+                </nav>
                 <nav class="eventItemNav">
                     <NuxtLink
                         v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig"
@@ -162,5 +162,9 @@ const currentPart = computed(() => {
 }
 fieldset {
     border-radius: .5rem;
+}
+.eventItemNav {
+    overflow-x: auto;
+    width: 100vw;
 }
 </style>
