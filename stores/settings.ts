@@ -13,14 +13,14 @@ try {
     }
 } catch (e) { }
 
-async function getUncompressedSilenceFile() {
+/* async function getUncompressedSilenceFile() {
     const compressed = '/audio/silence.zip'
     const { entries } = await unzip(compressed)
     const file = Object.entries(entries).find(([key]) => key.endsWith('.mp3'))
     const arrayBuffer = await file?.[1].arrayBuffer()
     if (!arrayBuffer) { throw new Error('Could not load silence file') }
     return URL.createObjectURL(new Blob([arrayBuffer], { type: 'audio/mpeg' }))
-}
+} */
 
 export const useSettings = defineStore('settings', () => {
     function getInstallStep() {
@@ -109,7 +109,7 @@ export const useSettings = defineStore('settings', () => {
 
     const isPlaying = ref(false)
     const audioElem = process.client ? new Audio() : undefined
-    const silenceFile = process.client ? (audioElem!.canPlayType('audio/ogg') ? Promise.resolve('/audio/silence.ogg') : getUncompressedSilenceFile()) : null
+    // const silenceFile = process.client ? (audioElem!.canPlayType('audio/ogg') ? Promise.resolve('/audio/silence.ogg') : getUncompressedSilenceFile()) : null
     function playListener() {
         isPlaying.value = true
     }
@@ -117,14 +117,14 @@ export const useSettings = defineStore('settings', () => {
         if (process.client) {
             document.removeEventListener('click', pauseListener)
             isPlaying.value = false
-            silenceFile!.then((silence) => {
+            /* silenceFile!.then((silence) => {
                 audioElem!.src = silence
                 audioElem!.removeEventListener('play', playListener)
                 audioElem!.play()
                 setTimeout(() => {
                     audioElem!.addEventListener('play', playListener)
                 }, 100)
-            })
+            }) */
         }
     }
 
