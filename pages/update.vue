@@ -8,7 +8,7 @@
         </button>
         <br>
         <ClientOnly>
-            <button @click="$pwa.cancelInstall(); prevRoute !== null ? $router.back() : $router.replace('/schedule/0')">
+            <button @click="$pwa.cancelInstall(); prevRoute !== null ? $router.back() : $router.replace('/schedule')">
                 <IconCSS name="mdi:sync-off" />&ensp;Ignorovat
             </button>
         </ClientOnly>
@@ -24,7 +24,7 @@ onBeforeRouteUpdate((updateGuard) => {
 })
 
 async function download() {
-    $pwa.updateServiceWorker()
+    const updatePromise = $pwa.updateServiceWorker()
     if (process.client) {
         const regs = await navigator.serviceWorker?.getRegistrations()
         for (const reg of regs) {
@@ -36,7 +36,7 @@ async function download() {
                 $Sentry.captureException(e)
             }
         }
-        location.href = '/schedule/0'
+        updatePromise.finally(() => { location.href = '/' })
     }
 }
 </script>

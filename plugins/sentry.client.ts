@@ -22,7 +22,7 @@ export default defineNuxtPlugin({
             integrations: [
                 new Sentry.BrowserTracing({
                     routingInstrumentation: Sentry.vueRouterInstrumentation(nuxtApp.$router as Router),
-                    tracePropagationTargets: [config.public.SENTRY_TRACE_PROPAGATION_TARGET]
+                    tracePropagationTargets: config.public.SENTRY_TRACE_PROPAGATION_TARGET ? [config.public.SENTRY_TRACE_PROPAGATION_TARGET] : undefined
                 }),
                 new Sentry.Replay()
             ],

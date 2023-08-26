@@ -152,8 +152,14 @@ export const useSettings = defineStore('settings', () => {
 
     const selectedGroup = usePersistentRef<number>('selectedGroup', 0)
     const userNickname = usePersistentRef<string>('userNickname', '')
-    const userIdentifier = computed(() => {
-        if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
+    const userIdentifier = computed({
+        get() {
+            if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
+        },
+        set(value: string) {
+            localStorage.setItem('uniqueIdentifier', value)
+            uniqueIdentifier = value
+        }
     })
 
     if (process.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }

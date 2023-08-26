@@ -36,7 +36,7 @@ const router = useRouter()
 const schedulePartIndex = computed(() => router.currentRoute.value.params.schedulePart as string)
 const now = new Date()
 function isToday(schedulePart: typeof cloudStore.scheduleParts[0]) {
-    const [year, month, day] = schedulePart.date?.split('-') ?? [0, 0, 0]
+    const [year, month, day] = schedulePart?.date?.split('-') ?? [0, 0, 0]
     return (now.getFullYear() === parseInt(year) && now.getMonth() + 1 === parseInt(month) && now.getDate() === parseInt(day))
 }
 if (typeof schedulePartIndex.value === 'undefined') {

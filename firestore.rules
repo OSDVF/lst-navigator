@@ -2,6 +2,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
     match /{document=**}/feedback {
 			allow read: if true;
       allow write: if true;
@@ -13,6 +16,17 @@ service cloud.firestore {
     match /{document=**}/subscriptions {
 			allow read: if true;
       allow write: if true;
+    }
+    match /{document=**}/users/permissions {
+      function isAdmin() {
+				return get(/databases/$(database)/documents/$(document)/users/permissions/$(request.auth.uid)) == true;
+      }
+			match /{userId} {
+      	allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if isSignedIn() && isAdmin();
+      }
+      
+      allow write: if false;
     }
     match /{document=**} {
       allow read: if true;

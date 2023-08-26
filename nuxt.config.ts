@@ -111,7 +111,16 @@ const config = defineNuxtConfig({
             messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID,
             appId: process.env.VITE_APP_APPID,
             measurementId: process.env.VITE_APP_MEASUREMENTID
-        }
+        },
+        auth: true,
+        appCheck: process.env.VITE_APP_RECAPTCHA
+            ? {
+                debug: isDevMode,
+                key: process.env.VITE_APP_RECAPTCHA!,
+                provider: 'ReCaptchaV3',
+                isTokenAutoRefreshEnabled: true
+            }
+            : undefined
     },
     runtimeConfig: {
         public: {

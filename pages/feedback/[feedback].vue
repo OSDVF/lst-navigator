@@ -2,7 +2,7 @@
     <article>
         <h1>
             <NuxtLink :to="router.currentRoute.value.fullPath">
-                Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
+                <IconCSS name="mdi:rss" /> Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
             </NuxtLink>
         </h1>
         <NuxtLink v-if="feedbackPartIndex > 0" :to="`/feedback/${feedbackPartIndex + 1}`">
@@ -16,6 +16,12 @@
             <IconCSS name="mdi:chevron-right" />
         </NuxtLink>
         <br>
+        <NameChangeDialog>
+            <br>
+            Odpovídáš jako&ensp;
+        </NameChangeDialog>
+        <br>
+
         Každá tvá změna je hned uložena. {{ cloudStore.feedbackInfoText }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`">
@@ -64,6 +70,9 @@
         <ClientOnly>
             <Teleport to="#additionalNav">
                 <ProgressBar v-if="cloudStore.fetchingFeedback" />
+                <span v-if="cloudStore.couldNotFetchFeedback">
+                    {{ cloudStore.feedbackError || 'Nepodařilo se odeslat tvou odpověď' }}
+                </span>
                 <nav class="eventItemNav">
                     <NuxtLink
                         v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig"

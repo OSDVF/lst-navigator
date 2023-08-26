@@ -26,6 +26,9 @@
                     />
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description ?? 'Žádné detaily'" />
+                    <button v-if="user" class="edit">
+                        <IconCSS class="icon" name="mdi:pencil" />
+                    </button>
                     <span class="more">
                         <IconCSS class="icon" name="mdi:rss" />
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
@@ -46,6 +49,7 @@ import { Feedback, FeedbackType, useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
 const route = useRoute()
+const user = useCurrentUser()
 const selectedPart = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
 const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPart.value]?.program : [])
 const cloudStore = useCloudStore()

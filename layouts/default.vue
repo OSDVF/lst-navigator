@@ -74,7 +74,7 @@ const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
 ///
 installStep.then((step) => {
     const safeStep = step ?? 0
-    if (safeStep < config.public.installStepCount) {
+    if (route.name !== 'feedback' && safeStep < config.public.installStepCount) {
         router.push('/install/' + safeStep)
     }
 })

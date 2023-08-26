@@ -35,23 +35,7 @@
         <h4>Individuální nastavení</h4>
         <fieldset>
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
-            <ClientOnly>
-                <form @submit.prevent>
-                    <input id="nickname" v-model="tempNickname" :disabled="!!settings.userNickname">
-                    <button
-                        v-if="!!settings.userNickname"
-                        @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"
-                    >
-                        <IconCSS name="mdi:alert" /> Změnit
-                    </button>
-                    <button
-                        v-else
-                        @click="confirmDialog('Jméno by mělo být v rámci akce unikátní. Jeho změna v budoucnu může způsobit ztrátu přístupu k tvému feedbacku a poznámkám.') ? settings.userNickname = tempNickname : null"
-                    >
-                        <IconCSS name="material-symbols:save" /> Uložit
-                    </button>
-                </form>
-            </ClientOnly>
+            <NameChangeDialog />
         </fieldset>
         <fieldset>
             <label>Datum synchronizace poznámek</label>
@@ -81,6 +65,21 @@
                 </button>
             </span>
         </fieldset>
+        <fieldset>
+            <label>
+                <IconCSS v-if="cloud.permissions === 'admin'" name="mdi:shield-lock-open" title="Úpravy povoleny" />
+                <img v-else-if="user?.photoURL" referrerPolicy="no-referrer" crossorigin="anonymous" :src="user.photoURL" alt="Profilový obrázek" width="24" height="24">
+                {{ user?.displayName ?? error ?? 'Přihlášení' }} <span v-if="user?.email" class="muted nowrap">{{ user.email }}</span>
+            </label>
+            <span>
+                <button v-if="user" @click="logout">
+                    <IconCSS name="mdi:logout" /> Odhlásit
+                </button>
+                <button v-else @click="signIn">
+                    <IconCSS name="mdi:login" /> Přihlásit
+                </button>
+            </span>
+        </fieldset>
         <h4>O aplikaci</h4>
         <fieldset>
             <p>Verze</p>
@@ -100,6 +99,13 @@
 
 <script setup lang="ts">
 import { setDoc } from 'firebase/firestore'
+import {
+    signOut,
+    GoogleAuthProvider,
+    getRedirectResult,
+    signInWithPopup
+} from 'firebase/auth'
+import { useFirebaseAuth } from 'vuefire'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
 definePageMeta({
@@ -109,20 +115,16 @@ definePageMeta({
 const settings = useSettings()
 const cloud = useCloudStore()
 const config = useRuntimeConfig()
+const auth = useFirebaseAuth()
+const user = useCurrentUser()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
-const tempNickname = ref(toRaw(settings.userNickname))
-watch(settings, (s) => {
-    if (s.userNickname !== tempNickname.value) {
-        tempNickname.value = s.userNickname
-    }
-})
-function confirmDialog(message: string) {
-    if (process.server) { return false }
-    return window.confirm(message)
-}
+
 function leadingPlus(value: number) {
     return value > 0 ? `+${value}` : value
+}
+function logout() {
+    signOut(auth!)
 }
 function uploadCustomClick() {
     uploading.value = true
@@ -151,6 +153,8 @@ function syncNotes() {
                             [settings.userIdentifier]: value
                         }
                     }
+                }, {
+                    merge: true
                 })
             }
         }
@@ -158,7 +162,52 @@ function syncNotes() {
         alert('Nepodařilo se připojit k úložišti poznámek')
     }
 }
+
+// display errors if any
+const error = ref(null)
+function signIn() {
+    signInWithPopup(auth!, googleAuthProvider)
+        .then((result) => {
+            if (cloud.feedbackDoc) {
+                if (cloud.onlineFeedbackRef?.[result.user.uid]) {
+                    if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
+                        settings.userIdentifier = cloud.onlineFeedbackRef[result.user.uid].offlineUserIdentifier
+                        settings.userNickname = cloud.onlineFeedbackRef[result.user.uid].offlineUserName
+                    }
+                }
+
+                setDoc(cloud.feedbackDoc, {
+                    [result.user.uid]: {
+                        name: result.user.displayName,
+                        offlineUserName: settings.userNickname,
+                        offlineUserIdentifier: settings.userIdentifier,
+                        email: result.user.email,
+                        photoURL: result.user.photoURL,
+                        timestamp: Date.now()
+                    }
+                }, {
+                    merge: true
+                })
+            }
+            console.log(result)
+        }).catch((reason) => {
+            console.error('Failed signin', reason)
+            error.value = reason
+        })
+}
+// only on client side
+onMounted(() => {
+    getRedirectResult(auth!).catch((reason) => {
+        console.error('Failed redirect result', reason)
+        error.value = reason
+    })
+})
 </script>
+
+<script lang="ts">
+export const googleAuthProvider = new GoogleAuthProvider()// Is here in classic <script> because <script setup> is unique for instance
+</script>
+
 
 <style lang="scss" scoped>
 @use "sass:color";
@@ -178,6 +227,12 @@ fieldset {
         &:not(:first-child) {
             text-align: end;
         }
+    }
+
+    img {
+        vertical-align: middle;
+        border-radius: 50%;
+        margin-right: .5rem;
     }
 }
 </style>

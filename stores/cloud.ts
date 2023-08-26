@@ -87,6 +87,11 @@ export const useCloudStore = defineStore('cloud', () => {
     const feedbackDoc = getDocument('feedback')
     const onlineFeedbackRef = useDocument(feedbackDoc.value)
 
+    const usersDocument = getDocument('users')
+    const usersDoc = useDocument(usersDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
+    const user = useCurrentUser()
+    const permissions = computed(() => user.value?.uid ? usersDoc.value?.permissions?.[user.value.uid] : null)
+
     const scheduleParts = computed<{
         date: string,
         name: string,
@@ -145,6 +150,19 @@ export const useCloudStore = defineStore('cloud', () => {
     watch(onlineFeedbackRef, hydrateOfflineFeedback)
     hydrateOfflineFeedback(onlineFeedbackRef.value)
 
+    watch(settings, (newSettings) => {
+        if (feedbackDoc.value && user.value && process.client) {
+            setDoc(feedbackDoc.value, {
+                [user.value.uid]: {
+                    offlineUserName: newSettings.userNickname,
+                    offlineUserIdentifier: localStorage.getItem('uniqueIdentifier')
+                }
+            }, {
+                merge: true
+            })
+        }
+    })
+
     function saveAgainAllFeedback() {
         fetchingFeedback.value = true
         const uploadingPromise = setDoc(feedbackDoc.value!, offlineFeedback.value, {
@@ -198,6 +216,8 @@ export const useCloudStore = defineStore('cloud', () => {
         couldNotFetchFeedback,
         feedbackError,
         fetchingFeedback,
-        feedbackDirtyTime
+        feedbackDirtyTime,
+        onlineFeedbackRef,
+        permissions
     }
 })
