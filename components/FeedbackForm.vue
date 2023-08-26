@@ -194,7 +194,7 @@ watch(props, () => {
     })
 })
 
-const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
+const permitSwipe = inject<Ref<boolean>>('permitSwipe', ref(false))
 
 function syncComplicated(index: number, value?: number) {
     const prevComplicated = new Array(props.complicatedQuestions.length).fill(null) as (number | null)[]

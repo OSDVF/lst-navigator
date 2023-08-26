@@ -97,7 +97,7 @@ const settings = useSettings()
 const partIndex = parseInt(route.params.schedulePart as string ?? 0)
 const eventItemIndex = parseInt(route.params.event as string ?? 0)
 const cloudStore = useCloudStore()
-const globalBackground = inject('globalBackground') as Ref<string>
+const globalBackground = inject('globalBackground', ref('')) as Ref<string>
 const eventData = computed(() => {
     const program = cloudStore.scheduleParts ? cloudStore.scheduleParts[partIndex]?.program : []
     if (program) {
@@ -118,8 +118,8 @@ const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
 
 const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
-const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
-const permitSwipe = inject<Ref<boolean>>('permitSwipe') ?? ref(false)
+const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning', ref(false))
+const permitSwipe = inject<Ref<boolean>>('permitSwipe', ref(false))
 
 const notesDocument = useDocument(cloudStore.notesDocument)
 const offlineNote = usePersistentRef(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })

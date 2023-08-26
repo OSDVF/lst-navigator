@@ -55,7 +55,7 @@ onMounted(() => {
 const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string))
 
 const currentTransition = ref('slide-left')
-const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning') ?? ref(false)
+const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning', ref(false))
 const permitSwipe = ref(true)
 provide('permitSwipe', permitSwipe)
 const transitioning = ref(false)

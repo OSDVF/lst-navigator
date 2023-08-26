@@ -19,7 +19,7 @@
             </NuxtLink>
         </h6>
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <div v-html="cloudStore.eventDescription ?? 'Žádný popis'" />
+        <div class="text-invert" v-html="cloudStore.eventDescription ?? 'Žádný popis'" />
     </article>
 </template>
 

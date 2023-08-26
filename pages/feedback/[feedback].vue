@@ -30,13 +30,20 @@
                 <legend v-if="entry.title">
                     <h3>{{ entry.title }}</h3>
                 </legend>
-                <details v-if="entry.subtitle || entry.description" class="hoverable">
-                    <summary v-if="entry.subtitle"><h4 class="inline-block">
-                        {{ entry.subtitle }}
-                    </h4></summary>
-                    <!-- eslint-disable-next-line vue/no-v-html -->
-                    <p v-html="entry.description ?? 'Žádné detaily'" />
-                </details>
+                <template v-if="entry.subtitle || entry.description">
+                    <details v-if="(entry.subtitle?.length ?? 0) + (entry.description?.length ?? 0) > 100" class="hoverable">
+                        <summary v-if="entry.subtitle"><h4 class="inline-block">
+                            {{ entry.subtitle }}
+                        </h4></summary>
+                        <!-- eslint-disable-next-line vue/no-v-html -->
+                        <p v-html="entry.description ?? 'Žádné detaily'" />
+                    </details>
+                    <template v-else>
+                        <h4>{{ entry.subtitle }}</h4>
+                        <!-- eslint-disable-next-line vue/no-v-html -->
+                        <p v-html="entry.description" />
+                    </template>
+                </template>
                 <FeedbackForm
                     :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data"
                     :complicated-questions="entry.questions"
@@ -63,6 +70,7 @@
                 <IconCSS name="material-symbols:save" /> Zkusit znovu
             </button>
         </p>
+        <br>
         <br>
         <br>
         <br>
@@ -150,7 +158,7 @@ const currentPart = computed(() => {
 </script>
 <style lang="scss" scoped>
 .hoverable {
-    padding: 1rem;
+    padding: 0 1rem 1rem 1rem;
     border-radius: .5rem;
     cursor: pointer;
     &:hover, &:focus, &:focus-within {

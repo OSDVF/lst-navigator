@@ -68,7 +68,7 @@
         <fieldset>
             <label>
                 <IconCSS v-if="cloud.permissions === 'admin'" name="mdi:shield-lock-open" title="Úpravy povoleny" />
-                <img v-else-if="user?.photoURL" referrerPolicy="no-referrer" crossorigin="anonymous" :src="user.photoURL" alt="Profilový obrázek" width="24" height="24">
+                <img v-else-if="user?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous" :src="user.photoURL" alt="Profilový obrázek" width="24" height="24">
                 {{ user?.displayName ?? error ?? 'Přihlášení' }} <span v-if="user?.email" class="muted nowrap">{{ user.email }}</span>
             </label>
             <span>
