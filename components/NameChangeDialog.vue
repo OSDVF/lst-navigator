@@ -2,7 +2,7 @@
     <ClientOnly>
         <form @submit.prevent>
             <slot />
-            <input id="nickname" v-model="tempNickname" :disabled="!!settings.userNickname">
+            <input id="nickname" v-model="tempNickname" v-paste-model :disabled="!!settings.userNickname">
             <button
                 v-if="!!settings.userNickname"
                 @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"

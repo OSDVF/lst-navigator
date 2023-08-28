@@ -60,7 +60,7 @@
             Pokračovat na další část
             <IconCSS name="mdi:chevron-right" />
         </button>
-        <button v-else class="large d-block m-left-auto" @click="cloudStore.saveAgainAllFeedback().then(() => router.push('/info'))">
+        <button v-else class="large d-block m-left-auto" @click="cloudStore.saveAgainAllFeedback().then(() => router.push('/feedback/thanks'))">
             <IconCSS name="mdi:check" />
             Dokončit
         </button>
@@ -78,8 +78,8 @@
         <ClientOnly>
             <Teleport to="#additionalNav">
                 <ProgressBar v-if="cloudStore.fetchingFeedback" />
-                <nav v-if="cloudStore.couldNotFetchFeedback">
-                    {{ cloudStore.feedbackError || 'Nepodařilo se odeslat tvou odpověď' }}
+                <nav v-if="cloudStore.couldNotFetchFeedback" class="p-1">
+                    {{ cloudStore.feedbackError || 'Nepodařilo se odeslat tvou odpověď. Ale ždáný strach, je uložená offline ve tvém zařízení.' }}
                 </nav>
                 <nav class="eventItemNav">
                     <NuxtLink

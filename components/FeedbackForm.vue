@@ -56,9 +56,9 @@
                 <td>Celkový dojem</td>
                 <td @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                     <NuxtRating
-                        v-if="updatedRating/* a hack to re-render on props update */" inactive-color="#aaa"
-                        :read-only="false" :rating-value="props.data?.basic ?? 0"
-                        :class="{ 'null': props.data?.basic === null || typeof props.data?.basic === 'undefined' }"
+                        v-if="updatedRating.basic/* a hack to re-render on props update */" inactive-color="#aaa"
+                        :read-only="false" :rating-value="normalizedData.basic ?? 0"
+                        :class="{ 'null': normalizedData.basic === null || typeof normalizedData.basic === 'undefined' }"
                         @rating-selected="syncBasic"
                     />
                 </td>
@@ -76,9 +76,9 @@
                     <td>{{ question }}</td>
                     <td @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                         <NuxtRating
-                            v-if="updatedRating" inactive-color="#aaa" :read-only="false"
-                            :class="{ 'null': props.data.complicated?.[index] === null || typeof props.data.complicated?.[index] === 'undefined' }"
-                            :rating-value="props.data.complicated?.[index] ?? 0"
+                            v-if="updatedRating.complicated" inactive-color="#aaa" :read-only="false"
+                            :class="{ 'null': normalizedData.complicated?.[index] === null || typeof normalizedData.complicated?.[index] === 'undefined' }"
+                            :rating-value="normalizedData.complicated?.[index] ?? 0"
                             @rating-selected="(value: number) => syncComplicated(index, value)"
                         />
                     </td>
@@ -95,7 +95,8 @@
             <tr v-if="type !== 'select'">
                 <td colspan="2">
                     <textarea
-                        v-model.lazy="syncDetail" :placeholder="props.detailQuestion"
+                        v-model.lazy="syncDetail"
+                        v-paste-model :placeholder="props.detailQuestion"
                         @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                     />
                 </td>
@@ -113,7 +114,7 @@
 </template>
 <script setup lang="ts">
 import { FieldValue, deleteField } from 'firebase/firestore'
-import { FeedbackType, Feedback } from '@/stores/cloud'
+import { FeedbackType, Feedback, defaultQuestions } from '@/stores/cloud'
 
 const props = defineProps({
     data: {
@@ -133,11 +134,7 @@ const props = defineProps({
     complicatedQuestions: {
         type: Array as PropType<string[]>,
         required: false,
-        default: () => [
-            'Rečník',
-            'Osobní přínos',
-            'Srozumitelnost'
-        ]
+        default: () => defaultQuestions
     },
     selectOptions: {
         type: Array as PropType<string[]>,
@@ -161,7 +158,7 @@ const syncDetail = computed({
     },
     set(value: string | undefined): void {
         props.onSetData({
-            ...props.data,
+            ...normalizedData.value,
             detail: typeof value === 'undefined' ? deleteField() : value
         })
     }
@@ -173,7 +170,7 @@ const syncSelect = computed({
     },
     set(value: string | undefined | FieldValue) {
         props.onSetData({
-            ...props.data,
+            ...normalizedData.value,
             select: typeof value === 'undefined' ? deleteField() : value
         })
     }
@@ -181,17 +178,41 @@ const syncSelect = computed({
 
 function syncBasic(value?: number) {
     props.onSetData({
-        ...props.data,
+        ...normalizedData.value,
         basic: typeof value === 'undefined' ? deleteField() : value
     })
 }
 
-const updatedRating = ref(true)
-watch(props, () => {
-    updatedRating.value = false
-    nextTick(() => {
-        updatedRating.value = true
-    })
+const normalizedData = computed(() => {
+    const result : Feedback = {}
+    // probably FieldValue - somthing like deleteField()
+    for (const prop in props.data) {
+        const val = props.data[prop as keyof Feedback]
+        const t = typeof val
+        if ((t !== 'object' && t !== 'undefined') || Array.isArray(val)) {
+            result[prop as keyof Feedback] = val as any
+        }
+    }
+    return result
+})
+
+const updatedRating = ref({
+    basic: true,
+    complicated: true
+})
+watch(props, (newVal, oldVal) => {
+    if (newVal.data.basic !== oldVal.data.basic) {
+        updatedRating.value.basic = false
+        nextTick(() => {
+            updatedRating.value.basic = true
+        })
+    }
+    if (newVal.data.complicated !== oldVal.data.complicated) {
+        updatedRating.value.complicated = false
+        nextTick(() => {
+            updatedRating.value.complicated = true
+        })
+    }
 })
 
 const permitSwipe = inject<Ref<boolean>>('permitSwipe', ref(false))

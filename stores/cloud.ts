@@ -36,6 +36,11 @@ export type Feedback = {
     complicated?: (number | null)[],
     select?: string | FieldValue
 }
+export const defaultQuestions = [
+    'Rečník',
+    'Osobní přínos',
+    'Srozumitelnost'
+]
 
 export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
@@ -83,9 +88,9 @@ export const useCloudStore = defineStore('cloud', () => {
     const feedbackInfoText = computed(() => metaDoc.value?.feedbackInfo)
 
     const scheduleDocument = getDocument('schedule')
-    const scheduleDoc = useDocument(scheduleDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
+    const scheduleDoc = useDocument(scheduleDocument.value, { wait: true, snapshotListenOptions: { includeMetadataChanges: false } })
     const feedbackDoc = getDocument('feedback')
-    const onlineFeedbackRef = useDocument(feedbackDoc.value)
+    const onlineFeedbackRef = useDocument(feedbackDoc.value, { snapshotListenOptions: { includeMetadataChanges: false } })
 
     const usersDocument = getDocument('users')
     const usersDoc = useDocument(usersDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
@@ -109,6 +114,10 @@ export const useCloudStore = defineStore('cloud', () => {
         fetchingFeedback.value = true
         offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
         feedbackDirtyTime.value = new Date().getTime()
+
+        if (config.public.ENV !== 'production') {
+            console.log(`Setting ${sIndex} . ${eIndex} to`, data)
+        }
 
         setDoc(feedbackDoc.value!, {
             [sIndex]: {
