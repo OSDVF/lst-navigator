@@ -42,7 +42,7 @@
             <span>
                 <small>
                     <ClientOnly>
-                        {{ settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime) }}
+                        {{ settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime).toLocaleString(lang) }}
                     </ClientOnly>
                 </small>
                 &ensp;
@@ -56,7 +56,7 @@
             <span>
                 <small>
                     <ClientOnly>
-                        {{ cloud.feedbackDirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedbackDirtyTime) }}
+                        {{ cloud.feedbackDirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedbackDirtyTime).toLocaleString(lang) }}
                     </ClientOnly>
                 </small>
                 &ensp;
@@ -85,7 +85,7 @@
             <p>Verze</p>
             <p>
                 <ClientOnly>
-                    {{ new Date(parseInt(config.public.compileTime)).toLocaleString() }}
+                    {{ new Date(parseInt(config.public.compileTime)).toLocaleString(lang) }}
                     {{ leadingPlus(parseInt(config.public.compileTimeZone) / 60) }}
                 </ClientOnly>
             </p>
@@ -119,6 +119,8 @@ const auth = useFirebaseAuth()
 const user = useCurrentUser()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
+
+const lang = computed(() => process.client ? navigator.language : 'cs-CZ')
 
 function leadingPlus(value: number) {
     return value > 0 ? `+${value}` : value

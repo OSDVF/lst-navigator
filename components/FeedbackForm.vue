@@ -95,8 +95,7 @@
             <tr v-if="type !== 'select'">
                 <td colspan="2">
                     <textarea
-                        v-model.lazy="syncDetail"
-                        v-paste-model :placeholder="props.detailQuestion"
+                        v-model.lazy="syncDetail" v-paste-model :placeholder="props.detailQuestion"
                         @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                     />
                 </td>
@@ -184,7 +183,7 @@ function syncBasic(value?: number) {
 }
 
 const normalizedData = computed(() => {
-    const result : Feedback = {}
+    const result: Feedback = {}
     // probably FieldValue - somthing like deleteField()
     for (const prop in props.data) {
         const val = props.data[prop as keyof Feedback]
@@ -239,27 +238,6 @@ function syncComplicated(index: number, value?: number) {
 </script>
 
 <style lang="scss">
-.average-rating {
-    &::before {
-        //nuxt-rating has this class for some reason
-        position: static;
-        -webkit-text-stroke: 1px #000000d0;
-    }
-
-    &.null::before {
-        background-image:
-            linear-gradient(90deg, var(--active-color) var(--percent), transparent var(--percent)),
-            /* tint image */
-            linear-gradient(to right, rgba(0, 0, 0, 0.0), rgba(0, 0, 0, 0)),
-            /* checkered effect */
-            linear-gradient(to right, black 50%, white 50%),
-            linear-gradient(to bottom, black 50%, white 50%);
-        background-blend-mode: normal, normal, exclusion, saturation;
-        background-size: auto, 5px 5px, 5px 5px, 5px 5px;
-        background-clip: text;
-    }
-}
-
 .feedbackTable {
     width: 100%;
 
@@ -283,4 +261,5 @@ function syncComplicated(index: number, value?: number) {
         width: 100%;
         font-size: 1.1rem;
     }
-}</style>
+}
+</style>

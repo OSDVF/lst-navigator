@@ -21,3 +21,13 @@ export function toHumanTime(time?: number) {
 export function getParallelEvents(eventItem: ScheduleEvent) {
     return eventItem.subtitle?.split(',')?.map(x => x.trim()) ?? []
 }
+
+export function onlyIntIndexed<T>(a: Array<T>) {
+    const result = []
+    for (const key in a) {
+        if (!isNaN(parseInt(key))) {
+            result[parseInt(key)] = (a[key])
+        }
+    }
+    return result
+}

@@ -30,6 +30,12 @@ export type ScheduleEvent = {
     icon?: string // iconify code
 }
 
+export type SchedulePart = {
+    date: string,
+    name: string,
+    program: ScheduleEvent[]
+};
+
 export type Feedback = {
     basic?: number | FieldValue,
     detail?: string | FieldValue,
@@ -97,11 +103,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const user = useCurrentUser()
     const permissions = computed(() => user.value?.uid ? usersDoc.value?.permissions?.[user.value.uid] : null)
 
-    const scheduleParts = computed<{
-        date: string,
-        name: string,
-        program: ScheduleEvent[]
-    }[]>(() => scheduleDoc.value?.parts)
+    const scheduleParts = computed<SchedulePart[]>(() => scheduleDoc.value?.parts)
     const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
     const notesDocument = getDocument('notes')
@@ -114,10 +116,6 @@ export const useCloudStore = defineStore('cloud', () => {
         fetchingFeedback.value = true
         offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
         feedbackDirtyTime.value = new Date().getTime()
-
-        if (config.public.ENV !== 'production') {
-            console.log(`Setting ${sIndex} . ${eIndex} to`, data)
-        }
 
         setDoc(feedbackDoc.value!, {
             [sIndex]: {
