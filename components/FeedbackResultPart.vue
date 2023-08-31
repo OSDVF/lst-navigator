@@ -10,7 +10,7 @@
                 Název
             </div>
             <div class="th">
-                {{ $props.displayKind === 'histogram' ? 'Statistiky' : 'Průměr' }}
+                Průměr
             </div>
             <div class="th">
                 {{ $props.displayKind === 'histogram' ? 'Histogram' : 'Jednotlivé odpovědi' }}
@@ -20,29 +20,49 @@
             <table>
                 <tbody ref="tableBody">
                     <template v-if="feedbackParts">
-                        <tr v-for="(event, eIndex) in onlyIntIndexed(feedbackParts)" :key="`e${eIndex}td`">
+                        <tr
+                            v-for="(replies, eIndex) in onlyIntIndexed(feedbackParts)" :key="`e${eIndex}td`"
+                            :set="event = schedulePart?.program[eIndex]"
+                        >
                             <td>
                                 <strong>
-                                    {{ $props.schedulePart?.program?.[eIndex]?.title }}
+                                    {{ event?.title }}
                                 </strong>
                             </td>
                             <td>
-                                <FeedbackReply :reply="getAverage(event)" :event="$props.schedulePart?.program?.[eIndex]" />
+                                <FeedbackReply
+                                    :reply="getAverage(replies)"
+                                    :event="$props.schedulePart?.program?.[eIndex]"
+                                />
                             </td>
-                            <template v-if="event">
+                            <template v-if="replies">
                                 <template v-if="$props.displayKind === 'individual'">
-                                    <td v-for="rIndex in Object.keys(event)" :key="`e${eIndex}r${rIndex}`" :title="rIndex">
-                                        <FeedbackReply
-                                            :reply="event[rIndex as any]"
-                                            :event="$props.schedulePart?.program?.[eIndex]"
-                                        />
+                                    <td
+                                        v-for="rIndex in Object.keys(replies)" :key="`e${eIndex}r${rIndex}`"
+                                        :title="rIndex"
+                                    >
+                                        <FeedbackReply :reply="replies[rIndex as any]" :event="event" />
                                     </td>
                                 </template>
                                 <template v-else>
-                                    <td v-if="schedulePart?.program[eIndex].feedbackType === 'basic'">
+                                    <template v-if="event.feedbackType === 'complicated'">
+                                        <td
+                                            v-for="(q, qIndex) in (event.questions || defaultQuestions)"
+                                            :key="`e${eIndex}q${qIndex}`"
+                                        >
+                                            <BarChart
+                                                :values="getHistogram(Object.values(replies).map(r => typeof r?.complicated?.[qIndex] === 'number' ? r.complicated[qIndex] : null))"
+                                                :min="0" :colors="complicatedColors[qIndex]" :categories="HISTOGRAM_BUCKETS"
+                                                :labels="HISTOGRAM_BUCKETS"
+                                            />
+                                            {{ q }}
+                                        </td>
+                                    </template>
+                                    <td v-else>
                                         <BarChart
-                                            :values="getHistogram(Object.values(event).map(r => typeof r?.basic === 'number' ? r.basic : null))"
-                                            :min="0"
+                                            :values="getHistogram(Object.values(replies).map(r => typeof r?.basic === 'number' ? r.basic : null))"
+                                            :min="0" :colors="basicColors" :categories="HISTOGRAM_BUCKETS"
+                                            :labels="HISTOGRAM_BUCKETS"
                                         />
                                         Celkový dojem
                                     </td>
@@ -57,11 +77,12 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, SchedulePart } from '@/stores/cloud'
+import randomcolor from 'randomcolor'
+import { Feedback, SchedulePart, defaultQuestions } from '@/stores/cloud'
 import { onlyIntIndexed } from '@/utils/types'
 
 export type DisplayKind = 'histogram' | 'individual'
-const RESOLUTION = 5
+const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
 
 defineProps<{
     schedulePart?: SchedulePart,
@@ -72,6 +93,9 @@ defineProps<{
 const scrollX = ref(0)
 const syncHeader = ref<HTMLElement>()
 const tableBody = ref<HTMLElement>()
+const basicColors = randomcolor({ count: 5, hue: 'blue' })
+const hues = ['yellow', 'orange', 'red']
+const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue }))
 
 function doSyncHeaders() {
     for (let i = 0; i < (syncHeader.value?.children?.length ?? 0); i++) {

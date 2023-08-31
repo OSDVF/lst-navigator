@@ -6,7 +6,7 @@
         <div
             v-for="(value, index) in normalizedValues" :key="index" class="bar"
             :style="{ '--value': `${value * 100}%`, '--count': normalizedValues.length, '--color': colors[index] }"
-            :title="Object.values($props.values)[index]?.toString() ?? 'N/A'"
+            :title="filteredValues[index]?.toString() ?? 'N/A'"
         >
             <span class="label">{{ labels[index] }}</span>
         </div>
@@ -20,16 +20,34 @@ const props = defineProps<{
     values: {[key: number]: number},
     resolution?: number,
     labels?: string[],
+    categories?: number[], // key of 'values' that will always be displayed no matter if there are no values for that key. Labels must be also supplied if categories are set
     colors?: string[],
     max?: number,
     min?: number
 }>()
 
+const filteredValues = computed(() => {
+    const v = []
+    const maximumKey = Math.max(...Object.keys(props.values).map(x => parseInt(x)), ...(props.categories ?? []))
+    let minKey = Math.min(...Object.keys(props.values).map(x => parseInt(x)), ...(props.categories ?? []))
+    if (!isFinite(minKey)) {
+        minKey = 0
+    }
+    for (let i = minKey; i <= maximumKey; i++) {
+        if (typeof props.values[i] === 'undefined' && props.categories?.includes(i)) {
+            v.push(0)
+        } else {
+            v.push(props.values[i])
+        }
+    }
+    return v
+})
+
 const max = computed(() => {
     if (typeof props.max !== 'undefined') {
         return props.max
     }
-    const v = Object.values(props.values)
+    const v = filteredValues.value
 
     let max = v[0] ?? 0
     for (let i = 1; i < v.length; i++) {
@@ -44,7 +62,7 @@ const min = computed(() => {
     if (typeof props.min !== 'undefined') {
         return props.min
     }
-    const v = Object.values(props.values)
+    const v = filteredValues.value
 
     let min = v[0] ?? 0
     for (let i = 1; i < v.length; i++) {
@@ -58,7 +76,7 @@ const min = computed(() => {
 const range = computed(() => max.value - min.value)
 
 const normalizedValues = computed(() => {
-    return Object.values(props.values).map(v => (v - min.value) / range.value)
+    return filteredValues.value.map(v => (v - min.value) / range.value)
 })
 
 const labels = computed(() => {
@@ -72,7 +90,7 @@ const colors = computed(() => {
     if (typeof props.colors !== 'undefined') {
         return props.colors
     }
-    return randomcolor({ count: Object.values(props.values).length })
+    return randomcolor({ count: filteredValues.value.length })
 })
 
 const gridPoints = computed(() => {

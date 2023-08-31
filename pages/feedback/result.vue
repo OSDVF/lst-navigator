@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, ScheduleEvent, defaultQuestions, useCloudStore } from '@/stores/cloud'
+import { useCloudStore } from '@/stores/cloud'
 import { onlyIntIndexed } from '@/utils/types'
 import { DisplayKind } from '@/components/FeedbackResultPart.vue'
 const cloudStore = useCloudStore()
@@ -82,8 +82,10 @@ $border-color: rgba(128, 128, 128, 0.657);
         display: flex;
         position: sticky;
         top: 0;
+        z-index: 1;
 
         .th {
+            background: white;
             overflow-x: auto;
             overflow-y: hidden;
             flex-shrink: 0;
