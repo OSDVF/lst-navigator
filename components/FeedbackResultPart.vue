@@ -10,38 +10,43 @@
                 Název
             </div>
             <div class="th">
-                Průměr
+                <strong>Průměr</strong>
             </div>
-            <div class="th">
-                {{ $props.displayKind === 'histogram' ? 'Histogram' : 'Jednotlivé odpovědi' }}
+            <div v-if="$props.displayKind === 'histogram'" class="th">
+                Histogram
             </div>
+            <template v-else>
+                <div v-for="respondent in Object.keys(seenRespondents)" :key="respondent" class="th">
+                    {{ respondent }}
+                </div>
+            </template>
+
         </header>
         <div class="scroll-x" @scroll="e => scrollX = (e.target as HTMLElement).scrollLeft">
             <table>
                 <tbody ref="tableBody">
                     <template v-if="feedbackParts">
-                        <tr
-                            v-for="(replies, eIndex) in onlyIntIndexed(feedbackParts)" :key="`e${eIndex}td`"
-                            :set="event = schedulePart?.program[eIndex]"
-                        >
-                            <td>
-                                <strong>
-                                    {{ event?.title }}
-                                </strong>
-                            </td>
-                            <td>
-                                <FeedbackReply
-                                    :reply="getAverage(replies)"
-                                    :event="$props.schedulePart?.program?.[eIndex]"
-                                />
-                            </td>
-                            <template v-if="replies">
+                        <template v-for="(replies, eIndex) in onlyIntIndexed(feedbackParts)" :key="`e${eIndex}td`">
+                            <tr
+                                v-if="replies"
+                                :set="event = schedulePart?.program[eIndex]"
+                            >
+                                <td>
+                                    <strong>
+                                        {{ event?.title }}
+                                    </strong>
+                                </td>
+                                <td>
+                                    <FeedbackReply
+                                        :reply="getAverage(replies)"
+                                        :event="$props.schedulePart?.program?.[eIndex]"
+                                    />
+                                </td>
                                 <template v-if="$props.displayKind === 'individual'">
                                     <td
-                                        v-for="rIndex in Object.keys(replies)" :key="`e${eIndex}r${rIndex}`"
-                                        :title="rIndex"
+                                        v-for="(reply, rIndex) in repliesTabulated[eIndex]" :key="`e${eIndex}r${rIndex}`"
                                     >
-                                        <FeedbackReply :reply="replies[rIndex as any]" :event="event" />
+                                        <FeedbackReply :reply="reply" :event="event" />
                                     </td>
                                 </template>
                                 <template v-else>
@@ -67,8 +72,8 @@
                                         Celkový dojem
                                     </td>
                                 </template>
-                            </template>
-                        </tr>
+                            </tr>
+                        </template>
                     </template>
                 </tbody>
             </table>
@@ -84,7 +89,7 @@ import { onlyIntIndexed } from '@/utils/types'
 export type DisplayKind = 'histogram' | 'individual'
 const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
 
-defineProps<{
+const props = defineProps<{
     schedulePart?: SchedulePart,
     feedbackParts: Feedback[][], // firstly indexed by event, secondly by user
     displayKind: DisplayKind
@@ -97,6 +102,39 @@ const basicColors = randomcolor({ count: 5, hue: 'blue' })
 const hues = ['yellow', 'orange', 'red']
 const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue }))
 
+const seenRespondents = ref<{ [respondentId: string]: number }>({})
+const repliesTabulated = computed(() => {
+    const result: (Feedback | null)[][] = []
+    let lastRespondentIndex = 0
+
+    for (const feedbackPart of props.feedbackParts) {
+        const partRepliesByUser = Array<Feedback | null>(lastRespondentIndex + 1)
+        for (const respondentId in feedbackPart) {
+            const respondentIndex = seenRespondents.value[respondentId]
+            if (typeof respondentIndex === 'undefined') {
+                seenRespondents.value[respondentId] = lastRespondentIndex
+                partRepliesByUser[lastRespondentIndex] = feedbackPart[respondentId]
+                lastRespondentIndex++
+            } else {
+                partRepliesByUser[respondentIndex] = feedbackPart[respondentId]
+            }
+        }
+        result.push(partRepliesByUser)
+    }
+
+    // second pass fills in the gaps
+    for (const i in result) {
+        const feedbackPart = result[i]
+        for (let i = 0; i < lastRespondentIndex; i++) {
+            if (typeof feedbackPart[i] === 'undefined') {
+                feedbackPart[i] = null
+            }
+        }
+        result[i] = feedbackPart
+    }
+    return result
+})
+
 function doSyncHeaders() {
     for (let i = 0; i < (syncHeader.value?.children?.length ?? 0); i++) {
         const headerElem = syncHeader.value?.children[i] as HTMLElement
@@ -106,17 +144,19 @@ function doSyncHeaders() {
         }
         cellElem?.style.removeProperty('width')
         if ((cellElem?.clientWidth ?? 0) > 2) {
-            headerElem.style.width = (cellElem!.offsetWidth - parseFloat(getComputedStyle(headerElem.parentElement!).borderWidth.replace('px', '')) * 2) + 'px'
+            headerElem.style.width = (cellElem!.offsetWidth) + 'px'
         } else {
             headerElem.style.removeProperty('width')
-            cellElem.style.width = (headerElem?.clientWidth - parseFloat(getComputedStyle(cellElem).borderWidth.replace('px', '')) * 2) + 'px'
+            cellElem.style.width = (headerElem?.offsetWidth) + 'px'
         }
     }
 }
 
 onMounted(() => {
     doSyncHeaders()
-    window.addEventListener('resize', doSyncHeaders)
+    if (tableBody.value) {
+        new ResizeObserver(doSyncHeaders).observe(tableBody.value)
+    }
 })
 
 function getAverage(replies: Feedback[]) {

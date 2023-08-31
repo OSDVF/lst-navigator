@@ -37,8 +37,7 @@
             <FeedbackResultPart
                 v-for="key in Object.keys(programPartsFeedback)" :key="`p${key}`"
                 :schedule-part="onlyIntIndexed(cloudStore.scheduleParts)[key as any]"
-                :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])"
-                :display-kind="displayKind"
+                :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])" :display-kind="displayKind"
             />
         </template>
     </div>
@@ -48,6 +47,7 @@
 import { useCloudStore } from '@/stores/cloud'
 import { onlyIntIndexed } from '@/utils/types'
 import { DisplayKind } from '@/components/FeedbackResultPart.vue'
+import { usePersistentRef } from '@/utils/storage'
 const cloudStore = useCloudStore()
 
 const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.onlineFeedbackRef as any[]))
@@ -56,7 +56,7 @@ const displayKindOptionLabels = {
     individual: 'Individuální'
 }
 
-const displayKind = ref<DisplayKind>('histogram')
+const displayKind = usePersistentRef<DisplayKind>('displayKind', 'histogram')
 </script>
 
 <style lang="scss">
@@ -64,7 +64,8 @@ $border-color: rgba(128, 128, 128, 0.657);
 
 .feedbackResult {
     table {
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         margin-bottom: 1rem;
 
         &:nth-child(even) {
@@ -75,7 +76,14 @@ $border-color: rgba(128, 128, 128, 0.657);
     td,
     th,
     .th {
-        border: 1px solid $border-color;
+        border-bottom: 1px solid $border-color;
+        border-right: 1px solid $border-color;
+    }
+
+    td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
     }
 
     header {
@@ -90,7 +98,9 @@ $border-color: rgba(128, 128, 128, 0.657);
             overflow-y: hidden;
             flex-shrink: 0;
             position: relative;
-            vertical-align: middle;
+            display: flex;
+            align-items: center;
+            justify-content: center;
 
             &:not(:last-child) {
                 border-right: 1px solid $border-color;
