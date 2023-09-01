@@ -1,20 +1,11 @@
 <template>
     <template v-if="event.feedbackType === 'complicated'">
-        <td v-for="(q, qIndex) in (event.questions || defaultQuestions)" :key="`e${eIndex}q${qIndex}`">
+        <td v-for="(q, qIndex) in (event.questions || defaultQuestions)" :key="`q${qIndex}`">
             <BarChart
                 :values="getHistogram(Object.values(replies).map(r => typeof r?.complicated?.[qIndex] === 'number' ? r.complicated[qIndex] : null))"
                 :min="0" :colors="complicatedColors[qIndex]" :categories="HISTOGRAM_BUCKETS" :labels="HISTOGRAM_BUCKETS"
             />
             {{ q }}
-        </td>
-        <td colspan="100%">
-            <table>
-                <tbody>
-                    <tr v-for="detailReply in repliesWithDetails" :key="`d${detailReply.i}`">
-                        <td>{{ detailReply.i }}</td><td>{{ detailReply.r.detail }}</td>
-                    </tr>
-                </tbody>
-            </table>
         </td>
     </template>
     <td v-else>
@@ -25,6 +16,15 @@
             />
             Celkový dojem
         </div>
+    </td>
+    <td colspan="100%">
+        <table>
+            <tbody>
+                <tr v-for="detailReply in repliesWithDetails" :key="`d${detailReply.i}`">
+                    <td>{{ detailReply.i }}</td><td>{{ detailReply.r.detail }}</td>
+                </tr>
+            </tbody>
+        </table>
     </td>
 </template>
 
