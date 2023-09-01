@@ -77,10 +77,6 @@
         <br>
         <ClientOnly>
             <Teleport to="#additionalNav">
-                <ProgressBar v-if="cloudStore.fetchingFeedback" />
-                <nav v-if="cloudStore.couldNotFetchFeedback" class="p-1">
-                    {{ cloudStore.feedbackError || 'Nepodařilo se odeslat tvou odpověď. Ale ždáný strach, je uložená offline ve tvém zařízení.' }}
-                </nav>
                 <nav class="eventItemNav">
                     <NuxtLink
                         v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig"
@@ -106,7 +102,7 @@ const settings = useSettings()
 const feedbackPartIndex = parseInt(router.currentRoute.value.params.feedback as string) || 0
 const currentPart = computed(() => {
     const config: FeedbackConfig | undefined = cloudStore.feedbackConfig?.[feedbackPartIndex]
-    const subparts: {title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & {data: Feedback, secondaryIndex: number | string, selectOptions: string[]})[]}[] = []
+    const subparts: {title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & {data: Feedback | null, secondaryIndex: number | string, selectOptions: string[]})[]}[] = []
 
     if (config?.group) {
         for (const scheduleIndex in cloudStore.scheduleParts) {

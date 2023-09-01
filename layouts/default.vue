@@ -13,7 +13,13 @@
             <slot />
         </main>
         <div class="navigation">
-            <div id="additionalNav" />
+            <div class="flex-full">
+                <ProgressBar v-if="cloudStore.fetchingFeedback" />
+                <nav v-if="cloudStore.couldNotFetchFeedback" class="p-1">
+                    {{ cloudStore.feedbackError || 'Nepodařilo se odeslat tvou odpověď. Ale ždáný strach, je uložená offline ve tvém zařízení.' }}
+                </nav>
+            </div>
+            <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
                 <NuxtLink to="/info">
                     <IconCSS name="mdi:information" size="2rem" />
@@ -125,7 +131,7 @@ function captureError(error: unknown) {
     }
 }
 
-#additionalNav {
+.flex-full {
     flex-basis: 100%;
 }
 
@@ -135,6 +141,7 @@ function captureError(error: unknown) {
     left: 0;
     right: 0;
     position: fixed;
+    z-index: 2; // to also show above image fade overlay on /info
 }
 
 .networkError {

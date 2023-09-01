@@ -29,10 +29,6 @@
                 :detail-question="eventData?.detailQuestion"
                 @set-data="(data: Feedback) => cloudStore.setFeedbackData(partIndex, eventItemIndex, data)"
             />
-            <div v-if="fetchingFeedback">
-                <IconCSS name="material-symbols:save" />&ensp;
-                <ProgressBar />
-            </div>
             <p v-if="cloudStore.couldNotFetchFeedback">
                 Nepodařilo se uložit tvou odpověď
                 <br>
@@ -114,7 +110,6 @@ const eventData = computed(() => {
 const previousEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex - 1])
 const nextEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex + 1])
 const noteError = ref()
-const fetchingFeedback = ref(false)
 const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
 
@@ -156,7 +151,7 @@ const noteModel = computed({
                     }).then(() => { fetchingNote.value = couldNotFetchNote.value = false }).catch((e) => { noteError.value = e })
                     setTimeout(() => {
                         couldNotFetchNote.value = fetchingNote.value
-                        fetchingFeedback.value = false
+                        fetchingNote.value = false
                     }, 7000)
                 }
                 noteSaving = null

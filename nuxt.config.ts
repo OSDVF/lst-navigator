@@ -143,7 +143,8 @@ const config = defineNuxtConfig({
             ENV: process.env.NODE_ENV ?? 'production',
             SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
             SENTRY_DSN: process.env.VITE_APP_DSN,
-            SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET
+            SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET,
+            debugUser: process.env.VITE_APP_DEBUG_USER
         }
     },
     ssr: true

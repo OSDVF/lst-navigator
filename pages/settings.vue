@@ -68,11 +68,11 @@
         <fieldset>
             <label>
                 <IconCSS v-if="cloud.permissions === 'admin'" name="mdi:shield-lock-open" title="Úpravy povoleny" />
-                <img v-else-if="user?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous" :src="user.photoURL" alt="Profilový obrázek" width="24" height="24">
-                {{ user?.displayName ?? error ?? 'Přihlášení' }} <span v-if="user?.email" class="muted nowrap">{{ user.email }}</span>
+                <img v-else-if="cloud.user?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous" :src="cloud.user.photoURL" alt="Profilový obrázek" width="24" height="24">
+                {{ cloud.user?.displayName ?? error ?? 'Přihlášení' }} <span v-if="cloud.user?.email" class="muted nowrap">{{ cloud.user.email }}</span>
             </label>
             <span>
-                <button v-if="user" @click="logout">
+                <button v-if="cloud.user" @click="logout">
                     <IconCSS name="mdi:logout" /> Odhlásit
                 </button>
                 <button v-else @click="signIn">
@@ -116,7 +116,6 @@ const settings = useSettings()
 const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const auth = useFirebaseAuth()
-const user = useCurrentUser()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
 

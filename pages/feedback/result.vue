@@ -5,12 +5,29 @@
             <div>
                 <label>
                     Druh zobrazení&ensp;
-                    <select v-model="displayKind">
+                    <select v-model="admin.displayKind">
                         <option v-for="k in Object.keys(displayKindOptionLabels)" :key="k" :value="k">
                             {{ displayKindOptionLabels[k as DisplayKind] }}
                         </option>
                     </select>
                 </label>
+                <template v-if="cloudStore.user && cloudStore.permissions === 'admin'">
+                    <br>
+                    <button v-if="admin.editingFeedback" @click="admin.editingFeedback = false">
+                        Úpravy
+                        <IconCSS name="mdi:pencil" />
+                    </button>
+                    <button v-else @click="admin.editingFeedback = true">
+                        Zobrazení
+                        <IconCSS name="mdi:eye" />
+                    </button>
+                </template>
+                <br>
+                Počet respondentů: {{ respondents.names.size }} <button @click="showRespondents = true">
+                    Vypsat
+                </button>
+                <br>
+                <textarea v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly :value="showRespondents ? Array.from(respondents.names).join('\n') : ''" />
             </div>
             <div>
                 <p>
@@ -37,26 +54,28 @@
             <FeedbackResultPart
                 v-for="key in Object.keys(programPartsFeedback)" :key="`p${key}`"
                 :schedule-part="onlyIntIndexed(cloudStore.scheduleParts)[key as any]"
-                :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])" :display-kind="displayKind"
+                :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])"
+                @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.setFeedbackData(key, eIndex, data, user)"
             />
         </template>
     </div>
 </template>
 
 <script setup lang="ts">
-import { useCloudStore } from '@/stores/cloud'
+import { Feedback, useCloudStore } from '@/stores/cloud'
 import { onlyIntIndexed } from '@/utils/types'
-import { DisplayKind } from '@/components/FeedbackResultPart.vue'
-import { usePersistentRef } from '@/utils/storage'
+import { DisplayKind, useAdmin } from '@/stores/admin'
+import { useRespondents } from '@/stores/respondents'
 const cloudStore = useCloudStore()
+const admin = useAdmin()
+const respondents = useRespondents()
 
 const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.onlineFeedbackRef as any[]))
 const displayKindOptionLabels = {
     histogram: 'Histogram',
     individual: 'Individuální'
 }
-
-const displayKind = usePersistentRef<DisplayKind>('displayKind', 'histogram')
+const showRespondents = ref(false)
 </script>
 
 <style lang="scss">
@@ -78,6 +97,17 @@ $border-color: rgba(128, 128, 128, 0.657);
     .th {
         border-bottom: 1px solid $border-color;
         border-right: 1px solid $border-color;
+
+        &>button {
+            visibility: hidden;
+        }
+
+        &:hover,
+        &:focus {
+            &>button {
+                visibility: visible;
+            }
+        }
     }
 
     td:first-child {

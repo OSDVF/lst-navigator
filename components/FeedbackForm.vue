@@ -19,7 +19,7 @@
                     Účastnil*a jsem se
                 </td>
                 <td>
-                    <select v-model="syncSelect" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
+                    <select v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                         <option v-for="parallelEvent in selectOptions" :key="parallelEvent" :value="parallelEvent">
                             {{ parallelEvent }}
                         </option>
@@ -28,7 +28,7 @@
                 <td>
                     <button
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="syncSelect = undefined"
+                        @click="controls.syncSelect.value = undefined"
                     >
                         <IconCSS name="mdi:trash" />
                     </button>
@@ -37,7 +37,7 @@
             <tr v-if="type === 'select'">
                 <td>Vyberte odpověd</td>
                 <td>
-                    <select v-model="syncSelect" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
+                    <select v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                         <option v-for="selectOption in selectOptions" :key="selectOption" :value="selectOption">
                             {{ selectOption }}
                         </option>
@@ -46,7 +46,7 @@
                 <td>
                     <button
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="syncSelect = undefined"
+                        @click="controls.syncSelect.value = undefined"
                     >
                         <IconCSS name="mdi:trash" />
                     </button>
@@ -59,13 +59,13 @@
                         v-if="updatedRating.basic/* a hack to re-render on props update */" inactive-color="#aaa"
                         :read-only="false" :rating-value="normalizedData.basic ?? 0"
                         :class="{ 'null': normalizedData.basic === null || typeof normalizedData.basic === 'undefined' }"
-                        @rating-selected="syncBasic"
+                        @rating-selected="controls.syncBasic"
                     />
                 </td>
                 <td>
                     <button
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="syncBasic(undefined)"
+                        @click="controls.syncBasic(undefined)"
                     >
                         <IconCSS name="mdi:trash" />
                     </button>
@@ -79,13 +79,13 @@
                             v-if="updatedRating.complicated" inactive-color="#aaa" :read-only="false"
                             :class="{ 'null': normalizedData.complicated?.[index] === null || typeof normalizedData.complicated?.[index] === 'undefined' }"
                             :rating-value="normalizedData.complicated?.[index] ?? 0"
-                            @rating-selected="(value: number) => syncComplicated(index, value)"
+                            @rating-selected="(value: number) => controls.syncComplicated(index, value)"
                         />
                     </td>
                     <td>
                         <button
                             title="Odstranit odpověd" @pointerenter="permitSwipe = false"
-                            @pointerleave="permitSwipe = true" @click="syncComplicated(index, undefined)"
+                            @pointerleave="permitSwipe = true" @click="controls.syncComplicated(index, undefined)"
                         >
                             <IconCSS name="mdi:trash" />
                         </button>
@@ -95,14 +95,14 @@
             <tr v-if="type !== 'select'">
                 <td colspan="2">
                     <textarea
-                        v-model.lazy="syncDetail" v-paste-model :placeholder="props.detailQuestion"
+                        v-model.lazy="controls.syncDetail.value" v-paste-model :placeholder="props.detailQuestion"
                         @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                     />
                 </td>
                 <td>
                     <button
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="syncDetail = undefined"
+                        @click="controls.syncDetail.value = undefined"
                     >
                         <IconCSS name="mdi:trash" />
                     </button>
@@ -112,8 +112,8 @@
     </table>
 </template>
 <script setup lang="ts">
-import { FieldValue, deleteField } from 'firebase/firestore'
 import { FeedbackType, Feedback, defaultQuestions } from '@/stores/cloud'
+import useFeedbackControls from '@/utils/feedbackControls'
 
 const props = defineProps({
     data: {
@@ -151,37 +151,6 @@ const props = defineProps({
     }
 })
 
-const syncDetail = computed({
-    get(): string | undefined {
-        return props.data?.detail as string | undefined
-    },
-    set(value: string | undefined): void {
-        props.onSetData({
-            ...normalizedData.value,
-            detail: typeof value === 'undefined' ? deleteField() : value
-        })
-    }
-})
-
-const syncSelect = computed({
-    get() {
-        return props.data?.select
-    },
-    set(value: string | undefined | FieldValue) {
-        props.onSetData({
-            ...normalizedData.value,
-            select: typeof value === 'undefined' ? deleteField() : value
-        })
-    }
-})
-
-function syncBasic(value?: number) {
-    props.onSetData({
-        ...normalizedData.value,
-        basic: typeof value === 'undefined' ? deleteField() : value
-    })
-}
-
 const normalizedData = computed(() => {
     const result: Feedback = {}
     // probably FieldValue - somthing like deleteField()
@@ -193,6 +162,14 @@ const normalizedData = computed(() => {
         }
     }
     return result
+})
+
+const controls = useFeedbackControls({
+    props: {
+        data: normalizedData.value,
+        complicatedQuestions: props.complicatedQuestions ?? defaultQuestions,
+        onSetData: props.onSetData
+    }
 })
 
 const updatedRating = ref({
@@ -216,24 +193,7 @@ watch(props, (newVal, oldVal) => {
 
 const permitSwipe = inject<Ref<boolean>>('permitSwipe', ref(false))
 
-function syncComplicated(index: number, value?: number) {
-    const prevComplicated = new Array(props.complicatedQuestions.length).fill(null) as (number | null)[]
-    if (props.data.complicated) {
-        for (const i in props.data.complicated) {
-            prevComplicated[i] = props.data.complicated[i]
-        }
-    }
-    if (typeof value !== 'undefined') {
-        prevComplicated[index] = value
-    } else if (typeof prevComplicated[index] !== 'undefined') {
-        prevComplicated[index] = null
-    }
 
-    props.onSetData({
-        ...props.data,
-        complicated: prevComplicated
-    })
-}
 
 </script>
 

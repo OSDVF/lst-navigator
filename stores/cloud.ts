@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
-import { FieldValue, Firestore, collection, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
+import { FieldValue, Firestore, collection, deleteField, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
+import { IdTokenResult, User } from 'firebase/auth'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/storage'
 
@@ -52,12 +53,12 @@ export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
     const firebaseApp = useFirebaseApp()
 
-    let firestore : Firestore | null = null
+    let firestore: Firestore | null = null
     if (process.client) {
         try {
             firestore = initializeFirestore(firebaseApp, {
                 localCache:
-                persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
+                    persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
             })
         } catch (e) {
             firestore = useFirestore()
@@ -100,30 +101,48 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const usersDocument = getDocument('users')
     const usersDoc = useDocument(usersDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
-    const user = useCurrentUser()
-    const permissions = computed(() => user.value?.uid ? usersDoc.value?.permissions?.[user.value.uid] : null)
+    const onlineUser = useCurrentUser()
+    const user = usePersistentRef('user', onlineUser.value) // offline-stored user
+
+    onMounted(function() {
+        if (config.public.debugUser) {
+            user.value = debugUser
+        } else {
+            watch(onlineUser, (newUser) => {
+                if (newUser) {
+                    user.value = newUser
+                }
+            })
+        }
+    })
+
+    const permissions = computed<'admin' | string>(() => config.public.debugUser ? 'admin' : user.value?.uid ? usersDoc.value?.permissions?.[user.value.uid] : null)
 
     const scheduleParts = computed<SchedulePart[]>(() => scheduleDoc.value?.parts)
     const scheduleLoading = computed(() => scheduleDoc.pending.value)
 
     const notesDocument = getDocument('notes')
-    const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback } } }>('lastNewFeedback', {})
+    const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
     const fetchingFeedback = ref(false)
     const couldNotFetchFeedback = ref(false)
     const feedbackError = ref()
-    function setFeedbackData(sIndex: number | string, eIndex: number | string, data: Feedback) {
+
+    function setFeedbackData(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
         fetchingFeedback.value = true
-        offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
+        if (typeof userIdentifier === 'undefined') {
+            offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
+        }
+        userIdentifier ??= settings.userIdentifier
         feedbackDirtyTime.value = new Date().getTime()
 
         setDoc(feedbackDoc.value!, {
             [sIndex]: {
                 [eIndex]: {
-                    [settings.userIdentifier]: data
+                    [userIdentifier]: data !== null ? data : deleteField()
                 }
             },
-            [settings.userIdentifier]: feedbackDirtyTime.value
+            [userIdentifier]: feedbackDirtyTime.value
         }, {
             merge: true
         }).then(() => { fetchingFeedback.value = couldNotFetchFeedback.value = false }).catch((e) => { feedbackError.value = e })
@@ -133,7 +152,9 @@ export const useCloudStore = defineStore('cloud', () => {
         }, 5000)
     }
 
-    function hydrateOfflineFeedback(onlineFeedback:any) {
+    let hydrationDebounce: null | NodeJS.Timeout = null
+    function hydrateOfflineFeedback(onlineFeedback: any) {
+        hydrationDebounce = null
         if (new Date(onlineFeedback?.[settings.userIdentifier] ?? 0).getTime() > feedbackDirtyTime.value) {
             for (const sIndex in onlineFeedback) {
                 const sPart = onlineFeedback[sIndex]
@@ -154,7 +175,12 @@ export const useCloudStore = defineStore('cloud', () => {
         }
     }
 
-    watch(onlineFeedbackRef, hydrateOfflineFeedback)
+
+    watch(onlineFeedbackRef, function () {
+        if (hydrationDebounce === null) {
+            hydrationDebounce = setTimeout(hydrateOfflineFeedback, 800)
+        }
+    })
     hydrateOfflineFeedback(onlineFeedbackRef.value)
 
     watch(settings, (newSettings) => {
@@ -172,7 +198,25 @@ export const useCloudStore = defineStore('cloud', () => {
 
     function saveAgainAllFeedback() {
         fetchingFeedback.value = true
-        const uploadingPromise = setDoc(feedbackDoc.value!, offlineFeedback.value, {
+
+        // Convert null reply to deleteField
+        const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value
+        for (const sIndex in payload) {
+            const schedulePart = payload[sIndex]
+            for (const eIndex in schedulePart) {
+                const event = schedulePart[eIndex]
+                for (const uIndex in event) {
+                    const reply = event[uIndex]
+                    if (reply === null || typeof reply === 'undefined') {
+                        event[uIndex] = deleteField()
+                    }
+                }
+                schedulePart[eIndex] = event
+            }
+            payload[sIndex] = schedulePart
+        }
+
+        const uploadingPromise = setDoc(feedbackDoc.value!, payload, {
             merge: true
         }).then(() => { fetchingFeedback.value = couldNotFetchFeedback.value = false })
         setTimeout(() => {
@@ -225,6 +269,7 @@ export const useCloudStore = defineStore('cloud', () => {
         fetchingFeedback,
         feedbackDirtyTime,
         onlineFeedbackRef,
-        permissions
+        permissions,
+        user
     }
 })

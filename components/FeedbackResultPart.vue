@@ -12,29 +12,60 @@
             <div class="th">
                 <strong>Průměr</strong>
             </div>
-            <div v-if="$props.displayKind === 'histogram'" class="th">
+            <div v-if="admin.displayKind === 'histogram'" class="th">
                 Histogram
             </div>
             <template v-else>
-                <div v-for="respondent in Object.keys(seenRespondents)" :key="respondent" class="th">
+                <div v-for="respondent in tabulated.respondents" :key="respondent" class="th">
                     {{ respondent }}
                 </div>
             </template>
-
         </header>
         <div class="scroll-x" @scroll="e => scrollX = (e.target as HTMLElement).scrollLeft">
             <table>
                 <tbody ref="tableBody">
                     <template v-if="feedbackParts">
                         <template v-for="(replies, eIndex) in onlyIntIndexed(feedbackParts)" :key="`e${eIndex}td`">
-                            <tr
-                                v-if="replies"
-                                :set="event = schedulePart?.program[eIndex]"
+                            <template
+                                v-if="schedulePart?.program[eIndex].feedbackType && ['parallel', 'select'].includes(schedulePart.program[eIndex].feedbackType!)"
                             >
+                                <caption>{{ schedulePart?.program[eIndex].title }}</caption>
+                                <!-- Filtered by selected option -->
+                                <tr
+                                    v-for="(option, oIndex) in getParallelOrSelectEvents(schedulePart?.program[eIndex])"
+                                    :key="`e${eIndex}o${oIndex}`"
+                                >
+                                    <td
+                                        :set="filteredReplies = Object.fromEntries(Object.entries(replies).filter(([_rKey, r]) => r.select == option))"
+                                    >
+                                        <em>{{ option }} ({{ Object.keys(filteredReplies).length }})</em>
+                                    </td>
+                                    <template v-if="filteredReplies">
+                                        <td>
+                                            <FeedbackReply
+                                                :reply="getAverage(filteredReplies)"
+                                                :event="$props.schedulePart?.program?.[eIndex]"
+                                            />
+                                        </td>
+                                        <FeedbackHistogramRow
+                                            v-if="admin.displayKind === 'histogram'"
+                                            :event="schedulePart?.program[eIndex]" :replies="filteredReplies"
+                                        />
+                                        <FeedbackIndividualRow
+                                            v-else :event="schedulePart?.program[eIndex]"
+                                            :replies="tabulated.replies[eIndex].map(r => r?.select === option ? r : null)"
+                                            :respondents="tabulated.respondents"
+                                            @set-data="(data: Feedback | null, user: string) => $props.onSetData!(data, eIndex.toString(), user)"
+                                        />
+                                    </template>
+                                </tr>
+                            </template>
+                            <tr v-else-if="replies" :set="event = schedulePart?.program[eIndex]">
                                 <td>
                                     <strong>
                                         {{ event?.title }}
                                     </strong>
+                                    ({{ Object.keys(replies).length }})
                                 </td>
                                 <td>
                                     <FeedbackReply
@@ -42,36 +73,13 @@
                                         :event="$props.schedulePart?.program?.[eIndex]"
                                     />
                                 </td>
-                                <template v-if="$props.displayKind === 'individual'">
-                                    <td
-                                        v-for="(reply, rIndex) in repliesTabulated[eIndex]" :key="`e${eIndex}r${rIndex}`"
-                                    >
-                                        <FeedbackReply :reply="reply" :event="event" />
-                                    </td>
-                                </template>
-                                <template v-else>
-                                    <template v-if="event.feedbackType === 'complicated'">
-                                        <td
-                                            v-for="(q, qIndex) in (event.questions || defaultQuestions)"
-                                            :key="`e${eIndex}q${qIndex}`"
-                                        >
-                                            <BarChart
-                                                :values="getHistogram(Object.values(replies).map(r => typeof r?.complicated?.[qIndex] === 'number' ? r.complicated[qIndex] : null))"
-                                                :min="0" :colors="complicatedColors[qIndex]" :categories="HISTOGRAM_BUCKETS"
-                                                :labels="HISTOGRAM_BUCKETS"
-                                            />
-                                            {{ q }}
-                                        </td>
-                                    </template>
-                                    <td v-else>
-                                        <BarChart
-                                            :values="getHistogram(Object.values(replies).map(r => typeof r?.basic === 'number' ? r.basic : null))"
-                                            :min="0" :colors="basicColors" :categories="HISTOGRAM_BUCKETS"
-                                            :labels="HISTOGRAM_BUCKETS"
-                                        />
-                                        Celkový dojem
-                                    </td>
-                                </template>
+                                <FeedbackHistogramRow v-if="admin.displayKind === 'histogram'" :replies="replies" :event="event" />
+                                <FeedbackIndividualRow
+                                    v-else
+                                    :event="event" :replies="tabulated.replies[eIndex]"
+                                    :respondents="tabulated.respondents"
+                                    @set-data="(data: Feedback | null, user: string) => $props.onSetData!(data, eIndex.toString(), user)"
+                                />
                             </tr>
                         </template>
                     </template>
@@ -82,41 +90,40 @@
 </template>
 
 <script setup lang="ts">
-import randomcolor from 'randomcolor'
-import { Feedback, SchedulePart, defaultQuestions } from '@/stores/cloud'
+import { Feedback, ScheduleEvent, SchedulePart } from '@/stores/cloud'
 import { onlyIntIndexed } from '@/utils/types'
-
-export type DisplayKind = 'histogram' | 'individual'
-const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
+import { useAdmin } from '@/stores/admin'
+import { useRespondents } from '@/stores/respondents'
 
 const props = defineProps<{
     schedulePart?: SchedulePart,
     feedbackParts: Feedback[][], // firstly indexed by event, secondly by user
-    displayKind: DisplayKind
+    onSetData?:(data: Feedback | null, eIndex: string, userIdentifier: string) => void
 }>()
+
+const admin = useAdmin()
+const allRespondents = useRespondents()
 
 const scrollX = ref(0)
 const syncHeader = ref<HTMLElement>()
 const tableBody = ref<HTMLElement>()
-const basicColors = randomcolor({ count: 5, hue: 'blue' })
-const hues = ['yellow', 'orange', 'red']
-const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue }))
 
-const seenRespondents = ref<{ [respondentId: string]: number }>({})
-const repliesTabulated = computed(() => {
+const tabulated = computed(() => {
+    const seenRespondents: { [respondentId: string]: number } = {}
     const result: (Feedback | null)[][] = []
     let lastRespondentIndex = 0
 
     for (const feedbackPart of props.feedbackParts) {
         const partRepliesByUser = Array<Feedback | null>(lastRespondentIndex + 1)
-        for (const respondentId in feedbackPart) {
-            const respondentIndex = seenRespondents.value[respondentId]
+        for (const respondentName in feedbackPart) {
+            const respondentIndex = seenRespondents[respondentName]
             if (typeof respondentIndex === 'undefined') {
-                seenRespondents.value[respondentId] = lastRespondentIndex
-                partRepliesByUser[lastRespondentIndex] = feedbackPart[respondentId]
+                seenRespondents[respondentName] = lastRespondentIndex
+                allRespondents.names.add(respondentName)
+                partRepliesByUser[lastRespondentIndex] = feedbackPart[respondentName]
                 lastRespondentIndex++
             } else {
-                partRepliesByUser[respondentIndex] = feedbackPart[respondentId]
+                partRepliesByUser[respondentIndex] = feedbackPart[respondentName]
             }
         }
         result.push(partRepliesByUser)
@@ -132,7 +139,10 @@ const repliesTabulated = computed(() => {
         }
         result[i] = feedbackPart
     }
-    return result
+    return {
+        replies: result,
+        respondents: Object.keys(seenRespondents)
+    }
 })
 
 function doSyncHeaders() {
@@ -143,11 +153,13 @@ function doSyncHeaders() {
             return
         }
         cellElem?.style.removeProperty('width')
+        const cellWidth = parseFloat(getComputedStyle(cellElem).width)
+        const headerWidth = parseFloat(getComputedStyle(headerElem).width)
         if ((cellElem?.clientWidth ?? 0) > 2) {
-            headerElem.style.width = (cellElem!.offsetWidth) + 'px'
+            headerElem.style.width = cellWidth + 'px'
         } else {
-            headerElem.style.removeProperty('width')
-            cellElem.style.width = (headerElem?.offsetWidth) + 'px'
+            headerElem.style?.removeProperty('width');
+            (cellElem.children[0] as HTMLElement).style.width = headerWidth + 'px'
         }
     }
 }
@@ -190,19 +202,14 @@ function getAverage(replies: Feedback[]) {
     }
 }
 
-function getHistogram(replies: (number | null)[]) {
-    const hist: number[] = []
-
-    for (const r of replies) {
-        if (r !== null) {
-            if (!hist[r]) {
-                hist[r] = 0
-            }
-            hist[r]++
-        }
+function getParallelOrSelectEvents(event: ScheduleEvent) {
+    switch (event.feedbackType) {
+    case 'select':
+        return event.questions
+    case 'parallel':
+        return getParallelEvents(event)
     }
-
-    return hist
+    return []
 }
 
 </script>
