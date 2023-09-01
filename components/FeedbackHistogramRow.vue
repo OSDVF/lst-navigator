@@ -7,6 +7,15 @@
             />
             {{ q }}
         </td>
+        <td colspan="100%">
+            <table>
+                <tbody>
+                    <tr v-for="detailReply in repliesWithDetails" :key="`d${detailReply.i}`">
+                        <td>{{ detailReply.i }}</td><td>{{ detailReply.r.detail }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
     </template>
     <td v-else>
         <div>
@@ -21,17 +30,21 @@
 
 <script setup lang="ts">
 import randomcolor from 'randomcolor'
-import { Feedback } from '@/stores/cloud'
+import { Feedback, ScheduleEvent } from '@/stores/cloud'
 
 const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
 const basicColors = randomcolor({ count: 5, hue: 'blue' })
 const hues = ['yellow', 'orange', 'red']
 const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue }))
 
-defineProps<{
-    replies: Feedback[]
+const props = defineProps<{
+    replies: {[respondent: string]: Feedback},
+    event: ScheduleEvent
 }>()
 
+const repliesWithDetails = computed(() => {
+    return Object.entries(props.replies).map(([i, r]) => ({ i, r })).filter(({ r }) => r.detail)
+})
 
 function getHistogram(replies: (number | null)[]) {
     const hist: number[] = []
