@@ -4,38 +4,40 @@
         <Head>
             <Title>{{ title }}</Title>
         </Head>
-        <main
-            :style="{
-                'background': globalBackground ? `linear-gradient(0deg, transparent, ${globalBackground})` : undefined,
-                'overflow-x': trainsitioning ? 'hidden' : undefined,
-            }"
-        >
+        <nav>
+            <label>Vybraná akce
+                <select v-model="cloudStore.selectedEvent">
+                    <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>
+                </select>
+            </label>
+        </nav>
+        <main>
             <slot />
         </main>
         <div class="navigation">
             <div class="flex-full">
                 <ProgressBar v-if="cloudStore.feedback.fetching" />
                 <nav v-if="cloudStore.feedback.fetchFailed" class="p-1">
-                    {{ cloudStore.feedback.error || 'Nepodařilo se odeslat tvou odpověď. Ale ždáný strach, je uložená offline ve tvém zařízení.' }}
+                    {{ cloudStore.feedback.error || 'Nepodařilo se uložit úpravy.' }}
                 </nav>
             </div>
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
-                <NuxtLink to="/info">
-                    <IconCSS name="mdi:information" size="2rem" />
-                    {{ config.public.title }}
+                <NuxtLink to="/admin/feedback">
+                    <IconCSS name="mdi:rss" size="2rem" />
+                    Zpětná vazba
                 </NuxtLink>
-                <NuxtLink to="/schedule">
+                <NuxtLink to="/admin/events">
                     <IconCSS name="mdi:calendar-text" size="2rem" />
+                    Akce
+                </NuxtLink>
+                <NuxtLink to="/admin/users">
+                    <IconCSS name="mdi:person" size="2rem" />
+                    Uživatelé
+                </NuxtLink>
+                <NuxtLink to="/">
+                    <IconCSS name="mdi:home" size="2rem" />
                     Program
-                </NuxtLink>
-                <NuxtLink to="/settings">
-                    <IconCSS name="mdi:cog" size="2rem" />
-                    Nastavení
-                </NuxtLink>
-                <NuxtLink v-if="cloudStore.resolvedPermissions.eventAdmin" to="/admin">
-                    <IconCSS name="mdi:account-cog" size="2rem" />
-                    Administrace
                 </NuxtLink>
             </nav>
             <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
@@ -67,49 +69,20 @@
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
-import { useSettings } from '@/stores/settings'
 
 const app = useNuxtApp()
 const ui = useUI()
 const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
 const route = useRoute()
-const router = useRouter()
-const settings = useSettings()
-const installStep = settings.getInstallStep()
 const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
-
-if (process.client) {
-    ///
-/// Redirection guards
-///
-    installStep.then((step) => {
-        const safeStep = step ?? 0
-        if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
-            router.push('/install/' + safeStep)
-        }
-    })
-
-    if (app.$pwa.needRefresh) {
-        router.push('/update')
-    }
-
-    app.$onUpdateCallback(() => {
-        router.push('/update')
-    })
-}
 
 const title = computed(() => {
     if (route.meta.title) {
-        return `${route.meta.title} · ${config.public.title}`
+        return `${route.meta.title} · Administrace ${config.public.title}`
     }
     return config.public.title
 })
-
-const trainsitioning = ref(false)
-provide('trainsitioning', trainsitioning)
-const globalBackground = ref('')
-provide('globalBackground', globalBackground)
 
 function captureError(error: unknown) {
     // eslint-disable-next-line no-console

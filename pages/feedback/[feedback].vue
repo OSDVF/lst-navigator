@@ -9,7 +9,7 @@
             <IconCSS name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;
         </NuxtLink>
         <NuxtLink
-            v-if="feedbackPartIndex < cloudStore.feedbackConfig?.length - 1"
+            v-if="feedbackPartIndex < (cloudStore.feedback.config?.length ?? 0) - 1"
             :to="`/feedback/${feedbackPartIndex - 1}`"
         >
             Skočit na další část
@@ -22,7 +22,7 @@
         </NameChangeDialog>
         <br>
 
-        Každá tvá změna je hned uložena. {{ cloudStore.feedbackInfoText }}
+        Každá tvá změna je hned uložena. {{ cloudStore.feedback.infoText }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`">
             <h3>{{ subPart.title }}</h3>
@@ -48,25 +48,25 @@
                     :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data"
                     :complicated-questions="entry.questions"
                     :select-options="entry.selectOptions"
-                    @set-data="(data: Feedback) => cloudStore.setFeedbackData(subPart.primaryIndex, entry.secondaryIndex, data)"
+                    @set-data="(data: Feedback) => cloudStore.feedback.set(subPart.primaryIndex, entry.secondaryIndex, data)"
                 />
             </fieldset>
         </div>
         <br>
         <button
-            v-if="feedbackPartIndex < cloudStore.feedbackConfig?.length - 1" class="large d-block m-left-auto"
-            @click="cloudStore.saveAgainAllFeedback().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))"
+            v-if="feedbackPartIndex < (cloudStore.feedback.config?.length ?? 0) - 1" class="large d-block m-left-auto"
+            @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))"
         >
             Pokračovat na další část
             <IconCSS name="mdi:chevron-right" />
         </button>
-        <button v-else class="large d-block m-left-auto" @click="cloudStore.saveAgainAllFeedback().then(() => router.push('/feedback/thanks'))">
+        <button v-else class="large d-block m-left-auto" @click="cloudStore.feedback.saveAgain().then(() => router.push('/feedback/thanks'))">
             <IconCSS name="mdi:check" />
             Dokončit
         </button>
-        <p v-if="cloudStore.couldNotFetchFeedback" style="color:red">
-            {{ cloudStore.feedbackError || 'Nepodařilo se uložit tvou odpověď' }}
-            <button @click="cloudStore.saveAgainAllFeedback">
+        <p v-if="cloudStore.feedback.fetchFailed" style="color:red">
+            {{ cloudStore.feedback.error || 'Nepodařilo se uložit tvou odpověď' }}
+            <button @click="cloudStore.feedback.saveAgain">
                 <IconCSS name="material-symbols:save" /> Zkusit znovu
             </button>
         </p>
@@ -79,7 +79,7 @@
             <Teleport to="#additionalNav">
                 <nav class="eventItemNav">
                     <NuxtLink
-                        v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig"
+                        v-for="(feedbackPart, fIndex) in cloudStore.feedback.config"
                         :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : null"
                     >
                         <IconCSS v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
@@ -101,7 +101,7 @@ const cloudStore = useCloudStore()
 const settings = useSettings()
 const feedbackPartIndex = parseInt(router.currentRoute.value.params.feedback as string) || 0
 const currentPart = computed(() => {
-    const config: FeedbackConfig | undefined = cloudStore.feedbackConfig?.[feedbackPartIndex]
+    const config: FeedbackConfig | undefined = cloudStore.feedback.config?.[feedbackPartIndex]
     const subparts: {title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & {data: Feedback | null, secondaryIndex: number | string, selectOptions: string[]})[]}[] = []
 
     if (config?.group) {

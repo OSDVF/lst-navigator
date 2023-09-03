@@ -11,7 +11,7 @@
                         </option>
                     </select>
                 </label>
-                <template v-if="cloudStore.user && cloudStore.permissions === 'admin'">
+                <template v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.eventAdmin">
                     <br>
                     <button v-if="admin.editingFeedback" @click="admin.editingFeedback = false">
                         Úpravy
@@ -27,7 +27,10 @@
                     Vypsat
                 </button>
                 <br>
-                <textarea v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly :value="showRespondents ? Array.from(respondents.names).join('\n') : ''" />
+                <textarea
+                    v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly
+                    :value="showRespondents ? Array.from(respondents.names).join('\n') : ''"
+                />
             </div>
             <div>
                 <p>
@@ -55,7 +58,7 @@
                 v-for="key in Object.keys(programPartsFeedback)" :key="`p${key}`"
                 :schedule-part="onlyIntIndexed(cloudStore.scheduleParts)[key as any]"
                 :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])"
-                @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.setFeedbackData(key, eIndex, data, user)"
+                @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)"
             />
         </template>
     </div>
@@ -66,11 +69,18 @@ import { Feedback, useCloudStore } from '@/stores/cloud'
 import { onlyIntIndexed } from '@/utils/types'
 import { DisplayKind, useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
+
+definePageMeta({
+    title: 'Výsledky zpětné vazby',
+    layout: 'admin',
+    middleware: ['auth']
+})
+
 const cloudStore = useCloudStore()
 const admin = useAdmin()
 const respondents = useRespondents()
 
-const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.onlineFeedbackRef as any[]))
+const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.feedback.online as any[]))
 const displayKindOptionLabels = {
     histogram: 'Histogram',
     individual: 'Individuální'

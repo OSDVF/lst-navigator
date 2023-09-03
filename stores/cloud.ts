@@ -1,11 +1,13 @@
-import { defineStore } from 'pinia'
-import { FieldValue, Firestore, collection, deleteField, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
+import { defineStore, skipHydrate } from 'pinia'
+import { FieldValue, Firestore, arrayUnion, collection, deleteField, doc, getDocs, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { IdTokenResult, User } from 'firebase/auth'
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signOut } from 'firebase/auth'
+import { getCurrentInstance } from 'vue-demi'
 import { useSettings } from '@/stores/settings'
-import { usePersistentRef } from '@/utils/storage'
+import { usePersistentRef } from '@/utils/persistence'
+import { KnownCollectionName } from '@/utils/db'
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select'
 export type FeedbackConfig = {
@@ -37,125 +39,330 @@ export type SchedulePart = {
     program: ScheduleEvent[]
 };
 
+export type EventSubdocuments = 'meta' | 'notes' | 'feedback' | 'subscriptions' | 'users'
+
+
+export type EventMeta = {
+    description: string,
+    title: string,
+    subtitle: string,
+    schedule: {
+        parts: SchedulePart[]
+    }, // in the database this a reference to another document, but this reference is being resolved by vuefire
+    image: string, // url
+    feedback: FeedbackConfig[],
+    feedbackInfo: string,
+    groups: string[],
+    web: string
+}
+
+export type EventDescription = {
+    title: string,
+    start: string, // in format 2023-01-30
+    end: string,
+    meta: EventMeta
+} & {
+        [key in EventSubdocuments]: string
+    }
+
+export type Permissions = {
+    superAdmin: boolean,
+    /**
+     * Also has access to the administrator section and can edit feedback results
+     */
+    eventAdmin: boolean,
+    /**
+     * Can edit schedule on this event and has access to feedback results
+     */
+    editSchedule: boolean,
+}
+
+export type UserInfo = {
+    permissions: { [key: 'superAdmin' | string]: boolean | 'admin' | 'schedule' }
+    subscriptions: string[],
+    signature: {
+        [eventId: string]: string
+    },
+    signatureId: {
+        [eventId: string]: string
+    },
+    name: string,
+    email: string,
+    photoURL: string,
+    timestamp: number,
+    timezone: number
+}
+
+export type UpdatePayload<T> = {
+    [key in keyof T]: T[key] | FieldValue
+}
+
 export type Feedback = {
     basic?: number | FieldValue,
     detail?: string | FieldValue,
     complicated?: (number | null)[],
     select?: string | FieldValue
 }
+
+/**
+ * Compile time check that this collection really exists (is checked by the server)
+ */
+export function knownCollection(firestore: Firestore, name: KnownCollectionName) {
+    return collection(firestore, name)
+}
+
 export const defaultQuestions = [
     'Rečník',
     'Osobní přínos',
     'Srozumitelnost'
 ]
 
+export const googleAuthProvider = new GoogleAuthProvider()
+
+let probe = true
+if (process.server) {
+    // probe the firestore firstly because otherwise we get infinite loading
+    try {
+        await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })
+    } catch (e) {
+        console.error(e)
+        probe = false
+    }
+}
+
 export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
     const firebaseApp = useFirebaseApp()
+    const firebaseStorage = useFirebaseStorage()
+    const config = useRuntimeConfig()
+    const selectedEvent = ref(config.public.defaultEvent)
+    const auth = useFirebaseAuth()
 
     let firestore: Firestore | null = null
-    if (process.client) {
+
+    if (probe) {
         try {
             firestore = initializeFirestore(firebaseApp, {
                 localCache:
                     persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
             })
         } catch (e) {
-            firestore = useFirestore()
+            console.error(e)
+
+            try {
+                firestore = useFirestore()
+            } catch (e) {
+                console.error(e)
+            }
         }
     }
-    const firebaseStorage = useFirebaseStorage()
-    const config = useRuntimeConfig()
 
-    const eventDbName = ref(config.public.dbCollectionName)
+    const eventDocuments = useDocument<EventDescription>(firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null, {
+        maxRefDepth: 4
+    })
 
-    function getDocument(docName: string, ...pathSegments: string[]) {
+    function currentEventDocument(docName: EventSubdocuments) {
         return computed(() => {
-            if (typeof eventDbName.value === 'undefined' || process.server || !firestore) {
-                return null
-            }
-            return doc(collection(firestore, eventDbName.value), docName, ...pathSegments)
+            if (!firestore) { return null }
+            return doc(firestore, selectedEvent.value, docName)
         })
     }
 
-    const metaDocument = getDocument('meta')
-    const subscriptionsDocument = getDocument('subscriptions')
-    const metaDoc = useDocument(metaDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
-    const eventImage = computed(() => metaDoc.value?.image
-        ? useStorageFileUrl(storageRef(firebaseStorage, metaDoc.value?.image)).url.value
+    const subscriptionsDocument = currentEventDocument('subscriptions')
+
+    const eventImage = computed(() => eventDocuments.value?.meta.image
+        ? useStorageFileUrl(storageRef(firebaseStorage, eventDocuments.value?.meta.image)).url.value
         : null)
-    const eventTitle = computed(() => metaDoc.value?.title)
-    const eventSubtitle = computed(() => metaDoc.value?.subtitle)
-    const eventDescription = computed(() => metaDoc.value?.description)
-    const eventWeb = computed(() => metaDoc.value?.web)
-    const networkError = computed(() => metaDoc.error.value)
-    const metaLoading = computed(() => metaDoc.pending.value)
-    const groupNames = computed(() => metaDoc.value?.groups ?? [])
-    const feedbackConfig = computed<FeedbackConfig[]>(() => metaDoc.value?.feedback)
-    const feedbackInfoText = computed(() => metaDoc.value?.feedbackInfo)
+    const eventTitle = computed(() => eventDocuments.value?.meta.title)
+    const eventSubtitle = computed(() => eventDocuments.value?.meta.subtitle)
+    const eventDescription = computed(() => eventDocuments.value?.meta.description)
+    const eventWeb = computed(() => eventDocuments.value?.meta.web)
+    const groupNames = computed(() => eventDocuments.value?.meta.groups ?? [])
+    const fd = currentEventDocument('feedback')
+    const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
+    const feedback = {
+        config: computed<FeedbackConfig[] | undefined>(() => eventDocuments.value?.meta.feedback),
+        doc: fd,
+        dirtyTime: feedbackDirtyTime,
+        error: ref(),
+        fetchFailed: ref(false),
+        fetching: ref(false),
+        infoText: computed(() => eventDocuments.value?.meta.feedbackInfo),
+        online: useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false } }),
+        set(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
+            feedback.fetching.value = true
+            if (typeof userIdentifier === 'undefined') {
+                offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
+            }
+            userIdentifier ??= settings.userIdentifier
+            feedbackDirtyTime.value = new Date().getTime()
 
-    const scheduleDocument = getDocument('schedule')
-    const scheduleDoc = useDocument(scheduleDocument.value, { wait: true, snapshotListenOptions: { includeMetadataChanges: false } })
-    const feedbackDoc = getDocument('feedback')
-    const onlineFeedbackRef = useDocument(feedbackDoc.value, { snapshotListenOptions: { includeMetadataChanges: false } })
+            setDoc(feedback.doc.value!, {
+                [sIndex]: {
+                    [eIndex]: {
+                        [userIdentifier]: data !== null ? data : deleteField()
+                    }
+                },
+                [userIdentifier]: feedbackDirtyTime.value
+            }, {
+                merge: true
+            }).then(() => { feedback.fetching.value = feedback.fetchFailed.value = false }).catch((e) => { feedback.error.value = e })
+            setTimeout(() => {
+                feedback.fetchFailed.value = feedback.fetching.value
+                feedback.fetching.value = false
+            }, 5000)
+        },
+        saveAgain() {
+            feedback.fetching.value = true
 
-    const usersDocument = getDocument('users')
-    const usersDoc = useDocument(usersDocument.value, { snapshotListenOptions: { includeMetadataChanges: false } })
-    const onlineUser = useCurrentUser()
-    const user = usePersistentRef('user', onlineUser.value) // offline-stored user
+            // Convert null reply to deleteField
+            const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value
+            for (const sIndex in payload) {
+                const schedulePart = payload[sIndex]
+                for (const eIndex in schedulePart) {
+                    const event = schedulePart[eIndex]
+                    for (const uIndex in event) {
+                        const reply = event[uIndex]
+                        if (reply === null || typeof reply === 'undefined') {
+                            event[uIndex] = deleteField()
+                        }
+                    }
+                    schedulePart[eIndex] = event
+                }
+                payload[sIndex] = schedulePart
+            }
 
-    onMounted(function() {
+            const uploadingPromise = setDoc(feedback.doc.value!, payload, {
+                merge: true
+            }).then(() => { feedback.fetching.value = feedback.fetchFailed.value = false })
+            setTimeout(() => {
+                feedback.fetchFailed.value = feedback.fetching.value
+                feedback.fetching.value = false
+            }, 5000)
+            uploadingPromise.catch((e) => { feedback.error.value = e })
+            return uploadingPromise
+        }
+    }
+
+    const onlineUserAuth = useCurrentUser()
+    const offlineAuth = usePersistentRef('user', onlineUserAuth.value ? { ...onlineUserAuth.value } : null) // offline-stored user
+    const userAuth = computed({
+        get() {
+            return onlineUserAuth.value ?? offlineAuth.value
+        },
+        set(value) {
+            /* offlineUser.value.displayName = value?.displayName
+            offlineUser.value.email = value?.email
+            offlineUser.value.emailVerified = value?.emailVerified
+            offlineUser.value.photoURL = value?.photoURL
+            offlineUser.value.uid = value?.uid
+            offlineUser.value.providerId = value?.providerId
+            offlineUser.value.phoneNumber = value?.phoneNumber
+            offlineUser.value.isAnonymous = value?.isAnonymous
+            offlineUser.value.emailVerified = value?.emailVerified
+            offlineUser.value.metadata = value?.metadata
+            offlineUser.value.providerData = value?.providerData
+            offlineUser.value.refreshToken = value?.refreshToken */
+            if (!value) {
+                offlineAuth.value = value
+            } else if (!offlineAuth.value) {
+                offlineAuth.value = {} as any
+            }
+            for (const key in value) {
+                if (typeof value[key as keyof typeof value] !== 'function') {
+                    (offlineAuth.value as any)[key]! = value[key as keyof typeof value]
+                }
+            }
+        }
+    })
+    const usersCollection = firestore ? knownCollection(firestore, 'users') : null
+    const user = {
+        auth: userAuth,
+        doc: firestore && userAuth.value?.uid && usersCollection ? skipHydrate(doc(usersCollection, userAuth.value!.uid)) : null,
+        info: useDocument<UserInfo>(null),
+        error: ref(),
+        async signOut() {
+            await signOut(auth!)
+            userAuth.value = null
+        },
+        signIn() {
+            signInWithPopup(auth!, googleAuthProvider)
+                .then((result) => {
+                    if (user.doc) {
+                        const signatureId = user.info.value!.signatureId[selectedEvent.value]
+                        if (signatureId) {
+                            if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
+                                settings.userIdentifier = signatureId
+                                settings.userNickname = user.info.value!.signature[selectedEvent.value]
+                            }
+                        }
+
+                        const now = new Date()
+                        setDoc(user.doc, {
+                            name: result.user.displayName,
+                            signature: {
+                                [selectedEvent.value]: settings.userNickname
+                            },
+                            signatureId: {
+                                [selectedEvent.value]: settings.userIdentifier
+                            },
+                            subscriptions: arrayUnion(),
+                            email: result.user.email,
+                            photoURL: result.user.photoURL,
+                            timestamp: now.getTime(),
+                            timezone: now.getTimezoneOffset()
+                        } as Partial<UpdatePayload<UserInfo>>, {
+                            merge: true
+                        })
+                    }
+                }).catch((reason) => {
+                    console.error('Failed signin', reason)
+                    user.error.value = reason
+                })
+        }
+    }
+    user.info = useDocument<UserInfo>(user.doc)
+
+    onMounted(function () {
         if (config.public.debugUser) {
-            user.value = debugUser
+            userAuth.value = debugUser
         } else {
-            watch(onlineUser, (newUser) => {
+            watch(onlineUserAuth, (newUser) => {
                 if (newUser) {
-                    user.value = newUser
+                    userAuth.value = newUser
                 }
             })
         }
     })
 
-    const permissions = computed<'admin' | string>(() => config.public.debugUser ? 'admin' : user.value?.uid ? usersDoc.value?.permissions?.[user.value.uid] : null)
-
-    const scheduleParts = computed<SchedulePart[]>(() => scheduleDoc.value?.parts)
-    const scheduleLoading = computed(() => scheduleDoc.pending.value)
-
-    const notesDocument = getDocument('notes')
-    const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
-    const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
-    const fetchingFeedback = ref(false)
-    const couldNotFetchFeedback = ref(false)
-    const feedbackError = ref()
-
-    function setFeedbackData(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
-        fetchingFeedback.value = true
-        if (typeof userIdentifier === 'undefined') {
-            offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
+    const resolvedPermissions = computed<Permissions>(() => config.public.debugUser
+        ? {
+            editSchedule: true,
+            eventAdmin: true,
+            superAdmin: true
         }
-        userIdentifier ??= settings.userIdentifier
-        feedbackDirtyTime.value = new Date().getTime()
+        : user.info.value?.permissions
+            ? {
+                editSchedule: user.info.value.permissions[selectedEvent.value] === 'schedule' || user.info.value.permissions[selectedEvent.value] === 'admin' || user.info.value.permissions.superAdmin === true,
+                eventAdmin: user.info.value.permissions[selectedEvent.value] === 'admin' || user.info.value.permissions.superAdmin === true,
+                superAdmin: user.info.value.permissions.superAdmin === true
+            }
+            : {
+                editSchedule: false,
+                eventAdmin: false,
+                superAdmin: false
+            })
 
-        setDoc(feedbackDoc.value!, {
-            [sIndex]: {
-                [eIndex]: {
-                    [userIdentifier]: data !== null ? data : deleteField()
-                }
-            },
-            [userIdentifier]: feedbackDirtyTime.value
-        }, {
-            merge: true
-        }).then(() => { fetchingFeedback.value = couldNotFetchFeedback.value = false }).catch((e) => { feedbackError.value = e })
-        setTimeout(() => {
-            couldNotFetchFeedback.value = fetchingFeedback.value
-            fetchingFeedback.value = false
-        }, 5000)
-    }
+    const scheduleParts = computed<SchedulePart[]>(() => eventDocuments.value?.meta.schedule?.parts ?? [])
+
+    const notesDocument = currentEventDocument('notes')
+    const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
+    const messagingToken = usePersistentRef('messagingToken', '')
 
     let hydrationDebounce: null | NodeJS.Timeout = null
     function hydrateOfflineFeedback(onlineFeedback: any) {
         hydrationDebounce = null
-        if (new Date(onlineFeedback?.[settings.userIdentifier] ?? 0).getTime() > feedbackDirtyTime.value) {
+        if (new Date(onlineFeedback?.[settings.userIdentifier] ?? 0).getTime() > feedback.dirtyTime.value) {
             for (const sIndex in onlineFeedback) {
                 const sPart = onlineFeedback[sIndex]
                 for (const eIndex in sPart) {
@@ -176,17 +383,18 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
 
-    watch(onlineFeedbackRef, function () {
+    watch(feedback.online, function () {
         if (hydrationDebounce === null) {
             hydrationDebounce = setTimeout(hydrateOfflineFeedback, 800)
         }
     })
-    hydrateOfflineFeedback(onlineFeedbackRef.value)
+    hydrateOfflineFeedback(feedback.online)
+
 
     watch(settings, (newSettings) => {
-        if (feedbackDoc.value && user.value && process.client) {
-            setDoc(feedbackDoc.value, {
-                [user.value.uid]: {
+        if (feedback.doc.value && userAuth.value?.uid && process.client) {
+            setDoc(feedback.doc.value, {
+                [userAuth.value.uid]: {
                     offlineUserName: newSettings.userNickname,
                     offlineUserIdentifier: localStorage.getItem('uniqueIdentifier')
                 }
@@ -196,80 +404,47 @@ export const useCloudStore = defineStore('cloud', () => {
         }
     })
 
-    function saveAgainAllFeedback() {
-        fetchingFeedback.value = true
-
-        // Convert null reply to deleteField
-        const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value
-        for (const sIndex in payload) {
-            const schedulePart = payload[sIndex]
-            for (const eIndex in schedulePart) {
-                const event = schedulePart[eIndex]
-                for (const uIndex in event) {
-                    const reply = event[uIndex]
-                    if (reply === null || typeof reply === 'undefined') {
-                        event[uIndex] = deleteField()
-                    }
-                }
-                schedulePart[eIndex] = event
-            }
-            payload[sIndex] = schedulePart
-        }
-
-        const uploadingPromise = setDoc(feedbackDoc.value!, payload, {
-            merge: true
-        }).then(() => { fetchingFeedback.value = couldNotFetchFeedback.value = false })
-        setTimeout(() => {
-            couldNotFetchFeedback.value = fetchingFeedback.value
-            fetchingFeedback.value = false
-        }, 5000)
-        uploadingPromise.catch((e) => { feedbackError.value = e })
-        return uploadingPromise
-    }
+    // only on client side
+    onMounted(() => {
+        getRedirectResult(auth!).catch((reason) => {
+            console.error('Failed redirect result', reason)
+            user.error.value = reason
+        })
+    })
 
     if (process.client) {
         navigator.serviceWorker?.getRegistration().then((registration) => {
             if (registration?.active) {
                 const messaging = getMessaging(firebaseApp)
-                getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((token) => {
-                    if (token && subscriptionsDocument.value) {
-                        setDoc(subscriptionsDocument.value, {
-                            tokens: [
-                                token
-                            ]
-                        }, { merge: true })
+                getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((newToken) => {
+                    if (newToken) {
+                        messagingToken.value = newToken
+                        if (subscriptionsDocument.value) {
+                            setDoc(subscriptionsDocument.value, {
+                                tokens: arrayUnion(newToken)
+                            }, { merge: true })
+                        }
                     }
                 })
             }
         })
     }
     return {
-        eventDbName,
-        getDocument,
-        metaDocument,
+        selectedEvent,
         eventImage,
         eventTitle,
         eventSubtitle,
         eventDescription,
         eventWeb,
-        networkError,
-        metaLoading,
+        networkError: eventDocuments.error.value,
+        metaLoading: eventDocuments.pending.value,
         scheduleParts,
-        scheduleLoading,
         groupNames,
-        notesDocument,
-        feedbackConfig,
-        feedbackDoc,
-        offlineFeedback,
-        feedbackInfoText,
-        setFeedbackData,
-        saveAgainAllFeedback,
-        couldNotFetchFeedback,
-        feedbackError,
-        fetchingFeedback,
-        feedbackDirtyTime,
-        onlineFeedbackRef,
-        permissions,
-        user
+        notesDocument: skipHydrate(notesDocument),
+        feedback,
+        offlineFeedback: skipHydrate(offlineFeedback),
+        resolvedPermissions,
+        user,
+        eventsCollection: useCollection(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 })
     }
 })

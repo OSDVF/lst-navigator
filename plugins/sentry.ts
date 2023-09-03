@@ -45,6 +45,15 @@ export default defineNuxtPlugin({
             })
         }
 
+        nuxtApp.vueApp.config.errorHandler = (error, context) => {
+            Sentry.captureException(error)
+            console.error('errorHandler', error, context)
+        }
+        nuxtApp.hook('vue:error', (err) => {
+            Sentry.captureException(err)
+            console.error('vue:error', err)
+        })
+
         return {
             provide: {
                 Sentry

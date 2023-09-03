@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { unzip } from 'unzipit'
-import { usePersistentRef } from '@/utils/storage'
+import { usePersistentRef } from '@/utils/persistence'
 import lf from '~/utils/lf'
 
 let uniqueIdentifier = new Date().getTime().toString(36)

@@ -2,16 +2,18 @@ import { deleteField, FieldValue } from 'firebase/firestore'
 import { Feedback } from '@/stores/cloud'
 
 type Props = {
-    data: Feedback,
+    data: MaybeRefOrGetter<Feedback>,
     onSetData: (data: Feedback) => void,
-    complicatedQuestions: string[]
+    complicatedQuestions: MaybeRefOrGetter<string[]>
 }
 export default function useFeedbackControls({ props }: {props: Props}) {
     function syncComplicated(index: number, value?: number) {
-        const prevComplicated = new Array(props.complicatedQuestions.length).fill(null) as (number | null)[]
-        if (props.data.complicated) {
-            for (const i in props.data.complicated) {
-                prevComplicated[i] = props.data.complicated[i]
+        const prevComplicated = new Array(toValue(props.complicatedQuestions).length).fill(null) as (number | null)[]
+        const data = toValue(props.data)
+        const compl = data.complicated
+        if (compl) {
+            for (const i in compl) {
+                prevComplicated[i] = compl[i]
             }
         }
         if (typeof value !== 'undefined') {
@@ -21,18 +23,18 @@ export default function useFeedbackControls({ props }: {props: Props}) {
         }
 
         props.onSetData({
-            ...props.data,
+            ...data,
             complicated: prevComplicated
         })
     }
 
     const syncDetail = computed({
         get(): string | undefined {
-            return props.data?.detail as string | undefined
+            return toValue(props.data).detail as string | undefined
         },
         set(value: string | undefined): void {
             props.onSetData({
-                ...props.data,
+                ...toValue(props.data),
                 detail: typeof value === 'undefined' ? deleteField() : value
             })
         }
@@ -40,11 +42,11 @@ export default function useFeedbackControls({ props }: {props: Props}) {
 
     const syncSelect = computed({
         get() {
-            return props.data?.select
+            return toValue(props.data)?.select
         },
         set(value: string | undefined | FieldValue) {
             props.onSetData({
-                ...props.data,
+                ...toValue(props.data),
                 select: typeof value === 'undefined' ? deleteField() : value
             })
         }
@@ -52,7 +54,7 @@ export default function useFeedbackControls({ props }: {props: Props}) {
 
     function syncBasic(value?: number) {
         props.onSetData({
-            ...props.data,
+            ...toValue(props.data),
             basic: typeof value === 'undefined' ? deleteField() : value
         })
     }

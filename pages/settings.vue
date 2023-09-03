@@ -1,5 +1,5 @@
 <template>
-    <article>
+    <article class="settings">
         <fieldset>
             <label for="selectedAudioName">Zvuk upozornění</label>
             <span>
@@ -56,30 +56,16 @@
             <span>
                 <small>
                     <ClientOnly>
-                        {{ cloud.feedbackDirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedbackDirtyTime).toLocaleString(lang) }}
+                        {{ cloud.feedback.dirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedback.dirtyTime).toLocaleString(lang) }}
                     </ClientOnly>
                 </small>
                 &ensp;
-                <button @click="cloud.saveAgainAllFeedback">
+                <button @click="cloud.feedback.saveAgain">
                     <IconCSS name="mdi:reload" /> Odeslat znovu
                 </button>
             </span>
         </fieldset>
-        <fieldset>
-            <label>
-                <IconCSS v-if="cloud.permissions === 'admin'" name="mdi:shield-lock-open" title="Úpravy povoleny" />
-                <img v-else-if="cloud.user?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous" :src="cloud.user.photoURL" alt="Profilový obrázek" width="24" height="24">
-                {{ cloud.user?.displayName ?? error ?? 'Přihlášení' }} <span v-if="cloud.user?.email" class="muted nowrap">{{ cloud.user.email }}</span>
-            </label>
-            <span>
-                <button v-if="cloud.user" @click="logout">
-                    <IconCSS name="mdi:logout" /> Odhlásit
-                </button>
-                <button v-else @click="signIn">
-                    <IconCSS name="mdi:login" /> Přihlásit
-                </button>
-            </span>
-        </fieldset>
+        <LoginField />
         <h4>O aplikaci</h4>
         <fieldset>
             <p>Verze</p>
@@ -99,13 +85,6 @@
 
 <script setup lang="ts">
 import { setDoc } from 'firebase/firestore'
-import {
-    signOut,
-    GoogleAuthProvider,
-    getRedirectResult,
-    signInWithPopup
-} from 'firebase/auth'
-import { useFirebaseAuth } from 'vuefire'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
 definePageMeta({
@@ -115,7 +94,6 @@ definePageMeta({
 const settings = useSettings()
 const cloud = useCloudStore()
 const config = useRuntimeConfig()
-const auth = useFirebaseAuth()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
 
@@ -123,9 +101,6 @@ const lang = computed(() => process.client ? navigator.language : 'cs-CZ')
 
 function leadingPlus(value: number) {
     return value > 0 ? `+${value}` : value
-}
-function logout() {
-    signOut(auth!)
 }
 function uploadCustomClick() {
     uploading.value = true
@@ -163,58 +138,14 @@ function syncNotes() {
         alert('Nepodařilo se připojit k úložišti poznámek')
     }
 }
-
-// display errors if any
-const error = ref(null)
-function signIn() {
-    signInWithPopup(auth!, googleAuthProvider)
-        .then((result) => {
-            if (cloud.feedbackDoc) {
-                if (cloud.onlineFeedbackRef?.[result.user.uid]) {
-                    if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
-                        settings.userIdentifier = cloud.onlineFeedbackRef[result.user.uid].offlineUserIdentifier
-                        settings.userNickname = cloud.onlineFeedbackRef[result.user.uid].offlineUserName
-                    }
-                }
-
-                setDoc(cloud.feedbackDoc, {
-                    [result.user.uid]: {
-                        name: result.user.displayName,
-                        offlineUserName: settings.userNickname,
-                        offlineUserIdentifier: settings.userIdentifier,
-                        email: result.user.email,
-                        photoURL: result.user.photoURL,
-                        timestamp: Date.now()
-                    }
-                }, {
-                    merge: true
-                })
-            }
-            console.log(result)
-        }).catch((reason) => {
-            console.error('Failed signin', reason)
-            error.value = reason
-        })
-}
-// only on client side
-onMounted(() => {
-    getRedirectResult(auth!).catch((reason) => {
-        console.error('Failed redirect result', reason)
-        error.value = reason
-    })
-})
-</script>
-
-<script lang="ts">
-export const googleAuthProvider = new GoogleAuthProvider()// Is here in classic <script> because <script setup> is unique for instance
 </script>
 
 
-<style lang="scss" scoped>
+<style lang="scss">
 @use "sass:color";
 @import "@/assets/styles/constants.scss";
 
-fieldset {
+.settings fieldset {
     display: flex;
     justify-content: stretch;
     align-items: center;

@@ -1,3 +1,4 @@
+@use "sass:math";
 @import "constants.scss";
 //
 // Navigation bars
@@ -39,5 +40,60 @@ main .average-rating {
         background-blend-mode: normal, normal, exclusion, saturation;
         background-size: auto, 5px 5px, 5px 5px, 5px 5px;
         background-clip: text;
+    }
+}
+
+.navigation {
+    border-top: 1px solid rgba($link-background, 0.1);
+
+    &>nav>a>span {
+        display: block;
+        margin: auto;
+    }
+
+    .router-link-active {
+        background: #00000016;
+    }
+}
+
+.flex-full {
+    flex-basis: 100%;
+}
+
+.backgroundLoading,
+.navigation {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: fixed;
+    z-index: 2; // to also show above image fade overlay on /info
+}
+
+.networkError {
+    flex-basis: 100%;
+    flex-grow: 1;
+    backdrop-filter: $blurred-background;
+    background: rgba($link-background, 0.2);
+    text-align: center;
+    transition: transform .2s ease, margin-top .2s ease;
+    $errorBannerHeight: 2.5rem;
+
+    transform: translateY($errorBannerHeight);
+    height: $errorBannerHeight;
+    margin-top: -$errorBannerHeight;
+    padding: math.div($errorBannerHeight, 5.0);
+
+    &.visible {
+        transform: translateY(0rem);
+        margin-top: 0;
+    }
+}
+
+.backgroundLoading {
+    transition: transfom .2s ease;
+    transform: translateY(6px);
+
+    &.visible {
+        transform: translateY(0);
     }
 }

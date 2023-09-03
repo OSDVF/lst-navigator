@@ -126,7 +126,7 @@ const config = defineNuxtConfig({
         public: {
             title: process.env.VITE_APP_SHORT_NAME,
             longName: process.env.VITE_APP_NAME,
-            dbCollectionName: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
+            defaultEvent: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
             imageCacheFirst: isDevMode,
             installStepCount,
             compileTime,

@@ -11,7 +11,7 @@
                 {{ day?.name ?? index }}
             </NuxtLink>
         </nav>
-        <ProgressBar :class="{ daysLoading: true, visible: cloudStore.scheduleLoading }" />
+        <ProgressBar :class="{ daysLoading: true, visible: cloudStore.metaLoading }" />
         <div
             v-drag="dragHandler" :style="{
                 transition: transitioning || moving ? 'none' : 'transform .2s ease',
@@ -43,19 +43,19 @@ function isToday(schedulePart: typeof cloudStore.scheduleParts[0]) {
 // Automatic redirect when no day is selected
 //
 watch(cloudStore, (newCloud) => {
-    if (typeof schedulePartIndex.value === 'undefined' && newCloud.scheduleLoading === false) {
+    if (typeof schedulePartIndex.value === 'undefined' && newCloud.metaLoading === false) {
         findToday(newCloud)
     }
 })
 onMounted(() => {
-    if (typeof schedulePartIndex.value === 'undefined' && cloudStore?.scheduleLoading === false) {
+    if (typeof schedulePartIndex.value === 'undefined' && cloudStore?.metaLoading === false) {
         findToday(cloudStore)
     }
 })
 const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string))
 
 const currentTransition = ref('slide-left')
-const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning', ref(false))
+const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = ref(true)
 provide('permitSwipe', permitSwipe)
 const transitioning = ref(false)

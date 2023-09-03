@@ -17,20 +17,23 @@ service cloud.firestore {
 			allow read: if true;
       allow write: if true;
     }
-    match /{document=**}/users/permissions {
-      function isAdmin() {
-				return get(/databases/$(database)/documents/$(document)/users/permissions/$(request.auth.uid)) == true;
+    match /users {
+      function isSuperAdmin() {
+				return get(/databases/$(database)/documents/users/$(request.auth.uid)/permissions/superAdmin) == true;
       }
 			match /{userId} {
-      	allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-        allow write: if isSignedIn() && isAdmin();
+      	allow read: if isSignedIn();
+        allow write: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       }
-      
+      allow read: if isSignedIn();
       allow write: if false;
     }
-    match /{document=**} {
-      allow read: if true;
+    match /{document=*}/{subdoc=**} {
+      allow read: if exists(/databases/$(database)/documents/events/$(document));
       allow write: if false;
+    }
+    match /events/{document=**} {
+    	allow read: if true;
     }
   }
 }

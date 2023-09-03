@@ -27,14 +27,14 @@
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
                 :complicated-questions="eventData?.questions" :select-options="getParallelEvents(eventData)"
                 :detail-question="eventData?.detailQuestion"
-                @set-data="(data: Feedback) => cloudStore.setFeedbackData(partIndex, eventItemIndex, data)"
+                @set-data="(data: Feedback) => cloudStore.feedback.set(partIndex, eventItemIndex, data)"
             />
-            <p v-if="cloudStore.couldNotFetchFeedback">
+            <p v-if="cloudStore.feedback.fetchFailed">
                 Nepodařilo se uložit tvou odpověď
                 <br>
-                {{ cloudStore.feedbackError }}
+                {{ cloudStore.feedback.error }}
                 <br>
-                <button @click="cloudStore.saveAgainAllFeedback">
+                <button @click="cloudStore.feedback.saveAgain">
                     <IconCSS name="material-symbols:save" /> Zkusit uložit znovu
                 </button>
             </p>
@@ -80,7 +80,7 @@ import { colorToHex, darkenColor } from '@/utils/colors'
 import { Feedback, useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime, getParallelEvents } from '@/utils/types'
-import { usePersistentRef } from '@/utils/storage'
+import { usePersistentRef } from '@/utils/persistence'
 
 const ClassicEditor = ref()
 if (process.client) {
@@ -94,7 +94,7 @@ const settings = useSettings()
 const partIndex = parseInt(route.params.schedulePart as string ?? 0)
 const eventItemIndex = parseInt(route.params.event as string ?? 0)
 const cloudStore = useCloudStore()
-const globalBackground = inject('globalBackground', ref('')) as Ref<string>
+const globalBackground = inject('globalBackground', ref(''))
 const eventData = computed(() => {
     const program = cloudStore.scheduleParts ? cloudStore.scheduleParts[partIndex]?.program : []
     if (program) {
@@ -114,8 +114,8 @@ const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
 
 const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
-const movingOrTrainsitioning = inject<Ref<boolean>>('trainsitioning', ref(false))
-const permitSwipe = inject<Ref<boolean>>('permitSwipe', ref(false))
+const movingOrTrainsitioning = inject('trainsitioning', ref(false))
+const permitSwipe = inject('permitSwipe', ref(false))
 
 const notesDocument = useDocument(cloudStore.notesDocument)
 const offlineNote = usePersistentRef(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })

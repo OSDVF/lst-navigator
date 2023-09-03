@@ -166,7 +166,7 @@ const normalizedData = computed(() => {
 
 const controls = useFeedbackControls({
     props: {
-        data: normalizedData.value,
+        data: normalizedData,
         complicatedQuestions: props.complicatedQuestions ?? defaultQuestions,
         onSetData: props.onSetData
     }
@@ -176,14 +176,14 @@ const updatedRating = ref({
     basic: true,
     complicated: true
 })
-watch(props, (newVal, oldVal) => {
-    if (newVal.data.basic !== oldVal.data.basic) {
+watch(normalizedData, (newVal, oldVal) => {
+    if (newVal.basic !== oldVal.basic) {
         updatedRating.value.basic = false
         nextTick(() => {
             updatedRating.value.basic = true
         })
     }
-    if (newVal.data.complicated !== oldVal.data.complicated) {
+    if (newVal.complicated !== oldVal.complicated) {
         updatedRating.value.complicated = false
         nextTick(() => {
             updatedRating.value.complicated = true
@@ -191,9 +191,7 @@ watch(props, (newVal, oldVal) => {
     }
 })
 
-const permitSwipe = inject<Ref<boolean>>('permitSwipe', ref(false))
-
-
+const permitSwipe = inject('permitSwipe', ref(false))
 
 </script>
 

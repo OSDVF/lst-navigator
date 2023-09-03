@@ -26,7 +26,7 @@
                     />
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description ?? 'Žádné detaily'" />
-                    <button v-if="cloudStore.user && cloudStore.permissions === 'admin'" class="edit">
+                    <button v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editSchedule" class="edit">
                         <IconCSS class="icon" name="mdi:pencil" />
                     </button>
                     <span class="more">
@@ -44,8 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { doc } from 'firebase/firestore'
-import { Feedback, FeedbackType, useCloudStore } from '@/stores/cloud'
+import { FeedbackType, useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
 const route = useRoute()
@@ -59,12 +58,8 @@ setInterval(() => {
 }, 1000 * 60)// Automatic time update
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
-const firestore = process.client ? useFirestore() : null
-const currentFeedbackDoc = firestore ? doc(firestore, `${cloudStore.eventDbName}/feedback`) : null
-const currentFeedbackValue = useDocument(currentFeedbackDoc)
-
 function getFeedback(entry: any, index: number) {
-    const feedback: Feedback = currentFeedbackValue.value?.[selectedPart.value]?.[index]?.[settings.userIdentifier]
+    const feedback = cloudStore.offlineFeedback?.[selectedPart.value]?.[index]?.[settings.userIdentifier]
     if (!feedback) { return false }
     switch (entry.feedbackType as FeedbackType) {
     case 'basic':

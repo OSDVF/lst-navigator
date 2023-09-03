@@ -1,31 +1,33 @@
 /* eslint-disable no-console */
-import { initializeApp } from 'firebase/app'
-import { DocumentReference, collection, doc, getDoc } from 'firebase/firestore'
+import { DocumentReference, doc, getDoc } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
 import * as Sentry from '@sentry/node'
+import { initializeApp } from 'firebase/app'
+import { EventDescription } from '@/stores/cloud'
+import { KnownCollectionName } from '@/utils/db'
 
 
 export default async function () {
     const config = useRuntimeConfig()
-    const eventDbName = config.public.dbCollectionName
     initializeApp(config.vuefire.options.config)
-    const firestore = useFirestore()
+    const selectedEvent = config.public.defaultEvent
+    const firestore = useFirestore()// firebase should be created in plugins/1.firebase.ts
     const auth = new GoogleAuth({
         scopes: ['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/firebase.messaging']
     })
     const accessToken = await auth.getAccessToken()
 
-    const col = collection(firestore, eventDbName)
-
-    function getDocument(docName: string, ...pathSegments: string[]) {
-        if (typeof eventDbName === 'undefined') {
-            return null
-        }
-        return doc(col, docName, ...pathSegments)
+    async function eventDocument(event: string) {
+        return (await getDoc(doc(firestore, `${'events' as KnownCollectionName}/${event}`))).data() as {[key in keyof EventDescription]: DocumentReference}
     }
 
-    const subscriptionsDocument = getDocument('subscriptions')
+    async function currentEventDocument(docName: keyof EventDescription, ...pathSegments: string[]) {
+        const eDoc = await eventDocument(selectedEvent)
+        return doc(eDoc[docName], '/', ...pathSegments)
+    }
+
+    const subscriptionsDocument = await currentEventDocument('subscriptions')
     if (subscriptionsDocument === null) {
         return
     }
@@ -34,7 +36,7 @@ export default async function () {
         return
     }
 
-    const scheduleDocument = getDocument('schedule')
+    const scheduleDocument = (await getDoc(await currentEventDocument('meta'))).data()?.schedule
     if (scheduleDocument === null) {
         return
     }
