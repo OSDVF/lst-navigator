@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import randomcolor from 'randomcolor'
-import { Feedback, ScheduleEvent } from '@/stores/cloud'
+import { Feedback, ScheduleEvent } from '@/types/cloud'
 
 const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
 const basicColors = randomcolor({ count: 5, hue: 'blue' })

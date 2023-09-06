@@ -65,7 +65,8 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, useCloudStore } from '@/stores/cloud'
+import { useCloudStore } from '@/stores/cloud'
+import { Feedback } from '@/types/cloud'
 import { onlyIntIndexed } from '@/utils/types'
 import { DisplayKind, useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'

@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, ScheduleEvent } from '@/stores/cloud'
+import { Feedback, ScheduleEvent } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 
 defineProps<{

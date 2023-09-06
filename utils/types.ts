@@ -1,4 +1,4 @@
-import type { ScheduleEvent } from '@/stores/cloud'
+import { ScheduleEvent } from '@/types/cloud'
 
 export type NotificationPayload = {
     title: string,

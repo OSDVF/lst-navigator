@@ -21,7 +21,8 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, ScheduleEvent, defaultQuestions } from '@/stores/cloud'
+import { Feedback, ScheduleEvent } from '@/types/cloud'
+import { defaultQuestions } from '@/stores/cloud'
 import { darkenColor } from '@/utils/colors'
 import useFeedbackControls from '@/utils/feedbackControls'
 import { useAdmin } from '@/stores/admin'

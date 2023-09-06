@@ -1,12 +1,11 @@
-import { getCurrentUser } from 'vuefire'
+import { useCloudStore } from '@/stores/cloud'
 
 // middleware/auth.ts
-export default defineNuxtRouteMiddleware(async (to) => {
-    const config = useRuntimeConfig()
-    const user = config.public.debugUser ? debugUser : await getCurrentUser()
+export default defineNuxtRouteMiddleware((to) => {
+    const cloudStore = useCloudStore()
 
     // redirect the user to the login page
-    if (!user) {
+    if (!cloudStore.user.auth?.uid) {
         return navigateTo({
             path: '/login',
             query: {

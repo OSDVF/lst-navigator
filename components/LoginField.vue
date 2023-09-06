@@ -1,19 +1,19 @@
 <template>
     <fieldset>
         <label>
-            <IconCSS v-if="cloud.resolvedPermissions.editSchedule" name="mdi:shield-lock-open" title="Úpravy povoleny" />
+            <IconCSS v-if="cloudStore.resolvedPermissions.editSchedule" name="mdi:shield-lock-open" title="Úpravy povoleny" />
             <img
-                v-else-if="cloud.user.auth?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous"
-                :src="cloud.user.auth.photoURL" alt="Profilový obrázek" width="24" height="24"
+                v-else-if="cloudStore.user.auth?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous"
+                :src="cloudStore.user.auth.photoURL" alt="Profilový obrázek" width="24" height="24"
             >
-            {{ cloud.user.auth?.displayName ?? cloud.user.error ?? 'Přihlášení' }} <span v-if="cloud.user.auth?.email" class="muted nowrap">{{
-                cloud.user.auth.email }}</span>
+            {{ cloudStore.user.auth?.displayName ?? prettyError ?? 'Přihlášení' }} <span v-if="cloudStore.user.auth?.email" class="muted nowrap">{{
+                cloudStore.user.auth.email }}</span>
         </label>
         <span>
-            <button v-if="cloud.user.auth?.uid" @click="cloud.user.signOut">
+            <button v-if="cloudStore.user.auth?.uid" @click="cloudStore.user.signOut">
                 <IconCSS name="mdi:logout" /> Odhlásit
             </button>
-            <button v-else @click="cloud.user.signIn">
+            <button v-else @click="cloudStore.user.signIn">
                 <IconCSS name="mdi:login" /> Přihlásit
             </button>
         </span>
@@ -23,7 +23,27 @@
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
 
-const cloud = useCloudStore()
+const cloudStore = useCloudStore()
+const prettyError = ref()
+
+watch(cloudStore, (newCloud, oldCloud) => {
+    if (oldCloud.user.error?.code === newCloud.user.error?.code) { return }
+    switch (newCloud.user.error?.code) {
+    case 'auth/popup-blocked':
+        alert('Přihlášení bylo zablokováno vaším prohlížečem. Povolte vyskakovací okna (pop-up)')
+        setTimeout(() => location.reload(), 7000)
+        break
+    case 'auth/cancelled-popup-request':
+        alert('Pravděpodobně již máte otevřeno jiné přihlašovací okno')
+        break
+    case 'auth/popup-closed-by-user':
+        prettyError.value = 'Přihlašovací okno bylo zavřeno uživatelem'
+        break
+    default:
+        prettyError.value = cloudStore.user.error
+        break
+    }
+})
 
 </script>
 

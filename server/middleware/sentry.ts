@@ -5,7 +5,6 @@ export default defineEventHandler((event) => {
 
     Sentry.init({
         enabled: config.public.SENTRY_ENABLED,
-        autoSessionTracking: true,
         debug: config.public.ENV !== 'production',
         dsn: config.public.SENTRY_DSN,
         release: config.public.commitHash,

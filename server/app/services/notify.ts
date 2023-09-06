@@ -4,7 +4,7 @@ import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
 import * as Sentry from '@sentry/node'
 import { initializeApp } from 'firebase/app'
-import { EventDescription } from '@/stores/cloud'
+import { EventDescription } from '@/types/cloud'
 import { KnownCollectionName } from '@/utils/db'
 
 
@@ -40,7 +40,7 @@ export default async function () {
     if (scheduleDocument === null) {
         return
     }
-    const scheduleParts = await (await getDoc(scheduleDocument)).data()?.parts
+    const scheduleParts = (await (await getDoc(scheduleDocument)).data() as {parts: DocumentReference[]})?.parts
 
     if (scheduleParts === null) {
         return
@@ -50,7 +50,7 @@ export default async function () {
     const errors: { [key: string]: any } = {}
     const promises: Promise<void | Response>[] = []
     for (let partIndex = 0; partIndex < scheduleParts.length; partIndex++) {
-        const part = scheduleParts[partIndex] as DocumentReference
+        const part = scheduleParts[partIndex]
         const partData = await (await getDoc(part)).data()
         if (typeof partData === 'undefined') {
             continue

@@ -1,5 +1,5 @@
 import { deleteField, FieldValue } from 'firebase/firestore'
-import { Feedback } from '@/stores/cloud'
+import { Feedback } from '@/types/cloud'
 
 type Props = {
     data: MaybeRefOrGetter<Feedback>,

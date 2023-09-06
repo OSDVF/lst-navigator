@@ -44,7 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import { FeedbackType, useCloudStore } from '@/stores/cloud'
+import { useCloudStore } from '@/stores/cloud'
+import { FeedbackType } from '@/types/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
 const route = useRoute()

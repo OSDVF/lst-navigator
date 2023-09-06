@@ -20,11 +20,13 @@ export default defineNuxtPlugin({
             ...sentryConfig,
             app: nuxtApp.vueApp,
             integrations: [
-                new Sentry.BrowserTracing({
-                    routingInstrumentation: Sentry.vueRouterInstrumentation(nuxtApp.$router as Router),
-                    tracePropagationTargets: config.public.SENTRY_TRACE_PROPAGATION_TARGET ? [config.public.SENTRY_TRACE_PROPAGATION_TARGET] : undefined
-                }),
-                new Sentry.Replay()
+                ...(process.client
+                    ? [new Sentry.BrowserTracing({
+                        routingInstrumentation: Sentry.vueRouterInstrumentation(nuxtApp.$router as Router),
+                        tracePropagationTargets: config.public.SENTRY_TRACE_PROPAGATION_TARGET ? [config.public.SENTRY_TRACE_PROPAGATION_TARGET] : undefined
+                    }),
+                    new Sentry.Replay()]
+                    : [])
             ],
             trackComponents: true,
             hooks: ['activate', 'create', 'destroy', 'mount', 'update'],

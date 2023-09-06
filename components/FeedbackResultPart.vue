@@ -90,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, ScheduleEvent, SchedulePart } from '@/stores/cloud'
+import { Feedback, ScheduleEvent, SchedulePart } from '@/types/cloud'
 import { onlyIntIndexed } from '@/utils/types'
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'

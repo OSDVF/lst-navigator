@@ -112,7 +112,8 @@
     </table>
 </template>
 <script setup lang="ts">
-import { FeedbackType, Feedback, defaultQuestions } from '@/stores/cloud'
+import { defaultQuestions } from '@/stores/cloud'
+import { Feedback, FeedbackType } from '@/types/cloud'
 import useFeedbackControls from '@/utils/feedbackControls'
 
 const props = defineProps({

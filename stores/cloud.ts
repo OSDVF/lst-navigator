@@ -1,109 +1,13 @@
 import { defineStore, skipHydrate } from 'pinia'
-import { FieldValue, Firestore, arrayUnion, collection, deleteField, doc, getDocs, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
+import { FieldValue, Firestore, arrayUnion, collection, deleteField, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signOut } from 'firebase/auth'
-import { getCurrentInstance } from 'vue-demi'
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { KnownCollectionName } from '@/utils/db'
-
-export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select'
-export type FeedbackConfig = {
-    group?: string | RegExp, // title of parts of schedule to group by
-    title: string,
-    individual: {
-        name: string,
-        questions: string[]
-        type?: FeedbackType,
-        description?: string
-    }[],
-}
-export type ScheduleEvent = {
-    color?: string
-    notify?: string[]
-    subtitle?: string
-    title?: string
-    time?: number
-    feedbackType?: FeedbackType,
-    detailQuestion?: string,
-    description?: string,
-    questions?: string[],
-    icon?: string // iconify code
-}
-
-export type SchedulePart = {
-    date: string,
-    name: string,
-    program: ScheduleEvent[]
-};
-
-export type EventSubdocuments = 'meta' | 'notes' | 'feedback' | 'subscriptions' | 'users'
-
-
-export type EventMeta = {
-    description: string,
-    title: string,
-    subtitle: string,
-    schedule: {
-        parts: SchedulePart[]
-    }, // in the database this a reference to another document, but this reference is being resolved by vuefire
-    image: string, // url
-    feedback: FeedbackConfig[],
-    feedbackInfo: string,
-    groups: string[],
-    web: string
-}
-
-export type EventDescription = {
-    title: string,
-    start: string, // in format 2023-01-30
-    end: string,
-    meta: EventMeta
-} & {
-        [key in EventSubdocuments]: string
-    }
-
-export type Permissions = {
-    superAdmin: boolean,
-    /**
-     * Also has access to the administrator section and can edit feedback results
-     */
-    eventAdmin: boolean,
-    /**
-     * Can edit schedule on this event and has access to feedback results
-     */
-    editSchedule: boolean,
-}
-
-export type UserInfo = {
-    permissions: { [key: 'superAdmin' | string]: boolean | 'admin' | 'schedule' }
-    subscriptions: string[],
-    signature: {
-        [eventId: string]: string
-    },
-    signatureId: {
-        [eventId: string]: string
-    },
-    name: string,
-    email: string,
-    photoURL: string,
-    timestamp: number,
-    timezone: number
-}
-
-export type UpdatePayload<T> = {
-    [key in keyof T]: T[key] | FieldValue
-}
-
-export type Feedback = {
-    basic?: number | FieldValue,
-    detail?: string | FieldValue,
-    complicated?: (number | null)[],
-    select?: string | FieldValue
-}
-
+import { EventDescription, EventSubdocuments, FeedbackConfig, Feedback, UpdatePayload, SchedulePart, Subscriptions, UserInfo, Permissions } from '@/types/cloud'
 /**
  * Compile time check that this collection really exists (is checked by the server)
  */
@@ -125,6 +29,7 @@ if (process.server) {
     try {
         await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })
     } catch (e) {
+        // eslint-disable-next-line no-console
         console.error(e)
         probe = false
     }
@@ -137,6 +42,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const config = useRuntimeConfig()
     const selectedEvent = ref(config.public.defaultEvent)
     const auth = useFirebaseAuth()
+    const app = useNuxtApp()
 
     let firestore: Firestore | null = null
 
@@ -147,17 +53,20 @@ export const useCloudStore = defineStore('cloud', () => {
                     persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
             })
         } catch (e) {
+            // eslint-disable-next-line no-console
             console.error(e)
 
             try {
                 firestore = useFirestore()
             } catch (e) {
+                // eslint-disable-next-line no-console
                 console.error(e)
             }
         }
     }
 
-    const eventDocuments = useDocument<EventDescription>(firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null, {
+    const ed = firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null
+    const eventDocuments = useDocument<EventDescription>(ed, {
         maxRefDepth: 4
     })
 
@@ -244,93 +153,101 @@ export const useCloudStore = defineStore('cloud', () => {
         }
     }
 
-    const onlineUserAuth = useCurrentUser()
-    const offlineAuth = usePersistentRef('user', onlineUserAuth.value ? { ...onlineUserAuth.value } : null) // offline-stored user
-    const userAuth = computed({
+    const offlineAuth = usePersistentRef('user', auth?.currentUser ? { ...auth?.currentUser } : null) // offline-stored user
+    const userProxy = computed({
         get() {
-            return onlineUserAuth.value ?? offlineAuth.value
+            return offlineAuth.value
         },
         set(value) {
-            /* offlineUser.value.displayName = value?.displayName
-            offlineUser.value.email = value?.email
-            offlineUser.value.emailVerified = value?.emailVerified
-            offlineUser.value.photoURL = value?.photoURL
-            offlineUser.value.uid = value?.uid
-            offlineUser.value.providerId = value?.providerId
-            offlineUser.value.phoneNumber = value?.phoneNumber
-            offlineUser.value.isAnonymous = value?.isAnonymous
-            offlineUser.value.emailVerified = value?.emailVerified
-            offlineUser.value.metadata = value?.metadata
-            offlineUser.value.providerData = value?.providerData
-            offlineUser.value.refreshToken = value?.refreshToken */
             if (!value) {
                 offlineAuth.value = value
+                return
             } else if (!offlineAuth.value) {
                 offlineAuth.value = {} as any
             }
             for (const key in value) {
-                if (typeof value[key as keyof typeof value] !== 'function') {
-                    (offlineAuth.value as any)[key]! = value[key as keyof typeof value]
-                }
+                try {
+                    if (typeof value[key as keyof typeof value] !== 'function') {
+                        (offlineAuth.value as any)[key]! = value[key as keyof typeof value]
+                    }
+                    // eslint-disable-next-line no-console
+                } catch (e) { console.log(e) }
             }
         }
     })
-    const usersCollection = firestore ? knownCollection(firestore, 'users') : null
+    const usersCollection = firestore !== null ? knownCollection(firestore, 'users') : null
+    const ud = skipHydrate(computed(() => userProxy.value?.uid && usersCollection ? doc(usersCollection, userProxy.value.uid) : null))
     const user = {
-        auth: userAuth,
-        doc: firestore && userAuth.value?.uid && usersCollection ? skipHydrate(doc(usersCollection, userAuth.value!.uid)) : null,
-        info: useDocument<UserInfo>(null),
+        auth: offlineAuth,
+        doc: ud,
+        info: shallowRef(useDocument<UserInfo>(ud).value),
         error: ref(),
         async signOut() {
+            userProxy.value = null
             await signOut(auth!)
-            userAuth.value = null
         },
-        signIn() {
-            signInWithPopup(auth!, googleAuthProvider)
+        signIn(useRedirect = false) {
+            (useRedirect ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
                 .then((result) => {
-                    if (user.doc) {
-                        const signatureId = user.info.value!.signatureId[selectedEvent.value]
-                        if (signatureId) {
-                            if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
-                                settings.userIdentifier = signatureId
-                                settings.userNickname = user.info.value!.signature[selectedEvent.value]
-                            }
-                        }
-
-                        const now = new Date()
-                        setDoc(user.doc, {
-                            name: result.user.displayName,
-                            signature: {
-                                [selectedEvent.value]: settings.userNickname
-                            },
-                            signatureId: {
-                                [selectedEvent.value]: settings.userIdentifier
-                            },
-                            subscriptions: arrayUnion(),
-                            email: result.user.email,
-                            photoURL: result.user.photoURL,
-                            timestamp: now.getTime(),
-                            timezone: now.getTimezoneOffset()
-                        } as Partial<UpdatePayload<UserInfo>>, {
-                            merge: true
-                        })
-                    }
+                    userProxy.value = result.user
                 }).catch((reason) => {
-                    console.error('Failed signin', reason)
+                    const reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
+                    app.$Sentry.captureEvent(reason, {
+                        data: reasonPretty
+                    })
+                    // eslint-disable-next-line no-console
+                    console.error('Failed signin', reasonPretty)
                     user.error.value = reason
+                    if (window.prompt('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
+                        user.signIn(true)
+                    }
                 })
         }
     }
-    user.info = useDocument<UserInfo>(user.doc)
 
-    onMounted(function () {
-        if (config.public.debugUser) {
-            userAuth.value = debugUser
-        } else {
-            watch(onlineUserAuth, (newUser) => {
-                if (newUser) {
-                    userAuth.value = newUser
+    watch(settings, (newSettings) => {
+        if (user.doc.value && userProxy.value?.uid && process.client) {
+            setDoc(user.doc.value, {
+                signature: {
+                    [selectedEvent.value]: newSettings.userNickname
+                },
+                signatureId: {
+                    [selectedEvent.value]: localStorage.getItem('uniqueIdentifier')
                 }
+            }, {
+                merge: true
+            })
+        }
+    })
+
+    watch(user.info, (newUser) => {
+        if (user.doc.value && newUser) {
+            const signatureId = newUser.signatureId?.[selectedEvent.value]
+            if (signatureId) {
+                if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
+                    settings.userIdentifier = signatureId
+                    settings.userNickname = user.info.value!.signature[selectedEvent.value]
+                }
+            }
+
+            const now = new Date()
+            setDoc(user.doc.value, {
+                name: newUser.name || user.auth.value?.displayName,
+                signature: {
+                    [selectedEvent.value]: settings.userNickname
+                },
+                signatureId: {
+                    [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier'))
+                },
+                subscriptions: {
+                    [selectedEvent.value]: arrayUnion(messagingToken.value)
+                },
+                email: newUser.email || user.auth.value?.email,
+                photoURL: newUser.photoURL || user.auth.value?.photoURL,
+                lastLogin: now.getTime(),
+                lastTimezone: now.getTimezoneOffset()
+            } as Partial<UpdatePayload<UserInfo>>, {
+                merge: true
             })
         }
     })
@@ -341,7 +258,7 @@ export const useCloudStore = defineStore('cloud', () => {
             eventAdmin: true,
             superAdmin: true
         }
-        : user.info.value?.permissions
+        : user.info.value?.permissions && user.auth.value?.uid
             ? {
                 editSchedule: user.info.value.permissions[selectedEvent.value] === 'schedule' || user.info.value.permissions[selectedEvent.value] === 'admin' || user.info.value.permissions.superAdmin === true,
                 eventAdmin: user.info.value.permissions[selectedEvent.value] === 'admin' || user.info.value.permissions.superAdmin === true,
@@ -358,6 +275,18 @@ export const useCloudStore = defineStore('cloud', () => {
     const notesDocument = currentEventDocument('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
     const messagingToken = usePersistentRef('messagingToken', '')
+
+    watch(messagingToken, (newToken) => {
+        if (user.doc.value && userProxy.value?.uid && process.client) {
+            setDoc(user.doc.value, {
+                subscriptions: {
+                    [selectedEvent.value]: arrayUnion(newToken)
+                }
+            }, {
+                merge: true
+            })
+        }
+    })
 
     let hydrationDebounce: null | NodeJS.Timeout = null
     function hydrateOfflineFeedback(onlineFeedback: any) {
@@ -390,26 +319,33 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     hydrateOfflineFeedback(feedback.online)
 
-
-    watch(settings, (newSettings) => {
-        if (feedback.doc.value && userAuth.value?.uid && process.client) {
-            setDoc(feedback.doc.value, {
-                [userAuth.value.uid]: {
-                    offlineUserName: newSettings.userNickname,
-                    offlineUserIdentifier: localStorage.getItem('uniqueIdentifier')
+    // Hydrate user
+    onMounted(async () => {
+        if (config.public.debugUser) {
+            userProxy.value = debugUser
+        } else {
+            watch(useCurrentUser(), (newUser) => {
+                if (newUser) {
+                    userProxy.value = newUser
                 }
-            }, {
-                merge: true
             })
-        }
-    })
 
-    // only on client side
-    onMounted(() => {
-        getRedirectResult(auth!).catch((reason) => {
-            console.error('Failed redirect result', reason)
-            user.error.value = reason
-        })
+            await getRedirectResult(auth!).then((token) => {
+                if (token?.user) {
+                    userProxy.value = token.user
+                }
+            }).catch((reason) => {
+                // eslint-disable-next-line no-console
+                console.error('Failed redirect result', reason)
+                app.$Sentry.captureEvent(reason, {
+                    data: reason
+                })
+                user.error.value = reason
+            })
+            if (!userProxy.value) {
+                userProxy.value = await getCurrentUser()
+            }
+        }
     })
 
     if (process.client) {
@@ -421,8 +357,8 @@ export const useCloudStore = defineStore('cloud', () => {
                         messagingToken.value = newToken
                         if (subscriptionsDocument.value) {
                             setDoc(subscriptionsDocument.value, {
-                                tokens: arrayUnion(newToken)
-                            }, { merge: true })
+                                [newToken]: true
+                            } as UpdatePayload<Subscriptions>, { merge: true })
                         }
                     }
                 })
@@ -445,6 +381,6 @@ export const useCloudStore = defineStore('cloud', () => {
         offlineFeedback: skipHydrate(offlineFeedback),
         resolvedPermissions,
         user,
-        eventsCollection: useCollection(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 })
+        eventsCollection: useCollection(firestore !== null ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 })
     }
 })

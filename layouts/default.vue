@@ -81,8 +81,8 @@ const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
 
 if (process.client) {
     ///
-/// Redirection guards
-///
+    /// Redirection guards
+    ///
     installStep.then((step) => {
         const safeStep = step ?? 0
         if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
@@ -112,9 +112,10 @@ const globalBackground = ref('')
 provide('globalBackground', globalBackground)
 
 function captureError(error: unknown) {
-    // eslint-disable-next-line no-console
-    console.error(error, error instanceof TypeError ? error.stack : null)
-    Sentry.captureException(error)
+    try {
+        console.error(error, error instanceof TypeError ? error.stack : null)
+        Sentry.captureException(error)
+    } catch (e) { console.error(e) }
 }
 
 </script>

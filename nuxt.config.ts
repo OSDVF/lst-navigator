@@ -89,7 +89,7 @@ const config = defineNuxtConfig({
                 // The export name of top-level await promise for each chunk module
                 promiseExportName: '__tla',
                 // The function to generate import names of top-level await promise in each chunk module
-                promiseImportName: (i:any) => `__tla_${i}`
+                promiseImportName: (i: any) => `__tla_${i}`
             }),
             sentryVitePlugin({
                 authToken: process.env.SENTRY_AUTH_TOKEN,
