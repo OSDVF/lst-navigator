@@ -1,5 +1,5 @@
 import { defineStore, skipHydrate } from 'pinia'
-import { FieldValue, Firestore, arrayUnion, collection, deleteField, doc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
+import { DocumentReference, FieldValue, Firestore, arrayUnion, collection, deleteField, doc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
@@ -177,19 +177,56 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const usersCollection = firestore !== null ? knownCollection(firestore, 'users') : null
     const ud = skipHydrate(computed(() => userProxy.value?.uid && usersCollection ? doc(usersCollection, userProxy.value.uid) : null))
+
+    async function updateUserInfo(newDoc : DocumentReference | null) {
+        if (newDoc) {
+            const data = await (await getDoc(newDoc)).data()
+            if (data) { user.info.value = data as UserInfo }
+        }
+    }
     const user = {
         auth: offlineAuth,
         doc: ud,
-        info: shallowRef(useDocument<UserInfo>(ud).value),
+        info: ref<UserInfo | null>(null),
         error: ref(),
         async signOut() {
             userProxy.value = null
             await signOut(auth!)
         },
         signIn(useRedirect = false) {
-            (useRedirect ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
+            (useRedirect === true ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
                 .then((result) => {
                     userProxy.value = result.user
+                    updateUserInfo(user.doc.value)
+                    if (user.doc.value && user.info.value) {
+                        const signatureId = user.info.value.signatureId?.[selectedEvent.value]
+                        if (signatureId) {
+                            if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
+                                settings.userIdentifier = signatureId
+                                settings.userNickname = user.info.value!.signature[selectedEvent.value]
+                            }
+                        }
+
+                        const now = new Date()
+                        setDoc(user.doc.value, {
+                            name: user.info.value.name || user.auth.value?.displayName,
+                            signature: {
+                                [selectedEvent.value]: settings.userNickname
+                            },
+                            signatureId: {
+                                [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier'))
+                            },
+                            subscriptions: {
+                                [selectedEvent.value]: arrayUnion(messagingToken.value)
+                            },
+                            email: user.info.value.email || user.auth.value?.email,
+                            photoURL: user.info.value.photoURL || user.auth.value?.photoURL,
+                            lastLogin: now.getTime(),
+                            lastTimezone: now.getTimezoneOffset()
+                        } as Partial<UpdatePayload<UserInfo>>, {
+                            merge: true
+                        })
+                    }
                 }).catch((reason) => {
                     const reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
                     app.$Sentry.captureEvent(reason, {
@@ -198,12 +235,17 @@ export const useCloudStore = defineStore('cloud', () => {
                     // eslint-disable-next-line no-console
                     console.error('Failed signin', reasonPretty)
                     user.error.value = reason
-                    if (window.prompt('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
+                    if (confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
                         user.signIn(true)
                     }
                 })
         }
     }
+
+    watch(ud, (newDoc) => {
+        updateUserInfo(newDoc)
+    })
+    updateUserInfo(ud.value)
 
     watch(settings, (newSettings) => {
         if (user.doc.value && userProxy.value?.uid && process.client) {
@@ -215,38 +257,6 @@ export const useCloudStore = defineStore('cloud', () => {
                     [selectedEvent.value]: localStorage.getItem('uniqueIdentifier')
                 }
             }, {
-                merge: true
-            })
-        }
-    })
-
-    watch(user.info, (newUser) => {
-        if (user.doc.value && newUser) {
-            const signatureId = newUser.signatureId?.[selectedEvent.value]
-            if (signatureId) {
-                if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
-                    settings.userIdentifier = signatureId
-                    settings.userNickname = user.info.value!.signature[selectedEvent.value]
-                }
-            }
-
-            const now = new Date()
-            setDoc(user.doc.value, {
-                name: newUser.name || user.auth.value?.displayName,
-                signature: {
-                    [selectedEvent.value]: settings.userNickname
-                },
-                signatureId: {
-                    [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier'))
-                },
-                subscriptions: {
-                    [selectedEvent.value]: arrayUnion(messagingToken.value)
-                },
-                email: newUser.email || user.auth.value?.email,
-                photoURL: newUser.photoURL || user.auth.value?.photoURL,
-                lastLogin: now.getTime(),
-                lastTimezone: now.getTimezoneOffset()
-            } as Partial<UpdatePayload<UserInfo>>, {
                 merge: true
             })
         }
@@ -384,3 +394,4 @@ export const useCloudStore = defineStore('cloud', () => {
         eventsCollection: useCollection(firestore !== null ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 })
     }
 })
+

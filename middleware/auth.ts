@@ -5,7 +5,7 @@ export default defineNuxtRouteMiddleware((to) => {
     const cloudStore = useCloudStore()
 
     // redirect the user to the login page
-    if (!cloudStore.user.auth?.uid) {
+    if (process.client && !cloudStore.user.auth?.uid) {
         return navigateTo({
             path: '/login',
             query: {

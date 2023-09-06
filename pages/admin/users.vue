@@ -5,7 +5,7 @@
                 :is="DataTable" :data="usersIndexed" :select="true" :columns="[
                     {
                         searchable: false,
-                        render: (data: string) => `<img class='noinvert' referrerPolicy='no-referrer' crossorigin='anonymous' src='${data}' />`
+                        render: (data: string) => `<img class='noinvert' width='24px' referrerPolicy='no-referrer' crossorigin='anonymous' src='${data}' />`
                     },
                     null,
                     null,
@@ -13,7 +13,7 @@
                     null,
                     null,
                     {
-                        render: (data: string) => `<span title='${data}' style='width: 1em; height: 1em; --783d4724-iconUrl: url(https://api.iconify.design/mdi/${({
+                        render: (data: string) => `<span title='${data}' class='icon' style='mask-image: url(https://api.iconify.design/mdi/${({
                             super: 'shield-lock-open', event: 'calendar-check', admin: 'account-lock-open'
                         })[data]}.svg);'></span>`
                     }
@@ -21,7 +21,7 @@
             >
                 <thead>
                     <tr>
-                        <th>🙃</th>
+                        <th />
                         <th>ID</th>
                         <th>Účet</th>
                         <th>Podpis</th>
@@ -64,7 +64,7 @@ const usersIndexed = computed(() => {
                 user.name,
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
-                cloudStore.feedback.online?.[effectiveSignature],
+                cloudStore.feedback.online?.[effectiveSignature] ?? 'Nikdy',
                 user.permissions.superAdmin === true ? 'super' : user.permissions[cloudStore.selectedEvent]
             ]
             result.push(values)
@@ -88,3 +88,24 @@ dtModule.then(async (module) => {
     DataTable.value.use(Responsive.default)
 })
 </script>
+
+<style lang="scss">
+.datatable {
+    .icon {
+        background: black;
+        display: inline-block;
+        width: 1.5rem;
+        height: 1.5rem;
+        mask-repeat: no-repeat;
+        mask-size: 100% 100%;;
+    }
+    td {
+        border: 1px solid black;
+        padding: .2rem
+    }
+    table {
+        border-collapse: collapse;
+    }
+}
+
+</style>

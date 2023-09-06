@@ -5,11 +5,12 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
     const key = new LocalKey<T>(name, defaultValue, {
         hasDefaultValue: true
     })
-    let internalRef : Ref<UnwrapRef<T>>
+    let internalRef: Ref<UnwrapRef<T>>
     if (typeof localStorage !== 'undefined') {
         internalRef = ref(LocalStorage.getItem(key)!)
+    } else {
+        internalRef = ref(defaultValue)
     }
-    internalRef = ref(defaultValue)
     onMounted(() => {
         if (typeof localStorage !== 'undefined') {
             const storedVal = ref(LocalStorage.getItem(key)!).value
