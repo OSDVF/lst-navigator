@@ -4,7 +4,7 @@
         <Head>
             <Title>{{ title }}</Title>
         </Head>
-        <nav>
+        <nav class="p-1 flex justify-content-center">
             <label>Vybraná akce
                 <select v-model="cloudStore.selectedEvent">
                     <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>

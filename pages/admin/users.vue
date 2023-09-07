@@ -2,9 +2,14 @@
     <article>
         <ClientOnly>
             <Component
-                :is="DataTable" :data="usersIndexed" :select="true" :columns="[
+                :is="DataTable"
+                ref="table" :data="usersIndexed" :options="{
+                    order: [[1, 'asc']],
+                    select: true
+                }" :columns="[
                     {
                         searchable: false,
+                        orderable: false,
                         render: (data: string) => `<img class='noinvert' width='24px' referrerPolicy='no-referrer' crossorigin='anonymous' src='${data}' />`
                     },
                     null,
@@ -36,12 +41,9 @@
 </template>
 
 <script setup lang="ts">
+import type { Api } from 'datatables.net'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
 import { UserInfo } from '@/types/cloud'
-import 'datatables.net-dt'
-import 'datatables.net-buttons-dt'
-import 'datatables.net-responsive-dt'
-import 'datatables.net-select-dt'
 
 definePageMeta({
     title: 'Uživatelé',
@@ -73,19 +75,27 @@ const usersIndexed = computed(() => {
     return result
 })
 
-const dtModule = import('datatables.net-vue3')
-const selectModule = import('datatables.net-select')
-const buttonsModule = import('datatables.net-buttons')
-const responsiveModule = import('datatables.net-responsive')
+/* const table = ref<{dt:Api<typeof usersIndexed.value>}>()
+watch(table, (table) => {
+    if (table) {
+        table.dt.column('1').order('asc')// Default order by user uid
+    }
+}) */
 const DataTable = shallowRef()
-dtModule.then(async (module) => {
-    const Select = await selectModule
-    const Buttons = await buttonsModule
-    const Responsive = await responsiveModule
-    DataTable.value = module.default
-    DataTable.value.use(Buttons.default)
-    DataTable.value.use(Select.default)
-    DataTable.value.use(Responsive.default)
+onMounted(() => {
+    const dtModule = import('datatables.net-vue3')
+    const selectModule = import('datatables.net-select')
+    const buttonsModule = import('datatables.net-buttons')
+    const responsiveModule = import('datatables.net-responsive')
+    dtModule.then(async (module) => {
+        const Select = await selectModule
+        const Buttons = await buttonsModule
+        const Responsive = await responsiveModule
+        DataTable.value = module.default
+        DataTable.value.use(Buttons.default)
+        DataTable.value.use(Select.default)
+        DataTable.value.use(Responsive.default)
+    })
 })
 </script>
 
@@ -98,13 +108,6 @@ dtModule.then(async (module) => {
         height: 1.5rem;
         mask-repeat: no-repeat;
         mask-size: 100% 100%;;
-    }
-    td {
-        border: 1px solid black;
-        padding: .2rem
-    }
-    table {
-        border-collapse: collapse;
     }
 }
 

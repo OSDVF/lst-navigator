@@ -10,12 +10,14 @@
                 cloudStore.user.auth.email }}</span>
         </label>
         <span>
-            <button v-if="cloudStore.user.auth?.uid" @click="cloudStore.user.signOut">
-                <IconCSS name="mdi:logout" /> Odhlásit
-            </button>
-            <button v-else @click="cloudStore.user.signIn">
-                <IconCSS name="mdi:login" /> Přihlásit
-            </button>
+            <ClientOnly>
+                <button v-if="cloudStore.user.auth?.uid" @click="cloudStore.user.signOut">
+                    <IconCSS name="mdi:logout" /> Odhlásit
+                </button>
+                <button v-else @click="cloudStore.user.signIn">
+                    <IconCSS name="mdi:login" /> Přihlásit
+                </button>
+            </ClientOnly>
         </span>
     </fieldset>
 </template>
@@ -45,8 +47,4 @@ watch(cloudStore, (newCloud, oldCloud) => {
     }
 })
 
-</script>
-
-<script lang="ts">
-// Is here in classic <script> because <script setup> is unique for instance
 </script>

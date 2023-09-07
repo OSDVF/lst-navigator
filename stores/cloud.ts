@@ -70,6 +70,10 @@ export const useCloudStore = defineStore('cloud', () => {
         maxRefDepth: 4
     })
 
+    const eventData = useAsyncData('defaultEventData', () => eventDocuments.promise.value, {
+        watch: [eventDocuments]
+    }).data
+
     function currentEventDocument(docName: EventSubdocuments) {
         return computed(() => {
             if (!firestore) { return null }
@@ -79,24 +83,24 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const subscriptionsDocument = currentEventDocument('subscriptions')
 
-    const eventImage = computed(() => eventDocuments.value?.meta.image
-        ? useStorageFileUrl(storageRef(firebaseStorage, eventDocuments.value?.meta.image)).url.value
+    const eventImage = computed(() => eventData.value?.meta.image
+        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.meta.image)).url.value
         : null)
-    const eventTitle = computed(() => eventDocuments.value?.meta.title)
-    const eventSubtitle = computed(() => eventDocuments.value?.meta.subtitle)
-    const eventDescription = computed(() => eventDocuments.value?.meta.description)
-    const eventWeb = computed(() => eventDocuments.value?.meta.web)
-    const groupNames = computed(() => eventDocuments.value?.meta.groups ?? [])
+    const eventTitle = computed(() => eventData.value?.meta.title)
+    const eventSubtitle = computed(() => eventData.value?.meta.subtitle)
+    const eventDescription = computed(() => eventData.value?.meta.description)
+    const eventWeb = computed(() => eventData.value?.meta.web)
+    const groupNames = computed(() => eventData.value?.meta.groups ?? [])
     const fd = currentEventDocument('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
     const feedback = {
-        config: computed<FeedbackConfig[] | undefined>(() => eventDocuments.value?.meta.feedback),
+        config: computed<FeedbackConfig[] | undefined>(() => eventData.value?.meta.feedback),
         doc: fd,
         dirtyTime: feedbackDirtyTime,
         error: ref(),
         fetchFailed: ref(false),
         fetching: ref(false),
-        infoText: computed(() => eventDocuments.value?.meta.feedbackInfo),
+        infoText: computed(() => eventData.value?.meta.feedbackInfo),
         online: useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false } }),
         set(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
             feedback.fetching.value = true
@@ -178,7 +182,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const usersCollection = firestore !== null ? knownCollection(firestore, 'users') : null
     const ud = skipHydrate(computed(() => userProxy.value?.uid && usersCollection ? doc(usersCollection, userProxy.value.uid) : null))
 
-    async function updateUserInfo(newDoc : DocumentReference | null) {
+    async function updateUserInfo(newDoc: DocumentReference | null) {
         if (newDoc) {
             const data = await (await getDoc(newDoc)).data()
             if (data) { user.info.value = data as UserInfo }
@@ -280,7 +284,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 superAdmin: false
             })
 
-    const scheduleParts = computed<SchedulePart[]>(() => eventDocuments.value?.meta.schedule?.parts ?? [])
+    const scheduleParts = computed<SchedulePart[]>(() => eventData.value?.meta.schedule?.parts ?? [])
 
     const notesDocument = currentEventDocument('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
