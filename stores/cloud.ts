@@ -395,7 +395,7 @@ export const useCloudStore = defineStore('cloud', () => {
         offlineFeedback: skipHydrate(offlineFeedback),
         resolvedPermissions,
         user,
-        eventsCollection: useCollection(firestore !== null ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 })
+        eventsCollection: useCollection<EventDescription>(firestore !== null ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 })
     }
 })
 

@@ -18,6 +18,12 @@ export function toHumanTime(time?: number) {
     return `${hours}:${minutes.toString().padStart(2, '0')}`
 }
 
+export function toJSDate(date?: string) {
+    if (!date) { return null }
+    const [year, month, day] = date.split('-').map(x => parseInt(x))
+    return new Date(year, month - 1, day)
+}
+
 export function getParallelEvents(eventItem: ScheduleEvent) {
     return eventItem.subtitle?.split(',')?.map(x => x.trim()) ?? []
 }
