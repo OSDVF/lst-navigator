@@ -1,13 +1,16 @@
 <template>
-    <fieldset>
+    <fieldset class="relative">
         <label>
-            <IconCSS v-if="cloudStore.resolvedPermissions.editSchedule" name="mdi:shield-lock-open" title="Úpravy povoleny" />
+            <IconCSS v-if="cloudStore.resolvedPermissions.superAdmin" name="mdi:shield-lock-open" title="Úpravy povoleny" />
             <img
                 v-else-if="cloudStore.user.auth?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous"
                 :src="cloudStore.user.auth.photoURL" alt="Profilový obrázek" width="24" height="24"
             >
-            {{ cloudStore.user.auth?.displayName ?? prettyError ?? 'Přihlášení' }} <span v-if="cloudStore.user.auth?.email" class="muted nowrap">{{
-                cloudStore.user.auth.email }}</span>
+            &nbsp;
+            <ClientOnly>
+                {{ cloudStore.user.pendingPopup ? 'Postupujte podle pokynů v druhém okně' : cloudStore.user.auth?.displayName ?? prettyError ?? 'Přihlášení' }} <span v-if="cloudStore.user.auth?.email" class="muted nowrap">{{
+                    cloudStore.user.auth.email }}</span>
+            </ClientOnly>
         </label>
         <span>
             <ClientOnly>
@@ -17,6 +20,7 @@
                 <button v-else @click="cloudStore.user.signIn">
                     <IconCSS name="mdi:login" /> Přihlásit
                 </button>
+                <ProgressBar v-if="cloudStore.user.pendingAction" class="absolute left-0 bottom-0 right-0" />
             </ClientOnly>
         </span>
     </fieldset>

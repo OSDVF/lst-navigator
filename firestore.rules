@@ -19,11 +19,11 @@ service cloud.firestore {
     }
     match /users {
       function isSuperAdmin() {
-				return get(/databases/$(database)/documents/users/$(request.auth.uid)/permissions/superAdmin) == true;
+				return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)/permissions/superAdmin) == true;
       }
-			match /{userId} {
+			match /{userId}/{field=**} {
       	allow read: if isSignedIn();
-        allow write: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+        allow write: if (isSignedIn() && request.auth.uid == userId && request.resource.data.get('superAdmin', false) == false) || isSuperAdmin();
       }
       allow read: if isSignedIn();
       allow write: if false;

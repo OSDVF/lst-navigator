@@ -31,7 +31,7 @@ export type SchedulePart = {
 };
 
 export type EventSubdocuments = 'meta' | 'notes' | 'feedback' | 'subscriptions' | 'users'
-
+export const EventSubdocumentsList : EventSubdocuments[] = ['meta', 'notes', 'feedback', 'subscriptions', 'users']
 
 export type EventMeta = {
     description: string,
@@ -47,13 +47,13 @@ export type EventMeta = {
     web: string
 }
 
-export type EventDescription = {
+export type EventDescription<T = string> = {
     title: string,
     start: string, // in format 2023-01-30
     end: string,
     meta: EventMeta
 } & {
-        [key in EventSubdocuments]: string
+        [key in EventSubdocuments]: T
     }
 
 export type Permissions = {
@@ -69,7 +69,7 @@ export type Permissions = {
 }
 
 export type UserInfo = {
-    permissions: { [key: 'superAdmin' | string]: boolean | 'admin' | 'schedule' }
+    permissions: { [key: 'superAdmin' | string]: boolean | 'admin' | 'schedule' | null }
     subscriptions: {
         [eventId: string]: string
     },
@@ -79,9 +79,9 @@ export type UserInfo = {
     signatureId: {
         [eventId: string]: string
     },
-    name: string,
-    email: string,
-    photoURL: string,
+    name?: string,
+    email?: string,
+    photoURL?: string,
     lastLogin: number,
     lastTimezone: number
 }

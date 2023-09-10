@@ -22,20 +22,20 @@
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
                 <NuxtLink to="/info">
-                    <IconCSS name="mdi:information" size="2rem" />
+                    <IconCSS name="mdi:information" size="1.8rem" />
                     {{ config.public.title }}
                 </NuxtLink>
                 <NuxtLink to="/schedule">
-                    <IconCSS name="mdi:calendar-text" size="2rem" />
+                    <IconCSS name="mdi:calendar-text" size="1.8rem" />
                     Program
                 </NuxtLink>
-                <NuxtLink to="/settings">
-                    <IconCSS name="mdi:cog" size="2rem" />
-                    Nastavení
-                </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.eventAdmin" to="/admin">
-                    <IconCSS name="mdi:account-cog" size="2rem" />
+                    <IconCSS name="mdi:account-cog" size="1.8rem" />
                     Administrace
+                </NuxtLink>
+                <NuxtLink to="/settings">
+                    <IconCSS name="mdi:cog" size="1.8rem" />
+                    Nastavení
                 </NuxtLink>
             </nav>
             <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">

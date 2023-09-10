@@ -1,0 +1,49 @@
+diff --git a/node_modules/vuefire/dist/index.cjs b/node_modules/vuefire/dist/index.cjs
+index fc61ff9..6a7f0c3 100644
+--- a/node_modules/vuefire/dist/index.cjs
++++ b/node_modules/vuefire/dist/index.cjs
+@@ -776,7 +776,11 @@ function _useFirestoreRef(docOrCollectionRef, localOptions) {
+       if (promise.value === newPromise) {
+         error.value = reason;
+       }
+-      return Promise.reject(reason);
++      if(options.onError) {
++        options.onError(reason)
++      } else {
++        return Promise.reject(reason);
++      }
+     }).finally(() => {
+       if (promise.value === newPromise) {
+         pending.value = false;
+diff --git a/node_modules/vuefire/dist/index.d.ts b/node_modules/vuefire/dist/index.d.ts
+index 85fa6ea..4075900 100644
+--- a/node_modules/vuefire/dist/index.d.ts
++++ b/node_modules/vuefire/dist/index.d.ts
+@@ -129,6 +129,10 @@ interface FirestoreRefOptions extends _DataSourceOptions {
+      * Default Firestore converter to use with snapshots.
+      */
+     converter?: FirestoreDataConverter<unknown>;
++    /**
++     * Swallows fatal errors if defined
++     */
++    onError?: (e: any) => void;
+ }
+ /**
+  * Type of the global options for firestore refs. Some values cannot be `undefined`.
+diff --git a/node_modules/vuefire/dist/index.mjs b/node_modules/vuefire/dist/index.mjs
+index 9111e65..60001fa 100644
+--- a/node_modules/vuefire/dist/index.mjs
++++ b/node_modules/vuefire/dist/index.mjs
+@@ -775,7 +775,11 @@ function _useFirestoreRef(docOrCollectionRef, localOptions) {
+       if (promise.value === newPromise) {
+         error.value = reason;
+       }
+-      return Promise.reject(reason);
++      if(options.onError) {
++        options.onError(reason)
++      } else {
++        return Promise.reject(reason);
++      }
+     }).finally(() => {
+       if (promise.value === newPromise) {
+         pending.value = false;

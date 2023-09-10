@@ -1,9 +1,25 @@
 <template>
-    <article>
+    <div class="p-2">
+        <ProgressBar v-if="usersPending" />
+        <div v-show="someSelection">
+            <button @click="changePermissionsVisible = true">
+                Změnit oprávnění
+            </button>
+            <form v-show="changePermissionsVisible" @submit.prevent="changePermissions(); changePermissionsVisible = false">
+                <select v-model="targetPermission" required>
+                    <option
+                        v-for="(name, type) in { super: 'SuperAdmin', admin: 'Správce', event: 'Správce události', null: 'Nic' }"
+                        :key="type"
+                    >
+                        {{ name }}
+                    </option>
+                </select>
+                <input type="submit" value="Potvrdit">
+            </form>
+        </div>
         <ClientOnly>
             <Component
-                :is="DataTable"
-                ref="table" :data="usersIndexed" :options="{
+                :is="DataTable" ref="table" :data="usersIndexed" :options="{
                     order: [[1, 'asc']],
                     select: true
                 }" :columns="[
@@ -18,11 +34,11 @@
                     null,
                     null,
                     {
-                        render: (data: string) => `<span title='${data}' class='icon' style='mask-image: url(https://api.iconify.design/mdi/${({
+                        render: (data: string) => data ? `<span title='${data}' class='icon' style='mask-image: url(https://api.iconify.design/mdi/${({
                             super: 'shield-lock-open', event: 'calendar-check', admin: 'account-lock-open'
-                        })[data]}.svg);'></span>`
+                        })[data]}.svg);'></span>` : ''
                     }
-                ]"
+                ]" @select="selectionChanged" @deselect="selectionChanged" @error="dtError"
             >
                 <thead>
                     <tr>
@@ -37,13 +53,20 @@
                 </thead>
             </Component>
         </ClientOnly>
-    </article>
+        <p v-if="dtErrors" class="flex align-items-start">
+            <button @click="dtErrors = ''">
+                x
+            </button>
+            <pre class="m-0">{{ dtErrors }}</pre>
+        </p>
+    </div>
 </template>
 
 <script setup lang="ts">
 import type { Api } from 'datatables.net'
+import { doc, setDoc } from 'firebase/firestore'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
-import { UserInfo } from '@/types/cloud'
+import { UpdatePayload, UserInfo } from '@/types/cloud'
 
 definePageMeta({
     title: 'Uživatelé',
@@ -52,22 +75,29 @@ definePageMeta({
 })
 
 const cloudStore = useCloudStore()
+const app = useNuxtApp()
 const permissionError = ref()
-const users = useCollection<UserInfo>(knownCollection(useFirestore(), 'users'), { maxRefDepth: 0, onError(e: any) { permissionError.value = e } })
+const firestore = useFirestore()
+const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(knownCollection(firestore, 'users'), { maxRefDepth: 0, wait: true, onError(e: any) { permissionError.value = e } }).promise.value, {
+    server: false,
+    lazy: true
+})
+const usersPending = users.pending
+const dtErrors = ref('')
 
 const usersIndexed = computed(() => {
     const result = []
-    if (users.value) {
-        for (const user of users.value) {
+    if (users.data.value) {
+        for (const user of users.data.value) {
             const effectiveSignature = user.signature[cloudStore.selectedEvent] || user.signatureId[cloudStore.selectedEvent]
-            const values = [
+            const values: [string | undefined, string, string | undefined, string, string, string, string | boolean | null] = [
                 user.photoURL,
                 user.id,
                 user.name,
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
                 cloudStore.feedback.online?.[effectiveSignature] ?? 'Nikdy',
-                user.permissions.superAdmin === true ? 'super' : user.permissions[cloudStore.selectedEvent]
+                user.permissions?.superAdmin === true ? 'super' : user.permissions?.[cloudStore.selectedEvent]
             ]
             result.push(values)
         }
@@ -75,26 +105,62 @@ const usersIndexed = computed(() => {
     return result
 })
 
-/* const table = ref<{dt:Api<typeof usersIndexed.value>}>()
-watch(table, (table) => {
-    if (table) {
-        table.dt.column('1').order('asc')// Default order by user uid
+const table = ref<{ dt: Api<typeof usersIndexed.value> }>()
+const changePermissionsVisible = ref(false)
+const targetPermission = ref<UserInfo['permissions'][0] | 'super'>()
+const someSelection = ref(false)
+function selectionChanged() {
+    if (table.value) {
+        someSelection.value = table.value.dt.rows({ selected: true }).data().length > 0
     }
-}) */
+}
+
+function dtError(e: any, settings: any, techNote: string, message: string) {
+    console.error(e, settings, techNote, message)
+    app.$Sentry.captureException(message, {
+        extra: {
+            e,
+            techNote,
+            message
+        }
+    })
+    dtErrors.value += '\n' + message
+}
+
+function changePermissions() {
+    const selectedRows = table.value?.dt.rows({ selected: true })
+    if (selectedRows) {
+        const uids = selectedRows.column('1').data()
+        uids.each((uid) => {
+            const userDoc = doc(knownCollection(firestore, 'users'), uid)
+            setDoc(userDoc, (targetPermission.value === 'super'
+                ? {
+                    superAdmin: true
+                }
+                : {
+                    permissions: {
+                        [cloudStore.selectedEvent]: targetPermission.value,
+                        superAdmin: false
+                    }
+                }) as Partial<UpdatePayload<UserInfo>>, {
+                merge: true
+            })
+        })
+    }
+}
 const DataTable = shallowRef()
 onMounted(() => {
     const dtModule = import('datatables.net-vue3')
     const selectModule = import('datatables.net-select')
-    const buttonsModule = import('datatables.net-buttons')
     const responsiveModule = import('datatables.net-responsive')
     dtModule.then(async (module) => {
+        const $ = await import('jquery')
         const Select = await selectModule
-        const Buttons = await buttonsModule
         const Responsive = await responsiveModule
         DataTable.value = module.default
-        DataTable.value.use(Buttons.default)
         DataTable.value.use(Select.default)
         DataTable.value.use(Responsive.default)
+        $.fn.dataTable.ext.errMode = 'none'
     })
 })
 </script>
@@ -107,8 +173,8 @@ onMounted(() => {
         width: 1.5rem;
         height: 1.5rem;
         mask-repeat: no-repeat;
-        mask-size: 100% 100%;;
+        mask-size: 100% 100%;
+        ;
     }
 }
-
 </style>

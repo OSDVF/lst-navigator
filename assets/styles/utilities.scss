@@ -22,8 +22,16 @@
   margin-left: auto;
 }
 
+.m-0 {
+  margin: 0;
+}
+
 .p-1 {
   padding: .45rem
+}
+
+.p-2 {
+  padding: .9rem
 }
 
 .d-block {
@@ -48,4 +56,28 @@
 
 .justify-content-between {
   justify-content: space-between;
+}
+
+.align-items-start {
+  align-items: start;
+}
+
+.relative {
+  position: relative
+}
+
+.absolute {
+  position: absolute;
+}
+
+.left-0 {
+  left: 0
+}
+
+.right-0 {
+  right: 0;
+}
+
+.bottom-0 {
+  bottom: 0;
 }

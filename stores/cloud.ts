@@ -1,9 +1,9 @@
 import { defineStore, skipHydrate } from 'pinia'
-import { DocumentReference, FieldValue, Firestore, arrayUnion, collection, deleteField, doc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, setDoc } from 'firebase/firestore'
+import { DocumentReference, FieldValue, Firestore, arrayUnion, collection, deleteField, doc, getDoc, setDoc } from 'firebase/firestore'
 import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth'
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, User } from 'firebase/auth'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { KnownCollectionName } from '@/utils/db'
@@ -23,47 +23,19 @@ export const defaultQuestions = [
 
 export const googleAuthProvider = new GoogleAuthProvider()
 
-let probe = true
-if (process.server) {
-    // probe the firestore firstly because otherwise we get infinite loading
-    try {
-        await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })
-    } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e)
-        probe = false
-    }
-}
-
 export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
-    const firebaseApp = useFirebaseApp()
-    const firebaseStorage = useFirebaseStorage()
     const config = useRuntimeConfig()
+    const firebaseApp = useFirebaseApp()
+    const firestore = useFirestore()
+
+    const firebaseStorage = useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)
     const auth = useFirebaseAuth()
-    const app = useNuxtApp()
-
-    let firestore: Firestore | null = null
-
-    if (probe) {
-        try {
-            firestore = initializeFirestore(firebaseApp, {
-                localCache:
-                    persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() })
-            })
-        } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error(e)
-
-            try {
-                firestore = useFirestore()
-            } catch (e) {
-                // eslint-disable-next-line no-console
-                console.error(e)
-            }
-        }
+    if (process.client) {
+        auth?.setPersistence(browserLocalPersistence)
     }
+    const app = useNuxtApp()
 
     const ed = firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null
     const eventDocuments = useDocument<EventDescription>(ed, {
@@ -156,103 +128,117 @@ export const useCloudStore = defineStore('cloud', () => {
             return uploadingPromise
         }
     }
-
-    const offlineAuth = usePersistentRef('user', auth?.currentUser ? { ...auth?.currentUser } : null) // offline-stored user
-    const userProxy = computed({
-        get() {
-            return offlineAuth.value
-        },
-        set(value) {
-            if (!value) {
-                offlineAuth.value = value
-                return
-            } else if (!offlineAuth.value) {
-                offlineAuth.value = {} as any
-            }
-            for (const key in value) {
-                try {
-                    if (typeof value[key as keyof typeof value] !== 'function') {
-                        (offlineAuth.value as any)[key]! = value[key as keyof typeof value]
-                    }
-                    // eslint-disable-next-line no-console
-                } catch (e) { console.log(e) }
-            }
-        }
-    })
+    const userAuth = useCurrentUser()
     const usersCollection = firestore !== null ? knownCollection(firestore, 'users') : null
-    const ud = skipHydrate(computed(() => userProxy.value?.uid && usersCollection ? doc(usersCollection, userProxy.value.uid) : null))
+    const ud = computed(() => userAuth.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
 
-    async function updateUserInfo(newDoc: DocumentReference | null) {
+    const uPending = ref(false)
+    async function updateUserInfo(newDoc: DocumentReference | null) { // User info is updated on-demand
+        const wasPending = uPending.value
         if (newDoc) {
+            uPending.value = true
             const data = await (await getDoc(newDoc)).data()
             if (data) { user.info.value = data as UserInfo }
+        } else {
+            user.info.value = null
+        }
+        if (!wasPending) {
+            uPending.value = false
         }
     }
     const user = {
-        auth: offlineAuth,
-        doc: ud,
+        auth: skipHydrate(userAuth),
+        doc: skipHydrate(ud),
         info: ref<UserInfo | null>(null),
         error: ref(),
+        pendingAction: uPending,
+        pendingPopup: ref(false),
         async signOut() {
-            userProxy.value = null
+            user.pendingAction.value = true
             await signOut(auth!)
+            isAuthenticated.value = false
+            user.pendingAction.value = false
         },
-        signIn(useRedirect = false) {
-            (useRedirect === true ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
-                .then((result) => {
-                    userProxy.value = result.user
-                    updateUserInfo(user.doc.value)
-                    if (user.doc.value && user.info.value) {
-                        const signatureId = user.info.value.signatureId?.[selectedEvent.value]
-                        if (signatureId) {
-                            if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
-                                settings.userIdentifier = signatureId
-                                settings.userNickname = user.info.value!.signature[selectedEvent.value]
-                            }
-                        }
-
-                        const now = new Date()
-                        setDoc(user.doc.value, {
-                            name: user.info.value.name || user.auth.value?.displayName,
-                            signature: {
-                                [selectedEvent.value]: settings.userNickname
-                            },
-                            signatureId: {
-                                [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier'))
-                            },
-                            subscriptions: {
-                                [selectedEvent.value]: arrayUnion(messagingToken.value)
-                            },
-                            email: user.info.value.email || user.auth.value?.email,
-                            photoURL: user.info.value.photoURL || user.auth.value?.photoURL,
-                            lastLogin: now.getTime(),
-                            lastTimezone: now.getTimezoneOffset()
-                        } as Partial<UpdatePayload<UserInfo>>, {
-                            merge: true
-                        })
-                    }
-                }).catch((reason) => {
-                    const reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
-                    app.$Sentry.captureEvent(reason, {
-                        data: reasonPretty
-                    })
-                    // eslint-disable-next-line no-console
-                    console.error('Failed signin', reasonPretty)
-                    user.error.value = reason
-                    if (confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
-                        user.signIn(true)
-                    }
+        async signIn(useRedirect = false, secondAttempt = false): Promise<boolean> {
+            if (!useRedirect) { user.pendingPopup.value = true }
+            user.pendingAction.value = true
+            try {
+                // With emulators the popup version would throw cross-origin error
+                (useRedirect === true || config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
+                user.pendingAction.value = false
+                user.pendingPopup.value = false
+                return true
+            } catch (reason: any) {
+                let reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
+                if (reasonPretty.length < 3) {
+                    reasonPretty = reason
+                }
+                app.$Sentry.captureEvent(reason, {
+                    data: reasonPretty
                 })
+                // eslint-disable-next-line no-console
+                console.error('Failed signin', reasonPretty)
+                user.error.value = reason
+                let nextResult = false
+                if (secondAttempt === true) {
+                    alert('Přihlášení se nepodařilo provést')
+                } else if (!useRedirect && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
+                    nextResult = await user.signIn(true, true)
+                }
+                user.pendingAction.value = false
+                user.pendingPopup.value = false
+                return nextResult
+            }
         }
     }
 
-    watch(ud, (newDoc) => {
-        updateUserInfo(newDoc)
-    })
-    updateUserInfo(ud.value)
+    async function onSignIn(newUser: User) {
+        await updateUserInfo(user.doc.value)
+        if (user.doc.value) {
+            if (user.info.value) {
+                const signatureId = user.info.value.signatureId?.[selectedEvent.value]
+                if (signatureId) {
+                    if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
+                        settings.userIdentifier = signatureId
+                        settings.userNickname = user.info.value!.signature[selectedEvent.value]
+                    }
+                }
+            }
+
+            const now = new Date()
+            const payload: Partial<UpdatePayload<UserInfo>> = {
+                name: newUser.displayName || user.info.value?.name,
+                signature: {
+                    [selectedEvent.value]: settings.userNickname
+                },
+                signatureId: {
+                    [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier'))
+                },
+                subscriptions: {
+                    [selectedEvent.value]: arrayUnion(messagingToken.value)
+                },
+                email: newUser.email || user.info.value?.email,
+                photoURL: newUser.photoURL || user.info.value?.photoURL,
+                lastLogin: now.getTime(),
+                lastTimezone: now.getTimezoneOffset(),
+                permissions: !user.info.value?.permissions?.[selectedEvent.value]
+                    ? {
+                        [selectedEvent.value]: null
+                    }
+                    : undefined
+            }
+            // remove undefined values
+            Object.keys(payload).forEach(key => payload[<keyof UserInfo>key] === undefined ? delete payload[<keyof UserInfo>key] : {})
+
+            await setDoc(user.doc.value, payload, {
+                merge: true
+            })
+            await updateUserInfo(user.doc.value)
+        }
+    }
 
     watch(settings, (newSettings) => {
-        if (user.doc.value && userProxy.value?.uid && process.client) {
+        if (user.doc.value && userAuth.value?.uid && process.client) {
             setDoc(user.doc.value, {
                 signature: {
                     [selectedEvent.value]: newSettings.userNickname
@@ -266,32 +252,38 @@ export const useCloudStore = defineStore('cloud', () => {
         }
     })
 
-    const resolvedPermissions = computed<Permissions>(() => config.public.debugUser
-        ? {
-            editSchedule: true,
-            eventAdmin: true,
-            superAdmin: true
-        }
-        : user.info.value?.permissions && user.auth.value?.uid
-            ? {
-                editSchedule: user.info.value.permissions[selectedEvent.value] === 'schedule' || user.info.value.permissions[selectedEvent.value] === 'admin' || user.info.value.permissions.superAdmin === true,
-                eventAdmin: user.info.value.permissions[selectedEvent.value] === 'admin' || user.info.value.permissions.superAdmin === true,
-                superAdmin: user.info.value.permissions.superAdmin === true
+    const resolvedPermissions = computed<Permissions>(() => {
+        if (config.public.debugUser) {
+            return {
+                editSchedule: true,
+                eventAdmin: true,
+                superAdmin: true
             }
-            : {
-                editSchedule: false,
-                eventAdmin: false,
-                superAdmin: false
-            })
+        }
+        if (user.info.value?.permissions && user.auth.value?.uid) {
+            const onlinePermission = user.info.value.permissions?.[selectedEvent.value]
+            return {
+                editSchedule: onlinePermission === 'schedule' || onlinePermission === 'admin' || user.info.value.permissions?.superAdmin === true,
+                eventAdmin: onlinePermission === 'admin' || user.info.value.permissions?.superAdmin === true,
+                superAdmin: user.info.value.permissions?.superAdmin === true
+            }
+        }
+        return {
+            editSchedule: false,
+            eventAdmin: false,
+            superAdmin: false
+        }
+    })
 
     const scheduleParts = computed<SchedulePart[]>(() => eventData.value?.meta.schedule?.parts ?? [])
 
     const notesDocument = currentEventDocument('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
     const messagingToken = usePersistentRef('messagingToken', '')
+    const isAuthenticated = usePersistentRef('isAuthenticated', false)
 
     watch(messagingToken, (newToken) => {
-        if (user.doc.value && userProxy.value?.uid && process.client) {
+        if (user.doc.value && userAuth.value?.uid && process.client) {
             setDoc(user.doc.value, {
                 subscriptions: {
                     [selectedEvent.value]: arrayUnion(newToken)
@@ -336,19 +328,9 @@ export const useCloudStore = defineStore('cloud', () => {
     // Hydrate user
     onMounted(async () => {
         if (config.public.debugUser) {
-            userProxy.value = debugUser
+            userAuth.value = debugUser
         } else {
-            watch(useCurrentUser(), (newUser) => {
-                if (newUser) {
-                    userProxy.value = newUser
-                }
-            })
-
-            await getRedirectResult(auth!).then((token) => {
-                if (token?.user) {
-                    userProxy.value = token.user
-                }
-            }).catch((reason) => {
+            await getRedirectResult(auth!).catch((reason) => {
                 // eslint-disable-next-line no-console
                 console.error('Failed redirect result', reason)
                 app.$Sentry.captureEvent(reason, {
@@ -356,9 +338,24 @@ export const useCloudStore = defineStore('cloud', () => {
                 })
                 user.error.value = reason
             })
-            if (!userProxy.value) {
-                userProxy.value = await getCurrentUser()
-            }
+            watch(ud, (newDoc) => {
+                updateUserInfo(newDoc)
+            })
+            auth!.onAuthStateChanged({
+                next: (user) => {
+                    if (user) {
+                        if (!isAuthenticated.value) {
+                            onSignIn(user)
+                            isAuthenticated.value = true
+                        }
+                    } else {
+                        isAuthenticated.value = false
+                    }
+                    updateUserInfo(ud.value)
+                },
+                error: console.error,
+                complete: () => { console.log('completed') }
+            })
         }
     })
 

@@ -97,3 +97,8 @@ main .average-rating {
         transform: translateY(0);
     }
 }
+.firebase-emulator-warning {
+    pointer-events: none;
+    opacity: .4;
+    border:0 !important
+}

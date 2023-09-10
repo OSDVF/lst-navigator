@@ -34,7 +34,7 @@ const config = defineNuxtConfig({
         '~/assets/styles/components.scss'
     ],
     devtools: {
-        enabled: true,
+        enabled: process.env.NUXT_DEVTOOLS !== 'false',
         timeline: {
             enabled: true
         }
@@ -57,6 +57,7 @@ const config = defineNuxtConfig({
             }
             : undefined,
         filename: 'sw.ts',
+        includeAssets: ['__/**'],
         injectManifest: {
             rollupFormat: 'iife',
             globIgnores: [
@@ -64,14 +65,14 @@ const config = defineNuxtConfig({
                 '**/public/audio/silence.zip'
             ]
         },
+        injectRegister: 'inline',
         manifest: {
             name: process.env.VITE_APP_NAME,
             short_name: process.env.VITE_APP_SHORT_NAME,
             icons
         },
-        strategies: 'injectManifest',
-        injectRegister: 'inline',
         srcDir: 'utils',
+        strategies: 'injectManifest',
         workbox: {
             sourcemap: true
         }
@@ -103,6 +104,9 @@ const config = defineNuxtConfig({
         ]
     },
     vuefire: {
+        emulators: {
+            enabled: process.env.FIREBASE_EMULATOR === 'true'
+        },
         config: {
             apiKey: process.env.VITE_APP_APIKEY,
             authDomain: process.env.VITE_APP_AUTHDOMAIN,
@@ -113,7 +117,7 @@ const config = defineNuxtConfig({
             measurementId: process.env.VITE_APP_MEASUREMENTID
         },
         auth: true,
-        appCheck: process.env.VITE_APP_RECAPTCHA
+        appCheck: process.env.VITE_APP_RECAPTCHA && process.env.FIREBASE_APPCHECK !== 'false'
             ? {
                 debug: isDevMode,
                 key: process.env.VITE_APP_RECAPTCHA!,
@@ -127,6 +131,7 @@ const config = defineNuxtConfig({
             title: process.env.VITE_APP_SHORT_NAME,
             longName: process.env.VITE_APP_NAME,
             defaultEvent: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
+            emulators: process.env.FIREBASE_EMULATOR === 'true',
             imageCacheFirst: isDevMode,
             installStepCount,
             compileTime,
@@ -147,7 +152,11 @@ const config = defineNuxtConfig({
             debugUser: process.env.VITE_APP_DEBUG_USER
         }
     },
-    ssr: true
+    ssr: true,
+    typescript: {
+        typeCheck: true,
+        strict: true
+    }
 })
 
 fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({

@@ -24,20 +24,24 @@
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
                 <NuxtLink to="/admin/feedback">
-                    <IconCSS name="mdi:rss" size="2rem" />
+                    <IconCSS name="mdi:rss" size="1.8rem" />
                     Zpětná vazba
                 </NuxtLink>
                 <NuxtLink to="/admin/events">
-                    <IconCSS name="mdi:calendar-text" size="2rem" />
+                    <IconCSS name="mdi:calendar-text" size="1.8rem" />
                     Akce
                 </NuxtLink>
                 <NuxtLink to="/admin/users">
-                    <IconCSS name="mdi:person" size="2rem" />
+                    <IconCSS name="mdi:person" size="1.8rem" />
                     Uživatelé
                 </NuxtLink>
                 <NuxtLink to="/">
-                    <IconCSS name="mdi:home" size="2rem" />
+                    <IconCSS name="mdi:home" size="1.8rem" />
                     Program
+                </NuxtLink>
+                <NuxtLink to="/settings">
+                    <IconCSS name="mdi:cog" size="1.8rem" />
+                    Nastavení
                 </NuxtLink>
             </nav>
             <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
