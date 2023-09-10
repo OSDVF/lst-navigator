@@ -167,7 +167,7 @@ export const useCloudStore = defineStore('cloud', () => {
             user.pendingAction.value = true
             try {
                 // With emulators the popup version would throw cross-origin error
-                (useRedirect === true || config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
+                (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
                 user.pendingAction.value = false
                 user.pendingPopup.value = false
                 return true

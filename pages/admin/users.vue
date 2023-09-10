@@ -7,10 +7,7 @@
             </button>
             <form v-show="changePermissionsVisible" @submit.prevent="changePermissions(); changePermissionsVisible = false">
                 <select v-model="targetPermission" required>
-                    <option
-                        v-for="(name, type) in { super: 'SuperAdmin', admin: 'Správce', event: 'Správce události', null: 'Nic' }"
-                        :key="type"
-                    >
+                    <option v-for="(name, type) in permissionNames" :key="type" :value="type">
                         {{ name }}
                     </option>
                 </select>
@@ -26,7 +23,7 @@
                     {
                         searchable: false,
                         orderable: false,
-                        render: (data: string) => `<img class='noinvert' width='24px' referrerPolicy='no-referrer' crossorigin='anonymous' src='${data}' />`
+                        render: (data: string) => data ? `<img class='noinvert' width='24px' referrerPolicy='no-referrer' crossorigin='anonymous' src='${data}' />` : null
                     },
                     null,
                     null,
@@ -34,8 +31,8 @@
                     null,
                     null,
                     {
-                        render: (data: string) => data ? `<span title='${data}' class='icon' style='mask-image: url(https://api.iconify.design/mdi/${({
-                            super: 'shield-lock-open', event: 'calendar-check', admin: 'account-lock-open'
+                        render: (data: keyof typeof permissionNames) => data ? `<span title='${permissionNames[data]}' class='icon' style='mask-image: url(https://api.iconify.design/mdi/${({
+                            super: 'shield-lock-open', event: 'calendar-check', admin: 'account-lock-open', null: null
                         })[data]}.svg);'></span>` : ''
                     }
                 ]" @select="selectionChanged" @deselect="selectionChanged" @error="dtError"
@@ -83,6 +80,12 @@ const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(know
     lazy: true
 })
 const usersPending = users.pending
+const permissionNames = computed(() => ({
+    ...(cloudStore.resolvedPermissions.superAdmin ? { super: 'SuperAdmin' } : {}), // super admin can make others super admins
+    ...(cloudStore.resolvedPermissions.eventAdmin ? { admin: 'Správce' } : {}),
+    event: 'Správce události',
+    null: 'Nic'
+}))
 const dtErrors = ref('')
 
 const usersIndexed = computed(() => {
@@ -90,10 +93,10 @@ const usersIndexed = computed(() => {
     if (users.data.value) {
         for (const user of users.data.value) {
             const effectiveSignature = user.signature[cloudStore.selectedEvent] || user.signatureId[cloudStore.selectedEvent]
-            const values: [string | undefined, string, string | undefined, string, string, string, string | boolean | null] = [
+            const values: [string | undefined, string, string, string, string, string, string | boolean | null] = [
                 user.photoURL,
                 user.id,
-                user.name,
+                user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
                 cloudStore.feedback.online?.[effectiveSignature] ?? 'Nikdy',
@@ -128,21 +131,21 @@ function dtError(e: any, settings: any, techNote: string, message: string) {
 }
 
 function changePermissions() {
-    const selectedRows = table.value?.dt.rows({ selected: true })
-    if (selectedRows) {
-        const uids = selectedRows.column('1').data()
-        uids.each((uid) => {
+    const selectedRows = table.value?.dt.rows({ selected: true }).data()
+    if (selectedRows?.length) {
+        selectedRows.each((selectedRow) => {
+            const uid = selectedRow[1]
             const userDoc = doc(knownCollection(firestore, 'users'), uid)
-            setDoc(userDoc, (targetPermission.value === 'super'
-                ? {
-                    superAdmin: true
-                }
-                : {
-                    permissions: {
+            setDoc(userDoc, {
+                permissions: targetPermission.value === 'super'
+                    ? {
+                        superAdmin: true
+                    }
+                    : {
                         [cloudStore.selectedEvent]: targetPermission.value,
                         superAdmin: false
                     }
-                }) as Partial<UpdatePayload<UserInfo>>, {
+            } as Partial<UpdatePayload<UserInfo>>, {
                 merge: true
             })
         })

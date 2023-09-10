@@ -2,17 +2,18 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 import { defineNuxtPlugin } from 'nuxt/app'
 
 export default defineNuxtPlugin({
-    order: 100,
-    setup() {
-        const firebaseApp = useFirebaseApp()
-        try {
-            initializeFirestore(firebaseApp, {
-                localCache:
+    hooks: {
+        'app:beforeMount': () => {
+            const firebaseApp = useFirebaseApp()
+            try {
+                initializeFirestore(firebaseApp, {
+                    localCache:
                     process.client ? persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() }) : undefined
-            })
-        } catch (e) {
+                })
+            } catch (e) {
             // eslint-disable-next-line no-console
-            console.error(e)
+                console.error(e)
+            }
         }
     }
 })

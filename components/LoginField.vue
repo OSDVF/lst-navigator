@@ -1,14 +1,24 @@
 <template>
     <fieldset class="relative">
         <label>
-            <IconCSS v-if="cloudStore.resolvedPermissions.superAdmin" name="mdi:shield-lock-open" title="Úpravy povoleny" />
-            <img
-                v-else-if="cloudStore.user.auth?.photoURL" class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous"
-                :src="cloudStore.user.auth.photoURL" alt="Profilový obrázek" width="24" height="24"
-            >
-            &nbsp;
+            <template v-if="cloudStore.resolvedPermissions.superAdmin">
+
+                <IconCSS name="mdi:shield-lock-open" title="Úpravy povoleny" />
+                &nbsp;
+            </template>
+            <template v-else-if="cloudStore.user.auth?.photoURL">
+                <img
+                    class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous"
+                    :src="cloudStore.user.auth.photoURL" alt="Profilový obrázek" width="24" height="24"
+                >
+                &nbsp;
+            </template>
             <ClientOnly>
-                {{ cloudStore.user.pendingPopup ? 'Postupujte podle pokynů v druhém okně' : cloudStore.user.auth?.displayName ?? prettyError ?? 'Přihlášení' }} <span v-if="cloudStore.user.auth?.email" class="muted nowrap">{{
+                {{ cloudStore.user.pendingPopup ? 'Postupujte podle pokynů v druhém okně' :
+                    cloudStore.user.auth?.displayName ?? prettyError ?? 'Přihlášení' }} <span
+                    v-if="cloudStore.user.auth?.email"
+                    class="muted nowrap"
+                >{{
                     cloudStore.user.auth.email }}</span>
             </ClientOnly>
         </label>
