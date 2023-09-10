@@ -166,6 +166,10 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
+@import 'datatables.net-dt';
+@import 'datatables.net-select-dt';
+@import 'datatables.net-responsive-dt';
+
 .datatable {
     .icon {
         background: black;

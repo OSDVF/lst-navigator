@@ -1,5 +1,5 @@
 import type { PwaInjection } from "@vite-pwa/nuxt";
-import * as Sentry from '@sentry/vue'
+import type * as Sentry from '@sentry/vue'
 
 export { }
 

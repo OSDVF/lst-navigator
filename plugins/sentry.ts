@@ -1,6 +1,6 @@
-import { defineNuxtPlugin, useRuntimeConfig } from '#app'
 import * as Sentry from '@sentry/vue'
 import type { Router } from 'vue-router'
+import { defineNuxtPlugin, useRuntimeConfig } from '#app'
 
 export default defineNuxtPlugin({
     parallel: true,
@@ -28,7 +28,7 @@ export default defineNuxtPlugin({
                     new Sentry.Replay()]
                     : [])
             ],
-            trackComponents: true,
+            trackComponents: process.client,
             hooks: ['activate', 'create', 'destroy', 'mount', 'update'],
             // Set tracesSampleRate to 1.0 to capture 100%
             // of transactions for performance monitoring.

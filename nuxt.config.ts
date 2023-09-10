@@ -152,11 +152,7 @@ const config = defineNuxtConfig({
             debugUser: process.env.VITE_APP_DEBUG_USER
         }
     },
-    ssr: true,
-    typescript: {
-        typeCheck: true,
-        strict: true
-    }
+    ssr: true
 })
 
 fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({

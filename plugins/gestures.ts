@@ -1,5 +1,8 @@
 import { GesturePlugin } from '@vueuse/gesture'
 
-export default defineNuxtPlugin((nuxtApp) => {
-    nuxtApp.vueApp.use(GesturePlugin)
+export default defineNuxtPlugin({
+    parallel: true,
+    setup(nuxtApp) {
+        nuxtApp.vueApp.use(GesturePlugin)
+    }
 })

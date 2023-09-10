@@ -1,11 +1,8 @@
-import { useCloudStore } from '@/stores/cloud'
-
 // middleware/auth.ts
-export default defineNuxtRouteMiddleware((to) => {
-    const cloudStore = useCloudStore()
-
+export default defineNuxtRouteMiddleware(async (to) => {
+    const user = await getCurrentUser()
     // redirect the user to the login page
-    if (process.client && !cloudStore.user.auth?.uid) {
+    if (process.client && !user) {
         return navigateTo({
             path: '/login',
             query: {

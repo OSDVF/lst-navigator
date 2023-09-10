@@ -2,6 +2,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 import { defineNuxtPlugin } from 'nuxt/app'
 
 export default defineNuxtPlugin({
+    order: 100,
     setup() {
         const firebaseApp = useFirebaseApp()
         try {

@@ -27,6 +27,9 @@ export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
     const config = useRuntimeConfig()
     const firebaseApp = useFirebaseApp()
+    if (!firebaseApp) {
+        throw new Error('Firebase app not initialized')
+    }
     const firestore = useFirestore()
 
     const firebaseStorage = useFirebaseStorage()
