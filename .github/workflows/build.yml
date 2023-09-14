@@ -12,10 +12,31 @@ jobs:
 
       - name: Inject SSR service account
         run: echo '${{ secrets.SSR_SERVICE_ACCOUNT }}' > service-account.json
-        
-      - run: yarn
 
-      - run: yarn generate
+      - name: Cache node modules
+        id: cache-yarn
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          # yarn cache files are stored in `~/.yarn` on Linux/macOS
+          path: ~/.yarn
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - if: ${{ steps.cache-yarn.outputs.cache-hit != 'true' }}
+        name: List the state of node modules
+        continue-on-error: true
+        run: yarn list
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: SSR Generate
+        run: yarn generate
 
       - name: Archive distribution artifacts
         uses: actions/upload-artifact@v3

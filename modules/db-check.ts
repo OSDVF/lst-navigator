@@ -5,21 +5,9 @@
 /* eslint-disable no-console */
 import { defineNuxtModule } from '@nuxt/kit'
 import { DocumentReference, getFirestore } from 'firebase-admin/firestore'
-import { CollectionsList, KnownCollectionName } from '../utils/db'
+import { CollectionsList, KnownCollectionName, timeout } from '../utils/db'
 import useFirebase from '../server/utils/firebase'
 import { EventDescription, EventSubdocumentsList } from '../types/cloud'
-
-async function timeout<T>(prom: Promise<T>, time = 5000): Promise<T | void> {
-    let timer: NodeJS.Timeout | null = null
-    try {
-        return await Promise.race([
-            prom,
-            new Promise<T>((_resolve, reject) => { timer = setTimeout(reject, time) })
-        ])
-    } finally {
-        if (timer) { clearTimeout(timer) }
-    }
-}
 
 export default defineNuxtModule({
     hooks: {
