@@ -1,0 +1,25 @@
+name: build
+'on': push
+jobs:
+  build_and_preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - 
+        name: Inject secrets
+        run: echo '${{ secrets.DOTENV }}' > .env
+
+      - name: Inject SSR service account
+        run: echo '${{ secrets.SSR_SERVICE_ACCOUNT }}' > service-account.json
+        
+      - run: yarn
+
+      - run: yarn generate
+
+      - name: Archive distribution artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: |
+            dist
