@@ -47,11 +47,11 @@ function addToTree(file: StorageReference) {
 }
 
 function getFromTree(path?: string) : FileTree | undefined {
-    if (typeof path === 'undefined') {
+    if (!path) {
         return fileTree.value
     }
     const parts = path.split(DIRECTORY_SEPARATOR)
-    const dfsTarget = fileTree.value
+    let dfsTarget = fileTree.value
     const foundFile = false
     for (const i in parts) {
         const p = parts[i]
@@ -60,23 +60,36 @@ function getFromTree(path?: string) : FileTree | undefined {
         }
         const next = dfsTarget.directory?.[p]
         if (!next) {
-            throw new Error(`File ${p} does not exist for ${path}`)
+            return undefined
         }
         if (parseInt(i) === parts.length - 1) {
             return next
         } else if (!next.directory) {
             throw new Error(`File ${p} is not a directory for ${path}`)
         }
+        dfsTarget = next
     }
 }
 
-export default function useFileTree(directory?: string) : Ref<FileTree | undefined> {
+export default function useFileTree(file: MaybeRefOrGetter<string|undefined>) : Ref<FileTree | undefined> {
     const storage = useFirebaseStorage()
     return asyncComputed(async () => {
         if (!storage) {
             return {}
         }
-        (await listAll(storageRef(storage, directory))).items.forEach(addToTree)
-        return getFromTree(directory)
+        const fileV = toValue(file)
+        let f : StorageReference | null = storageRef(storage, fileV)
+        if (fileV) {
+            do {
+                if (getFromTree(f.fullPath)) {
+                    continue
+                }
+                const items = (await listAll(f)).items
+                console.log(items)
+                items.forEach(addToTree)
+                f = f.parent
+            } while (f !== null)
+        }
+        return fileTree.value
     }, {})
 }

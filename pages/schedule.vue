@@ -48,7 +48,7 @@ watch(cloudStore, (newCloud) => {
         findToday(newCloud)
     }
 })
-onMounted(() => {
+onActivated(() => {
     if (typeof schedulePartIndex.value === 'undefined' && cloudStore?.metaLoading === false) {
         findToday(cloudStore)
     }

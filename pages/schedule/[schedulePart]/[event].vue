@@ -118,7 +118,7 @@ const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[partInd
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocument(cloudStore.notesDocument)
+const notesDocument = useDocument(cloudStore.notesDocument, { once: !!process.server })
 const offlineNote = usePersistentRef(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 

@@ -2,6 +2,7 @@
 import fs from 'fs'
 import childProcess from 'child_process'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
+import { splitVendorChunkPlugin } from 'vite'
 import topLevelAwait from 'vite-plugin-top-level-await'
 import { icons } from './icons.json'
 
@@ -83,7 +84,23 @@ const config = defineNuxtConfig({
     },
     vite: {
         build: {
-            sourcemap: true
+            sourcemap: true,
+            rollupOptions: {
+                output: {
+                    manualChunks(id: string) {
+                        if (id.includes('file-extension-icon-js')) {
+                            return 'file-extension-icon-js'
+                        }
+                    }
+                }
+            }
+        },
+        resolve: {
+            alias: [
+                {
+                    find: 'path', replacement: 'path-browserify'
+                }
+            ]
         },
         plugins: [
             topLevelAwait({
@@ -100,8 +117,12 @@ const config = defineNuxtConfig({
                 release: {
                     name: commitHash
                 }
-            })
+            }),
+            splitVendorChunkPlugin()
         ]
+    },
+    vue: {
+        defineModel: true
     },
     vuefire: {
         emulators: {

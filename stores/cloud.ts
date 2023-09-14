@@ -53,7 +53,8 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const ed = firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null
     const eventDocuments = useDocument<EventDescription>(ed, {
-        maxRefDepth: 4
+        maxRefDepth: 4,
+        once: process.server
     })
 
     const eventData = useAsyncData('defaultEventData', () => eventDocuments.promise.value, {
@@ -87,7 +88,7 @@ export const useCloudStore = defineStore('cloud', () => {
         fetchFailed: ref(false),
         fetching: ref(false),
         infoText: computed(() => eventData.value?.meta.feedbackInfo),
-        online: useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false } }),
+        online: useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false }, once: process.server }),
         set(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
             feedback.fetching.value = true
             if (typeof userIdentifier === 'undefined') {
@@ -406,7 +407,7 @@ export const useCloudStore = defineStore('cloud', () => {
         offlineFeedback: skipHydrate(offlineFeedback),
         resolvedPermissions,
         user,
-        eventsCollection: useCollection<EventDescription>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 }),
+        eventsCollection: useCollection<EventDescription>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: process.server }),
         probe
     }
 })

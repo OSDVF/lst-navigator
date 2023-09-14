@@ -1,9 +1,9 @@
 <template>
-    <article>
+    <article v-if="cloudStore.eventsCollection.length > 0">
         <button v-if="action == Actions.Nothing" @click="action = Actions.New">
             <IconCSS name="mdi:plus" /> Nová
         </button>
-        <button v-if="action == Actions.Nothing && isSelection" @click="editSelected">
+        <button v-if="action == Actions.Nothing && isSelection" @click="startEditingSelected">
             <IconCSS name="mdi:pencil" /> Upravit
         </button>
         <form v-if="action == Actions.New || action == Actions.Edit" @submit.prevent="editEvent(false)">
@@ -27,7 +27,7 @@
                 <button type="button">
                     <IconCSS name="mdi:folder-multiple-image" @click="selectingImage = true" /> Vybrat
                 </button>
-                <StorageFileSelect v-model="editedEvent.imageIdentifier" />
+                <StorageFileSelect v-if="selectingImage" v-model="editedEvent.imageIdentifier" />
                 <p v-if="files?.length === 1">
                     Soubor k nahrání: {{ files.item(0)!.name }}
                 </p>
@@ -38,6 +38,7 @@
             </fieldset>
             <input type="submit" value="Potvrdit">
         </form>
+        <ProgressBar v-show="loading" />
         <LazyDataTable
             ref="table"
             :data="eventsIndexed" :options="{
@@ -55,6 +56,7 @@
             </thead>
         </LazyDataTable>
     </article>
+    <ProgressBar v-else />
 </template>
 
 <script setup lang="ts">
@@ -80,6 +82,7 @@ enum Actions {
     Nothing, New, Edit
 }
 const action = ref<Actions>(Actions.Nothing)
+const selectingImage = ref(false)
 
 const now = toStoreDate(new Date())
 const editedEvent = ref({
@@ -92,6 +95,7 @@ const editedEvent = ref({
     subtitle: '',
     web: ''
 })
+const loading = ref(false)
 
 const sanitizeTitleAndId = computed({
     get() {
@@ -208,17 +212,19 @@ function selectionChanged() {
         isSelection.value = table.value.dt.rows({ selected: true }).data().length > 0
     }
 }
-async function editSelected() {
+async function startEditingSelected() {
     if (table.value && fs) {
         const selectedData = table.value.dt.rows({ selected: true }).data()
         if (selectedData.length > 1) {
             alert('Vyberte jednu akci')
             return
         }
-        action.value = Actions.Edit
         const selectedEvent = cloudStore.eventsCollection.find(e => e.id === selectedData[0][0])
         if (selectedEvent) {
+            loading.value = true
             const meta = await (await getDoc(doc(fs, selectedEvent.meta))).data() as EventMeta
+            loading.value = false
+            action.value = Actions.Edit
             editedEvent.value = {
                 title: selectedEvent?.title,
                 identifier: selectedEvent.id,
@@ -233,9 +239,9 @@ async function editSelected() {
     }
 }
 const ClassicEditor = ref()
-if (process.client) {
+onMounted(() => {
     import('@ckeditor/ckeditor5-build-classic').then((c) => {
         ClassicEditor.value = c.default
     })
-}
+})
 </script>

@@ -66,7 +66,7 @@ definePageMeta({
 const cloudStore = useCloudStore()
 const permissionError = ref()
 const firestore = useFirestore()
-const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(knownCollection(firestore, 'users'), { maxRefDepth: 0, wait: true, onError(e: any) { permissionError.value = e } }).promise.value, {
+const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(knownCollection(firestore, 'users'), { maxRefDepth: 0, wait: true, once: !!process.server, onError(e: any) { permissionError.value = e } }).promise.value, {
     server: false,
     lazy: true
 })

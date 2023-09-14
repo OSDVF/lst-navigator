@@ -1,24 +1,8 @@
 @use "sass:math";
 @import "constants.scss";
-//
-// Navigation bars
-//
-nav {
-    display: flex;
-    backdrop-filter: $blurred-background;
-    background: #0000000d;
-    justify-content: stretch;
+@import "navigation.scss";
+@import "tree.scss";
 
-    &>a {
-        flex-grow: 1;
-        padding: .5rem;
-        text-align: center;
-
-        &:focus {
-            outline: 0;
-        }
-    }
-}
 ///
 /// Rating stars
 /// 
@@ -41,23 +25,6 @@ main .average-rating {
         background-size: auto, 5px 5px, 5px 5px, 5px 5px;
         background-clip: text;
     }
-}
-
-.navigation {
-    border-top: 1px solid rgba($link-background, 0.1);
-
-    &>nav>a>span {
-        display: block;
-        margin: auto;
-    }
-
-    .router-link-active {
-        background: #00000016;
-    }
-}
-
-.flex-full {
-    flex-basis: 100%;
 }
 
 .backgroundLoading,
