@@ -1,6 +1,6 @@
 import type { FieldValue } from 'firebase/firestore'
 
-export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select'
+export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' | 'text'
 export type FeedbackConfig = {
     group?: string | RegExp, // title of parts of schedule to group by
     title: string,
@@ -31,7 +31,7 @@ export type SchedulePart = {
 };
 
 export type EventSubdocuments = 'meta' | 'notes' | 'feedback' | 'subscriptions' | 'users'
-export const EventSubdocumentsList : EventSubdocuments[] = ['meta', 'notes', 'feedback', 'subscriptions', 'users']
+export const EventSubdocumentsList: EventSubdocuments[] = ['meta', 'notes', 'feedback', 'subscriptions', 'users']
 
 export type EventMeta = {
     description: string,
@@ -68,8 +68,15 @@ export type Permissions = {
     editSchedule: boolean,
 }
 
+export enum UserLevel {
+    Nothing,
+    ScheduleAdmin,
+    Admin,
+    SuperAdmin
+}
+
 export type UserInfo = {
-    permissions: { [key: 'superAdmin' | string]: boolean | 'admin' | 'schedule' | null }
+    permissions: { [key: 'superAdmin' | string]: boolean | UserLevel }
     subscriptions: {
         [eventId: string]: string
     },
@@ -95,6 +102,11 @@ export type Feedback = {
     detail?: string | FieldValue,
     complicated?: (number | null)[],
     select?: string | FieldValue
+}
+
+export type TabulatedFeedback = {
+    replies: { [key: string | number]: (Feedback | null)[] },
+    respondents: string[]
 }
 
 export type Subscriptions = {

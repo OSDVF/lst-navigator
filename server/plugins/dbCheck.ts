@@ -25,7 +25,7 @@ export default defineNitroPlugin(async () => {
         const event = (await doc.get()).data() as EventDescription<DocumentReference>
         for (const ref of EventSubdocumentsList) {
             if (!event[ref] || !(await event[ref].get()).exists) {
-                console.warn(`Event '${doc.id}' subdocument reference '${ref}': '${event[ref]}' is not valid`)
+                console.warn(`Event '${doc.id}' subdocument reference '${ref}': '${event[ref] instanceof DocumentReference ? event[ref].path : event[ref]}' is not valid`)
             }
         }
     }

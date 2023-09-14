@@ -1,0 +1,19 @@
+<template>
+    <div>
+        <FeedbackResultPart
+            v-for="key in Object.keys(programPartsFeedback).filter(key=>!!programPartsFeedback[key as keyof typeof programPartsFeedback])" :key="`p${key}`"
+            :schedule-part="onlyIntIndexed(cloudStore.scheduleParts)[key as any]"
+            :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])"
+            @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)"
+        />
+    </div>
+</template>
+
+<script setup lang="ts">
+import { Feedback } from '@/types/cloud'
+import { onlyIntIndexed } from '@/utils/types'
+import { useCloudStore } from '@/stores/cloud'
+
+const cloudStore = useCloudStore()
+const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.feedback.online as any[]))
+</script>

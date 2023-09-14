@@ -7,7 +7,7 @@ import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedir
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { KnownCollectionName } from '@/utils/db'
-import { EventDescription, EventSubdocuments, FeedbackConfig, Feedback, UpdatePayload, SchedulePart, Subscriptions, UserInfo, Permissions } from '@/types/cloud'
+import { EventDescription, EventSubdocuments, FeedbackConfig, Feedback, UpdatePayload, SchedulePart, Subscriptions, UserInfo, Permissions, UserLevel } from '@/types/cloud'
 /**
  * Compile time check that this collection really exists (is checked by the server)
  */
@@ -23,14 +23,25 @@ export const defaultQuestions = [
 
 export const googleAuthProvider = new GoogleAuthProvider()
 
+
+let probe = true
+if (process.server) {
+    // probe the firestore firstly because otherwise we get infinite loading
+    try {
+        await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })
+    } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e)
+        probe = false
+    }
+}
+
+
 export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
     const config = useRuntimeConfig()
-    const firebaseApp = useFirebaseApp()
-    if (!firebaseApp) {
-        throw new Error('Firebase app not initialized')
-    }
-    const firestore = useFirestore()
+    const firebaseApp = probe && useFirebaseApp()
+    const firestore = probe && useFirestore()
 
     const firebaseStorage = useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)
@@ -132,7 +143,7 @@ export const useCloudStore = defineStore('cloud', () => {
         }
     }
     const userAuth = useCurrentUser()
-    const usersCollection = firestore !== null ? knownCollection(firestore, 'users') : null
+    const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
 
     const uPending = ref(false)
@@ -226,7 +237,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 lastTimezone: now.getTimezoneOffset(),
                 permissions: !user.info.value?.permissions?.[selectedEvent.value]
                     ? {
-                        [selectedEvent.value]: null
+                        [selectedEvent.value]: UserLevel.Nothing
                     }
                     : undefined
             }
@@ -266,8 +277,8 @@ export const useCloudStore = defineStore('cloud', () => {
         if (user.info.value?.permissions && user.auth.value?.uid) {
             const onlinePermission = user.info.value.permissions?.[selectedEvent.value]
             return {
-                editSchedule: onlinePermission === 'schedule' || onlinePermission === 'admin' || user.info.value.permissions?.superAdmin === true,
-                eventAdmin: onlinePermission === 'admin' || user.info.value.permissions?.superAdmin === true,
+                editSchedule: onlinePermission === UserLevel.ScheduleAdmin || onlinePermission === UserLevel.Admin || user.info.value.permissions?.superAdmin === true,
+                eventAdmin: onlinePermission === UserLevel.Admin || user.info.value.permissions?.superAdmin === true,
                 superAdmin: user.info.value.permissions?.superAdmin === true
             }
         }
@@ -364,7 +375,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     if (process.client) {
         navigator.serviceWorker?.getRegistration().then((registration) => {
-            if (registration?.active) {
+            if (registration?.active && firebaseApp) {
                 const messaging = getMessaging(firebaseApp)
                 getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((newToken) => {
                     if (newToken) {
@@ -395,7 +406,8 @@ export const useCloudStore = defineStore('cloud', () => {
         offlineFeedback: skipHydrate(offlineFeedback),
         resolvedPermissions,
         user,
-        eventsCollection: useCollection<EventDescription>(firestore !== null ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 })
+        eventsCollection: useCollection<EventDescription>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0 }),
+        probe
     }
 })
 

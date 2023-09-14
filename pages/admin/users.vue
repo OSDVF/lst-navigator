@@ -31,7 +31,7 @@
                 null,
                 {
                     render: (data: keyof typeof permissionNames) => data ? `<span title='${permissionNames[data]}' class='icon' style='mask-image: url(https://api.iconify.design/mdi/${({
-                        super: 'shield-lock-open', event: 'calendar-check', admin: 'account-lock-open', null: null
+                        [UserLevel.SuperAdmin]: 'shield-lock-open', [UserLevel.ScheduleAdmin]: 'calendar-check', [UserLevel.Admin]: 'account-lock-open', [UserLevel.Nothing]: null
                     })[data]}.svg);'></span>` : ''
                 }
             ]" @select="selectionChanged" @deselect="selectionChanged"
@@ -55,7 +55,7 @@
 import type { Api } from 'datatables.net'
 import { doc, setDoc } from 'firebase/firestore'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
-import { UpdatePayload, UserInfo } from '@/types/cloud'
+import { UpdatePayload, UserInfo, UserLevel } from '@/types/cloud'
 
 definePageMeta({
     title: 'Uživatelé',
@@ -72,10 +72,10 @@ const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(know
 })
 const usersPending = users.pending
 const permissionNames = computed(() => ({
-    ...(cloudStore.resolvedPermissions.superAdmin ? { super: 'SuperAdmin' } : {}), // super admin can make others super admins
-    ...(cloudStore.resolvedPermissions.eventAdmin ? { admin: 'Správce' } : {}),
-    event: 'Správce události',
-    null: 'Nic'
+    ...(cloudStore.resolvedPermissions.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
+    ...(cloudStore.resolvedPermissions.eventAdmin ? { [UserLevel.Admin]: 'Správce' } : {}),
+    [UserLevel.ScheduleAdmin]: 'Správce události',
+    [UserLevel.Nothing]: 'Nic'
 }))
 
 const usersIndexed = computed(() => {
@@ -83,14 +83,14 @@ const usersIndexed = computed(() => {
     if (users.data.value) {
         for (const user of users.data.value) {
             const effectiveSignature = user.signature[cloudStore.selectedEvent] || user.signatureId[cloudStore.selectedEvent]
-            const values: [string | undefined, string, string, string, string, string, string | boolean | null] = [
+            const values: [string | undefined, string, string, string, string, string, UserLevel | boolean] = [
                 user.photoURL,
                 user.id,
                 user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
                 cloudStore.feedback.online?.[effectiveSignature] ?? 'Nikdy',
-                user.permissions?.superAdmin === true ? 'super' : user.permissions?.[cloudStore.selectedEvent]
+                user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent]
             ]
             result.push(values)
         }
@@ -100,7 +100,7 @@ const usersIndexed = computed(() => {
 
 const table = ref<{ dt: Api<typeof usersIndexed.value> }>()
 const changePermissionsVisible = ref(false)
-const targetPermission = ref<UserInfo['permissions'][0] | 'super'>()
+const targetPermission = ref<UserInfo['permissions'][0]>()
 const someSelection = ref(false)
 function selectionChanged() {
     if (table.value) {
@@ -116,7 +116,7 @@ function changePermissions() {
             const uid = selectedRow[1]
             const userDoc = doc(knownCollection(firestore, 'users'), uid)
             setDoc(userDoc, {
-                permissions: targetPermission.value === 'super'
+                permissions: targetPermission.value === UserLevel.SuperAdmin
                     ? {
                         superAdmin: true
                     }

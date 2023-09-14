@@ -11,7 +11,7 @@
             <template v-for="(compl, index) in $props.reply.complicated" :key="`c${index}`">
                 <NuxtRating
                     :read-only="!admin.editingFeedback" :active-color="darkenColor('#ffff00', index / 5)"
-                    :rating-value="compl" :title="$props.event?.questions?.[index] ?? defaultQuestions[index]"
+                    :rating-value="compl" :title="questions?.[index] ?? defaultQuestions[index]"
                     rating-size="1.2rem" @rating-selected="(val: number) => controls?.syncComplicated(index, val)"
                 /> {{
                     Math.round(((compl ?? 0) + Number.EPSILON) * 10) / 10 }}
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, ScheduleEvent } from '@/types/cloud'
+import { Feedback } from '@/types/cloud'
 import { defaultQuestions } from '@/stores/cloud'
 import { darkenColor } from '@/utils/colors'
 import useFeedbackControls from '@/utils/feedbackControls'
@@ -29,7 +29,7 @@ import { useAdmin } from '@/stores/admin'
 
 const props = defineProps<{
     reply: Feedback
-    event?: ScheduleEvent
+    questions?: string[]
     respondent?: string,
     onSetData?:(value: Feedback) => void
 }>()
@@ -40,7 +40,7 @@ const controls = props.onSetData
     ? useFeedbackControls({
         props: {
             data: props.reply,
-            complicatedQuestions: props.event?.questions || defaultQuestions,
+            complicatedQuestions: props.questions || defaultQuestions,
             onSetData: props.onSetData
         }
     })

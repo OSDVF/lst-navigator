@@ -1,20 +1,26 @@
 <template>
     <div>
-        <caption>{{ $props.schedulePart?.name }}</caption>
+        <caption>{{ $props.schedulePart?.name ?? $props.config?.name }}</caption>
+        {{ $props.config?.description }}
         <header
             ref="syncHeader" :style="{
                 transform: `translateX(${-scrollX}px)`
             }"
         >
-            <div class="th">
+            <div v-if="$props.schedulePart" class="th">
                 Název
             </div>
             <div class="th">
                 <strong>Průměr</strong>
             </div>
-            <div v-if="admin.displayKind === 'histogram'" class="th">
-                Histogram
-            </div>
+            <template v-if="admin.displayKind === 'histogram'">
+                <div class="th">
+                    Histogram
+                </div>
+                <div class="th">
+                    Podrobná odpověď
+                </div>
+            </template>
             <template v-else>
                 <div v-for="respondent in tabulated.respondents" :key="respondent" class="th">
                     {{ respondent }}
@@ -24,64 +30,34 @@
         <div class="scroll-x" @scroll="e => scrollX = (e.target as HTMLElement).scrollLeft">
             <table>
                 <tbody ref="tableBody">
-                    <template v-if="feedbackParts">
-                        <template v-for="(replies, eIndex) in onlyIntIndexed(feedbackParts)" :key="`e${eIndex}td`">
-                            <template
-                                v-if="schedulePart?.program[eIndex].feedbackType && ['parallel', 'select'].includes(schedulePart.program[eIndex].feedbackType!)"
-                            >
-                                <caption>{{ schedulePart?.program[eIndex].title }}</caption>
-                                <!-- Filtered by selected option -->
-                                <tr
-                                    v-for="(option, oIndex) in getParallelOrSelectEvents(schedulePart?.program[eIndex])"
-                                    :key="`e${eIndex}o${oIndex}`"
-                                >
-                                    <td
-                                        :set="filteredReplies = Object.fromEntries(Object.entries(replies).filter(([_rKey, r]) => r.select == option))"
-                                    >
-                                        <em>{{ option }} ({{ Object.keys(filteredReplies).length }})</em>
-                                    </td>
-                                    <template v-if="filteredReplies">
-                                        <td>
-                                            <FeedbackReply
-                                                :reply="getAverage(filteredReplies)"
-                                                :event="$props.schedulePart?.program?.[eIndex]"
-                                            />
-                                        </td>
-                                        <FeedbackHistogramRow
-                                            v-if="admin.displayKind === 'histogram'"
-                                            :event="schedulePart?.program[eIndex]" :replies="filteredReplies"
-                                        />
-                                        <FeedbackIndividualRow
-                                            v-else :event="schedulePart?.program[eIndex]"
-                                            :replies="tabulated.replies[eIndex].map(r => r?.select === option ? r : null)"
-                                            :respondents="tabulated.respondents"
-                                            @set-data="(data: Feedback | null, user: string) => $props.onSetData!(data, eIndex.toString(), user)"
-                                        />
-                                    </template>
-                                </tr>
-                            </template>
-                            <tr v-else-if="replies" :set="event = schedulePart?.program[eIndex]">
-                                <td>
-                                    <strong>
-                                        {{ event?.title }}
-                                    </strong>
-                                    ({{ Object.keys(replies).length }})
-                                </td>
-                                <td>
-                                    <FeedbackReply
-                                        :reply="getAverage(replies)"
-                                        :event="$props.schedulePart?.program?.[eIndex]"
-                                    />
-                                </td>
-                                <FeedbackHistogramRow v-if="admin.displayKind === 'histogram'" :replies="replies" :event="event" />
-                                <FeedbackIndividualRow
-                                    v-else
-                                    :event="event" :replies="tabulated.replies[eIndex]"
-                                    :respondents="tabulated.respondents"
-                                    @set-data="(data: Feedback | null, user: string) => $props.onSetData!(data, eIndex.toString(), user)"
-                                />
-                            </tr>
-                        </template>
+                    <template v-for="(replies, eIndex) in feedbackParts" :key="`e${eIndex}td`">
+                        <SelectFeedbackRows
+                            v-if="isSelect(eIndex)" :event="schedulePart?.program[eIndex as number]"
+                            :replies="replies" :tabulated="tabulated.replies[eIndex]"
+                            :respondents="tabulated.respondents"
+                            :config="config"
+                        />
+                        <tr v-else-if="replies" :set="event = schedulePart?.program[eIndex as number]">
+                            <td v-if="$props.schedulePart">
+                                <strong>
+                                    {{ event?.title }}
+                                </strong>
+                                ({{ Object.keys(replies).length }})
+                            </td>
+                            <td>
+                                <FeedbackReply :reply="getAverage(replies)" :questions="(event ?? config)?.questions" />
+                            </td>
+                            <FeedbackHistogramRow
+                                v-if="admin.displayKind === 'histogram'" :replies="replies"
+                                :feedback-type="event?.feedbackType ?? config?.type"
+                                :questions="(event ?? config)?.questions"
+                            />
+                            <FeedbackIndividualRow
+                                v-else :event="event" :replies="tabulated.replies[eIndex]"
+                                :respondents="tabulated.respondents"
+                                @set-data="(data: Feedback | null, user: string) => $props.onSetData!(data, eIndex.toString(), user)"
+                            />
+                        </tr>
                     </template>
                 </tbody>
             </table>
@@ -90,14 +66,15 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, ScheduleEvent, SchedulePart } from '@/types/cloud'
-import { onlyIntIndexed } from '@/utils/types'
+import { Feedback, FeedbackConfig, SchedulePart, TabulatedFeedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
+import { getAverage } from '@/utils/types'
 
 const props = defineProps<{
     schedulePart?: SchedulePart,
-    feedbackParts: Feedback[][], // firstly indexed by event, secondly by user
+    config?: FeedbackConfig['individual'][0],
+    feedbackParts: { [key: string | number]: { [user: string]: Feedback } }, // firstly indexed by event, secondly by user
     onSetData?:(data: Feedback | null, eIndex: string, userIdentifier: string) => void
 }>()
 
@@ -108,12 +85,18 @@ const scrollX = ref(0)
 const syncHeader = ref<HTMLElement>()
 const tableBody = ref<HTMLElement>()
 
-const tabulated = computed(() => {
+function isSelect(eIndex: string | number) {
+    const config = props.config?.type ?? props.schedulePart?.program[eIndex as number].feedbackType
+    return (config) && ['parallel', 'select'].includes(config)
+}
+
+const tabulated = computed<TabulatedFeedback>(() => {
     const seenRespondents: { [respondentId: string]: number } = {}
-    const result: (Feedback | null)[][] = []
+    const result: TabulatedFeedback['replies'] = {}
     let lastRespondentIndex = 0
 
-    for (const feedbackPart of props.feedbackParts) {
+    for (const feedbackPartI in props.feedbackParts) {
+        const feedbackPart = props.feedbackParts[feedbackPartI]
         const partRepliesByUser = Array<Feedback | null>(lastRespondentIndex + 1)
         for (const respondentName in feedbackPart) {
             const respondentIndex = seenRespondents[respondentName]
@@ -126,7 +109,7 @@ const tabulated = computed(() => {
                 partRepliesByUser[respondentIndex] = feedbackPart[respondentName]
             }
         }
-        result.push(partRepliesByUser)
+        result[feedbackPartI] = (partRepliesByUser)
     }
 
     // second pass fills in the gaps
@@ -170,46 +153,5 @@ onMounted(() => {
         new ResizeObserver(doSyncHeaders).observe(tableBody.value)
     }
 })
-
-function getAverage(replies: Feedback[]) {
-    const compl: { [index: string | number]: number } = {}
-    const complCount: { [index: string | number]: number } = {}
-    let basic = 0
-    let basicCount = 0
-    for (const rI in replies) {
-        const r = replies[rI]
-        if (r.basic) {
-            basic += r.basic as number
-            basicCount++
-        }
-        if (r.complicated) {
-            for (const c in r.complicated) {
-                if (r.complicated?.[c] !== null) {
-                    if (!compl[c]) {
-                        compl[c] = 0
-                        complCount[c] = 0
-                    }
-                    compl[c] += r.complicated[c]!
-                    complCount[c]++
-                }
-            }
-        }
-    }
-
-    return {
-        basic: basic / basicCount,
-        complicated: Object.keys(compl).map(i => compl[i] / complCount[i])
-    }
-}
-
-function getParallelOrSelectEvents(event: ScheduleEvent) {
-    switch (event.feedbackType) {
-    case 'select':
-        return event.questions
-    case 'parallel':
-        return getParallelEvents(event)
-    }
-    return []
-}
 
 </script>
