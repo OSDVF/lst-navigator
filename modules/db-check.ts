@@ -50,6 +50,7 @@ export default defineNuxtModule({
                     }
                 }
             }
+            fs.terminate()
         }
     }
 })

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { DocumentReference, doc, getDoc } from 'firebase/firestore'
+import { DocumentReference, doc, getDoc, terminate } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
 import * as Sentry from '@sentry/node'
@@ -119,5 +119,6 @@ export default async function () {
     await Promise.all(promises)
     console.log(new Date(), responses)
     console.error(errors)
+    terminate(firestore)
     return responses
 }
