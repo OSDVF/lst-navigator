@@ -1,24 +1,16 @@
 import childProcess from 'child_process'
-import { stderr, stdin, stdout, env, argv } from 'process'
+import { stderr, stdin, stdout, argv, env } from 'process'
 import { chunksToLinesAsync } from '@rauschma/stringio'
 
-const p = childProcess.spawn('nuxt', ['generate'], { shell: true, env: { ...env, FORCE_COLOR: 'true' } })
+const p = childProcess.spawn('nuxt', ['generate'], { shell: true, env: { ...env, FORCE_COLOR: 'true', CI: env.CI || argv.includes('ci') } })
 
-const promise = checkReadable(p.stdout)
-const ci = argv.includes('ci')
-if (!ci) {
-    p.stdout.pipe(stdout)
-    p.stdin.pipe(stdin)
-    p.stderr.pipe(stderr)
-} else {
-    await promise
-}
+checkReadable(p.stdout)
+p.stdout.pipe(stdout)
+p.stdin.pipe(stdin)
+p.stderr.pipe(stderr)
 
 async function checkReadable(readable) {
     for await (const line of chunksToLinesAsync(readable)) {
-        if (ci) {
-            stdout.write(line)
-        }
         if (line.includes('You can now deploy')) {
             p.kill()
             return
