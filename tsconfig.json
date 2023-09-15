@@ -9,7 +9,6 @@
     ],
     "types": [
       "./global.d.ts",
-      "@types/path-browserify"
     ]
   },
 }

@@ -65,8 +65,8 @@ definePageMeta({
 
 const cloudStore = useCloudStore()
 const permissionError = ref()
-const firestore = useFirestore()
-const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(knownCollection(firestore, 'users'), { maxRefDepth: 0, wait: true, once: !!process.server, onError(e: any) { permissionError.value = e } }).promise.value, {
+const firestore = cloudStore.probe && useFirestore()
+const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(firestore ? knownCollection(firestore, 'users') : null, { maxRefDepth: 0, wait: true, once: !!process.server, onError(e: any) { permissionError.value = e } }).promise.value, {
     server: false,
     lazy: true
 })
@@ -111,7 +111,7 @@ function selectionChanged() {
 
 function changePermissions() {
     const selectedRows = table.value?.dt.rows({ selected: true }).data()
-    if (selectedRows?.length) {
+    if (selectedRows?.length && firestore) {
         selectedRows.each((selectedRow) => {
             const uid = selectedRow[1]
             const userDoc = doc(knownCollection(firestore, 'users'), uid)

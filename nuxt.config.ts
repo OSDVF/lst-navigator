@@ -40,6 +40,9 @@ const config = defineNuxtConfig({
             enabled: true
         }
     },
+    ignore: [
+        'maintenance/**'
+    ],
     modules: [
         '@vite-pwa/nuxt',
         'nuxt-icon',
@@ -50,6 +53,16 @@ const config = defineNuxtConfig({
         'nuxt-scheduler',
         'nuxt-rating'
     ],
+    hooks: {
+        ready() {
+            childProcess.spawn('./node_modules/.bin/ts-node-esm', ['./maintenance/mirror-auth.ts'], {
+                stdio: ['pipe', 'inherit', 'inherit']
+            }).unref()
+            childProcess.spawn('./node_modules/.bin/ts-node-esm', ['./maintenance/db-check.ts'], {
+                stdio: ['pipe', 'inherit', 'inherit']
+            }).unref()
+        }
+    },
     pwa: {
         devOptions: isDevMode
             ? {

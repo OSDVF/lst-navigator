@@ -81,3 +81,15 @@ export function hasFeedback(f: {[key:string]:Feedback} | Feedback) : boolean {
     const v = Object.values(f)
     return f.basic || f.complicated || f.detail || f.select || (v && v.find(fs => hasFeedback(fs)))
 }
+
+export async function timeoutPromise<T>(prom: Promise<T>, time = 5000): Promise<T | void> {
+    let timer: NodeJS.Timeout | null = null
+    try {
+        return await Promise.race([
+            prom,
+            new Promise<T>((_resolve, reject) => { timer = setTimeout(reject, time) })
+        ])
+    } finally {
+        if (timer) { clearTimeout(timer) }
+    }
+}

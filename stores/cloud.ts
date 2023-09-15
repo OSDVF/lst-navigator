@@ -43,9 +43,9 @@ export const useCloudStore = defineStore('cloud', () => {
     const firebaseApp = probe && useFirebaseApp()
     const firestore = probe && useFirestore()
 
-    const firebaseStorage = useFirebaseStorage()
+    const firebaseStorage = probe && useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)
-    const auth = useFirebaseAuth()
+    const auth = probe ? useFirebaseAuth() : null
     if (process.client) {
         auth?.setPersistence(browserLocalPersistence)
     }
@@ -70,7 +70,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const subscriptionsDocument = currentEventDocument('subscriptions')
 
-    const eventImage = computed(() => eventData.value?.meta.image
+    const eventImage = computed(() => eventData.value?.meta.image && firebaseStorage
         ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.meta.image)).url.value
         : null)
     const eventTitle = computed(() => eventData.value?.meta.title)

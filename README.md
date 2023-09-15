@@ -15,8 +15,9 @@ Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introdu
 - Multiple
 
 ## Advanced technical features
-- Checking database references on build (`modules/db-check.ts`)
-- Mirroring google account login page for precaching and CSR compliance (`modules/auth-proxy.ts`)
+- Maintenance tasks when starting development server
+    - Checking database references (`modules/db-check.ts`)
+    - Mirroring google account login page for precaching and CSR compliance (`modules/mirror-auth.ts`)
 - SSR generating static schedule pages
 
 ## WIP
