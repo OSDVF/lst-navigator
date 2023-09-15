@@ -7,6 +7,11 @@ name: Deploy live to Firebase Hosting
   workflow_dispatch:
 jobs:
   build_and_deploy:
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      actions: read
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -15,12 +20,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - run: mkdir -p .output/public
+
       - name: Download distribution artifact
         uses: dawidd6/action-download-artifact@v2
         with:
           workflow: build.yml
           workflow_conclusion: success
           name: dist
+          path: .output/public
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

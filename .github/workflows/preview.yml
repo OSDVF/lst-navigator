@@ -11,10 +11,17 @@ name: preview
   workflow_dispatch:
 jobs:
   build_and_preview:
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      actions: read
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - run: mkdir -p .output/public
 
       - name: Download distribution artifact
         uses: dawidd6/action-download-artifact@v2
@@ -22,12 +29,7 @@ jobs:
           workflow: build.yml
           workflow_conclusion: success
           name: dist
-
-
-      - name: Download distribution artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: dist
+          path: .output/public
           
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

@@ -44,4 +44,4 @@ jobs:
         with:
           name: dist
           path: |
-            dist
+            .output/public
