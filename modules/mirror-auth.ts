@@ -12,10 +12,7 @@ const files = [
 
 export default defineNuxtModule({
     meta: {
-        name: 'mirror-auth',
-        compatibility: {
-            nuxt: '>=2.15'
-        }
+        name: 'mirror-auth'
     },
     hooks: {
         ready(nuxt) {

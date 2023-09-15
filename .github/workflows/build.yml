@@ -37,7 +37,7 @@ jobs:
         run: yarn
 
       - name: SSR Generate
-        run: yarn generate
+        run: yarn generate ci
 
       - name: Archive distribution artifacts
         uses: actions/upload-artifact@v3

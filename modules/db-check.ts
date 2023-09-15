@@ -11,10 +11,7 @@ import { EventDescription, EventSubdocumentsList } from '../types/cloud'
 
 export default defineNuxtModule({
     meta: {
-        name: 'db-check',
-        compatibility: {
-            nuxt: '>=3.0'
-        }
+        name: 'db-check'
     },
     hooks: {
         async ready(nuxt) {

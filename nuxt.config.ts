@@ -4,6 +4,7 @@ import childProcess from 'child_process'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { splitVendorChunkPlugin } from 'vite'
 import topLevelAwait from 'vite-plugin-top-level-await'
+import { getFirestore, terminate } from 'firebase/firestore'
 import { icons } from './icons.json'
 
 const installStepCount = fs.readdirSync('./pages/install').length
