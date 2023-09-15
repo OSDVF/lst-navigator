@@ -2,18 +2,27 @@
 # https://github.com/firebase/firebase-tools
 
 name: preview
-on:
+'on':
   workflow_run:
     workflows: ["build"]
     branches: [main]
     types:
       - completed
+  workflow_dispatch:
 jobs:
   build_and_preview:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Download distribution artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yml
+          workflow_conclusion: success
+          name: dist
+
 
       - name: Download distribution artifact
         uses: actions/download-artifact@v3
