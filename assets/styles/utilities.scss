@@ -50,12 +50,28 @@
   overflow-x: auto;
 }
 
+.scroll-y {
+  overflow-y: auto;
+}
+
+.mh-5 {
+  max-height: 5rem;
+}
+
+.focus-expand:focus {
+  max-height: unset;
+}
+
 .flex {
   display: flex;
 }
 
 .flew-wrap {
   flex-wrap: wrap;
+}
+
+.flex-grow > * {
+  flex-grow: 1;
 }
 
 .flex-full {

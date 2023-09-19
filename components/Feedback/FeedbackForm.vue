@@ -1,18 +1,5 @@
 <template>
     <table class="feedbackTable">
-        <!--<thead>
-            <tr>
-                <th>
-                    Otázka
-                </th>
-                <th>
-                    Odpověd
-                </th>
-                <th>
-                    Akce
-                </th>
-            </tr>
-        </thead>-->
         <tbody>
             <tr v-if="type === 'parallel'">
                 <td>

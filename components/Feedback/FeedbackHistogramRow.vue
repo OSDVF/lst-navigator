@@ -1,33 +1,35 @@
 <template>
-    <td v-no-wrap-border>
-        <template v-if="feedbackType === 'complicated' || repliesValues.find(r => r.complicated?.find(c => !!c))">
-            <span
-                v-for="(q, qIndex) in (questions || defaultQuestions)" :key="`q${qIndex}`"
-                class="inline-block border-between"
-            >
+    <td>
+        <div v-no-wrap-border class="flex flex-wrap flex-grow">
+            <template v-if="feedbackType === 'complicated' || repliesValues.find(r => r.complicated?.find(c => !!c))">
+                <span
+                    v-for="(q, qIndex) in (questions || defaultQuestions)" :key="`q${qIndex}`"
+                    class="inline-block border-between"
+                >
+                    <BarChart
+                        :values="complicatedReplies[qIndex].hist" :min="0" :colors="complicatedColors[qIndex]"
+                        :categories="HISTOGRAM_BUCKETS" :labels="HISTOGRAM_BUCKETS"
+                        :popups="complicatedReplies[qIndex].individuals"
+                    />
+                    {{ q }}
+                </span>
+            </template>
+            <div v-if="feedbackType === 'text'">
                 <BarChart
-                    :values="complicatedReplies[qIndex].hist" :min="0" :colors="complicatedColors[qIndex]"
-                    :categories="HISTOGRAM_BUCKETS" :labels="HISTOGRAM_BUCKETS"
-                    :popups="complicatedReplies[qIndex].individuals"
+                    :values="clusteredTextIndexed" :min="0"
+                    :colors="randomcolor({ count: seenCategories.length, hue: 'orange' })"
+                    :categories="Object.keys(seenCategories)" :labels="seenCategories.map(c => c?.substring(0, 4))"
+                    :popups="buckets.map(b => Array.from(b).join('\n'))" class="rotated"
                 />
-                {{ q }}
-            </span>
-        </template>
-        <div v-if="feedbackType === 'text'">
-            <BarChart
-                :values="clusteredTextIndexed" :min="0"
-                :colors="randomcolor({ count: seenCategories.length, hue: 'orange' })"
-                :categories="Object.keys(seenCategories)" :labels="seenCategories.map(c => c?.substring(0, 4))"
-                :popups="buckets.map(b => Array.from(b).join('\n'))" class="rotated"
-            />
-            Podobné odpovědi
-        </div>
-        <div v-if="feedbackType == 'basic' || repliesValues.find(r => r.basic)">
-            <BarChart
-                :values="basicReplies.hist" :min="0" :colors="basicColors" :categories="HISTOGRAM_BUCKETS"
-                :popups="basicReplies.individuals" :labels="HISTOGRAM_BUCKETS"
-            />
-            Celkový dojem
+                Podobné odpovědi
+            </div>
+            <div v-if="feedbackType == 'basic' || repliesValues.find(r => r.basic)">
+                <BarChart
+                    :values="basicReplies.hist" :min="0" :colors="basicColors" :categories="HISTOGRAM_BUCKETS"
+                    :popups="basicReplies.individuals" :labels="HISTOGRAM_BUCKETS"
+                />
+                Celkový dojem
+            </div>
         </div>
     </td>
     <td colspan="100%">

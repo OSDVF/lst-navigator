@@ -10,7 +10,7 @@
                 Název
             </div>
             <div class="th">
-                Průměr
+                <strong>Průměr</strong>
             </div>
             <template v-if="admin.displayKind === 'histogram'">
                 <div class="th">
@@ -34,8 +34,9 @@
                             v-if="isSelect(eIndex)" :event="schedulePart?.program[eIndex as number]"
                             :replies="replies" :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
                             :config="config?.config?.[eIndex]"
+                            @set-data="(data: Feedback, user: string) => $props.onSetData?.(data, eIndex as string, user)"
                         />
-                        <tr v-else-if="replies">
+                        <tr v-else-if="replies && Object.keys(replies).length > 0">
                             <FeedbackCells
                                 :config="config?.config?.[eIndex]" :make-link="() => makeLink?.(eIndex)"
                                 :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"

@@ -7,7 +7,7 @@
             ({{ Object.keys(replies).length }})
         </NuxtLink>
         <template v-else>
-            {{ config?.name }}
+            {{ config?.name ?? '\xa0' }}
         </template>
     </td>
     <td>
@@ -19,7 +19,7 @@
         :questions="(event ?? config)?.questions"
     />
     <FeedbackIndividualRow
-        v-else :event="event" :replies="tabulated"
+        v-else :questions="event?.questions ?? config?.questions" :replies="tabulated"
         :respondents="respondents"
         @set-data="$props.onSetData"
     />

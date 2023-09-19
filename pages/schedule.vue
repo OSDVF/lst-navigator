@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div style="padding-top: 4rem;">
         <nav role="navigation" class="days">
             <NuxtLink
                 v-for="(day, index) in cloudStore.scheduleParts" :key="day?.name ?? `day${index}`" :style="{
@@ -153,10 +153,6 @@ const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[]
 
 <style lang="scss">
 @import "@/assets/styles/constants.scss";
-
-main {
-    padding-top: 4rem;
-}
 
 nav.days {
     position: fixed;

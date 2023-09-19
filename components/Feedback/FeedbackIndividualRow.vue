@@ -3,8 +3,10 @@
         <div>
             <template v-if="reply">
                 <FeedbackReply
-                    :reply="reply" :event="event"
-                    @set-data="typeof $props.onSetData !== 'undefined' ? (val: Feedback) => $props.onSetData!(val, respondents[rIndex]) : null"
+                    :reply="reply"
+                    :questions="questions"
+                    :respondent="respondents[rIndex]"
+                    @set-data="$props.onSetData"
                 />
                 <button
                     v-show="admin.editingFeedback"
@@ -18,14 +20,14 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, ScheduleEvent } from '@/types/cloud'
+import { Feedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 
 defineProps<{
     onSetData?:(data: Feedback | null, userIdentifier: string) => void,
     replies: Feedback[],
     respondents: string[]
-    event: ScheduleEvent
+    questions?: string[],
 }>()
 
 const admin = useAdmin()

@@ -25,6 +25,7 @@ const otherFeedback = computed(() => {
                     if (typeof replies[innerKey] === 'object') {
                         val[innerKey] = Lodash.merge(val[innerKey], replies[innerKey][0])
                         delete replies[innerKey]
+                        delete result[innerKey]
                     }
                 }
                 result[key] = val

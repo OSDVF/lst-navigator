@@ -41,7 +41,12 @@ export const useCloudStore = defineStore('cloud', () => {
     const settings = useSettings()
     const config = useRuntimeConfig()
     const firebaseApp = probe && useFirebaseApp()
-    const firestore = probe && useFirestore()
+    let firestore : null | Firestore = null
+    try {
+        firestore = probe ? useFirestore() : null
+    } catch (e) { // DOMExcepton  [TimeoutError]: The operation was aborted due to timeout
+        console.error(e)
+    }
 
     const firebaseStorage = probe && useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)

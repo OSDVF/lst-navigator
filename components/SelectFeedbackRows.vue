@@ -22,7 +22,7 @@
             <FeedbackIndividualRow
                 v-else :questions="questions"
                 :replies="tabulated.map(r => r?.select === option ? r : null)" :respondents="respondents"
-                @set-data="(data: Feedback | null, user: string) => $props.onSetData!(data, eIndex.toString(), user)"
+                @set-data="$props.onSetData"
             />
         </template>
     </tr>
@@ -40,7 +40,7 @@ const props = defineProps<{
     replies: { [user: string]: Feedback },
     tabulated: TabulatedFeedback['replies'][''],
     respondents: string[],
-    onSetData?:(data: Feedback | null, eIndex: string, userIdentifier: string) => void,
+    onSetData?:(data: Feedback | null, userIdentifier: string) => void,
 }>()
 
 const admin = useAdmin()
