@@ -36,7 +36,7 @@
                             :config="config?.config?.[eIndex]"
                             @set-data="(data: Feedback, user: string) => $props.onSetData?.(data, eIndex as string, user)"
                         />
-                        <tr v-else-if="replies && Object.keys(replies).length > 0">
+                        <tr v-else-if="replies && Object.keys(replies).length > 0" :style="{background: config?.config?.[eIndex].type === 'text' ? '#ffa6000d': ''}">
                             <FeedbackCells
                                 :config="config?.config?.[eIndex]" :make-link="() => makeLink?.(eIndex)"
                                 :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"

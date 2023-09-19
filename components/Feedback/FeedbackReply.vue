@@ -8,14 +8,14 @@
             {{ Math.round(($props.reply.basic + Number.EPSILON) * 10) / 10 }}
         </template>
         <template v-if="$props.reply?.complicated?.length">
-            <template v-for="(compl, index) in $props.reply.complicated" :key="`c${index}`">
+            <div v-for="(compl, index) in $props.reply.complicated" :key="`c${index}`">
                 <NuxtRating
                     :read-only="!admin.editingFeedback" :active-color="darkenColor('#ffff00', index / 5)"
                     :rating-value="compl" :title="questions?.[index] ?? defaultQuestions[index]"
                     rating-size="1.2rem" @rating-selected="(val: number) => controls?.syncComplicated(index, val)"
                 /> {{
                     Math.round(((compl ?? 0) + Number.EPSILON) * 10) / 10 }}
-            </template>
+            </div>
         </template>
         <template v-else-if="$props.reply?.detail">
             <textarea v-if="controls && admin.editingFeedback" v-model="controls!.syncDetail.value" />
@@ -69,6 +69,9 @@ const controls = props.onSetData
     textarea {
         border:0;
         scrollbar-width: auto;
+    }
+    .average-rating {
+        display: inline-flex;
     }
 }
 </style>
