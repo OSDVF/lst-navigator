@@ -1,8 +1,10 @@
 <template>
-    <caption>{{ (config?.name ?? event?.title) }}</caption>
+    <caption :title="config?.description ?? event?.description">
+        {{ (config?.name ?? event?.title) }}
+    </caption>
     <!-- Filtered by selected option -->
     <tr v-for="(option, oIndex) in getParallelOrSelectEvents(event ?? config)" :key="oIndex">
-        <td :set="filteredReplies = Object.fromEntries(Object.entries(replies).filter(([_rKey, r]) => r.select == option))">
+        <td :set="filteredReplies = Object.fromEntries(Object.entries(replies).filter(([_rKey, r]) => r.select == option))" :title="Object.keys(filteredReplies).join(', ')">
             <div
                 :set="thisCount = Object.keys(filteredReplies).length" class="absolute left-0 top-0 bottom-0 z--1"
                 :style="{ width: `${100 * thisCount / maxCount}%`, background: randomColor({ hue: 'green' }) }"

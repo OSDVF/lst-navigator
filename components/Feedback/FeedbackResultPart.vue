@@ -1,17 +1,16 @@
 <template>
     <div>
         <caption>{{ $props.schedulePart?.name ?? $props.config?.name }}</caption>
-        {{ $props.config?.description }}
         <header
             ref="syncHeader" :style="{
                 transform: `translateX(${-scrollX}px)`
             }"
         >
-            <div v-if="$props.schedulePart" class="th">
+            <div class="th">
                 Název
             </div>
             <div class="th">
-                <strong>Průměr</strong>
+                Průměr
             </div>
             <template v-if="admin.displayKind === 'histogram'">
                 <div class="th">
@@ -27,35 +26,21 @@
                 </div>
             </template>
         </header>
-        <div class="scroll-x" @scroll="e => scrollX = (e.target as HTMLElement).scrollLeft">
+        <div class="scroll-x" @scroll.capture="e => scrollX = (e.target as HTMLElement).scrollLeft">
             <table>
                 <tbody ref="tableBody">
                     <template v-for="(replies, eIndex) in feedbackParts" :key="`e${eIndex}td`">
                         <SelectFeedbackRows
                             v-if="isSelect(eIndex)" :event="schedulePart?.program[eIndex as number]"
-                            :replies="replies" :tabulated="tabulated.replies[eIndex]"
-                            :respondents="tabulated.respondents"
-                            :config="config"
+                            :replies="replies" :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
+                            :config="config?.config?.[eIndex]"
                         />
-                        <tr v-else-if="replies" :set="event = schedulePart?.program[eIndex as number]">
-                            <td v-if="$props.schedulePart">
-                                <strong>
-                                    {{ event?.title }}
-                                </strong>
-                                ({{ Object.keys(replies).length }})
-                            </td>
-                            <td>
-                                <FeedbackReply :reply="getAverage(replies)" :questions="(event ?? config)?.questions" />
-                            </td>
-                            <FeedbackHistogramRow
-                                v-if="admin.displayKind === 'histogram'" :replies="replies"
-                                :feedback-type="event?.feedbackType ?? config?.type"
-                                :questions="(event ?? config)?.questions"
-                            />
-                            <FeedbackIndividualRow
-                                v-else :event="event" :replies="tabulated.replies[eIndex]"
-                                :respondents="tabulated.respondents"
-                                @set-data="(data: Feedback | null, user: string) => $props.onSetData!(data, eIndex.toString(), user)"
+                        <tr v-else-if="replies">
+                            <FeedbackCells
+                                :config="config?.config?.[eIndex]" :make-link="() => makeLink?.(eIndex)"
+                                :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
+                                :replies="replies" :event="schedulePart?.program[eIndex as number]"
+                                :on-set-data="(data: Feedback, user: string) => $props.onSetData?.(data, eIndex as string, user)"
                             />
                         </tr>
                     </template>
@@ -69,13 +54,13 @@
 import { Feedback, FeedbackConfig, SchedulePart, TabulatedFeedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
-import { getAverage } from '@/utils/types'
 
 const props = defineProps<{
     schedulePart?: SchedulePart,
-    config?: FeedbackConfig['individual'][0],
+    config?: { name: string, config: { [partName: string]: FeedbackConfig['individual'][0] } },
     feedbackParts: { [key: string | number]: { [user: string]: Feedback } }, // firstly indexed by event, secondly by user
     onSetData?:(data: Feedback | null, eIndex: string, userIdentifier: string) => void
+    makeLink?: (eIndex: string | number) => string
 }>()
 
 const admin = useAdmin()
@@ -86,7 +71,7 @@ const syncHeader = ref<HTMLElement>()
 const tableBody = ref<HTMLElement>()
 
 function isSelect(eIndex: string | number) {
-    const config = props.config?.type ?? props.schedulePart?.program[eIndex as number].feedbackType
+    const config = props.config?.config?.[eIndex]?.type ?? props.schedulePart?.program[eIndex as number].feedbackType
     return (config) && ['parallel', 'select'].includes(config)
 }
 
@@ -131,7 +116,8 @@ const tabulated = computed<TabulatedFeedback>(() => {
 function doSyncHeaders() {
     for (let i = 0; i < (syncHeader.value?.children?.length ?? 0); i++) {
         const headerElem = syncHeader.value?.children[i] as HTMLElement
-        const cellElem = tableBody.value?.children[0]?.children[i] as HTMLElement
+        const rowsOrShit = Array.from(tableBody.value?.children ?? []) as HTMLElement[]
+        const cellElem = rowsOrShit.find(c => c.tagName === 'TR')?.children[i] as HTMLElement
         if (typeof cellElem === 'undefined') {
             return
         }
@@ -140,7 +126,7 @@ function doSyncHeaders() {
         const headerWidth = parseFloat(getComputedStyle(headerElem).width)
         if ((cellElem?.clientWidth ?? 0) > 2) {
             headerElem.style.width = cellWidth + 'px'
-        } else {
+        } else if (cellElem.children[0]) {
             headerElem.style?.removeProperty('width');
             (cellElem.children[0] as HTMLElement).style.width = headerWidth + 'px'
         }

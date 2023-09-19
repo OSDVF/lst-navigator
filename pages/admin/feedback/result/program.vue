@@ -4,6 +4,7 @@
             v-for="key in Object.keys(programPartsFeedback).filter(key=>!!programPartsFeedback[key as keyof typeof programPartsFeedback])" :key="`p${key}`"
             :schedule-part="onlyIntIndexed(cloudStore.scheduleParts)[key as any]"
             :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])"
+            :make-link="(eIndex:string) => `/schedule/${key}/${eIndex}`"
             @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)"
         />
     </div>

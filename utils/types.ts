@@ -38,7 +38,7 @@ export function onlyIntIndexed<T>(a: Array<T>) {
     const result = []
     for (const key in a) {
         if (!isNaN(parseInt(key))) {
-            result[parseInt(key)] = (a[key])
+            result[parseInt(key)] = a[key]
         }
     }
     return result
@@ -75,9 +75,9 @@ export function getAverage(replies: { [key: string]: Feedback }) {
     }
 }
 
-export function hasFeedback(f: Feedback) : boolean
-export function hasFeedback(fs: {[key:string]:Feedback}) : boolean
-export function hasFeedback(f: {[key:string]:Feedback} | Feedback) : boolean {
+export function hasFeedback(f: Feedback): boolean
+export function hasFeedback(fs: { [key: string]: Feedback }): boolean
+export function hasFeedback(f: { [key: string]: Feedback } | Feedback): boolean {
     const v = Object.values(f)
     return f.basic || f.complicated || f.detail || f.select || (v && v.find(fs => hasFeedback(fs)))
 }
@@ -92,4 +92,16 @@ export async function timeoutPromise<T>(prom: Promise<T>, time = 5000): Promise<
     } finally {
         if (timer) { clearTimeout(timer) }
     }
+}
+
+function objectMap(obj: object, fn: Function) {
+    return Object.fromEntries(
+        Object.entries(obj).map(
+            ([k, v], i) => [k, fn(v, k, i)]
+        )
+    )
+}
+
+export function mapObject<T, U>(obj: { [key: string]: T }, fn: (v: T, k: string, i: number) => U): { [key: string]: U } {
+    return objectMap(obj, fn)
 }

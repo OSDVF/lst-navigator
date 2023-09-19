@@ -8,7 +8,7 @@
                 Ostatní otázky
             </NuxtLink>
         </nav>
-        <div class="p-1 feedbackResult">
+        <div :class="'p-1 feedbackResult ' + admin.displayKind">
             <div class="flex flex-wrap justify-content-between p-1">
                 <div>
                     <label>
@@ -145,7 +145,7 @@ async function csvExport() {
         }
     }
 
-    const compoundIndexesExpanded : string[] = []
+    const compoundIndexesExpanded: string[] = []
     for (const user in byUserData) {
         const userData: { [key: string]: boolean | string | number } = {}
         for (const compoundIndex of compoundIndexes) {
@@ -201,6 +201,13 @@ async function csvExport() {
 <style lang="scss">
 $border-color: rgba(128, 128, 128, 0.657);
 
+@mixin left-sticky {
+    position: sticky;
+    left: 0;
+    background: white;
+    z-index: 1;
+}
+
 .feedbackResult {
     table {
         border-collapse: separate;
@@ -209,6 +216,18 @@ $border-color: rgba(128, 128, 128, 0.657);
 
         &:nth-child(even) {
             background-color: rgba(128, 128, 128, 0.1);
+        }
+
+        &>tbody>tr {
+            &>td:first-child {
+                @include left-sticky;
+            }
+        }
+    }
+
+    &.histogram {
+        table>tbody>tr>td:last-child {
+            min-width: 20rem
         }
     }
 
@@ -230,17 +249,11 @@ $border-color: rgba(128, 128, 128, 0.657);
         }
     }
 
-    td:first-child {
-        position: sticky;
-        left: 0;
-        background: white;
-    }
-
     header {
         display: flex;
         position: sticky;
         top: 0;
-        z-index: 1;
+        z-index: 2;//To be above left-sticky elements
 
         .th {
             background: white;
@@ -254,6 +267,10 @@ $border-color: rgba(128, 128, 128, 0.657);
 
             &:not(:last-child) {
                 border-right: 1px solid $border-color;
+            }
+
+            &:first-child {
+                @include left-sticky; // TODO does not really get stuck
             }
         }
     }

@@ -101,6 +101,18 @@ const router = useRouter()
 const cloudStore = useCloudStore()
 const settings = useSettings()
 const feedbackPartIndex = parseInt(router.currentRoute.value.params.feedback as string) || 0
+
+definePageMeta({
+    middleware(to, _from) {
+        if (isNaN(parseInt(to.params.feedback as string))) {
+            if (process.client) { alert(`Neplatná část feedbackového dotazníku ${to.params.feedback}`) }
+            return {
+                path: '/feedback'
+            }
+        }
+    }
+})
+
 const currentPart = computed(() => {
     const config: FeedbackConfig | undefined = cloudStore.feedback.config?.[feedbackPartIndex]
     const subparts: {title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & {data: Feedback | null, secondaryIndex: number | string, selectOptions: string[]})[]}[] = []
