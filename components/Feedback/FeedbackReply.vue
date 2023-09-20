@@ -3,7 +3,7 @@
         <template v-if="typeof $props.reply?.basic === 'number' && !isNaN($props.reply.basic)">
             <NuxtRating
                 :read-only="!admin.editingFeedback" active-color="blue" :rating-value="$props.reply.basic"
-                title="Celkový dojem" rating-size="1.2rem" @rating-selected="(val: number) => controls?.syncBasic(val)"
+                title="Celkový dojem" rating-size="1.2em" @rating-selected="(val: number) => controls?.syncBasic(val)"
             />
             {{ Math.round(($props.reply.basic + Number.EPSILON) * 10) / 10 }}
         </template>
@@ -12,7 +12,7 @@
                 <NuxtRating
                     :read-only="!admin.editingFeedback" :active-color="darkenColor('#ffff00', index / 5)"
                     :rating-value="compl" :title="questions?.[index] ?? defaultQuestions[index]"
-                    rating-size="1.2rem" @rating-selected="(val: number) => controls?.syncComplicated(index, val)"
+                    rating-size="1.2em" @rating-selected="(val: number) => controls?.syncComplicated(index, val)"
                 /> {{
                     Math.round(((compl ?? 0) + Number.EPSILON) * 10) / 10 }}
             </div>
@@ -67,6 +67,7 @@ const controls = props.onSetData
 <style lang="scss">
 .feedbackResult {
     textarea {
+        font-size: .9em;
         border:0;
         scrollbar-width: auto;
     }

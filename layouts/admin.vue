@@ -10,7 +10,7 @@
                     <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>
                 </select>
             </label>
-            <div id="topNav" />
+            <div id="topNav" class="flex" />
         </nav>
         <main>
             <slot />

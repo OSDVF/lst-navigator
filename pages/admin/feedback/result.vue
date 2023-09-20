@@ -12,7 +12,7 @@
         </Teleport>
         <div :class="'p-1 feedbackResult ' + admin.displayKind">
             <div class="flex flex-wrap justify-content-between p-1">
-                <div>
+                <div class="mr-1">
                     <label>
                         Druh zobrazení&ensp;
                         <select v-model="admin.displayKind">
@@ -47,10 +47,17 @@
                     </template>
                 </div>
                 <div>
-                    <button @click="csvExport">
+                    <button class="mr-1" @click="csvExport">
                         <IconCSS name="mdi:file-excel" />
                         CSV Export
                     </button>
+                    <fieldset class="p-0_2">
+                        <IconCSS name="mdi:magnify" /><button @click="zoomFactor += 0.1">
+                            +
+                        </button><button @click="zoomFactor -= 0.1">
+                            -
+                        </button><input v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`" type="number" style="border:none">
+                    </fieldset>
                 </div>
                 <div>
                     <span style="color:blue">
@@ -77,7 +84,7 @@
                 Načítání
             </template>
             <template v-else>
-                <NuxtPage />
+                <NuxtPage :style="`font-size: ${zoomFactor}rem`" />
             </template>
         </div>
     </div>
@@ -107,6 +114,7 @@ onMounted(() => {
 const cloudStore = useCloudStore()
 const admin = useAdmin()
 const respondents = useRespondents()
+const zoomFactor = ref(1)
 
 const displayKindOptionLabels = {
     histogram: 'Histogram',
@@ -255,7 +263,7 @@ $border-color: rgba(128, 128, 128, 0.657);
         display: flex;
         position: sticky;
         top: 0;
-        z-index: 2;//To be above left-sticky elements
+        z-index: 2; //To be above left-sticky elements
 
         .th {
             background: white;
@@ -280,7 +288,7 @@ $border-color: rgba(128, 128, 128, 0.657);
     caption {
         display: block;
         width: 100%;
-        font-size: 1.5rem;
+        font-size: 1.5em;
         font-weight: bold;
         padding: .5rem;
         background-color: rgba(128, 128, 128, 0.2);

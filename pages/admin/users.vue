@@ -17,7 +17,8 @@
         <LazyDataTable
             ref="table" :data="usersIndexed" :options="{
                 order: [[1, 'asc']],
-                select: true
+                select: true,
+                responsive: true
             }" :columns="[
                 {
                     searchable: false,
@@ -81,7 +82,7 @@ const permissionNames = computed(() => ({
 const usersIndexed = computed(() => {
     const result = []
     if (users.data.value) {
-        for (const user of users.data.value) {
+        for (const user of users.data.value as (UserInfo & { id: string })[]) { // firestore documents have an added property 'id'
             const effectiveSignature = user.signature[cloudStore.selectedEvent] || user.signatureId[cloudStore.selectedEvent]
             const values: [string | undefined, string, string, string, string, string, UserLevel | boolean] = [
                 user.photoURL,

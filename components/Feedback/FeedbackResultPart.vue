@@ -26,7 +26,7 @@
                 </div>
             </template>
         </header>
-        <div class="scroll-x" @scroll.capture="e => scrollX = (e.target as HTMLElement).scrollLeft">
+        <div class="scroll-x" @scroll.passive="e => scrollX = (e.target as HTMLElement).scrollLeft">
             <table>
                 <tbody ref="tableBody">
                     <template v-for="(replies, eIndex) in feedbackParts" :key="`e${eIndex}td`">
@@ -77,40 +77,36 @@ function isSelect(eIndex: string | number) {
 }
 
 const tabulated = computed<TabulatedFeedback>(() => {
-    const seenRespondents: { [respondentId: string]: number } = {}
+    const partRespondents = new Set<string>()
     const result: TabulatedFeedback['replies'] = {}
-    let lastRespondentIndex = 0
 
+    // first pass finds respondents
     for (const feedbackPartI in props.feedbackParts) {
         const feedbackPart = props.feedbackParts[feedbackPartI]
-        const partRepliesByUser = Array<Feedback | null>(lastRespondentIndex + 1)
         for (const respondentName in feedbackPart) {
-            const respondentIndex = seenRespondents[respondentName]
-            if (typeof respondentIndex === 'undefined') {
-                seenRespondents[respondentName] = lastRespondentIndex
-                allRespondents.names.add(respondentName)
-                partRepliesByUser[lastRespondentIndex] = feedbackPart[respondentName]
-                lastRespondentIndex++
-            } else {
-                partRepliesByUser[respondentIndex] = feedbackPart[respondentName]
-            }
+            allRespondents.names.add(respondentName)
+            partRespondents.add(respondentName)
         }
-        result[feedbackPartI] = (partRepliesByUser)
     }
 
-    // second pass fills in the gaps
-    for (const i in result) {
-        const feedbackPart = result[i]
-        for (let i = 0; i < lastRespondentIndex; i++) {
-            if (typeof feedbackPart[i] === 'undefined') {
-                feedbackPart[i] = null
+    // second pass fills replies
+    const resultRespondents = Array.from(partRespondents).sort()
+    for (const feedbackPartI in props.feedbackParts) {
+        const feedbackPart = props.feedbackParts[feedbackPartI]
+        const repliesByUserIndex : TabulatedFeedback['replies'][''] = []
+        for (const i in resultRespondents) {
+            const respondent = resultRespondents[i]
+            let respondentReply : Feedback | null = feedbackPart[respondent]
+            if (!respondentReply) {
+                respondentReply = null
             }
+            repliesByUserIndex[i] = respondentReply
         }
-        result[i] = feedbackPart
+        result[feedbackPartI] = repliesByUserIndex
     }
     return {
         replies: result,
-        respondents: Object.keys(seenRespondents)
+        respondents: resultRespondents
     }
 })
 

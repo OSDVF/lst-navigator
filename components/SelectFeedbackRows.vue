@@ -3,11 +3,11 @@
         {{ (config?.name ?? event?.title) }}
     </caption>
     <!-- Filtered by selected option -->
-    <tr v-for="(option, oIndex) in getParallelOrSelectEvents(event ?? config)" :key="oIndex">
-        <td :set="filteredReplies = Object.fromEntries(Object.entries(replies).filter(([_rKey, r]) => r.select == option))" :title="Object.keys(filteredReplies).join(', ')">
+    <tr v-for="(filteredReplies, option) in repliesByOption" :key="option">
+        <td :title="Object.keys(filteredReplies).join(', ')">
             <div
                 :set="thisCount = Object.keys(filteredReplies).length" class="absolute left-0 top-0 bottom-0 z--1"
-                :style="{ width: `${100 * thisCount / maxCount}%`, background: randomColor({ hue: 'green' }) }"
+                :style="{ width: `${100 * thisCount / maxCount}%`, background: randomColors?.[option] }"
             />
             <em>{{ option }} ({{ thisCount }})</em>
         </td>
@@ -46,10 +46,36 @@ const props = defineProps<{
 const admin = useAdmin()
 const questions = computed(() => (props.event ?? props.config).questions)
 const type = computed(() => (props.event?.feedbackType ?? props.config?.type))
+const options = computed(() => getParallelOrSelectEvents(props.event ?? props.config))
+const randomColors: { [option: string]: string } = {}
+if (options.value) {
+    for (const option of options.value) {
+        randomColors[option] = randomColor({ hue: 'green' })
+    }
+}
+
+const repliesByOption = computed(() => {
+    const result: { [option: string]: { [user: string]: Feedback } } = {}
+    if (options.value) {
+        for (const replyI in props.replies) {
+            const reply = props.replies[replyI]
+            for (const option of options.value) {
+                if (reply.select === option) {
+                    if (!result[option]) {
+                        result[option] = {}
+                    }
+                    result[option][replyI] = reply
+                }
+            }
+        }
+    }
+    return result
+})
 
 const maxCount = computed(() => {
-    const bySelected : {[option:string]:number} = {}
-    for (const reply of props.tabulated) {
+    const bySelected: { [option: string]: number } = {}
+    for (const replyI in props.replies) {
+        const reply = props.replies[replyI]
         if (reply?.select) {
             if (!bySelected[reply.select as string]) {
                 bySelected[reply.select as string] = 0
@@ -65,7 +91,7 @@ function getParallelOrSelectEvents(event: ScheduleEvent | typeof props.config) {
     case 'select':
         return event.questions
     case 'parallel':
-        return (event as ScheduleEvent).subtitle && getParallelEvents(event)
+        return (event as ScheduleEvent).subtitle ? getParallelEvents(event) : undefined
     }
     return []
 }

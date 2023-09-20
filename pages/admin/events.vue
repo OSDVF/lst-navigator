@@ -42,6 +42,7 @@
         <LazyDataTable
             ref="table"
             :data="eventsIndexed" :options="{
+                responsive: true,
                 select: true,
                 order: [[0, 'desc']]
             }" @select="selectionChanged" @unselect="selectionChanged"
