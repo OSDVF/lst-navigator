@@ -1,13 +1,15 @@
 <template>
     <div>
-        <nav>
-            <NuxtLink to="/admin/feedback/result/program">
+        <Teleport to="#topNav">
+            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-block">
+                <IconCSS name="mdi:calendar" />
                 Části programu
             </NuxtLink>
-            <NuxtLink to="/admin/feedback/result/other">
+            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-block">
+                <IconCSS name="mdi:form-select" />
                 Ostatní otázky
             </NuxtLink>
-        </nav>
+        </Teleport>
         <div :class="'p-1 feedbackResult ' + admin.displayKind">
             <div class="flex flex-wrap justify-content-between p-1">
                 <div>

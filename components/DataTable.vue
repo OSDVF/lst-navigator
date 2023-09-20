@@ -68,7 +68,7 @@ onMounted(() => {
         height: 1.5rem;
         mask-repeat: no-repeat;
         mask-size: 100% 100%;
-        ;
+        mask-image: var(--icon);
     }
 }
 </style>

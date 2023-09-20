@@ -30,7 +30,7 @@
                 null,
                 null,
                 {
-                    render: (data: keyof typeof permissionNames) => data ? `<span title='${permissionNames[data]}' class='icon' style='mask-image: url(https://api.iconify.design/mdi/${({
+                    render: (data: keyof typeof permissionNames) => data ? `<span title='${permissionNames[data]}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${({
                         [UserLevel.SuperAdmin]: 'shield-lock-open', [UserLevel.ScheduleAdmin]: 'calendar-check', [UserLevel.Admin]: 'account-lock-open', [UserLevel.Nothing]: null
                     })[data]}.svg);'></span>` : ''
                 }

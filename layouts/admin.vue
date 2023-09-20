@@ -4,12 +4,13 @@
         <Head>
             <Title>{{ title }}</Title>
         </Head>
-        <nav class="p-1 flex justify-content-center">
-            <label>Vybraná akce
+        <nav class="flex justify-content-center flex-grow">
+            <label class="m-auto p-1 text-right">Vybraná akce
                 <select v-model="cloudStore.selectedEvent">
                     <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>
                 </select>
             </label>
+            <div id="topNav" />
         </nav>
         <main>
             <slot />

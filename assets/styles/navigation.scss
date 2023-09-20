@@ -15,6 +15,9 @@ nav {
         &:focus {
             outline: 0;
         }
+        &.router-link-active {
+            background: #00000016;
+        }
     }
 }
 

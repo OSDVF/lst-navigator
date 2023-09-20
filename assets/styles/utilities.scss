@@ -22,6 +22,10 @@
   font-size: large
 }
 
+.m-auto {
+  margin: auto
+}
+
 .m-left-auto {
   margin-left: auto;
 }
@@ -54,6 +58,14 @@
   overflow-y: auto;
 }
 
+.min-h-2_5 {
+  min-height: 2.5rem;
+}
+
+.h-full {
+  height: 100%;
+}
+
 .mh-5 {
   max-height: 5rem;
 }
@@ -70,7 +82,7 @@
   flex-wrap: wrap;
 }
 
-.flex-grow > * {
+.flex-grow>* {
   flex-grow: 1;
 }
 
@@ -88,6 +100,10 @@
 
 .align-items-start {
   align-items: start;
+}
+
+.align-items-center {
+  align-items: center;
 }
 
 .relative {
@@ -108,6 +124,10 @@
 
 .bottom-0 {
   bottom: 0;
+}
+
+.text-right {
+  text-align: right;
 }
 
 .top-0 {
