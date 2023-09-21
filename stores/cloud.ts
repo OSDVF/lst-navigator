@@ -1,6 +1,6 @@
 import { defineStore, skipHydrate } from 'pinia'
 import { DocumentReference, FieldValue, Firestore, arrayUnion, collection, deleteField, doc, getDoc, setDoc } from 'firebase/firestore'
-import { useFirebaseStorage, useStorageFileUrl } from 'vuefire'
+import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
 import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, User } from 'firebase/auth'
@@ -50,7 +50,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const firebaseStorage = probe && useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)
-    const auth = probe ? useFirebaseAuth() : null
+    const auth = probe && (config.public.ssrAuthEnabled || process.client) ? useFirebaseAuth() : null
     if (process.client) {
         auth?.setPersistence(browserLocalPersistence)
     }
@@ -59,7 +59,8 @@ export const useCloudStore = defineStore('cloud', () => {
     const ed = firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null
     const eventDocuments = useDocument<EventDescription>(ed, {
         maxRefDepth: 4,
-        once: !!process.server
+        once: !!process.server,
+        wait: true
     })
 
     const eventData = useAsyncData('defaultEventData', () => eventDocuments.promise.value, {
@@ -75,7 +76,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const subscriptionsDocument = currentEventDocument('subscriptions')
 
-    const eventImage = computed(() => eventData.value?.meta.image && firebaseStorage
+    const eventImage = computed(() => eventData.value?.meta?.image && firebaseStorage
         ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.meta.image)).url.value
         : null)
     const eventTitle = computed(() => eventData.value?.meta.title)
@@ -148,9 +149,9 @@ export const useCloudStore = defineStore('cloud', () => {
             return uploadingPromise
         }
     }
-    const userAuth = useCurrentUser()
+    const userAuth = (config.public.ssrAuthEnabled || process.client) ? useCurrentUser() : null
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
-    const ud = computed(() => userAuth.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
+    const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
 
     const uPending = ref(false)
     async function updateUserInfo(newDoc: DocumentReference | null) { // User info is updated on-demand
@@ -184,7 +185,7 @@ export const useCloudStore = defineStore('cloud', () => {
             user.pendingAction.value = true
             try {
                 // With emulators the popup version would throw cross-origin error
-                (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
+                await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
                 user.pendingAction.value = false
                 user.pendingPopup.value = false
                 return true
@@ -202,7 +203,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 let nextResult = false
                 if (secondAttempt === true) {
                     alert('Přihlášení se nepodařilo provést')
-                } else if (!useRedirect && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
+                } else if (useRedirect !== true && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
                     nextResult = await user.signIn(true, true)
                 }
                 user.pendingAction.value = false
@@ -258,7 +259,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     watch(settings, (newSettings) => {
-        if (user.doc.value && userAuth.value?.uid && process.client) {
+        if (user.doc.value && userAuth?.value?.uid && process.client) {
             setDoc(user.doc.value, {
                 signature: {
                     [selectedEvent.value]: newSettings.userNickname
@@ -280,7 +281,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 superAdmin: true
             }
         }
-        if (user.info.value?.permissions && user.auth.value?.uid) {
+        if (user.info.value?.permissions && user.auth?.value?.uid) {
             const onlinePermission = user.info.value.permissions?.[selectedEvent.value]
             return {
                 editSchedule: onlinePermission === UserLevel.ScheduleAdmin || onlinePermission === UserLevel.Admin || user.info.value.permissions?.superAdmin === true,
@@ -303,7 +304,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const isAuthenticated = usePersistentRef('isAuthenticated', false)
 
     watch(messagingToken, (newToken) => {
-        if (user.doc.value && userAuth.value?.uid && process.client) {
+        if (user.doc.value && userAuth?.value?.uid && process.client) {
             setDoc(user.doc.value, {
                 subscriptions: {
                     [selectedEvent.value]: arrayUnion(newToken)
@@ -348,7 +349,7 @@ export const useCloudStore = defineStore('cloud', () => {
     // Hydrate user
     onMounted(async () => {
         if (config.public.debugUser) {
-            userAuth.value = debugUser
+            userAuth!.value = debugUser
         } else {
             await getRedirectResult(auth!).catch((reason) => {
                 // eslint-disable-next-line no-console

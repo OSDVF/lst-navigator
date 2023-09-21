@@ -141,7 +141,7 @@ const config = defineNuxtConfig({
             appId: process.env.VITE_APP_APPID,
             measurementId: process.env.VITE_APP_MEASUREMENTID
         },
-        auth: true,
+        auth: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
         appCheck: process.env.VITE_APP_RECAPTCHA && process.env.FIREBASE_APPCHECK !== 'false'
             ? {
                 debug: isDevMode,
@@ -174,7 +174,8 @@ const config = defineNuxtConfig({
             SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
             SENTRY_DSN: process.env.VITE_APP_DSN,
             SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET,
-            debugUser: process.env.VITE_APP_DEBUG_USER
+            debugUser: process.env.VITE_APP_DEBUG_USER,
+            ssrAuthEnabled: process.env.GOOGLE_APPLICATION_CREDENTIALS
         }
     },
     ssr: true

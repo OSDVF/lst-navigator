@@ -41,10 +41,14 @@ import { useCloudStore } from '@/stores/cloud'
 
 const cloudStore = useCloudStore()
 const prettyError = ref()
+const previousCode = ref()
 
-watch(cloudStore, (newCloud, oldCloud) => {
-    if (oldCloud.user.error?.code === newCloud.user.error?.code) { return }
-    switch (newCloud.user.error?.code) {
+watchEffect(() => {
+    if(cloudStore.user.error?.code) {
+        if(cloudStore.user.error.code === previousCode.value) return
+        previousCode.value = cloudStore.user.error.code
+    }
+    switch (cloudStore.user.error?.code) {
     case 'auth/popup-blocked':
         alert('Přihlášení bylo zablokováno vaším prohlížečem. Povolte vyskakovací okna (pop-up)')
         setTimeout(() => location.reload(), 7000)

@@ -40,10 +40,8 @@
                             Vypsat
                         </button>
                         <br>
-                        <textarea
-                            v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly
-                            :value="showRespondents ? Array.from(respondents.names).join('\n') : ''"
-                        />
+                        <textarea v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly
+                            :value="showRespondents ? Array.from(respondents.names).join('\n') : ''" />
                     </template>
                 </div>
                 <div>
@@ -56,7 +54,8 @@
                             +
                         </button><button @click="zoomFactor -= 0.1">
                             -
-                        </button><input v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`" type="number" style="border:none">
+                        </button><input v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`"
+                            type="number" style="border:none">
                     </fieldset>
                 </div>
                 <div>
@@ -120,6 +119,10 @@ const displayKindOptionLabels = {
     histogram: 'Histogram',
     individual: 'Individuální'
 }
+
+function sanitize(str: string) {
+    return str.replace('"', '\'')
+}
 const showRespondents = ref(false)
 let exportToCsv: null | typeof ExportToCsv = null
 async function csvExport() {
@@ -167,12 +170,12 @@ async function csvExport() {
                     compoundIndexesExpanded.push(basicCol)
                 }
                 const detailCol = `${compoundIndex}-detail`
-                userData[detailCol] = feedback.detail as string ?? ''
+                userData[detailCol] = sanitize(feedback.detail as string ?? '')
                 if (feedback.detail && !compoundIndexesExpanded.includes(detailCol)) {
                     compoundIndexesExpanded.push(detailCol)
                 }
                 const selectCol = `${compoundIndex}-vyber`
-                userData[selectCol] = feedback.select as string ?? ''
+                userData[selectCol] = sanitize(feedback.select as string ?? '')
                 if (feedback.select && !compoundIndexesExpanded.includes(selectCol)) {
                     compoundIndexesExpanded.push(selectCol)
                 }

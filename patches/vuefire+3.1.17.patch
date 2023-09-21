@@ -1,0 +1,15 @@
+diff --git a/node_modules/vuefire/dist/index.d.mts b/node_modules/vuefire/dist/index.d.mts
+index 71ea8c5..aa6f1f7 100644
+--- a/node_modules/vuefire/dist/index.d.mts
++++ b/node_modules/vuefire/dist/index.d.mts
+@@ -129,6 +129,10 @@ interface FirestoreRefOptions extends _DataSourceOptions {
+      * Default Firestore converter to use with snapshots.
+      */
+     converter?: FirestoreDataConverter<unknown>;
++    /**
++     * Swallows fatal errors if defined
++     */
++    onError?: (e: any) => void;
+ }
+ /**
+  * Type of the global options for firestore refs. Some values cannot be `undefined`.
