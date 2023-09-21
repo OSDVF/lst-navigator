@@ -28,7 +28,7 @@ const config = defineNuxtConfig({
     },
     build: {
         transpile: [
-            'lru-cache'
+            'lru-cache',
         ]
     },
     css: [
@@ -103,6 +103,9 @@ const config = defineNuxtConfig({
             alias: [
                 {
                     find: 'path', replacement: 'path-browserify'
+                },
+                {
+                    find: 'postcss', replacement: 'postcss/lib/postcss.mjs'
                 }
             ]
         },
