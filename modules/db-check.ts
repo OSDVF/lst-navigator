@@ -5,6 +5,7 @@
 /* eslint-disable no-console */
 import { defineNuxtModule } from '@nuxt/kit'
 import { DocumentReference, getFirestore } from 'firebase-admin/firestore'
+import { firestore } from 'firebase-admin'
 import { CollectionsList, KnownCollectionName } from '../utils/db'
 import useFirebase from '../server/utils/firebase'
 import { EventDescription, EventSubdocumentsList } from '../types/cloud'
@@ -41,12 +42,31 @@ export default defineNuxtModule({
             const events = await knownCollection('events').listDocuments()
             for (const doc of events) {
                 const event = (await doc.get()).data() as EventDescription<DocumentReference>
+                ///
+                /// Check references
+                ///
                 for (const ref of EventSubdocumentsList) {
                     if (!event[ref] || !(await event[ref].get()).exists) {
                         console.warn(`Event '${doc.id}' subdocument reference '${ref}': '${event[ref] instanceof DocumentReference ? event[ref]?.path : event[ref]}' is not valid`)
                     }
                 }
+                ///
+                /// Fix rendundant data in feedback
+                ///
+                const feedbackReplies = (await event.feedback.get()).data()
+                if (feedbackReplies) {
+                    for (const primaryId in feedbackReplies) {
+                        const part = feedbackReplies[primaryId]
+                        if (part && part.email && part.name && part.offlineUserIdentifier && part.photoURL && part.timestamp) {
+                            console.log(`Event '${doc.id}' removing feedback user record '${primaryId}'`)
+                            await event.feedback.update({
+                                [primaryId]: firestore.FieldValue.delete()
+                            })
+                        }
+                    }
+                }
             }
+
             fs.terminate()
         }
     }

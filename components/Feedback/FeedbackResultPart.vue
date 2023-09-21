@@ -1,6 +1,12 @@
 <template>
     <div>
-        <caption>{{ $props.schedulePart?.name ?? $props.config?.name }}</caption>
+        <caption><span>{{ $props.schedulePart?.name ?? $props.config?.name }}</span>
+            <div v-show="admin.displayKind === 'individual'" class="actions">
+                <button title="CSV Export" @click="csvExport">
+                    <IconCSS name="mdi:file-document-arrow-right" />
+                </button>
+            </div>
+        </caption>
         <header
             ref="syncHeader" :style="{
                 transform: `translateX(${-scrollX}px)`
@@ -36,7 +42,10 @@
                             :config="config?.config?.[eIndex]"
                             @set-data="(data: Feedback, user: string) => $props.onSetData?.(data, eIndex as string, user)"
                         />
-                        <tr v-else-if="replies && Object.keys(replies).length > 0" :style="{background: config?.config?.[eIndex].type === 'text' ? '#ffa6000d': ''}">
+                        <tr
+                            v-else-if="replies && Object.keys(replies).length > 0"
+                            :style="{ background: config?.config?.[eIndex].type === 'text' ? '#ffa6000d' : '' }"
+                        >
                             <FeedbackCells
                                 :config="config?.config?.[eIndex]" :make-link="() => makeLink?.(eIndex)"
                                 :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
@@ -93,10 +102,10 @@ const tabulated = computed<TabulatedFeedback>(() => {
     const resultRespondents = Array.from(partRespondents).sort()
     for (const feedbackPartI in props.feedbackParts) {
         const feedbackPart = props.feedbackParts[feedbackPartI]
-        const repliesByUserIndex : TabulatedFeedback['replies'][''] = []
+        const repliesByUserIndex: TabulatedFeedback['replies'][''] = []
         for (const i in resultRespondents) {
             const respondent = resultRespondents[i]
-            let respondentReply : Feedback | null = feedbackPart[respondent]
+            let respondentReply: Feedback | null = feedbackPart[respondent]
             if (!respondentReply) {
                 respondentReply = null
             }
@@ -137,4 +146,25 @@ onMounted(() => {
     }
 })
 
+function csvExport() {
+
+}
+
 </script>
+
+<style lang="scss">
+caption {
+    .actions {
+        visibility: hidden;
+        padding-left: 1rem;
+        display: flex;
+    }
+
+    &:hover,
+    &:focus {
+        .actions {
+            visibility: visible;
+        }
+    }
+}
+</style>

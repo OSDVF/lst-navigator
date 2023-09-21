@@ -90,7 +90,7 @@ const usersIndexed = computed(() => {
                 user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
-                cloudStore.feedback.online?.[effectiveSignature] ?? 'Nikdy',
+                cloudStore.feedback.online?.[effectiveSignature].toString() ?? 'Nikdy',
                 user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent]
             ]
             result.push(values)

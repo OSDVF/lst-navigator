@@ -40,13 +40,15 @@
                             Vypsat
                         </button>
                         <br>
-                        <textarea v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly
-                            :value="showRespondents ? Array.from(respondents.names).join('\n') : ''" />
+                        <textarea
+                            v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly
+                            :value="showRespondents ? Array.from(respondents.names).join('\n') : ''"
+                        />
                     </template>
                 </div>
                 <div>
                     <button class="mr-1" @click="csvExport">
-                        <IconCSS name="mdi:file-excel" />
+                        <IconCSS name="mdi:file-document-arrow-right" />
                         CSV Export
                     </button>
                     <fieldset class="p-0_2">
@@ -54,8 +56,10 @@
                             +
                         </button><button @click="zoomFactor -= 0.1">
                             -
-                        </button><input v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`"
-                            type="number" style="border:none">
+                        </button><input
+                            v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`"
+                            type="number" style="border:none"
+                        >
                     </fieldset>
                 </div>
                 <div>
@@ -66,7 +70,7 @@
                 <div>
                     <span style="color:yellow">
                         &block;&block;
-                    </span> &ensp; Vícefázové hodnocení
+                    </span> &ensp; Vícesložkové hodnocení
                 </div>
                 <div>
                     <span style="color:orange">
@@ -91,6 +95,8 @@
 
 <script setup lang="ts">
 import type * as ExportToCsv from 'export-to-csv'
+import { FieldValue } from 'firebase/firestore'
+import Lodash from 'lodash'
 import { useCloudStore } from '@/stores/cloud'
 import { Feedback } from '@/types/cloud'
 import { DisplayKind, useAdmin } from '@/stores/admin'
@@ -120,8 +126,12 @@ const displayKindOptionLabels = {
     individual: 'Individuální'
 }
 
-function sanitize(str: string) {
+function sanitize(str: string | FieldValue) {
+    if (typeof str === 'object') {
+        return ''
+    }
     return str.replace('"', '\'')
+        .replace(',', '，')
 }
 const showRespondents = ref(false)
 let exportToCsv: null | typeof ExportToCsv = null
@@ -152,6 +162,10 @@ async function csvExport() {
                     byUserData[user][compoundIndex] = feedback
                     if (!compoundIndexes.includes(compoundIndex)) {
                         compoundIndexes.push(compoundIndex)
+                    }
+                    const potentialInner = `${eventIndex}-0`
+                    if (compoundIndexes.includes(potentialInner)) {
+                        byUserData[user][compoundIndex] = Lodash.merge(byUserData[user][compoundIndex], byUserData[user][potentialInner])
                     }
                 }
             }
@@ -289,7 +303,8 @@ $border-color: rgba(128, 128, 128, 0.657);
     }
 
     caption {
-        display: block;
+        display: flex;
+        justify-content: center;
         width: 100%;
         font-size: 1.5em;
         font-weight: bold;

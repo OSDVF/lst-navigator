@@ -16,5 +16,5 @@ import { onlyIntIndexed } from '@/utils/types'
 import { useCloudStore } from '@/stores/cloud'
 
 const cloudStore = useCloudStore()
-const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.feedback.online as any[]))
+const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.feedback.online) as Omit<typeof cloudStore.feedback.online[0], number>[])
 </script>

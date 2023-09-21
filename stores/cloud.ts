@@ -4,10 +4,12 @@ import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl 
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
 import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, User } from 'firebase/auth'
+import Lodash from 'lodash'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { KnownCollectionName } from '@/utils/db'
 import { EventDescription, EventSubdocuments, FeedbackConfig, Feedback, UpdatePayload, SchedulePart, Subscriptions, UserInfo, Permissions, UserLevel } from '@/types/cloud'
+
 /**
  * Compile time check that this collection really exists (is checked by the server)
  */
@@ -86,6 +88,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const groupNames = computed(() => eventData.value?.meta.groups ?? [])
     const fd = currentEventDocument('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
+    const feedbackRepliesRaw = shallowRef(useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!process.server }))
     const feedback = {
         config: computed<FeedbackConfig[] | undefined>(() => eventData.value?.meta.feedback),
         doc: fd,
@@ -94,7 +97,26 @@ export const useCloudStore = defineStore('cloud', () => {
         fetchFailed: ref(false),
         fetching: ref(false),
         infoText: computed(() => eventData.value?.meta.feedbackInfo),
-        online: useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!process.server }),
+        online: computed(() => {
+            const result: { [key: string]: number | { [key: string | number]: { [user: string]: Feedback } } } = {}
+            const replies = feedbackRepliesRaw.value
+            if (replies) {
+                for (const key in replies) {
+                    const val = replies[key]
+                    if (typeof val === 'object' && val !== null) {
+                        for (const innerKey in val) {
+                            if (typeof replies[innerKey] === 'object') {
+                                val[innerKey] = Lodash.merge(val[innerKey], replies[innerKey][0])
+                                delete replies[innerKey]
+                                delete result[innerKey]
+                            }
+                        }
+                    }
+                    result[key] = val
+                }
+            }
+            return result
+        }),
         set(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
             feedback.fetching.value = true
             if (typeof userIdentifier === 'undefined') {

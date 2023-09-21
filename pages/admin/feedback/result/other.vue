@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import Lodash from 'lodash'
 import { Feedback, FeedbackConfig } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
 
@@ -21,13 +20,6 @@ const otherFeedback = computed(() => {
         for (const key in replies) {
             const val = replies[key]
             if (typeof val === 'object' && isNaN(parseInt(key))) {
-                for (const innerKey in val) {
-                    if (typeof replies[innerKey] === 'object') {
-                        val[innerKey] = Lodash.merge(val[innerKey], replies[innerKey][0])
-                        delete replies[innerKey]
-                        delete result[innerKey]
-                    }
-                }
                 result[key] = val
             }
         }

@@ -34,7 +34,7 @@ export function getParallelEvents(eventItem: ScheduleEvent) {
     return eventItem.subtitle?.split(',')?.map(x => x.trim()) ?? []
 }
 
-export function onlyIntIndexed<T>(a: Array<T>) {
+export function onlyIntIndexed<T>(a: { [key: string | number | symbol]: T } | ArrayLike<T>) {
     const result = []
     for (const key in a) {
         if (!isNaN(parseInt(key))) {
