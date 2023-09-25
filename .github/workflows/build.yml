@@ -14,30 +14,33 @@ jobs:
       - name: Inject SSR service account
         run: echo '${{ secrets.SSR_SERVICE_ACCOUNT }}' > service-account.json
 
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
       - name: Cache node modules
-        id: cache-yarn
+        id: cache-bun
         uses: actions/cache@v3
         env:
           cache-name: cache-node-modules
         with:
-          # yarn cache files are stored in `~/.yarn` on Linux/macOS
-          path: ~/.yarn
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          path: ~/.bun
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/bun.lockb') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
 
-      - if: ${{ steps.cache-yarn.outputs.cache-hit != 'true' }}
+      - if: ${{ steps.cache-bun.outputs.cache-hit != 'true' }}
         name: List the state of node modules
         continue-on-error: true
-        run: yarn list
+        run: bun list
 
       - name: Install dependencies
-        run: yarn
+        run: bun install
 
       - name: SSR Generate
-        run: yarn generate ci
+        run: bun generate ci
 
       - name: Archive distribution artifacts
         uses: actions/upload-artifact@v3

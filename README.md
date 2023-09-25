@@ -28,11 +28,10 @@ Used for [Moravian-Silesian Yout of Evangelical Church of Czech Brethren](https:
 Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
 1. Make sure to install the dependencies:
-
+- [bun](https://bun.sh/)
+- dependencies in project folder
 ```bash
-npm i -g yarn
-# yarn
-yarn install
+bun install
 ```
 
 2. Copy `.env.example` into `.env` and fill in the environment variables.
@@ -43,8 +42,7 @@ yarn install
 Start the development server on `https://localhost:3000`:
 
 ```bash
-# yarn
-yarn dev
+bun dev
 ```
 
 Note the server runs behind HTTPS wihtout HTTP redirects (otherswise firebase auth won't work).
@@ -54,15 +52,13 @@ Note the server runs behind HTTPS wihtout HTTP redirects (otherswise firebase au
 Build the application for production:
 
 ```bash
-# yarn
-yarn build
+bun generate
 ```
 
 Locally preview production build:
 
 ```bash
-# yarn
-yarn preview
+bun serve
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
