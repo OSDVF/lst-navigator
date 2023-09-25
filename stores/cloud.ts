@@ -299,21 +299,21 @@ export const useCloudStore = defineStore('cloud', () => {
         if (config.public.debugUser) {
             return {
                 editSchedule: true,
-                eventAdmin: true,
+                editEvent: true,
                 superAdmin: true
             }
         }
         if (user.info.value?.permissions && user.auth?.value?.uid) {
             const onlinePermission = user.info.value.permissions?.[selectedEvent.value]
             return {
-                editSchedule: onlinePermission === UserLevel.ScheduleAdmin || onlinePermission === UserLevel.Admin || user.info.value.permissions?.superAdmin === true,
-                eventAdmin: onlinePermission === UserLevel.Admin || user.info.value.permissions?.superAdmin === true,
+                editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || user.info.value.permissions?.superAdmin === true,
+                editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || user.info.value.permissions?.superAdmin === true,
                 superAdmin: user.info.value.permissions?.superAdmin === true
             }
         }
         return {
             editSchedule: false,
-            eventAdmin: false,
+            editEvent: false,
             superAdmin: false
         }
     })

@@ -61,7 +61,7 @@ export type Permissions = {
     /**
      * Also has access to the administrator section and can edit feedback results
      */
-    eventAdmin: boolean,
+    editEvent: boolean,
     /**
      * Can edit schedule on this event and has access to feedback results
      */

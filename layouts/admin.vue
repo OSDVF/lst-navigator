@@ -5,7 +5,8 @@
             <Title>{{ title }}</Title>
         </Head>
         <nav class="flex justify-content-center flex-grow">
-            <label class="m-auto p-1 text-right">Vybraná akce
+            <label class="m-auto p-1 text-right">
+                <IconCSS name="mdi:account-cog" size="1.8rem" />Vybraná akce
                 <select v-model="cloudStore.selectedEvent">
                     <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>
                 </select>
@@ -28,16 +29,16 @@
                     <IconCSS name="mdi:rss" size="1.8rem" />
                     Zpětná vazba
                 </NuxtLink>
-                <NuxtLink to="/admin/events">
+                <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/events">
                     <IconCSS name="mdi:calendar-text" size="1.8rem" />
                     Akce
                 </NuxtLink>
-                <NuxtLink to="/admin/users">
+                <NuxtLink v-if="cloudStore.resolvedPermissions.superAdmin" to="/admin/users">
                     <IconCSS name="mdi:person" size="1.8rem" />
                     Uživatelé
                 </NuxtLink>
                 <NuxtLink to="/">
-                    <IconCSS name="mdi:home" size="1.8rem" />
+                    <IconCSS name="mdi:backburger" size="1.8rem" />
                     Program
                 </NuxtLink>
                 <NuxtLink to="/settings">

@@ -29,7 +29,7 @@
                     <IconCSS name="mdi:calendar-text" size="1.8rem" />
                     Program
                 </NuxtLink>
-                <NuxtLink v-if="cloudStore.resolvedPermissions.eventAdmin" to="/admin">
+                <NuxtLink v-if="cloudStore.resolvedPermissions.editSchedule" to="/admin">
                     <IconCSS name="mdi:account-cog" size="1.8rem" />
                     Administrace
                 </NuxtLink>

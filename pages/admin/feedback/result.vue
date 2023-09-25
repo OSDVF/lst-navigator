@@ -22,7 +22,7 @@
                         </select>
                     </label>
                     <template v-if="admin.displayKind == 'individual'">
-                        <template v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.eventAdmin">
+                        <template v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editEvent">
                             <br>
                             <button v-if="admin.editingFeedback" @click="admin.editingFeedback = false">
                                 Úpravy

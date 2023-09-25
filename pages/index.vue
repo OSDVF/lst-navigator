@@ -3,5 +3,11 @@
 </template>
 
 <script setup>
-if (process.client) { useRouter().replace('/schedule') }
+definePageMeta({
+    middleware: () => {
+        return {
+            path: '/schedule'
+        }
+    }
+})
 </script>

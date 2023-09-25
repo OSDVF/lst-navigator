@@ -74,7 +74,7 @@ const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(fire
 const usersPending = users.pending
 const permissionNames = computed(() => ({
     ...(cloudStore.resolvedPermissions.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
-    ...(cloudStore.resolvedPermissions.eventAdmin ? { [UserLevel.Admin]: 'Správce' } : {}),
+    ...(cloudStore.resolvedPermissions.editEvent ? { [UserLevel.Admin]: 'Správce' } : {}),
     [UserLevel.ScheduleAdmin]: 'Správce události',
     [UserLevel.Nothing]: 'Nic'
 }))
@@ -90,7 +90,7 @@ const usersIndexed = computed(() => {
                 user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
-                cloudStore.feedback.online?.[effectiveSignature].toString() ?? 'Nikdy',
+                cloudStore.feedback.online?.[effectiveSignature]?.toString() ?? 'Nikdy',
                 user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent]
             ]
             result.push(values)
