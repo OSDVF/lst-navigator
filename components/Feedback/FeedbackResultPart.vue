@@ -44,7 +44,7 @@
                         />
                         <tr
                             v-else-if="replies && Object.keys(replies).length > 0"
-                            :style="{ background: config?.config?.[eIndex].type === 'text' ? '#ffa6000d' : '' }"
+                            :class="config?.config?.[eIndex].type"
                         >
                             <FeedbackCells
                                 :config="config?.config?.[eIndex]" :make-link="() => makeLink?.(eIndex)"

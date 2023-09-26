@@ -98,6 +98,9 @@ function getFeedback(entry: any, index: number) {
         &::marker {
             content: '';
         }
+        &::-webkit-details-marker {
+            display: none;
+        }
 
         h4 {
             margin: 0;

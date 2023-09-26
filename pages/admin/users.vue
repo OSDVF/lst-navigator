@@ -86,7 +86,7 @@ const usersIndexed = computed(() => {
             const effectiveSignature = user.signature[cloudStore.selectedEvent] || user.signatureId[cloudStore.selectedEvent]
             const values: [string | undefined, string, string, string, string, string, UserLevel | boolean] = [
                 user.photoURL,
-                user.id,
+                user.email ?? user.id,
                 user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),

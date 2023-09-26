@@ -33,10 +33,7 @@
                     <IconCSS name="mdi:account-cog" size="1.8rem" />
                     Administrace
                 </NuxtLink>
-                <NuxtLink to="/settings">
-                    <IconCSS name="mdi:cog" size="1.8rem" />
-                    Nastavení
-                </NuxtLink>
+                <SettingsLink />
             </nav>
             <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
                 <IconCSS name="mdi:cloud-off" /> Problém s připojením

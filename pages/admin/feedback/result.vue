@@ -1,6 +1,24 @@
 <template>
     <div>
         <Teleport to="#topNav">
+            <label class="p-1">
+                <IconCSS name="mdi:magnify" /><button @click="zoomFactor += 0.1">
+                    +
+                </button><button @click="zoomFactor -= 0.1">
+                    -
+                </button><input
+                    v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`"
+                    type="number" style="border:none;width: 7ex;display:inline"
+                >
+            </label>
+            <label class="p-1">
+                Druh zobrazení&ensp;
+                <select v-model="admin.displayKind">
+                    <option v-for="k in Object.keys(displayKindOptionLabels)" :key="k" :value="k">
+                        {{ displayKindOptionLabels[k as DisplayKind] }}
+                    </option>
+                </select>
+            </label>
             <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-block">
                 <IconCSS name="mdi:calendar" />
                 Části programu
@@ -13,14 +31,6 @@
         <div :class="'p-1 feedbackResult ' + admin.displayKind">
             <div class="flex flex-wrap justify-content-between p-1">
                 <div class="mr-1">
-                    <label>
-                        Druh zobrazení&ensp;
-                        <select v-model="admin.displayKind">
-                            <option v-for="k in Object.keys(displayKindOptionLabels)" :key="k" :value="k">
-                                {{ displayKindOptionLabels[k as DisplayKind] }}
-                            </option>
-                        </select>
-                    </label>
                     <template v-if="admin.displayKind == 'individual'">
                         <template v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editEvent">
                             <br>
@@ -51,16 +61,6 @@
                         <IconCSS name="mdi:file-document-arrow-right" />
                         CSV Export
                     </button>
-                    <fieldset class="p-0_2">
-                        <IconCSS name="mdi:magnify" /><button @click="zoomFactor += 0.1">
-                            +
-                        </button><button @click="zoomFactor -= 0.1">
-                            -
-                        </button><input
-                            v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`"
-                            type="number" style="border:none"
-                        >
-                    </fieldset>
                 </div>
                 <div>
                     <span style="color:blue">
@@ -241,14 +241,28 @@ $border-color: rgba(128, 128, 128, 0.657);
         border-spacing: 0;
         margin-bottom: 1rem;
 
-        &:nth-child(even) {
-            background-color: rgba(128, 128, 128, 0.1);
-        }
-
         &>tbody>tr {
             &>td:first-child {
                 @include left-sticky;
             }
+
+            &:nth-child(even) {
+
+                &>th,
+                &>td {
+                    background-color: rgba(128, 128, 128, 0.1);
+                }
+            }
+
+            &.text, &.text td:first-child {
+                background: #ffa6000d
+            }
+        }
+
+        table {
+            position: relative;
+            z-index: 1;
+            background: white;
         }
     }
 
