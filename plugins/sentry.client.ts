@@ -5,9 +5,9 @@ export default defineNuxtPlugin({
     parallel: true,
     setup(nuxtApp) {
         const config = useRuntimeConfig()
-        const sentryConfig = {
+        const sentryConfig : Partial<Sentry.BrowserOptions> = {
             enabled: config.public.SENTRY_ENABLED,
-            autoSessionTracking: process.client,
+            autoSessionTracking: true,
             debug: config.public.ENV !== 'production',
             dsn: config.public.SENTRY_DSN,
             release: config.public.commitHash,
@@ -17,26 +17,18 @@ export default defineNuxtPlugin({
         Sentry.init({
             ...sentryConfig,
             app: nuxtApp.vueApp,
-            integrations: [
-                ...(process.client
-                    ? [new Sentry.Replay()]
-                    : [])
-            ],
-            trackComponents: process.client,
+            integrations: [new Sentry.Replay()],
+            trackComponents: true,
             hooks: ['activate', 'create', 'destroy', 'mount', 'update'],
             // Capture Replay for 10% of all sessions,
             // plus for 100% of sessions with an error
-            replaysSessionSampleRate: process.client ? 0.1 : undefined,
-            replaysOnErrorSampleRate: process.client ? 1 : undefined
+            replaysSessionSampleRate: 0.1,
+            replaysOnErrorSampleRate: 1
         })
         if (process.client) {
             navigator.serviceWorker?.controller?.postMessage({
                 type: 'INITIALIZE_SENTRY',
                 config: sentryConfig
-            })
-        } else {
-            Sentry.setUser({
-                id: 'server'
             })
         }
         nuxtApp.hook('vue:error', (err) => {

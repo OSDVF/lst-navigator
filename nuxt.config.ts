@@ -95,8 +95,11 @@ const config = defineNuxtConfig({
             rollupOptions: {
                 output: {
                     manualChunks(id: string) {
-                        if (id.includes('file-extension-icon-js')) {
+                        if (id.toLowerCase().includes('file-extension-icon-js')) {
                             return 'file-extension-icon-js'
+                        }
+                        if (id.toLowerCase().includes('sentry')) {
+                            return 'sentry'
                         }
                     }
                 }
