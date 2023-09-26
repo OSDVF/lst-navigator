@@ -6,7 +6,7 @@ import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
 import { SeverityLevel } from '@sentry/browser'
-import localforage from 'localforage'
+import { idb } from '@composi/idb/types'
 import { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
 
@@ -28,7 +28,7 @@ isSupported().then((supported) => {
     }
     const messagingInstance = getMessaging(app)
     onBackgroundMessage(messagingInstance, async (payload: MessagePayload) => {
-        if (await localforage.getItem('doNotifications') !== 'false') {
+        if (await idb.get('doNotifications') !== 'false') {
             console.log('[SW] Received message ', payload)
             const payloadData = payload.data as NotificationPayload | undefined
 

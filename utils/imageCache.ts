@@ -6,7 +6,7 @@ export async function getCacheImage(name: string, url: string | null | undefined
         cacheFirst = config.public.imageCacheFirst
     }
     if (cacheFirst) {
-        const blob = await lf.getItem<Blob>(name)
+        const blob = await lf.get<Blob>(name)
         if (blob) {
             return URL.createObjectURL(blob)
         }
@@ -14,7 +14,7 @@ export async function getCacheImage(name: string, url: string | null | undefined
     if (url) {
         return url
     } else {
-        const blob = await lf.getItem<Blob>(name)
+        const blob = await lf.get<Blob>(name)
         if (blob) {
             return URL.createObjectURL(blob)
         }
@@ -42,5 +42,5 @@ function getBlobFromImage(img: HTMLImageElement): Promise<Blob | null> {
 export async function saveCacheImage(name: string, event: Event) {
     const image = event.target as HTMLImageElement
     const blob = await getBlobFromImage(image)
-    return await lf.setItem(name, blob)
+    return await lf.set(name, blob)
 }

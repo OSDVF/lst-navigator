@@ -111,7 +111,7 @@ provide('globalBackground', globalBackground)
 function captureError(error: unknown) {
     try {
         console.error(error, error instanceof TypeError ? error.stack : null)
-        Sentry.captureException(error)
+        Sentry?.captureException(error)
     } catch (e) { console.error(e) }
 }
 

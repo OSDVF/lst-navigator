@@ -112,6 +112,9 @@ const config = defineNuxtConfig({
                 },
                 {
                     find: 'postcss', replacement: 'postcss/lib/postcss.mjs'
+                },
+                {
+                    find: '@composi/idb/types', replacement: '@composi/idb/src/index.js'
                 }
             ]
         },

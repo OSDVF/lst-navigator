@@ -40,10 +40,10 @@ if (process.server) {
 
 
 export const useCloudStore = defineStore('cloud', () => {
-    const settings = useSettings()
     const config = useRuntimeConfig()
     const firebaseApp = probe && useFirebaseApp()
-    let firestore : null | Firestore = null
+    const settings = useSettings()
+    let firestore: null | Firestore = null
     try {
         firestore = probe ? useFirestore() : null
     } catch (e) { // DOMExcepton  [TimeoutError]: The operation was aborted due to timeout
@@ -281,7 +281,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     watch(settings, (newSettings) => {
-        if (user.doc.value && userAuth?.value?.uid && process.client) {
+        if (newSettings && user.doc.value && userAuth?.value?.uid && process.client) {
             setDoc(user.doc.value, {
                 signature: {
                     [selectedEvent.value]: newSettings.userNickname

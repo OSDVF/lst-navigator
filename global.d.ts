@@ -1,5 +1,6 @@
 import type { PwaInjection } from "@vite-pwa/nuxt";
 import type * as Sentry from '@sentry/vue'
+import { idb } from '@composi/idb/types'
 
 export { }
 
@@ -57,4 +58,8 @@ declare module 'nuxt/dist/app/nuxt' {
     $pwa: PwaInjection,
     $Sentry: typeof Sentry
   }
+}
+
+declare module '@composi/idb' {
+  export = idb
 }

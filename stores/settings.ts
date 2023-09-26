@@ -24,23 +24,25 @@ try {
 
 export const useSettings = defineStore('settings', () => {
     function getInstallStep() {
-        return lf.getItem<number>('installStep')
+        return lf.get<number>('installStep')
     }
 
     function setInstallStep(newValue: number) {
-        lf.setItem('installStep', newValue)
+        lf.set('installStep', newValue)
     }
 
     async function getUploadedAudio() {
         const audioList: { name: string, url: string }[] = []
-        const list = await lf.getItem<string[]>('uploadedAudioList') || []
-        for (const item of list) {
-            const blob = await lf.getItem<Blob>(item)
-            if (blob) {
-                const url = URL.createObjectURL(blob)
-                audioList.push({ name: item, url })
+        try {
+            const list = await lf.get<string[]>('uploadedAudioList') || []
+            for (const item of list) {
+                const blob = await lf.get<Blob>(item)
+                if (blob) {
+                    const url = URL.createObjectURL(blob)
+                    audioList.push({ name: item, url })
+                }
             }
-        }
+        } catch (e) { console.error(e) }
         return audioList
     }
 
@@ -83,22 +85,22 @@ export const useSettings = defineStore('settings', () => {
         reader.onload = async () => {
             const blob = new Blob([reader.result as ArrayBuffer], { type: file.type })
             const niceName = file.name.replace(/\.[^/.]+$/, '')
-            await lf.setItem(niceName, blob)
-            const list = await lf.getItem<string[]>('uploadedAudioList') || []
+            await lf.set(niceName, blob)
+            const list = await lf.get<string[]>('uploadedAudioList') || []
             list.push(niceName)
-            await lf.setItem('uploadedAudioList', list)
+            await lf.set('uploadedAudioList', list)
             audioList.value.push({ name: niceName, url: URL.createObjectURL(blob) })
             selectedAudio.value = audioList.value.length - 1
         }
     }
 
     async function deleteCustomAudio(name: string) {
-        lf.removeItem(name)
-        const list = await lf.getItem<string[]>('uploadedAudioList') || []
+        lf.remove(name)
+        const list = await lf.get<string[]>('uploadedAudioList') || []
         const index = list.findIndex(item => item === name)
         if (index !== -1) {
             list.splice(index, 1)
-            lf.setItem('uploadedAudioList', list)
+            lf.set('uploadedAudioList', list)
         }
         const audioIndex = audioList.value.findIndex(item => item.name === name)
         if (audioIndex !== -1) {
@@ -163,12 +165,12 @@ export const useSettings = defineStore('settings', () => {
     })
 
     if (process.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
-    const doNotifications = computed<Promise<boolean | null> | boolean>({
-        get(): Promise<boolean | null> {
-            return lf.getItem<boolean>('doNotifications')
+    const doNotifications = computed<Promise<boolean | undefined> | boolean>({
+        async get(): Promise<boolean | undefined> {
+            return await lf.get<boolean>('doNotifications') || false
         },
-        async set(value: boolean | Promise<boolean | null>) {
-            lf.setItem('doNotifications', value instanceof Promise ? await value : value)
+        async set(value: boolean | Promise<boolean | undefined>) {
+            lf.set('doNotifications', value instanceof Promise ? await value : value)
         }
     })
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
