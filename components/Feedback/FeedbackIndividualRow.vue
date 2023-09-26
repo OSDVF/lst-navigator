@@ -25,7 +25,7 @@ import { useAdmin } from '@/stores/admin'
 
 defineProps<{
     onSetData?:(data: Feedback | null, userIdentifier: string) => void,
-    replies: Feedback[],
+    replies: (Feedback | null)[],
     respondents: string[]
     questions?: string[],
 }>()

@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs'
 import { defineNuxtModule } from '@nuxt/kit'
+import onlyBuildTasks from '../utils/onlyBuildTasks'
 
 const files = [
     'handler',
@@ -16,6 +17,8 @@ export default defineNuxtModule({
     },
     hooks: {
         ready(nuxt) {
+            if (!onlyBuildTasks()) { return }
+
             console.log('Mirroring auth files...')
             for (const file of files) {
                 fetch(`https://${(nuxt.options as any).vuefire?.config?.projectId}.firebaseapp.com/__/auth/${file}`, {

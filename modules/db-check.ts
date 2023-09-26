@@ -9,6 +9,7 @@ import { firestore } from 'firebase-admin'
 import { CollectionsList, KnownCollectionName } from '../utils/db'
 import useFirebase from '../server/utils/firebase'
 import { EventDescription, EventSubdocumentsList } from '../types/cloud'
+import onlyBuildTasks from '../utils/onlyBuildTasks'
 
 export default defineNuxtModule({
     meta: {
@@ -16,6 +17,8 @@ export default defineNuxtModule({
     },
     hooks: {
         async ready(nuxt) {
+            if (!onlyBuildTasks()) { return }
+
             try {
                 // if the internet is not accessible, do not even try to check the db
                 await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })

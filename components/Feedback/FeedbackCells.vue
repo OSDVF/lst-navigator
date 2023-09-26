@@ -1,6 +1,6 @@
 <template>
     <td>
-        <NuxtLink v-if="event" :to="makeLink?.()">
+        <NuxtLink v-if="event && makeLink" :to="makeLink?.()">
             <strong>
                 {{ event?.title }}
             </strong>

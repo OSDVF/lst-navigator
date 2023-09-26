@@ -19,9 +19,9 @@ import randomcolor from 'randomcolor'
 const props = defineProps<{
     values: { [key: number]: number },
     resolution?: number,
-    labels?: string[],
+    labels?: string[] | number[],
     popups?: string[],
-    categories?: number[], // key of 'values' that will always be displayed no matter if there are no values for that key. Labels must be also supplied if categories are set
+    categories?: number[] | string[], // key of 'values' that will always be displayed no matter if there are no values for that key. Labels must be also supplied if categories are set
     colors?: string[],
     max?: number,
     min?: number,
@@ -32,7 +32,7 @@ const filteredValues = computed(() => {
     const v = []
     const p = []
     if (props.categories) {
-        for (const i of props.categories) {
+        for (const i of Object.values(props.categories)) {
             if (typeof props.values[i] === 'undefined') {
                 v.push(0)
             } else {

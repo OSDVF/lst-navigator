@@ -6,12 +6,12 @@
     "build": "nuxt build",
     "dev": "nuxt dev --https --ssl-key keys/server.key --ssl-cert keys/server.crt",
     "emulator": "firebase emulators:start --import .output/emulator --export-on-exit .output/emulator",
-    "generate": "bun build-static.mjs",
+    "generate": "bun -b build-static.mjs",
     "preview": "nuxt preview",
     "postinstall": "node_modules/@sentry/cli/scripts/install.js && patch-package && nuxt prepare",
-    "serve": "npx serve .output/public",
+    "serve": "bun x serve --ssl-key keys/server.key --ssl-cert keys/server.crt .output/public",
     "lint": "eslint --ext \".ts,.vue\" --ignore-path .gitignore .",
-    "lintfix": "bun lint --fix",
+    "lintfix": "eslint --fix --ext \".ts,.vue\" --ignore-path .gitignore .",
     "typecheck": "nuxt typecheck"
   },
   "devDependencies": {

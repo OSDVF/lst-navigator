@@ -5,8 +5,10 @@
 <script setup>
 definePageMeta({
     middleware: () => {
-        return {
-            path: '/schedule'
+        if (typeof window !== 'undefined') {
+            return {
+                path: '/schedule'
+            }
         }
     }
 })

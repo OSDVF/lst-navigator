@@ -61,7 +61,7 @@
                             'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        :to="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.scheduleParts?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : null)"
+                        :to="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.scheduleParts?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : $route.fullPath)"
                     >
                         <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
                             nextEventData?.title ?? nextEventData?.subtitle }}

@@ -40,6 +40,10 @@ const config = defineNuxtConfig({
             enabled: true
         }
     },
+    experimental: {
+        headNext: true,
+        polyfillVueUseHead: false
+    },
     ignore: [
         'maintenance/**'
     ],

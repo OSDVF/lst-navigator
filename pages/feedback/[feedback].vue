@@ -45,7 +45,7 @@
                     </template>
                 </template>
                 <FeedbackForm
-                    :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data"
+                    :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data ?? undefined"
                     :complicated-questions="entry.questions"
                     :select-options="entry.selectOptions"
                     @set-data="(data: Feedback) => cloudStore.feedback.set(subPart.primaryIndex, entry.secondaryIndex, data)"
@@ -80,7 +80,7 @@
                 <nav class="eventItemNav">
                     <NuxtLink
                         v-for="(feedbackPart, fIndex) in cloudStore.feedback.config"
-                        :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : null"
+                        :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : $route.fullPath"
                     >
                         <IconCSS v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
                         {{ fIndex === feedbackPartIndex ? '• ' : null }}<span class="muted">#{{ fIndex + 1 }}</span>&ensp;{{ feedbackPart.title }}

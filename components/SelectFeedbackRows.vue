@@ -35,7 +35,7 @@ import { getAverage } from '@/utils/types'
 import { useAdmin } from '~/stores/admin'
 
 const props = defineProps<{
-    config: FeedbackConfig['individual'][0],
+    config?: FeedbackConfig['individual'][0],
     event?: ScheduleEvent,
     replies: { [user: string]: Feedback },
     tabulated: TabulatedFeedback['replies'][''],
@@ -44,7 +44,7 @@ const props = defineProps<{
 }>()
 
 const admin = useAdmin()
-const questions = computed(() => (props.event ?? props.config).questions)
+const questions = computed(() => (props.event ?? props.config)?.questions)
 const type = computed(() => (props.event?.feedbackType ?? props.config?.type))
 const options = computed(() => getParallelOrSelectEvents(props.event ?? props.config))
 const randomColors: { [option: string]: string } = {}
@@ -87,11 +87,11 @@ const maxCount = computed(() => {
 })
 
 function getParallelOrSelectEvents(event: ScheduleEvent | typeof props.config) {
-    switch ((event as ScheduleEvent).feedbackType ?? (event as typeof props.config).type) {
+    switch ((event as ScheduleEvent).feedbackType ?? (event as typeof props.config)?.type) {
     case 'select':
-        return event.questions
+        return event!.questions
     case 'parallel':
-        return (event as ScheduleEvent).subtitle ? getParallelEvents(event) : undefined
+        return (event as ScheduleEvent)?.subtitle ? getParallelEvents(event!) : undefined
     }
     return []
 }

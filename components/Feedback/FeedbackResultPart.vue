@@ -40,17 +40,17 @@
                             v-if="isSelect(eIndex)" :event="schedulePart?.program[eIndex as number]"
                             :replies="replies" :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
                             :config="config?.config?.[eIndex]"
-                            @set-data="(data: Feedback, user: string) => $props.onSetData?.(data, eIndex as string, user)"
+                            @set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)"
                         />
                         <tr
                             v-else-if="replies && Object.keys(replies).length > 0"
                             :class="config?.config?.[eIndex].type"
                         >
                             <FeedbackCells
-                                :config="config?.config?.[eIndex]" :make-link="() => makeLink?.(eIndex)"
+                                :config="config?.config?.[eIndex]" :make-link="makeLink ? (() => makeLink!(eIndex)) : undefined"
                                 :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
                                 :replies="replies" :event="schedulePart?.program[eIndex as number]"
-                                :on-set-data="(data: Feedback, user: string) => $props.onSetData?.(data, eIndex as string, user)"
+                                :on-set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)"
                             />
                         </tr>
                     </template>

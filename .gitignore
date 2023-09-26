@@ -24,4 +24,3 @@ logs
 service-account.json
 utils/swenv.js
 .firebase
-bun.lockb

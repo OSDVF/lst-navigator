@@ -44,8 +44,8 @@ const prettyError = ref()
 const previousCode = ref()
 
 watchEffect(() => {
-    if(cloudStore.user.error?.code) {
-        if(cloudStore.user.error.code === previousCode.value) return
+    if (cloudStore.user.error?.code) {
+        if (cloudStore.user.error.code === previousCode.value) { return }
         previousCode.value = cloudStore.user.error.code
     }
     switch (cloudStore.user.error?.code) {

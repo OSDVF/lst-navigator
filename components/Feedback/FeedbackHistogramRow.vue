@@ -18,7 +18,7 @@
                 <BarChart
                     :values="clusteredTextIndexed" :min="0"
                     :colors="randomcolor({ count: seenCategories.length, hue: 'orange' })"
-                    :categories="Object.keys(seenCategories)" :labels="seenCategories.map(c => c?.substring(0, 4))"
+                    :categories="Object.keys(seenCategories)" :labels="seenCategories.map(c => c?.substring(0, 4) ?? '')"
                     :popups="buckets.map(b => Array.from(b).join('\n'))" class="rotated"
                 />
                 Podobné odpovědi

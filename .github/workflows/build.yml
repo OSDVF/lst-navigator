@@ -34,7 +34,7 @@ jobs:
       - if: ${{ steps.cache-bun.outputs.cache-hit != 'true' }}
         name: List the state of node modules
         continue-on-error: true
-        run: bun list
+        run: bun pm ls
 
       - name: Install dependencies
         run: bun install

@@ -33,7 +33,7 @@
                         <IconCSS class="icon" name="mdi:rss" />
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
                         <NuxtRating
-                            v-else :rating-value="getFeedback(entry, index)" rating-size="1.2rem"
+                            v-else :rating-value="(getFeedback(entry, index) as number)" rating-size="1.2rem"
                             inactive-color="#aaa" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
                         />
                     </span>
@@ -61,14 +61,14 @@ const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMi
 
 function getFeedback(entry: any, index: number) {
     const feedback = cloudStore.offlineFeedback?.[selectedPart.value]?.[index]?.[settings.userIdentifier]
-    if (!feedback) { return false }
+    if (!feedback) { return undefined }
     switch (entry.feedbackType as FeedbackType) {
     case 'basic':
         return feedback.basic
     case 'complicated':
-        return feedback.complicated ? (feedback.complicated.reduce((prev, cur) => prev! + cur!, 0) ?? 0) / feedback.complicated.length : false
+        return feedback.complicated ? (feedback.complicated.reduce((prev, cur) => prev! + cur!, 0) ?? 0) / feedback.complicated.length : undefined
     }
-    return false
+    return undefined
 }
 
 </script>
