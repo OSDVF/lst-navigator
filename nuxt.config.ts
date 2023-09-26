@@ -4,7 +4,6 @@ import childProcess from 'child_process'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { splitVendorChunkPlugin } from 'vite'
 import topLevelAwait from 'vite-plugin-top-level-await'
-import { getFirestore, terminate } from 'firebase/firestore'
 import { icons } from './icons.json'
 
 const installStepCount = fs.readdirSync('./pages/install').length
@@ -28,7 +27,7 @@ const config = defineNuxtConfig({
     },
     build: {
         transpile: [
-            'lru-cache',
+            'lru-cache'
         ]
     },
     css: [
@@ -120,7 +119,7 @@ const config = defineNuxtConfig({
                 authToken: process.env.SENTRY_AUTH_TOKEN,
                 org: process.env.SENTRY_ORG,
                 project: process.env.SENTRY_PROJECT,
-                disable: isDevMode || !!process.env.SENTRY_DISABLE,
+                disable: isDevMode || process.env.SENTRY_DISABLE === 'true' || process.env.SENTRY_PUBLISH_RELEASE === 'false',
                 release: {
                     name: commitHash
                 }
