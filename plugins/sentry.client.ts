@@ -1,17 +1,16 @@
 import * as Sentry from '@sentry/vue'
-import { defineNuxtPlugin, useRuntimeConfig } from '#app'
+import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin({
     parallel: true,
     setup(nuxtApp) {
-        const config = useRuntimeConfig()
         const sentryConfig : Partial<Sentry.BrowserOptions> = {
-            enabled: config.public.SENTRY_ENABLED,
+            enabled: nuxtApp.$config.public.SENTRY_ENABLED,
             autoSessionTracking: true,
-            debug: config.public.ENV !== 'production',
-            dsn: config.public.SENTRY_DSN,
-            release: config.public.commitHash,
-            environment: config.public.ENV
+            debug: nuxtApp.$config.public.ENV !== 'production',
+            dsn: nuxtApp.$config.public.SENTRY_DSN,
+            release: nuxtApp.$config.public.commitHash,
+            environment: nuxtApp.$config.public.ENV
         }
 
         Sentry.init({

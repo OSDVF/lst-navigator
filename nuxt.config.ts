@@ -94,12 +94,16 @@ const config = defineNuxtConfig({
             sourcemap: true,
             rollupOptions: {
                 output: {
+                    sourcemap: true,
                     manualChunks(id: string) {
                         if (id.toLowerCase().includes('file-extension-icon-js')) {
                             return 'file-extension-icon-js'
                         }
-                        if (id.toLowerCase().includes('sentry')) {
+                        if (id.toLowerCase().includes('@sentry')) { // the @ is important so plugins/sentry.*.ts is not included
                             return 'sentry'
+                        }
+                        if (id.toLowerCase().includes('firebase')) {
+                            return 'firebase'
                         }
                     }
                 }
