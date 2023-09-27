@@ -7,6 +7,11 @@
             :make-link="(eIndex:string) => `/schedule/${key}/${eIndex}`"
             @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)"
         />
+        <NuxtLink to="other">
+            <button class="large">
+                <IconCSS name="mdi:chevron-double-right" /> Další části feedbacku
+            </button>
+        </NuxtLink>
     </div>
 </template>
 

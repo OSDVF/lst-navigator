@@ -12,18 +12,18 @@
                 >
             </label>
             <label class="p-1">
-                Druh zobrazení&ensp;
+                <IconCSS name="mdi:view-dashboard" /> Zobrazení&ensp;
                 <select v-model="admin.displayKind">
                     <option v-for="k in Object.keys(displayKindOptionLabels)" :key="k" :value="k">
                         {{ displayKindOptionLabels[k as DisplayKind] }}
                     </option>
                 </select>
             </label>
-            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-block">
+            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-block tab">
                 <IconCSS name="mdi:calendar" />
                 Části programu
             </NuxtLink>
-            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-block">
+            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-block tab">
                 <IconCSS name="mdi:form-select" />
                 Ostatní otázky
             </NuxtLink>
@@ -57,12 +57,6 @@
                     </template>
                 </div>
                 <div>
-                    <button class="mr-1" @click="csvExport">
-                        <IconCSS name="mdi:file-document-arrow-right" />
-                        CSV Export
-                    </button>
-                </div>
-                <div>
                     <span style="color:blue">
                         &block;&block;
                     </span> &ensp; Celkový dojem
@@ -94,11 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import type * as ExportToCsv from 'export-to-csv'
-import { FieldValue } from 'firebase/firestore'
-import Lodash from 'lodash'
 import { useCloudStore } from '@/stores/cloud'
-import { Feedback } from '@/types/cloud'
 import { DisplayKind, useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
 
@@ -126,103 +116,7 @@ const displayKindOptionLabels = {
     individual: 'Individuální'
 }
 
-function sanitize(str: string | FieldValue) {
-    if (typeof str === 'object') {
-        return ''
-    }
-    return str.replace('"', '\'')
-        .replace(',', '，')
-}
 const showRespondents = ref(false)
-let exportToCsv: null | typeof ExportToCsv = null
-async function csvExport() {
-    if (!exportToCsv) {
-        exportToCsv = await import('export-to-csv')
-    }
-
-    const csvData = []
-    const compoundIndexes: string[] = []
-    const byUserData: { [user: string]: { [compoundId: string]: Feedback } } = {}
-    for (const partIndex in cloudStore.feedback.online) {
-        const part = cloudStore.feedback.online[partIndex]
-        if (typeof part === 'number' || part === null) { continue }
-        for (const eventIndex in part) {
-            const event = part[eventIndex]
-            for (const user in event) {
-                const feedback = event[user] as Feedback | null
-                if (feedback?.basic || feedback?.detail || feedback?.select || feedback?.complicated?.find(c => !!c)) {
-                    if (!byUserData[user]) {
-                        byUserData[user] = {}
-                    }
-                    let compoundIndex = `${partIndex}-${eventIndex}`
-                    const potentialTitle = cloudStore.scheduleParts[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
-                    if (potentialTitle) {
-                        compoundIndex += `-${potentialTitle}`
-                    }
-                    byUserData[user][compoundIndex] = feedback
-                    if (!compoundIndexes.includes(compoundIndex)) {
-                        compoundIndexes.push(compoundIndex)
-                    }
-                    const potentialInner = `${eventIndex}-0`
-                    if (compoundIndexes.includes(potentialInner)) {
-                        byUserData[user][compoundIndex] = Lodash.merge(byUserData[user][compoundIndex], byUserData[user][potentialInner])
-                    }
-                }
-            }
-        }
-    }
-
-    const compoundIndexesExpanded: string[] = []
-    for (const user in byUserData) {
-        const userData: { [key: string]: boolean | string | number } = {}
-        for (const compoundIndex of compoundIndexes) {
-            const feedback = byUserData[user][compoundIndex]
-            if (feedback) {
-                const basicCol = `${compoundIndex}-celkove`
-                userData[basicCol] = feedback.basic as number ?? ''
-                if (feedback.basic && !compoundIndexesExpanded.includes(basicCol)) {
-                    compoundIndexesExpanded.push(basicCol)
-                }
-                const detailCol = `${compoundIndex}-detail`
-                userData[detailCol] = sanitize(feedback.detail as string ?? '')
-                if (feedback.detail && !compoundIndexesExpanded.includes(detailCol)) {
-                    compoundIndexesExpanded.push(detailCol)
-                }
-                const selectCol = `${compoundIndex}-vyber`
-                userData[selectCol] = sanitize(feedback.select as string ?? '')
-                if (feedback.select && !compoundIndexesExpanded.includes(selectCol)) {
-                    compoundIndexesExpanded.push(selectCol)
-                }
-                const complicatedCols = [
-                    `${compoundIndex}-otazka1`,
-                    `${compoundIndex}-otazka2`,
-                    `${compoundIndex}-otazka3`
-                ]
-                for (const col of complicatedCols) {
-                    userData[col] = feedback.complicated?.[parseInt(col[col.length - 1]) - 1] as number ?? ''
-                    if (feedback.complicated?.[parseInt(col[col.length - 1]) - 1] && !compoundIndexesExpanded.includes(col)) {
-                        compoundIndexesExpanded.push(col)
-                    }
-                }
-            } else {
-                userData[`${compoundIndex}-celkove`] = ''
-                userData[`${compoundIndex}-detail`] = ''
-                userData[`${compoundIndex}-vyber`] = ''
-                userData[`${compoundIndex}-otazka1`] = ''
-                userData[`${compoundIndex}-otazka2`] = ''
-                userData[`${compoundIndex}-otazka3`] = ''
-            }
-        }
-
-        csvData.push({ user, ...userData })
-    }
-    const csvConfig = exportToCsv.mkConfig({
-        filename: `${cloudStore.selectedEvent}-feedback-${new Date().toLocaleString(navigator.language)}`,
-        columnHeaders: ['user', ...compoundIndexesExpanded]
-    })
-
-    exportToCsv.download(csvConfig)(exportToCsv.generateCsv(csvConfig)(csvData))
-}
 </script>
 
 <style lang="scss">

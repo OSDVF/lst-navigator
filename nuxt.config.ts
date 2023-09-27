@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
 import childProcess from 'child_process'
@@ -97,12 +98,15 @@ const config = defineNuxtConfig({
                     sourcemap: true,
                     manualChunks(id: string) {
                         if (id.toLowerCase().includes('file-extension-icon-js')) {
+                            console.log(`Chunk ${id} inside file-extension-icon-js`)
                             return 'file-extension-icon-js'
                         }
                         if (id.toLowerCase().includes('@sentry')) { // the @ is important so plugins/sentry.*.ts is not included
+                            console.log(`Chunk ${id} inside sentry`)
                             return 'sentry'
                         }
                         if (id.toLowerCase().includes('firebase')) {
+                            console.log(`Chunk ${id} inside firebase`)
                             return 'firebase'
                         }
                     }

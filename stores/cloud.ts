@@ -105,7 +105,7 @@ export const useCloudStore = defineStore('cloud', () => {
                     const val = replies[key]
                     if (typeof val === 'object' && val !== null) {
                         for (const innerKey in val) {
-                            if (typeof replies[innerKey] === 'object') {
+                            if (typeof replies[innerKey] === 'object' && isNaN(parseInt(innerKey))) {
                                 val[innerKey] = Lodash.merge(val[innerKey], replies[innerKey][0])
                                 delete replies[innerKey]
                                 delete result[innerKey]

@@ -6,7 +6,7 @@
         </Head>
         <nav class="flex justify-content-center flex-grow">
             <label class="m-auto p-1 text-right">
-                <IconCSS name="mdi:account-cog" size="1.8rem" />Vybraná akce
+                <IconCSS name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
                 <select v-model="cloudStore.selectedEvent">
                     <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>
                 </select>

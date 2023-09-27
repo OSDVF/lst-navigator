@@ -69,3 +69,13 @@ main .average-rating {
     opacity: .4;
     border:0 !important
 }
+
+.tab {
+    &:focus {
+        outline: none;
+    }
+    border-bottom: 3px solid #8787873d;
+    &.router-link-active {
+        border-color: #0e6aff85;
+    }
+}
