@@ -11,7 +11,8 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
     } else {
         internalRef = ref(defaultValue)
     }
-    onMounted(() => {
+    const app = useNuxtApp()
+    function hydrate() {
         if (typeof localStorage !== 'undefined') {
             const storedVal = ref(LocalStorage.getItem(key)!).value
             if (storedVal !== internalRef.value) {
@@ -24,6 +25,8 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
             deep: true
         })
         triggerRef(internalRef)
-    })
+    }
+    app.hook('app:mounted', hydrate)
+    onMounted(hydrate)
     return internalRef
 }

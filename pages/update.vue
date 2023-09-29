@@ -17,7 +17,7 @@
             </button>
         </ClientOnly>
         <p class="small">
-            Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd><IconCSS name="mdi:apple-keyboard-command" />+Shift+R</kbd>.
+            Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd><IconCSS name="mdi:apple-keyboard-command" />+Shift+R</kbd> na MacOS.
         </p>
     </article>
 </template>

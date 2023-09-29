@@ -19,6 +19,17 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "/clear",
+        "headers": [
+          {
+            "key": "Clear-Site-Data",
+            "value": "\"cache\", \"cookies\", \"storage\", \"executionContexts\""
+          }
+        ]
+      }
     ]
   },
   "emulators": {

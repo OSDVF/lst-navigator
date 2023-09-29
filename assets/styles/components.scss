@@ -55,15 +55,6 @@ main .average-rating {
         margin-top: 0;
     }
 }
-
-.backgroundLoading {
-    transition: transfom .2s ease;
-    transform: translateY(6px);
-
-    &.visible {
-        transform: translateY(0);
-    }
-}
 .firebase-emulator-warning {
     pointer-events: none;
     opacity: .4;

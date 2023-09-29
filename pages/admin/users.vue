@@ -84,14 +84,15 @@ const usersIndexed = computed(() => {
     if (users.data.value) {
         for (const user of users.data.value as (UserInfo & { id: string })[]) { // firestore documents have an added property 'id'
             const effectiveSignature = user.signature?.[cloudStore.selectedEvent] || user.signatureId?.[cloudStore.selectedEvent] || ''
-            const values: [string | undefined, string, string, string, string, string, UserLevel | boolean] = [
+            const values: [string | undefined, string, string, string, string, string, UserLevel | boolean, string] = [
                 user.photoURL,
                 user.email ?? user.id,
                 user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
                 cloudStore.feedback.online?.[effectiveSignature]?.toString() ?? 'Nikdy',
-                user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent]
+                user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent],
+                user.id
             ]
             result.push(values)
         }
@@ -114,7 +115,7 @@ function changePermissions() {
     const selectedRows = table.value?.dt.rows({ selected: true }).data()
     if (selectedRows?.length && firestore) {
         selectedRows.each((selectedRow) => {
-            const uid = selectedRow[1]
+            const uid = selectedRow[7]
             const userDoc = doc(knownCollection(firestore, 'users'), uid)
             setDoc(userDoc, {
                 permissions: targetPermission.value === UserLevel.SuperAdmin

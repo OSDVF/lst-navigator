@@ -86,6 +86,12 @@
                     <IconCSS name="mdi:reload-alert" />
                     Přeaktualizovat
                 </button>
+                <NuxtLink to="/clear">
+                    <button type="button">
+                        <IconCSS name="mdi:delete" />
+                        Smazat data
+                    </button>
+                </NuxtLink>
             </small>
         </fieldset>
     </article>

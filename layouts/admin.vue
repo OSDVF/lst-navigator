@@ -47,7 +47,7 @@
                 <IconCSS name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
-        <ProgressBar :class="{ backgroundLoading: true, visible: cloudStore.metaLoading }" />
+        <ProgressBar v-show="cloudStore.metaLoading" class="backgroundLoading" />
         <ClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </ClientOnly>

@@ -48,9 +48,9 @@ watch(cloudStore, (newCloud) => {
         findToday(newCloud)
     }
 })
-onActivated(() => {
-    if (typeof schedulePartIndex.value === 'undefined' && cloudStore?.metaLoading === false) {
-        findToday(cloudStore)
+onBeforeRouteUpdate((from) => {
+    if (typeof from.params.schedulePart === 'undefined' && cloudStore?.metaLoading === false) {
+        return findToday(cloudStore, true)
     }
 })
 const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string))
@@ -70,7 +70,7 @@ onBeforeRouteLeave((leaveGuard) => {
     }
 })
 
-function findToday(newCloud: typeof cloudStore) {
+function findToday(newCloud: typeof cloudStore, fromRouter = false) {
     let index: number | string = 0
     if (newCloud.scheduleParts?.length) {
         for (const i in newCloud.scheduleParts) {
@@ -81,7 +81,11 @@ function findToday(newCloud: typeof cloudStore) {
             }
         }
     }
-    router.replace(`/schedule/${index}`)
+    const newPath = `/schedule/${index}`
+    if (!fromRouter) {
+        router.replace(newPath)
+    }
+    return newPath
 }
 
 function onTrainsitionAfterLeave() {

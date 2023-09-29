@@ -39,7 +39,7 @@
                 <IconCSS name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
-        <ProgressBar :class="{ backgroundLoading: true, visible: cloudStore.metaLoading }" />
+        <ProgressBar v-show="isServer || cloudStore.metaLoading" class="backgroundLoading" />
         <ClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </ClientOnly>
@@ -54,6 +54,18 @@
                     <button @click="clearError">
                         Zkusit znovu
                     </button>
+                    <button @click="clearError">
+                        Zkusit znovu
+                    </button>
+                    <p>
+                        Pokud chyba přetrvává, zkuste
+                        <NuxtLink to="/clear">
+                            <button>
+                                <IconCSS name="mdi:delete" />
+                                smazat data
+                            </button>
+                        </NuxtLink>.
+                    </p>
                 </article>
             </main>
 
@@ -76,8 +88,10 @@ const router = useRouter()
 const settings = useSettings()
 const installStep = settings.getInstallStep()
 const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
+const isServer = ref(process.server)
 
 if (process.client) {
+    isServer.value = false
     ///
     /// Redirection guards
     ///
@@ -90,7 +104,7 @@ if (process.client) {
     const redirectRoute : RouteLocationRaw = {
         path: '/update',
         query: {
-            redirect: route.fullPath
+            redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath
         }
     }
 

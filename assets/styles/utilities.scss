@@ -72,6 +72,9 @@
 .min-h-2_5 {
   min-height: 2.5rem;
 }
+.min-h-full {
+  min-height: 100vh;
+}
 
 .h-full {
   height: 100%;
@@ -87,6 +90,10 @@
 
 .flex {
   display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
 }
 
 .flew-wrap {
@@ -143,6 +150,9 @@
 
 .bottom-0 {
   bottom: 0;
+}
+.bottom-25 {
+  bottom: 25%;
 }
 
 .text-right {

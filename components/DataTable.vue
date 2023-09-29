@@ -51,6 +51,7 @@ onMounted(() => {
         DataTable.value.use(Select.default)
         DataTable.value.use(Responsive.default)
         $.fn.dataTable.ext.errMode = 'none'
+        nextTick(() => dt.value?.responsive.recalc)
     })
 })
 </script>
@@ -60,7 +61,7 @@ onMounted(() => {
 @import 'datatables.net-select-dt';
 @import 'datatables.net-responsive-dt';
 
-.datatable {
+.dataTable {
     .icon {
         background: black;
         display: inline-block;
@@ -69,6 +70,15 @@ onMounted(() => {
         mask-repeat: no-repeat;
         mask-size: 100% 100%;
         mask-image: var(--icon);
+    }
+    &.collapsed {
+        .dtr-control {
+            white-space: nowrap;
+            &::before {
+                position: relative;
+                top: -6px
+            }
+        }
     }
 }
 </style>

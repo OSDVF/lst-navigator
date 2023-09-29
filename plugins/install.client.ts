@@ -1,3 +1,5 @@
+import { useSettings } from '~/stores/settings'
+
 // This variable will save the event for later use.
 let deferredPrompt: BeforeInstallPromptEvent | null = null
 window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => {
@@ -18,13 +20,21 @@ export default defineNuxtPlugin({
     hooks: {
         async 'app:mounted'(app) {
             const firebaseApp = useFirebaseApp()
+            const settings = useSettings()
+            const config = useRuntimeConfig()
             const swRegistraions = process.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {
-                    onUpdateCallback.value(registration)
-                    updateFound = true
+                    registration.installing?.addEventListener('statechange', async (ev) => {
+                        if ((ev.target as ServiceWorker).state === 'activated' && (await settings.getInstallStep() ?? 0) >= config.public.installStepCount) {
+                            console.log('Update found')
+                            onUpdateCallback.value(registration)
+                            updateFound = true
+                        }
+                    })
                 })
                 if (registration.waiting) {
+                    console.log('Waiting found')
                     onUpdateCallback.value(registration)
                     updateFound = true
                 }

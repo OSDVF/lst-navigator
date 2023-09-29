@@ -6,6 +6,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin'
 import { splitVendorChunkPlugin } from 'vite'
 import topLevelAwait from 'vite-plugin-top-level-await'
 import { icons } from './icons.json'
+import firebaseConfig from './firebase.json'
 
 const installStepCount = fs.readdirSync('./pages/install').length
 const commitMessageTime = childProcess.execSync('git log -1 --pretty="%B %cI"').toString().trim()
@@ -71,7 +72,8 @@ const config = defineNuxtConfig({
             rollupFormat: 'iife',
             globIgnores: [
                 '**/node_modules/**/*',
-                '**/public/audio/silence.zip'
+                '**/public/audio/silence.zip',
+                '/404'
             ]
         },
         injectRegister: 'inline',
@@ -90,15 +92,24 @@ const config = defineNuxtConfig({
         server: true,
         client: true
     },
+    routeRules: {
+        '/clear': {
+            headers: {
+                [firebaseConfig.hosting.headers[0].headers[0].key]: firebaseConfig.hosting.headers[0].headers[0].value
+            }
+        }
+    },
     vite: {
         build: {
-            sourcemap: true,
             rollupOptions: {
                 output: {
-                    sourcemap: true,
                     manualChunks(id: string) {
-                        if (id.toLowerCase().includes('file-extension-icon-js')) {
-                            console.log(`Chunk ${id} inside file-extension-icon-js`)
+                        const fei = id.toLowerCase().indexOf('file-extension-icon-js')
+                        if (fei !== -1) {
+                            /* const nextDirName = id.substring(fei + 'file-extension-icon-js'.length + 1).split('/')[2]
+                            const chunkName = `file-extension-icon-js/${nextDirName}`
+                            console.log(`Chunk ${id} inside ${chunkName}`)
+                            return chunkName */
                             return 'file-extension-icon-js'
                         }
                         if (id.toLowerCase().includes('@sentry')) { // the @ is important so plugins/sentry.*.ts is not included
@@ -195,7 +206,8 @@ const config = defineNuxtConfig({
             SENTRY_DSN: process.env.VITE_APP_DSN,
             SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET,
             debugUser: process.env.VITE_APP_DEBUG_USER,
-            ssrAuthEnabled: process.env.GOOGLE_APPLICATION_CREDENTIALS
+            ssrAuthEnabled: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+            supportEmail: process.env.SUPPORT_EMAIL
         }
     },
     ssr: true

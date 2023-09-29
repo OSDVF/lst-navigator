@@ -79,24 +79,24 @@ export const useCloudStore = defineStore('cloud', () => {
     const subscriptionsDocument = currentEventDocument('subscriptions')
 
     const eventImage = computed(() => eventData.value?.meta?.image && firebaseStorage
-        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.meta.image)).url.value
+        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.meta?.image)).url.value
         : null)
-    const eventTitle = computed(() => eventData.value?.meta.title)
-    const eventSubtitle = computed(() => eventData.value?.meta.subtitle)
-    const eventDescription = computed(() => eventData.value?.meta.description)
-    const eventWeb = computed(() => eventData.value?.meta.web)
-    const groupNames = computed(() => eventData.value?.meta.groups ?? [])
+    const eventTitle = computed(() => eventData.value?.meta?.title)
+    const eventSubtitle = computed(() => eventData.value?.meta?.subtitle)
+    const eventDescription = computed(() => eventData.value?.meta?.description)
+    const eventWeb = computed(() => eventData.value?.meta?.web)
+    const groupNames = computed(() => eventData.value?.meta?.groups ?? [])
     const fd = currentEventDocument('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
     const feedbackRepliesRaw = shallowRef(useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!process.server }))
     const feedback = {
-        config: computed<FeedbackConfig[] | undefined>(() => eventData.value?.meta.feedback),
+        config: computed<FeedbackConfig[] | undefined>(() => eventData.value?.meta?.feedback),
         doc: fd,
         dirtyTime: feedbackDirtyTime,
         error: ref(),
         fetchFailed: ref(false),
         fetching: ref(false),
-        infoText: computed(() => eventData.value?.meta.feedbackInfo),
+        infoText: computed(() => eventData.value?.meta?.feedbackInfo),
         online: computed(() => {
             const result: { [key: string]: number | { [key: string | number]: { [user: string]: Feedback } } } = {}
             const replies = feedbackRepliesRaw.value
@@ -318,7 +318,7 @@ export const useCloudStore = defineStore('cloud', () => {
         }
     })
 
-    const scheduleParts = computed<SchedulePart[]>(() => eventData.value?.meta.schedule?.parts ?? [])
+    const scheduleParts = computed<SchedulePart[]>(() => eventData.value?.meta?.schedule?.parts ?? [])
 
     const notesDocument = currentEventDocument('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
@@ -426,8 +426,8 @@ export const useCloudStore = defineStore('cloud', () => {
         eventSubtitle,
         eventDescription,
         eventWeb,
-        networkError: eventDocuments.error,
-        metaLoading: eventDocuments.pending,
+        networkError: skipHydrate(eventDocuments.error),
+        metaLoading: skipHydrate(eventDocuments.pending),
         scheduleParts,
         groupNames,
         notesDocument: skipHydrate(notesDocument),

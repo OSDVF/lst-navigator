@@ -1,6 +1,6 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 import { registerRoute, Route } from 'workbox-routing'
-import { StaleWhileRevalidate } from 'workbox-strategies'
+import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
@@ -21,6 +21,40 @@ precacheAndRoute(self.__WB_MANIFEST)
 self.skipWaiting()
 clientsClaim()
 
+const comChannel = new BroadcastChannel('SWCom')
+comChannel.addEventListener('message', (ev) => {
+    if (ev.data === 'install') {
+        onUpdate()
+    }
+})
+self.addEventListener('install', () => {
+    comChannel.postMessage('install')
+})
+
+async function onUpdate() {
+    try {
+        let foundUpdating = false
+        const notRedirectUrls = ['/', '/clear']
+        const clients = await self.clients.matchAll({ type: 'window' })
+        for (const client of clients) {
+            if ((client.url.includes('update') || client.url.includes('install')) || notRedirectUrls.includes(clients[0].url)) {
+                foundUpdating = true
+            }
+        }
+        if (!foundUpdating) {
+            const updateUrl = new URL('/update', self.location.origin)
+            console.log('Updating to ', clients[0]?.url)
+            if (clients.length === 1) {
+                await clients[0].navigate(updateUrl + `?redirect=${encodeURIComponent(clients[0].url)}`)
+            } else {
+                await self.clients.openWindow(updateUrl)
+            }
+        }
+    } catch (e) {
+        console.error(e)
+    }
+}
+
 const app = firebase.initializeApp(swConfig.firebase)
 isSupported().then((supported) => {
     if (!supported) {
@@ -34,7 +68,7 @@ isSupported().then((supported) => {
 
             const eventTime = new Date()
             if (payloadData) {
-                const [year, month, day] = payloadData.date.split('-').map((x:string) => parseInt(x, 10))
+                const [year, month, day] = payloadData.date.split('-').map((x: string) => parseInt(x, 10))
                 eventTime.setFullYear(year)
                 eventTime.setMonth(month - 1)
                 eventTime.setDate(day)
@@ -133,6 +167,11 @@ self.addEventListener(
 // Icons
 const iconsRoute = new Route(({ request, sameOrigin }) => {
     return request.url.startsWith('https://api.iconify.design/')
-}, new StaleWhileRevalidate())
+}, new CacheFirst())
 
 registerRoute(iconsRoute)
+
+const fallbackRoute = new Route(() => {}, new StaleWhileRevalidate())
+
+registerRoute(fallbackRoute)
+

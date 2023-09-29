@@ -55,7 +55,7 @@
     "@ckeditor/ckeditor5-build-classic": "^39.0.1",
     "@ckeditor/ckeditor5-vue": "^5.1.0",
     "@pinia/nuxt": "^0.4.11",
-    "@sentry/vue": "^7.61.1",
+    "@sentry/vue": "^7.72.0",
     "datatables.net-dt": "^1.13.6",
     "datatables.net-responsive-dt": "^2.5.0",
     "datatables.net-select": "^1.7.0",

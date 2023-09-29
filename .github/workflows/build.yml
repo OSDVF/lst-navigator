@@ -1,5 +1,8 @@
 name: build
 'on': push
+env:
+  SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL}}
+
 jobs:
   build:
     runs-on: ubuntu-latest
