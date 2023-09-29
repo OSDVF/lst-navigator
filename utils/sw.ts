@@ -1,7 +1,7 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 import { registerRoute, Route } from 'workbox-routing'
 import { StaleWhileRevalidate } from 'workbox-strategies'
-import { clientsClaim, skipWaiting } from 'workbox-core'
+import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
@@ -18,7 +18,7 @@ cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
 
 // Service worker lifecycle
-skipWaiting()
+self.skipWaiting()
 clientsClaim()
 
 const app = firebase.initializeApp(swConfig.firebase)

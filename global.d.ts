@@ -48,6 +48,10 @@ declare global {
     prompt(): Promise<void>;
 
   }
+
+  interface Location {
+    reload(forcedReload?: boolean): void;
+  }
 }
 
 declare module 'nuxt/dist/app/nuxt' {

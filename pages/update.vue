@@ -1,5 +1,9 @@
 <template>
     <article>
+        <Head>
+            <meta http-equiv="Cache-control" content="no-cache">
+            <meta http-equiv="Expires" content="-1">
+        </Head>
         <h1>
             <IconCSS name="mdi:update" />&ensp;Dostupná aktualizace
         </h1>
@@ -8,19 +12,29 @@
         </button>
         <br>
         <ClientOnly>
-            <button @click="$pwa.cancelInstall(); prevRoute !== null ? $router.back() : $router.replace('/schedule')">
+            <button @click="$pwa.cancelInstall(); prevRoute !== null ? $router.back() : goToRedirectedFrom()">
                 <IconCSS name="mdi:sync-off" />&ensp;Ignorovat
             </button>
         </ClientOnly>
+        <p class="small">
+            Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd><IconCSS name="mdi:apple-keyboard-command" />+Shift+R</kbd>.
+        </p>
     </article>
 </template>
 
 <script setup lang="ts">
 const { $pwa, $Sentry } = useNuxtApp()
 const prevRoute = ref<string | null>(null)
+const router = useRouter()
 
 onBeforeRouteUpdate((updateGuard) => {
     prevRoute.value = updateGuard.fullPath
+})
+
+onMounted(() => {
+    if (router.currentRoute.value.query.installed) {
+        goToRedirectedFrom()
+    }
 })
 
 async function download() {
@@ -28,15 +42,28 @@ async function download() {
     if (process.client) {
         const regs = await navigator.serviceWorker?.getRegistrations()
         for (const reg of regs) {
+            const currentState = (reg.waiting ?? reg.installing ?? reg.active)
             try {
-                reg.waiting?.postMessage({ type: 'CLIENTS_CLAIM' })
-                reg.waiting?.postMessage({ type: 'SKIP_WAITING' })
+                currentState?.postMessage({ type: 'CLIENTS_CLAIM' })
+                currentState?.postMessage({ type: 'SKIP_WAITING' })
             } catch (e) {
                 console.error(e)
                 $Sentry.captureException(e)
             }
         }
-        updatePromise.finally(() => { location.href = '/' })
+        const path = router.currentRoute.value.fullPath
+        await router.push({
+            path,
+            query: {
+                ...router.currentRoute.value.query,
+                installed: 'true'
+            }
+        })
+        updatePromise.finally(() => { location.reload(true) })
     }
+}
+
+function goToRedirectedFrom() {
+    router.replace((router.currentRoute.value.query.redirect as string) ?? '/schedule')
 }
 </script>

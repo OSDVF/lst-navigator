@@ -42,7 +42,9 @@
             <span>
                 <small>
                     <ClientOnly>
-                        {{ settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime).toLocaleString(lang) }}
+                        {{
+                            settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime).toLocaleString(lang)
+                        }}
                     </ClientOnly>
                 </small>
                 &ensp;
@@ -56,7 +58,8 @@
             <span>
                 <small>
                     <ClientOnly>
-                        {{ cloud.feedback.dirtyTime === 0 ? 'Nikdy' : new Date(cloud.feedback.dirtyTime).toLocaleString(lang) }}
+                        {{ cloud.feedback.dirtyTime === 0 ? 'Nikdy' : new
+                            Date(cloud.feedback.dirtyTime).toLocaleString(lang) }}
                     </ClientOnly>
                 </small>
                 &ensp;
@@ -78,7 +81,12 @@
         </fieldset>
         <fieldset>
             <span>Poslední aktualizace</span>
-            <small>{{ config.public.commitMessageTime }}</small>
+            <small>{{ config.public.commitMessageTime }}
+                <button type="button" @click="forceUpdate">
+                    <IconCSS name="mdi:reload-alert" />
+                    Přeaktualizovat
+                </button>
+            </small>
         </fieldset>
     </article>
 </template>
@@ -95,6 +103,7 @@ const settings = useSettings()
 const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const uploading = ref(false)
+const router = useRouter()
 const audioInputField = ref<HTMLInputElement | null>(null)
 
 const lang = computed(() => process.client ? navigator.language : 'cs-CZ')
@@ -137,6 +146,13 @@ function syncNotes() {
     } else {
         alert('Nepodařilo se připojit k úložišti poznámek')
     }
+}
+async function forceUpdate() {
+    if (!process.client) { return }
+    for (const registration of await navigator.serviceWorker.getRegistrations()) {
+        await registration.update()
+    }
+    router.push({ path: '/update', query: { redirect: router.currentRoute.value.fullPath } })
 }
 </script>
 

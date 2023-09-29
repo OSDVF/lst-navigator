@@ -65,6 +65,7 @@
 import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
 import { useSettings } from '@/stores/settings'
+import type { RouteLocationRaw } from '#vue-router'
 
 const app = useNuxtApp()
 const ui = useUI()
@@ -86,13 +87,19 @@ if (process.client) {
             router.push('/install/' + safeStep)
         }
     })
+    const redirectRoute : RouteLocationRaw = {
+        path: '/update',
+        query: {
+            redirect: route.fullPath
+        }
+    }
 
     if (app.$pwa.needRefresh) {
-        router.push('/update')
+        router.push(redirectRoute)
     }
 
     app.$onUpdateCallback(() => {
-        router.push('/update')
+        router.push(redirectRoute)
     })
 }
 
