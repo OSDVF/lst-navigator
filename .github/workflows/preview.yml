@@ -30,7 +30,7 @@ jobs:
           workflow_conclusion: success
           name: dist
           path: .output/public
-      - run: bun inject-sourcemaps.mjs
+      - run: node inject-sourcemaps.mjs
           
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
