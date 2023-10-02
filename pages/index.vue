@@ -19,6 +19,7 @@ definePageMeta({
                 path: '/schedule'
             }
         }
-    }
+    },
+    layout: 'install'
 })
 </script>

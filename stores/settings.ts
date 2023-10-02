@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { unzip } from 'unzipit'
+import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { usePersistentRef } from '@/utils/persistence'
-import lf from '~/utils/lf'
 
 let uniqueIdentifier = new Date().getTime().toString(36)
 try {
@@ -23,20 +23,15 @@ try {
 } */
 
 export const useSettings = defineStore('settings', () => {
-    function getInstallStep() {
-        return lf.get<number>('installStep')
-    }
-
-    function setInstallStep(newValue: number) {
-        lf.set('installStep', newValue)
-    }
-
+    const uploadedAudioList = useIDBKeyval<string[]>('uploadedAudioList', [])
     async function getUploadedAudio() {
         const audioList: { name: string, url: string }[] = []
         try {
-            const list = await lf.get<string[]>('uploadedAudioList') || []
+            const list = uploadedAudioList.data.value
             for (const item of list) {
-                const blob = await lf.get<Blob>(item)
+                const i = useIDBKeyval<Blob | null>(item, null)
+                await i.isRead
+                const blob = i.data.value
                 if (blob) {
                     const url = URL.createObjectURL(blob)
                     audioList.push({ name: item, url })
@@ -85,22 +80,21 @@ export const useSettings = defineStore('settings', () => {
         reader.onload = async () => {
             const blob = new Blob([reader.result as ArrayBuffer], { type: file.type })
             const niceName = file.name.replace(/\.[^/.]+$/, '')
-            await lf.set(niceName, blob)
-            const list = await lf.get<string[]>('uploadedAudioList') || []
-            list.push(niceName)
-            await lf.set('uploadedAudioList', list)
+            await useIDBKeyval<Blob | null>(niceName, null).set(blob)
+            uploadedAudioList.data.value.push(niceName)
             audioList.value.push({ name: niceName, url: URL.createObjectURL(blob) })
             selectedAudio.value = audioList.value.length - 1
         }
     }
 
     async function deleteCustomAudio(name: string) {
-        lf.remove(name)
-        const list = await lf.get<string[]>('uploadedAudioList') || []
+        const d = useIDBKeyval(name, null)
+        await d.set(null)
+        const list = uploadedAudioList.data.value
         const index = list.findIndex(item => item === name)
         if (index !== -1) {
             list.splice(index, 1)
-            lf.set('uploadedAudioList', list)
+            uploadedAudioList.data.value = list
         }
         const audioIndex = audioList.value.findIndex(item => item.name === name)
         if (audioIndex !== -1) {
@@ -165,20 +159,10 @@ export const useSettings = defineStore('settings', () => {
     })
 
     if (process.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
-    const doNotifications = computed<Promise<boolean | undefined> | boolean>({
-        async get(): Promise<boolean | undefined> {
-            return await lf.get<boolean>('doNotifications') || false
-        },
-        async set(value: boolean | Promise<boolean | undefined>) {
-            lf.set('doNotifications', value instanceof Promise ? await value : value)
-        }
-    })
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
     return {
-        getInstallStep,
-        setInstallStep,
-        selectedAudioName,
+        installStep: useIDBKeyval('installStep', 0),
         selectedAudioUrl,
         audioList,
         uploadCustomAudio,
@@ -191,7 +175,7 @@ export const useSettings = defineStore('settings', () => {
         selectedGroup,
         userNickname,
         userIdentifier,
-        doNotifications,
+        doNotifications: useIDBKeyval('doNotifications', true),
         notesDirtyTime
     }
 })

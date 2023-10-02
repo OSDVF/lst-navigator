@@ -1,0 +1,210 @@
+diff --git a/node_modules/@vueuse/integrations/index.cjs b/node_modules/@vueuse/integrations/index.cjs
+index 8f979f5..25ac77d 100644
+--- a/node_modules/@vueuse/integrations/index.cjs
++++ b/node_modules/@vueuse/integrations/index.cjs
+@@ -505,7 +505,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -535,7 +535,8 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   return {
+     set: setData,
+     isFinished,
+-    data
++    data,
++    isRead
+   };
+ }
+ 
+diff --git a/node_modules/@vueuse/integrations/index.d.cts b/node_modules/@vueuse/integrations/index.d.cts
+index 9a2283b..c2fcd0f 100644
+--- a/node_modules/@vueuse/integrations/index.d.cts
++++ b/node_modules/@vueuse/integrations/index.d.cts
+@@ -345,6 +345,7 @@ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
+     set(value: T): Promise<void>;
++    isRead: Promise<void>;
+ }
+ /**
+  *
+diff --git a/node_modules/@vueuse/integrations/index.d.mts b/node_modules/@vueuse/integrations/index.d.mts
+index 9a2283b..c2fcd0f 100644
+--- a/node_modules/@vueuse/integrations/index.d.mts
++++ b/node_modules/@vueuse/integrations/index.d.mts
+@@ -345,6 +345,7 @@ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
+     set(value: T): Promise<void>;
++    isRead: Promise<void>;
+ }
+ /**
+  *
+diff --git a/node_modules/@vueuse/integrations/index.d.ts b/node_modules/@vueuse/integrations/index.d.ts
+index 9a2283b..c2fcd0f 100644
+--- a/node_modules/@vueuse/integrations/index.d.ts
++++ b/node_modules/@vueuse/integrations/index.d.ts
+@@ -345,6 +345,7 @@ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
+     set(value: T): Promise<void>;
++    isRead: Promise<void>;
+ }
+ /**
+  *
+diff --git a/node_modules/@vueuse/integrations/index.iife.js b/node_modules/@vueuse/integrations/index.iife.js
+index 425f8b5..a618d41 100644
+--- a/node_modules/@vueuse/integrations/index.iife.js
++++ b/node_modules/@vueuse/integrations/index.iife.js
+@@ -606,7 +606,7 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
+       }
+       isFinished.value = true;
+     }
+-    read();
++    const isRead = read();
+     async function write() {
+       try {
+         if (data.value == null) {
+@@ -636,7 +636,8 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
+     return {
+       set: setData,
+       isFinished,
+-      data
++      data,
++      isRead,
+     };
+   }
+ 
+diff --git a/node_modules/@vueuse/integrations/index.mjs b/node_modules/@vueuse/integrations/index.mjs
+index 8cb8f77..b12c196 100644
+--- a/node_modules/@vueuse/integrations/index.mjs
++++ b/node_modules/@vueuse/integrations/index.mjs
+@@ -503,7 +503,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -533,7 +533,8 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   return {
+     set: setData,
+     isFinished,
+-    data
++    data,
++    isRead
+   };
+ }
+ 
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.cjs b/node_modules/@vueuse/integrations/useIDBKeyval.cjs
+index 2b6973e..8a1fc76 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.cjs
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.cjs
+@@ -32,7 +32,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -62,7 +62,8 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   return {
+     set: setData,
+     isFinished,
+-    data
++    data,
++    isRead
+   };
+ }
+ 
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.cts b/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
+index 9e79850..72806ca 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
+@@ -31,6 +31,7 @@ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
+     set(value: T): Promise<void>;
++    isRead: Promise<void>;
+ }
+ /**
+  *
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.mts b/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
+index 9e79850..72806ca 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
+@@ -31,6 +31,7 @@ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
+     set(value: T): Promise<void>;
++    isRead: Promise<void>;
+ }
+ /**
+  *
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.ts b/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
+index 9e79850..72806ca 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
+@@ -31,6 +31,7 @@ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
+     set(value: T): Promise<void>;
++    isRead: Promise<void>;
+ }
+ /**
+  *
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.iife.js b/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
+index f2905f0..539b016 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
+@@ -144,7 +144,7 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
+       }
+       isFinished.value = true;
+     }
+-    read();
++    const isRead = read();
+     async function write() {
+       try {
+         if (data.value == null) {
+@@ -174,7 +174,8 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
+     return {
+       set: setData,
+       isFinished,
+-      data
++      data,
++      isRead
+     };
+   }
+ 
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.mjs b/node_modules/@vueuse/integrations/useIDBKeyval.mjs
+index c110cda..b0e145c 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.mjs
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.mjs
+@@ -30,7 +30,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -60,7 +60,8 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   return {
+     set: setData,
+     isFinished,
+-    data
++    data,
++    isRead
+   };
+ }
+ 

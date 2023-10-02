@@ -26,7 +26,8 @@ export default defineNuxtPlugin({
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {
                     registration.installing?.addEventListener('statechange', async (ev) => {
-                        if ((ev.target as ServiceWorker).state === 'activated' && (await settings.getInstallStep() ?? 0) >= config.public.installStepCount) {
+                        await settings.installStep.isRead
+                        if ((ev.target as ServiceWorker).state === 'activated' && (settings.installStep.data ?? 0) >= config.public.installStepCount) {
                             console.log('Update found')
                             onUpdateCallback.value(registration)
                             updateFound = true

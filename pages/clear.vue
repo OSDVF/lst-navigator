@@ -23,7 +23,7 @@ onMounted(async() => {
     }
 
     // Clear indexedDB
-    for (const db of await indexedDB.databases?.() ?? ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'composi-idb', `firestore/[DEFAULT]/${config.public.vuefire.config.appId}/main`]) {
+    for (const db of await indexedDB.databases?.() || ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'composi-idb', `firestore/[DEFAULT]/${config.public.vuefire.config.appId}/main`]) {
         if (db.name) { indexedDB.deleteDatabase(db.name) }
     }
 

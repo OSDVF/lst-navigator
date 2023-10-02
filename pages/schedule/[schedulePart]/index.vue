@@ -25,7 +25,7 @@
                         :name="entry.icon ?? 'mdi:chevron-right'"
                     />
                     <!-- eslint-disable-next-line vue/no-v-html -->
-                    <span class="content" v-html="entry.description ?? 'Žádné detaily'" />
+                    <span class="content" v-html="entry.description?.trim() || 'Žádné detaily'" />
                     <button v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editSchedule" class="edit">
                         <IconCSS class="icon" name="mdi:pencil" />
                     </button>

@@ -6,7 +6,7 @@ import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
 import { SeverityLevel } from '@sentry/browser'
-import { idb } from '@composi/idb/types'
+import * as idb from 'idb-keyval'
 import { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
 

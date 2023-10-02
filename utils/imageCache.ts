@@ -1,12 +1,14 @@
-import lf from './lf'
+import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 
 export async function getCacheImage(name: string, url: string | null | undefined, cacheFirst?: boolean) {
     const config = useRuntimeConfig()
     if (typeof cacheFirst === 'undefined') {
         cacheFirst = config.public.imageCacheFirst
     }
+    const storage = useIDBKeyval<Blob | null>(name, null)
     if (cacheFirst) {
-        const blob = await lf.get<Blob>(name)
+        await storage.isRead
+        const blob = storage.data.value
         if (blob) {
             return URL.createObjectURL(blob)
         }
@@ -14,7 +16,8 @@ export async function getCacheImage(name: string, url: string | null | undefined
     if (url) {
         return url
     } else {
-        const blob = await lf.get<Blob>(name)
+        await storage.isRead
+        const blob = storage.data.value
         if (blob) {
             return URL.createObjectURL(blob)
         }
@@ -42,5 +45,5 @@ function getBlobFromImage(img: HTMLImageElement): Promise<Blob | null> {
 export async function saveCacheImage(name: string, event: Event) {
     const image = event.target as HTMLImageElement
     const blob = await getBlobFromImage(image)
-    return await lf.set(name, blob)
+    return await useIDBKeyval<Blob | null>(name, null).set(blob)
 }

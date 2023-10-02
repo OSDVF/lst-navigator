@@ -86,36 +86,36 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
 const settings = useSettings()
-const installStep = settings.getInstallStep()
+const installStep = settings.installStep
 const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
 const isServer = ref(process.server)
 
-if (process.client) {
+onMounted(() => {
     isServer.value = false
     ///
     /// Redirection guards
     ///
-    installStep.then((step) => {
-        const safeStep = step ?? 0
+
+    installStep.isRead.then(() => {
+        const safeStep = installStep.data
         if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
             router.push('/install/' + safeStep)
         }
-    })
-    const redirectRoute : RouteLocationRaw = {
-        path: '/update',
-        query: {
-            redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath
+        const redirectRoute : RouteLocationRaw = {
+            path: '/update',
+            query: {
+                redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath
+            }
         }
-    }
+        if (app.$pwa.needRefresh) {
+            router.push(redirectRoute)
+        }
 
-    if (app.$pwa.needRefresh) {
-        router.push(redirectRoute)
-    }
-
-    app.$onUpdateCallback(() => {
-        router.push(redirectRoute)
+        app.$onUpdateCallback(() => {
+            router.push(redirectRoute)
+        })
     })
-}
+})
 
 const title = computed(() => {
     if (route.meta.title) {
