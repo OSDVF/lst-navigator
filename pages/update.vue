@@ -64,6 +64,7 @@ async function download() {
 }
 
 function goToRedirectedFrom() {
-    router.replace((router.currentRoute.value.query.redirect as string) ?? '/schedule')
+    const url = new URL(router.currentRoute.value.query.redirect as string)
+    router.replace(`${url.pathname}${url.search}${url.hash}` ?? '/schedule')
 }
 </script>

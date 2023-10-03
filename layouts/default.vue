@@ -54,17 +54,9 @@
                     <button @click="clearError">
                         Zkusit znovu
                     </button>
-                    <button @click="clearError">
-                        Zkusit znovu
-                    </button>
                     <p>
                         Pokud chyba přetrvává, zkuste
-                        <NuxtLink to="/clear">
-                            <button>
-                                <IconCSS name="mdi:delete" />
-                                smazat data
-                            </button>
-                        </NuxtLink>.
+                        <AppManageBtns />
                     </p>
                 </article>
             </main>

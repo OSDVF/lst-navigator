@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
 import childProcess from 'child_process'
@@ -45,6 +45,18 @@ const config = defineNuxtConfig({
     experimental: {
         headNext: true,
         polyfillVueUseHead: false
+    },
+    hooks: {
+        'build:manifest' (manifest) {
+            for (const key in manifest) {
+                const mEntry = manifest[key]
+                mEntry.imports = mEntry.imports?.filter((v: string) => !v.includes('file-extension-icon-js'))
+                mEntry.dynamicImports = mEntry.dynamicImports?.filter((v: string) => !v.includes('file-extension-icon-js'))
+                mEntry.preload &&= !mEntry.file.includes('file-extension-icon-js')
+                mEntry.prefetch &&= mEntry.preload
+                manifest[key] = mEntry
+            }
+        }
     },
     ignore: [
         'maintenance/**'
@@ -101,23 +113,23 @@ const config = defineNuxtConfig({
     },
     vite: {
         build: {
+            modulePreload: {
+                resolveDependencies: (_filename, deps) => {
+                    return deps.filter(v => !v.includes('file-extension-icon-js'))
+                }
+            },
+            minify: 'terser',
             rollupOptions: {
                 output: {
                     manualChunks(id: string) {
                         const fei = id.toLowerCase().indexOf('file-extension-icon-js')
                         if (fei !== -1) {
-                            /* const nextDirName = id.substring(fei + 'file-extension-icon-js'.length + 1).split('/')[2]
-                            const chunkName = `file-extension-icon-js/${nextDirName}`
-                            console.log(`Chunk ${id} inside ${chunkName}`)
-                            return chunkName */
                             return 'file-extension-icon-js'
                         }
                         if (id.toLowerCase().includes('@sentry')) { // the @ is important so plugins/sentry.*.ts is not included
-                            console.log(`Chunk ${id} inside sentry`)
                             return 'sentry'
                         }
                         if (id.toLowerCase().includes('firebase')) {
-                            console.log(`Chunk ${id} inside firebase`)
                             return 'firebase'
                         }
                     }
@@ -172,7 +184,10 @@ const config = defineNuxtConfig({
             appId: process.env.VITE_APP_APPID,
             measurementId: process.env.VITE_APP_MEASUREMENTID
         },
-        auth: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+        auth: {
+            enabled: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+            sessionCookie: !process.argv.includes('generate')
+        },
         appCheck: process.env.VITE_APP_RECAPTCHA && process.env.FIREBASE_APPCHECK !== 'false'
             ? {
                 debug: isDevMode,

@@ -29,7 +29,7 @@
                     <IconCSS name="mdi:rss" size="1.8rem" />
                     Zpětná vazba
                 </NuxtLink>
-                <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/events">
+                <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/events" no-prefetch>
                     <IconCSS name="mdi:calendar-text" size="1.8rem" />
                     Akce
                 </NuxtLink>
@@ -62,6 +62,10 @@
                     <button @click="clearError">
                         Zkusit znovu
                     </button>
+                    <p>
+                        Pokud chyba přetrvává, zkuste
+                        <AppManageBtns />
+                    </p>
                 </article>
             </main>
 

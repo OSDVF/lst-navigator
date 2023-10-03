@@ -16,15 +16,15 @@
 <script setup lang="ts">
 const config = useRuntimeConfig()
 const router = useRouter()
-onMounted(async() => {
+onMounted(async () => {
     if (router.currentRoute.value.query.cleared) {
         router.replace('/')
         return
     }
 
     // Clear indexedDB
-    for (const db of await indexedDB.databases?.() || ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'composi-idb', `firestore/[DEFAULT]/${config.public.vuefire.config.appId}/main`]) {
-        if (db.name) { indexedDB.deleteDatabase(db.name) }
+    for (const db of await indexedDB.databases?.() || ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'keyval-store', `firestore/[DEFAULT]/${config.public.vuefire.config.appId}/main`]) {
+        if (db.name) { await new Promise(resolve => indexedDB.deleteDatabase(db.name!).addEventListener('success', resolve)) }
     }
 
     // Clear localStorage
@@ -42,7 +42,7 @@ onMounted(async() => {
     sessionStorage.clear()
 
     // Clear cache
-    caches.keys().then(function(names) {
+    caches.keys().then(function (names) {
         for (const name of names) {
             caches.delete(name)
         }
@@ -50,9 +50,9 @@ onMounted(async() => {
 
     // Clear service worker
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        await navigator.serviceWorker.getRegistrations().then(async function (registrations) {
             for (const registration of registrations) {
-                registration.unregister()
+                await registration.unregister()
             }
         })
     }

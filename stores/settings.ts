@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, skipHydrate } from 'pinia'
 import { unzip } from 'unzipit'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { usePersistentRef } from '@/utils/persistence'
@@ -163,6 +163,7 @@ export const useSettings = defineStore('settings', () => {
 
     return {
         installStep: useIDBKeyval('installStep', 0),
+        selectedAudioName: skipHydrate(selectedAudioName),
         selectedAudioUrl,
         audioList,
         uploadCustomAudio,

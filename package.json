@@ -32,6 +32,7 @@
     "cssnano": "^5.0.10",
     "eslint": "^8.45.0",
     "export-to-csv": "^1.0.0",
+    "fake-indexeddb": "^4.0.2",
     "file-extension-icon-js": "^1.1.6",
     "firebase-admin": "^11.10.1",
     "google-auth-library": "^9.0.0",

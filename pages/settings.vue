@@ -82,16 +82,7 @@
         <fieldset>
             <span>Poslední aktualizace</span>
             <small>{{ config.public.commitMessageTime }}
-                <button type="button" @click="forceUpdate">
-                    <IconCSS name="mdi:reload-alert" />
-                    Přeaktualizovat
-                </button>
-                <NuxtLink to="/clear">
-                    <button type="button">
-                        <IconCSS name="mdi:delete" />
-                        Smazat data
-                    </button>
-                </NuxtLink>
+                <AppManageBtns />
             </small>
         </fieldset>
     </article>
@@ -109,7 +100,6 @@ const settings = useSettings()
 const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const uploading = ref(false)
-const router = useRouter()
 const audioInputField = ref<HTMLInputElement | null>(null)
 
 const lang = computed(() => process.client ? navigator.language : 'cs-CZ')
@@ -152,13 +142,6 @@ function syncNotes() {
     } else {
         alert('Nepodařilo se připojit k úložišti poznámek')
     }
-}
-async function forceUpdate() {
-    if (!process.client) { return }
-    for (const registration of await navigator.serviceWorker.getRegistrations()) {
-        await registration.update()
-    }
-    router.push({ path: '/update', query: { redirect: router.currentRoute.value.fullPath } })
 }
 </script>
 
