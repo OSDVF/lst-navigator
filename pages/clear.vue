@@ -42,11 +42,10 @@ onMounted(async () => {
     sessionStorage.clear()
 
     // Clear cache
-    caches.keys().then(function (names) {
-        for (const name of names) {
-            caches.delete(name)
-        }
-    })
+    const names = await caches.keys()
+    for (const name of names) {
+        await caches.delete(name)
+    }
 
     // Clear service worker
     if ('serviceWorker' in navigator) {

@@ -1,8 +1,12 @@
 import fs from 'fs'
 import path from 'path'
-const d = fs.readdirSync('.output/public/_nuxt')
+const nuxtOutput = '.output/public/_nuxt'
+const d = fs.readdirSync(nuxtOutput)
 for (const f of d) {
     if (f.endsWith('.js')) {
-        fs.appendFileSync(`.output/public/_nuxt/${f}`, `//# sourceMappingURL=${path.basename(f)}.map\n`)
+        fs.appendFileSync(`${nuxtOutput}/${f}`, `//# sourceMappingURL=${path.basename(f)}.map\n`)
+    } else if (f.endsWith('.map')) {
+        const corrected = fs.readFileSync(`${nuxtOutput}/${f}`, 'utf8').replace('../../../../', '../')
+        fs.writeFileSync(`${nuxtOutput}/${f}`, corrected)
     }
 }
