@@ -5,22 +5,10 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-    match /{document=**}/feedback {
-			allow read: if true;
-      allow write: if true;
-    }
-    match /{document=**}/notes {
-			allow read: if true;
-      allow write: if true;
-    }
-    match /{document=**}/subscriptions {
-			allow read: if true;
-      allow write: if true;
+    function isSuperAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.get('superAdmin', false) == true;
     }
     match /users {
-      function isSuperAdmin() {
-				return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.get('superAdmin', false) == true;
-      }
 			match /{userId}/{field=**} {
       	allow read: if isSignedIn();
         allow write: if (isSignedIn() && request.auth.uid == userId && request.resource.data.permissions.get('superAdmin', false) == false) || isSuperAdmin();
@@ -28,12 +16,27 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false;
     }
-    match /{document=*}/{subdoc=**} {
-      allow read: if exists(/databases/$(database)/documents/events/$(document));
+    match /events/{event} {
+      allow read: if true;
+      allow create, delete: if isSuperAdmin();
       allow write: if false;
-    }
-    match /events/{document=**} {
-    	allow read: if true;
+      
+      match /{eventData} {
+        allow create, delete: if isSuperAdmin();
+      }
+    
+      match /feedback/{sessionId} {
+        allow read: if true;
+        allow write: if true;
+      }
+      match /notes/{sessionId} {
+        allow read: if true;
+        allow write: if true;
+      }
+      match /subscriptions/{subscriptionId} {
+        allow read: if true;
+        allow write: if true;
+      }
     }
   }
 }

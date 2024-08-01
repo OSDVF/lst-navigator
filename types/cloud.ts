@@ -1,4 +1,4 @@
-import type { FieldValue } from 'firebase/firestore'
+import type { CollectionReference, DocumentReference, FieldValue } from 'firebase/firestore'
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' | 'text'
 export type FeedbackConfig = {
@@ -30,30 +30,28 @@ export type SchedulePart = {
     program: ScheduleEvent[]
 };
 
-export type EventSubdocuments = 'meta' | 'notes' | 'feedback' | 'subscriptions' | 'users'
-export const EventSubdocumentsList: EventSubdocuments[] = ['meta', 'notes', 'feedback', 'subscriptions', 'users']
-
-export type EventMeta = {
-    description: string,
-    title: string,
-    subtitle: string,
-    schedule: {
-        parts: SchedulePart[]
-    }, // in the database this a reference to another document, but this reference is being resolved by vuefire
-    image: string, // url
-    feedback: FeedbackConfig[],
-    feedbackInfo: string,
-    groups: string[],
-    web: string
-}
+export type EventSubcollection = 'notes' | 'feedback' | 'subscriptions' | 'schedule' | 'users'
+export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'subscriptions', 'schedule', 'users']
+export type EventDocs = {
+    [K in EventSubcollection]: CollectionReference
+} & {
+    event: DocumentReference,
+};
 
 export type EventDescription<T = string> = {
     title: string,
     start: string, // in format 2023-01-30
     end: string,
-    meta: EventMeta
+
+    description: string,
+    subtitle: string,
+    image: string, // url
+    feedbackConfig: FeedbackConfig[],// subcollection
+    feedbackInfo: string,
+    groups: string[],
+    web: string
 } & {
-        [key in EventSubdocuments]: T
+        [key in EventSubcollection]: T
     }
 
 export type Permissions = {
@@ -70,8 +68,11 @@ export type Permissions = {
 
 export enum UserLevel {
     Nothing,
+    /// Can edit schedule of one event
     ScheduleAdmin,
+    /// Can edit schedule and users of one event
     Admin,
+    /// Can manage all events
     SuperAdmin
 }
 
@@ -97,11 +98,17 @@ export type UpdatePayload<T> = {
     [key in keyof T]: T[key] | UpdatePayload<T[key]> | FieldValue
 }
 
-export type Feedback = {
-    basic?: number | FieldValue,
-    detail?: string | FieldValue,
+export type UpdateRecordPayload<T> = {
+    [key: string]: T | UpdateRecordPayload<T> | FieldValue
+}
+
+export type Feedback = FeedbackOr<undefined>
+
+export type FeedbackOr<T> = {
+    basic?: number | T,
+    detail?: string | T,
     complicated?: (number | null)[],
-    select?: string | FieldValue
+    select?: string | T
 }
 
 export type TabulatedFeedback = {
@@ -109,6 +116,4 @@ export type TabulatedFeedback = {
     respondents: string[]
 }
 
-export type Subscriptions = {
-    [webPushToken: string]: /* array of notification groups */string[] | true /* subscribe to all groups */
-}
+export type Subscriptions = /* array of notification groups */string[] | true /* subscribe to all groups */

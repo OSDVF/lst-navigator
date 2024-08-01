@@ -3,34 +3,31 @@
         {{ (config?.name ?? event?.title) }}
     </caption>
     <!-- Filtered by selected option -->
-    <tr v-for="(filteredReplies, option) in repliesByOption" :key="option">
-        <td :title="Object.keys(filteredReplies).join(', ')">
+    <tr v-for="(filteredByOption, option) in repliesByOption" :key="option">
+        <td :title="Object.keys(filteredByOption.replies).join(', ')">
             <div
-                :set="thisCount = Object.keys(filteredReplies).length" class="absolute left-0 top-0 bottom-0 z--1"
-                :style="{ width: `${100 * thisCount / maxCount}%`, background: randomColors?.[option] }"
-            />
-            <em>{{ option }} ({{ thisCount }})</em>
+                class="absolute left-0 top-0 bottom-0 z--1"
+                :style="{ width: `${100 * filteredByOption.count / maxCount}%`, background: randomColors?.[option] }" />
+            <em>{{ option }} ({{ filteredByOption.count }})</em>
         </td>
-        <template v-if="filteredReplies">
+        <template v-if="filteredByOption">
             <td>
-                <FeedbackReply :reply="getAverage(filteredReplies)" :questions="questions" />
+                <FeedbackReply :reply="getAverage(filteredByOption.replies)" :questions="questions" />
             </td>
             <FeedbackHistogramRow
                 v-if="admin.displayKind === 'histogram'" :questions="questions" :feedback-type="type"
-                :replies="filteredReplies"
-            />
+                :replies="filteredByOption.replies" />
             <FeedbackIndividualRow
                 v-else :questions="questions"
                 :replies="tabulated.map(r => r?.select === option ? r : null)" :respondents="respondents"
-                @set-data="$props.onSetData"
-            />
+                @set-data="$props.onSetData" />
         </template>
     </tr>
 </template>
 
 <script setup lang="ts">
 import randomColor from 'randomcolor'
-import { FeedbackConfig, Feedback, ScheduleEvent, TabulatedFeedback } from '~/types/cloud'
+import type { FeedbackConfig, Feedback, ScheduleEvent, TabulatedFeedback } from '~/types/cloud'
 import { getAverage } from '@/utils/types'
 import { useAdmin } from '~/stores/admin'
 
@@ -40,7 +37,7 @@ const props = defineProps<{
     replies: { [user: string]: Feedback },
     tabulated: TabulatedFeedback['replies'][''],
     respondents: string[],
-    onSetData?:(data: Feedback | null, userIdentifier: string) => void,
+    onSetData?: (data: Feedback | null, userIdentifier: string) => void,
 }>()
 
 const admin = useAdmin()
@@ -55,19 +52,27 @@ if (options.value) {
 }
 
 const repliesByOption = computed(() => {
-    const result: { [option: string]: { [user: string]: Feedback } } = {}
+    const result: {
+        [option: string]: {
+            /** By user */
+            replies: { [user: string]: Feedback }, count: number
+        }
+    } = {}
     if (options.value) {
-        for (const replyI in props.replies) {
-            const reply = props.replies[replyI]
+        for (const user in props.replies) {
+            const reply = props.replies[user]
             for (const option of options.value) {
                 if (reply.select === option) {
                     if (!result[option]) {
-                        result[option] = {}
+                        result[option] = { replies: {}, count: 0 }
                     }
-                    result[option][replyI] = reply
+                    result[option].replies[user] = reply
                 }
             }
         }
+    }
+    for (const option in result) {
+        result[option].count = Object.keys(result[option].replies).length
     }
     return result
 })

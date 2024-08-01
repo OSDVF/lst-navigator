@@ -1,5 +1,4 @@
 import { defineStore, skipHydrate } from 'pinia'
-import { unzip } from 'unzipit'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { usePersistentRef } from '@/utils/persistence'
 
@@ -11,7 +10,7 @@ try {
     } else {
         uniqueIdentifier = prevIdentifier
     }
-} catch (e) { }
+} catch (e) { /* empty */ }
 
 /* async function getUncompressedSilenceFile() {
     const compressed = '/audio/silence.zip'
@@ -43,7 +42,7 @@ export const useSettings = defineStore('settings', () => {
 
     const defaultAudioList = [
         { name: 'Hadovky', url: '/audio/hadovky.mp3' },
-        { name: 'Líbezný zpěv', url: '/audio/zpev.mp3' }
+        { name: 'Líbezný zpěv', url: '/audio/zpev.mp3' },
     ]
     const audioList = ref(defaultAudioList)
     getUploadedAudio().then((uploadedAudioList) => {
@@ -63,7 +62,7 @@ export const useSettings = defineStore('settings', () => {
             } else {
                 selectedAudio.value = newValue
             }
-        }
+        },
     })
     const selectedAudioUrl = computed(() => {
         if (typeof selectedAudio.value === 'number') { return audioList.value[selectedAudio.value]?.url }
@@ -104,13 +103,13 @@ export const useSettings = defineStore('settings', () => {
     }
 
     const isPlaying = ref(false)
-    const audioElem = process.client ? new Audio() : undefined
-    // const silenceFile = process.client ? (audioElem!.canPlayType('audio/ogg') ? Promise.resolve('/audio/silence.ogg') : getUncompressedSilenceFile()) : null
+    const audioElem = import.meta.client ? new Audio() : undefined
+    // const silenceFile = import.meta.client ? (audioElem!.canPlayType('audio/ogg') ? Promise.resolve('/audio/silence.ogg') : getUncompressedSilenceFile()) : null
     function playListener() {
         isPlaying.value = true
     }
     function pauseListener() {
-        if (process.client) {
+        if (import.meta.client) {
             document.removeEventListener('click', pauseListener)
             isPlaying.value = false
             /* silenceFile!.then((silence) => {
@@ -124,7 +123,7 @@ export const useSettings = defineStore('settings', () => {
         }
     }
 
-    if (process.client) {
+    if (import.meta.client) {
         document.addEventListener('click', pauseListener)
         audioElem!.addEventListener('pause', pauseListener)
         audioElem!.addEventListener('play', playListener)
@@ -155,10 +154,10 @@ export const useSettings = defineStore('settings', () => {
         set(value: string) {
             localStorage.setItem('uniqueIdentifier', value)
             uniqueIdentifier = value
-        }
+        },
     })
 
-    if (process.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
+    if (import.meta.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
     return {
@@ -177,6 +176,6 @@ export const useSettings = defineStore('settings', () => {
         userNickname,
         userIdentifier,
         doNotifications: useIDBKeyval('doNotifications', true),
-        notesDirtyTime
+        notesDirtyTime,
     }
 })

@@ -8,7 +8,7 @@ export default defineNuxtPlugin({
                     if (typeof value !== 'string') { return }
                     vnode.component?.emit('update:modelValue', value)
                 })
-            }
+            },
         })
-    }
+    },
 })

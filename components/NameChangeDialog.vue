@@ -30,7 +30,7 @@ watch(settings, (s) => {
 })
 
 function confirmDialog(message: string) {
-    if (process.server) { return false }
+    if (import.meta.server) { return false }
     return window.confirm(message)
 }
 </script>

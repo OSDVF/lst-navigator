@@ -1,20 +1,21 @@
-/* eslint-disable no-console */
-import { DocumentReference, doc, getDoc, terminate } from 'firebase/firestore'
+ 
+import type { DocumentReference} from 'firebase/firestore';
+import { doc, getDoc, terminate } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
 import * as Sentry from '@sentry/node'
 import { initializeApp } from 'firebase/app'
-import { EventDescription } from '@/types/cloud'
-import { KnownCollectionName } from '@/utils/db'
+import type { EventDescription } from '@/types/cloud'
+import type { KnownCollectionName } from '@/utils/db'
 
 
 export default async function () {
     const config = useRuntimeConfig()
-    initializeApp(config.vuefire.options.config)
+    initializeApp((config.vuefire as any).options.config)
     const selectedEvent = config.public.defaultEvent
     const firestore = useFirestore()// firebase should be created in plugins/1.firebase.ts
     const auth = new GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/firebase.messaging']
+        scopes: ['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/firebase.messaging'],
     })
     const accessToken = await auth.getAccessToken()
 
@@ -36,11 +37,7 @@ export default async function () {
         return
     }
 
-    const scheduleDocument = (await getDoc(await currentEventDocument('meta'))).data()?.schedule
-    if (scheduleDocument === null) {
-        return
-    }
-    const scheduleParts = (await (await getDoc(scheduleDocument)).data() as {parts: DocumentReference[]})?.parts
+    const scheduleParts = (await (await getDoc(await currentEventDocument('schedule'))).data() as DocumentReference[])
 
     if (scheduleParts === null) {
         return
@@ -48,6 +45,8 @@ export default async function () {
     const now = new Date()
     const responses: { [key: string]: any } = {}
     const errors: { [key: string]: any } = {}
+
+    // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     const promises: Promise<void | Response>[] = []
     for (let partIndex = 0; partIndex < scheduleParts.length; partIndex++) {
         const part = scheduleParts[partIndex]
@@ -75,32 +74,32 @@ export default async function () {
             for (const subscription of subscriptions.tokens) {
                 // send notification
                 console.log(`[${new Date().toISOString()}] Sending notification about ${event.title} to ${subscription}`)
-                promises.push(fetch(`https://fcm.googleapis.com/v1/projects/${config.vuefire.options.config.projectId}/messages:send`, {
+                promises.push(fetch(`https://fcm.googleapis.com/v1/projects/${(config.vuefire as any).options.config.projectId}/messages:send`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + accessToken
+                        Authorization: 'Bearer ' + accessToken,
                     },
                     body: JSON.stringify({
                         message: {
                             token: subscription,
                             notification: {
                                 title: event.title,
-                                body: event.subtitle ?? event.description
+                                body: event.subtitle ?? event.description,
                             },
                             data: {
-                                url: `/schedule/${partIndex}/${eventIndex}`
+                                url: `/schedule/${partIndex}/${eventIndex}`,
                             },
                             webpush: {
                                 headers: {
-                                    Urgency: 'high'
+                                    Urgency: 'high',
                                 },
                                 notification: {
-                                    requireInteraction: 'true'
-                                }
-                            }
-                        }
-                    })
+                                    requireInteraction: 'true',
+                                },
+                            },
+                        },
+                    }),
                 }).then(async (response) => {
                     const body = await response.text()
                     if (response.ok) {

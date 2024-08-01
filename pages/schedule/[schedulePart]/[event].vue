@@ -74,17 +74,17 @@
 </template>
 
 <script setup lang="ts">
-import { setDoc } from 'firebase/firestore'
-import { useDocument } from 'vuefire'
+import { setDoc } from '~/utils/trace'
+import { doc } from 'firebase/firestore'
 import { colorToHex, darkenColor } from '@/utils/colors'
 import { useCloudStore } from '@/stores/cloud'
-import { Feedback } from '@/types/cloud'
+import type { Feedback } from '@/types/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime, getParallelEvents } from '@/utils/types'
 import { usePersistentRef } from '@/utils/persistence'
 
 const ClassicEditor = ref()
-if (process.client) {
+if (import.meta.client) {
     import('@ckeditor/ckeditor5-build-classic').then((c) => {
         ClassicEditor.value = c.default
     })
@@ -118,38 +118,38 @@ const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[partInd
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocument(cloudStore.notesDocument, { once: !!process.server })
+const notesDocument = useDocument(computed(()=>cloudStore.notesCollection ? doc(cloudStore.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
 const offlineNote = usePersistentRef(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 
 const noteModel = computed({
     get() {
-        const onlineVal = notesDocument.data.value?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier]
+        const onlineVal = notesDocument.value?.[partIndex]?.[eventItemIndex]
         const onlineDate = new Date(onlineVal?.time ?? 0).getTime()
         if (onlineDate > offlineNote.value.time) {
             return onlineVal.note
         }
         return offlineNote.value.note
-    },
+    }, 
     set(value: string) {
         const newValue = {
             time: settings.notesDirtyTime = new Date().getTime(),
-            note: value
+            note: value,
         }
         offlineNote.value = newValue
         if (!noteSaving) {
             noteSaving = setTimeout(() => {
-                if (cloudStore.notesDocument) {
+                if (cloudStore.notesCollection) {
                     fetchingNote.value = true
-                    setDoc(cloudStore.notesDocument, {
+                    setDoc(doc(cloudStore.notesCollection, settings.userIdentifier), {
                         [partIndex]: {
-                            [eventItemIndex]: {
-                                [settings.userIdentifier]: newValue
-                            }
-                        }
-                    }, {
-                        merge: true
-                    }).then(() => { fetchingNote.value = couldNotFetchNote.value = false }).catch((e) => { noteError.value = e })
+                            [eventItemIndex]: newValue,
+                        },
+                    },
+                    { merge: true }).then(() => { 
+                        fetchingNote.value = couldNotFetchNote.value = false 
+                    }).catch((e) => { noteError.value = e })
+
                     setTimeout(() => {
                         couldNotFetchNote.value = fetchingNote.value
                         fetchingNote.value = false
@@ -158,7 +158,7 @@ const noteModel = computed({
                 noteSaving = null
             }, 2000)
         }
-    }
+    },
 })
 
 onBeforeRouteLeave(() => {

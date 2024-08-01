@@ -2,12 +2,12 @@
 export default defineNuxtRouteMiddleware(async (to) => {
     const user = await getCurrentUser()
     // redirect the user to the login page
-    if (process.client && !user) {
+    if (import.meta.client && !user) {
         return navigateTo({
             path: '/login',
             query: {
-                redirect: to.fullPath
-            }
+                redirect: to.fullPath,
+            },
         })
     }
 })

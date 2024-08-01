@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { User } from 'firebase/auth'
+import type { User } from 'firebase/auth'
 
 const user = useCurrentUser()
 const router = useRouter()

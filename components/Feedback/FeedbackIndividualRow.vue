@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback } from '@/types/cloud'
+import type { Feedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 
 defineProps<{

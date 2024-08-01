@@ -1,5 +1,5 @@
 import { useScheduler } from '#scheduler'
-import notify from '~~/server/app/services/notify'
+import notify from '~/server/app/services/notify'
 
 export default defineNitroPlugin(() => {
     if (process.env.NOTIFICATIONS !== 'false' && !process.argv.includes('generate')) {

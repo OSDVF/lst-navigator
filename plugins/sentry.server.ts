@@ -6,21 +6,21 @@ export default defineNuxtPlugin({
     setup(nuxtApp) {
         Sentry.init({
             enabled: nuxtApp.$config.public.SENTRY_ENABLED,
-            autoSessionTracking: process.client,
+            autoSessionTracking: import.meta.client,
             debug: nuxtApp.$config.public.ENV !== 'production',
             dsn: nuxtApp.$config.public.SENTRY_DSN,
             release: nuxtApp.$config.public.commitHash,
-            environment: nuxtApp.$config.public.ENV
+            environment: nuxtApp.$config.public.ENV,
         })
         Sentry.configureScope((scope) => {
             scope.setUser({
-                id: 'server'
+                id: 'server',
             })
         })
 
         nuxtApp.hook('vue:error', (err) => {
             Sentry.captureException(err)
-            console.error('vue:error', err)
+            console.error('vue:error', JSON.stringify(err))
         })
         nuxtApp.vueApp.config.errorHandler = (error, context) => {
             Sentry.captureException(error)
@@ -28,5 +28,5 @@ export default defineNuxtPlugin({
         }
 
         nuxtApp.provide('Sentry', Sentry)
-    }
+    },
 })

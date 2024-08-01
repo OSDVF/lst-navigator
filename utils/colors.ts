@@ -6,7 +6,7 @@ export function colorToRGBA(color: string) {
     // Examples:
     // colorToRGBA('red')  # [255, 0, 0, 255]
     // colorToRGBA('#f00') # [255, 0, 0, 255]
-    if (process.client) {
+    if (import.meta.client) {
         const cvs = document.createElement('canvas')
         cvs.height = 1
         cvs.width = 1
@@ -30,7 +30,7 @@ export function colorToHex(color: string) {
     // colorToHex('rgb(255, 0, 0)') # '#ff0000'
     const rgba = colorToRGBA(color)
     const hex = [0, 1, 2].map(
-        function (idx) { return byteToHex(rgba[idx]) }
+        function (idx) { return byteToHex(rgba[idx]) },
     ).join('')
     return '#' + hex
 }

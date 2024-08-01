@@ -26,7 +26,7 @@
 </template>
 <script setup lang="ts">
 
-import { Feedback, FeedbackConfig, ScheduleEvent, TabulatedFeedback } from '@/types/cloud'
+import type { Feedback, FeedbackConfig, ScheduleEvent, TabulatedFeedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 import { getAverage } from '@/utils/types'
 

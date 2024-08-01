@@ -4,5 +4,5 @@ export default defineNuxtPlugin({
     parallel: true,
     setup(nuxtApp) {
         nuxtApp.vueApp.use(CKEditor)
-    }
+    },
 })

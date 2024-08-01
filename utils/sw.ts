@@ -3,11 +3,11 @@ import { registerRoute, Route } from 'workbox-routing'
 import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
-import { getMessaging, isSupported, MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
+import { getMessaging, isSupported, type MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
-import { SeverityLevel } from '@sentry/browser'
+import type { SeverityLevel } from '@sentry/browser'
 import * as idb from 'idb-keyval'
-import { NotificationPayload } from '@/utils/types'
+import type { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
 
 
@@ -82,7 +82,7 @@ isSupported().then((supported) => {
             self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.title ?? 'Notification',
                 {
                     ...swConfig.messaging,
-                    ...payload.notification
+                    ...payload.notification,
                 })
 
             self.clients.matchAll({ type: 'window' }).then((clients) => {
@@ -121,7 +121,7 @@ addEventListener('message', (event: MessageEvent) => {
     }
     Sentry.captureMessage('Message received', {
         level: 'debug' as SeverityLevel,
-        extra: event.data
+        extra: event.data,
     })
 })
 
@@ -132,7 +132,7 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
         category: 'notification',
         data: event.notification,
         timestamp: Date.now(),
-        level: 'debug'
+        level: 'debug',
     })
 })
 
@@ -141,7 +141,7 @@ self.addEventListener(
     (event: any) => {
         Sentry.captureMessage('Push subscription change', {
             level: 'debug',
-            extra: event
+            extra: event,
         })
         const subscription = self.registration.pushManager
             .subscribe(event.oldSubscription.options)
@@ -149,23 +149,23 @@ self.addEventListener(
                 fetch('register', {
                     method: 'post',
                     headers: {
-                        'Content-type': 'application/json'
+                        'Content-type': 'application/json',
                     },
                     body: JSON.stringify({
-                        endpoint: subscription.endpoint
-                    })
-                })
+                        endpoint: subscription.endpoint,
+                    }),
+                }),
             )
         event.waitUntil(subscription)
     },
-    false
+    false,
 )
 
 //
 // Runtime caching
 //
 // Icons
-const iconsRoute = new Route(({ request, sameOrigin }) => {
+const iconsRoute = new Route(({ request }) => {
     return request.url.startsWith('https://api.iconify.design/')
 }, new CacheFirst())
 

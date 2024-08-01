@@ -2,8 +2,8 @@ import { LocalKey, LocalStorage } from 'ts-localstorage'
 import type { UnwrapRef } from 'vue'
 
 export function usePersistentRef<T>(name: string, defaultValue: T) {
-    const key = new LocalKey<T>(name, defaultValue, {
-        hasDefaultValue: true
+    const key = new LocalKey<T, true>(name, defaultValue, {
+        hasDefaultValue: true,
     })
     let internalRef: Ref<UnwrapRef<T>>
     if (typeof localStorage !== 'undefined') {
@@ -22,7 +22,7 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
         watch(internalRef, (newValue) => {
             LocalStorage.setItem(key, isRef(newValue) ? newValue.value as T : newValue as T)
         }, {
-            deep: true
+            deep: true,
         })
         triggerRef(internalRef)
     }

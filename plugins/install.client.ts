@@ -22,7 +22,7 @@ export default defineNuxtPlugin({
             const firebaseApp = useFirebaseApp()
             const settings = useSettings()
             const config = useRuntimeConfig()
-            const swRegistraions = process.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
+            const swRegistraions = import.meta.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {
                     registration.installing?.addEventListener('statechange', async (ev) => {
@@ -44,15 +44,15 @@ export default defineNuxtPlugin({
                         type: 'INITIALIZE_APP',
                         config: {
                             ...firebaseApp.options,
-                            defaultNotification: { ...app.$nuxt.$config.public.messagingConfig }
-                        }
+                            defaultNotification: { ...app.$nuxt.$config.public.messagingConfig },
+                        },
                     })
                 } catch (e) {
                     console.error(e)
                     app.$nuxt.$Sentry.captureException(e)
                 }
             }
-        }
+        },
     },
     setup() {
         return {
@@ -64,8 +64,8 @@ export default defineNuxtPlugin({
                     if (updateFound) {
                         callback()
                     }
-                }
-            }
+                },
+            },
         }
-    }
+    },
 })

@@ -11,14 +11,11 @@
                     type="number" style="border:none;width: 7ex;display:inline"
                 >
             </label>
-            <label class="p-1">
-                <IconCSS name="mdi:view-dashboard" /> Zobrazení&ensp;
-                <select v-model="admin.displayKind">
-                    <option v-for="k in Object.keys(displayKindOptionLabels)" :key="k" :value="k">
-                        {{ displayKindOptionLabels[k as DisplayKind] }}
-                    </option>
-                </select>
-            </label>
+            <select v-model="admin.displayKind" class="p-1" title="Zobrazení">
+                <option v-for="(val,key) in displayKindOptionIcons" :key="key" :value="key">
+                    <IconCSS :name="val" />
+                </option>
+            </select>
             <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-block tab">
                 <IconCSS name="mdi:calendar" />
                 Části programu
@@ -89,13 +86,13 @@
 
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
-import { DisplayKind, useAdmin } from '@/stores/admin'
+import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
 
 definePageMeta({
     title: 'Výsledky zpětné vazby',
     layout: 'admin',
-    middleware: ['auth']
+    middleware: ['auth'],
 })
 
 const router = useRouter()
@@ -111,9 +108,9 @@ const admin = useAdmin()
 const respondents = useRespondents()
 const zoomFactor = ref(1)
 
-const displayKindOptionLabels = {
-    histogram: 'Histogram',
-    individual: 'Individuální'
+const displayKindOptionIcons = {
+    histogram: 'mdi:chart-histogram',
+    individual: 'mdi:list-status',
 }
 
 const showRespondents = ref(false)

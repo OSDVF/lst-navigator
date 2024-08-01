@@ -1,4 +1,4 @@
-import { Feedback, ScheduleEvent } from '@/types/cloud'
+import type { Feedback, FeedbackType, ScheduleEvent } from '@/types/cloud'
 
 export type NotificationPayload = {
     title: string,
@@ -17,6 +17,17 @@ export function toHumanTime(time?: number) {
     const minutes = time % 100
     return `${hours}:${minutes.toString().padStart(2, '0')}`
 }
+export function toHumanFeedback(feedback?: FeedbackType) {
+    if (!feedback) { return undefined }
+    return {
+        'basic': '⭐⭐⭐⭐⭐',
+        'complicated': 'Několik ⭐⭐⭐⭐⭐',
+        'text': 'Textová otázka',
+        'parallel': 'Paralelní programy',
+        'select': 'Výběr z možností',
+    }[feedback]
+}
+
 export function toJSDate(date: undefined): null;
 export function toJSDate(date: string): Date;
 export function toJSDate(date?: string) {
@@ -27,7 +38,11 @@ export function toJSDate(date?: string) {
 
 export function toFirebaseDate(data?: Date) {
     if (!data) { return null }
-    return `${data.getFullYear()}-${(data.getMonth() + 1).toString().padStart(2, '0')}-${data.getDate().toString().padStart(2, '0')}`
+    return `${data.getFullYear()}-${toFirebaseMonthDay(data)}`
+}
+
+export function toFirebaseMonthDay(date: Date) {
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }
 
 export function getParallelEvents(eventItem: ScheduleEvent) {
@@ -71,34 +86,32 @@ export function getAverage(replies: { [key: string]: Feedback }) {
 
     return {
         basic: basic / basicCount,
-        complicated: Object.keys(compl).map(i => compl[i] / complCount[i])
+        complicated: Object.keys(compl).map(i => compl[i] / complCount[i]),
     }
 }
 
-export function hasFeedback(f: Feedback): boolean
-export function hasFeedback(fs: { [key: string]: Feedback }): boolean
-export function hasFeedback(f: { [key: string]: Feedback } | Feedback): boolean {
+export function hasFeedback(f: Feedback | { [key: string]: Feedback } | Feedback): boolean {
     const v = Object.values(f)
     return f.basic || f.complicated || f.detail || f.select || (v && v.find(fs => hasFeedback(fs)))
 }
 
-export async function timeoutPromise<T>(prom: Promise<T>, time = 5000): Promise<T | void> {
+export async function timeoutPromise<T>(prom: Promise<T>, time = 5000): Promise<T> {
     let timer: NodeJS.Timeout | null = null
     try {
         return await Promise.race([
             prom,
-            new Promise<T>((_resolve, reject) => { timer = setTimeout(reject, time) })
+            new Promise<T>((_resolve, reject) => { timer = setTimeout(reject, time) }),
         ])
     } finally {
         if (timer) { clearTimeout(timer) }
     }
 }
 
-function objectMap(obj: object, fn: Function) {
+function objectMap(obj: object, fn: (v: any, k: string, i: number) => any): { [key: string]: any } {
     return Object.fromEntries(
         Object.entries(obj).map(
-            ([k, v], i) => [k, fn(v, k, i)]
-        )
+            ([k, v], i) => [k, fn(v, k, i)],
+        ),
     )
 }
 

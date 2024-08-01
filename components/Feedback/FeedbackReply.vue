@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback } from '@/types/cloud'
+import type { Feedback } from '@/types/cloud'
 import { defaultQuestions } from '@/stores/cloud'
 import { darkenColor } from '@/utils/colors'
 import useFeedbackControls from '@/utils/feedbackControls'
@@ -57,8 +57,8 @@ const controls = props.onSetData
         props: {
             data: props.reply,
             complicatedQuestions: props.questions || defaultQuestions,
-            onSetData: (value:Feedback) => props.onSetData?.(value, props.respondent!)
-        }
+            onSetData: (value:Feedback) => props.onSetData?.(value, props.respondent!),
+        },
     })
     : null
 

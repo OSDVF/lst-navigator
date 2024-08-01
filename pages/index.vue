@@ -16,10 +16,10 @@ definePageMeta({
     middleware: () => {
         if (typeof window !== 'undefined') {
             return {
-                path: '/schedule'
+                path: '/schedule',
             }
         }
     },
-    layout: 'install'
+    layout: 'install',
 })
 </script>

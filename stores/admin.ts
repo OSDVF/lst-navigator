@@ -10,7 +10,7 @@ export const useAdmin = defineStore('admin', function () {
         displayKind,
         editingFeedback: computed({
             get: () => editingFeedback.value && displayKind.value === 'individual',
-            set: (value: boolean) => { editingFeedback.value = value }
-        })
+            set: (value: boolean) => { editingFeedback.value = value },
+        }),
     }
 })

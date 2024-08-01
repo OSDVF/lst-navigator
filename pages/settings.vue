@@ -89,11 +89,12 @@
 </template>
 
 <script setup lang="ts">
-import { setDoc } from 'firebase/firestore'
+import { setDoc } from '~/utils/trace'
+import { doc } from 'firebase/firestore'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
 definePageMeta({
-    title: 'Nastavení'
+    title: 'Nastavení',
 })
 
 const settings = useSettings()
@@ -102,7 +103,7 @@ const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
 
-const lang = computed(() => process.client ? navigator.language : 'cs-CZ')
+const lang = computed(() => import.meta.client ? navigator.language : 'cs-CZ')
 
 function leadingPlus(value: number) {
     return value > 0 ? `+${value}` : value
@@ -123,19 +124,17 @@ function deleteCustomAudio() {
     settings.deleteCustomAudio(settings.selectedAudioName)
 }
 function syncNotes() {
-    if (cloud.notesDocument) {
+    if (cloud.notesCollection) {
         for (const key in localStorage) {
             if (key.startsWith('note.')) {
                 const value = localStorage.getItem(key)
                 const indexes = key.split('.')
-                setDoc(cloud.notesDocument, {
+                setDoc(doc(cloud.notesCollection, settings.userIdentifier), {
                     [indexes[1]]: {
-                        [indexes[2]]: {
-                            [settings.userIdentifier]: value
-                        }
-                    }
+                        [indexes[2]]: value,
+                    },
                 }, {
-                    merge: true
+                    merge: true,
                 })
             }
         }

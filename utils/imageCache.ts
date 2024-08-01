@@ -26,7 +26,7 @@ export async function getCacheImage(name: string, url: string | null | undefined
 }
 
 function getBlobFromImage(img: HTMLImageElement): Promise<Blob | null> {
-    if (process.client) {
+    if (import.meta.client) {
         const canvas = document.createElement('canvas')
         canvas.width = img.naturalWidth
         canvas.height = img.naturalHeight

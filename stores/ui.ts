@@ -12,6 +12,6 @@ export const useUI = defineStore('ui', () => {
     return {
         showLightBox,
         imagesRef,
-        visibleRef
+        visibleRef,
     }
 })

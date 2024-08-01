@@ -39,7 +39,7 @@
                 <IconCSS name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
-        <ProgressBar v-show="isServer || cloudStore.metaLoading" class="backgroundLoading" />
+        <ProgressBar v-show="isServer || cloudStore.eventLoading" class="backgroundLoading" />
         <ClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </ClientOnly>
@@ -79,8 +79,7 @@ const route = useRoute()
 const router = useRouter()
 const settings = useSettings()
 const installStep = settings.installStep
-const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
-const isServer = ref(process.server)
+const isServer = ref(import.meta.server)
 
 onMounted(() => {
     isServer.value = false
@@ -96,8 +95,8 @@ onMounted(() => {
         const redirectRoute : RouteLocationRaw = {
             path: '/update',
             query: {
-                redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath
-            }
+                redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath,
+            },
         }
         if (app.$pwa.needRefresh) {
             router.push(redirectRoute)
@@ -124,7 +123,7 @@ provide('globalBackground', globalBackground)
 function captureError(error: unknown) {
     try {
         console.error(error, error instanceof TypeError ? error.stack : null)
-        Sentry?.captureException(error)
+        app.$Sentry.captureException(error)
     } catch (e) { console.error(e) }
 }
 

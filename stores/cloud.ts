@@ -1,14 +1,18 @@
+// TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { DocumentReference, FieldValue, Firestore, arrayUnion, collection, deleteField, doc, getDoc, setDoc } from 'firebase/firestore'
+import { Firestore, type CollectionReference, type DocumentReference, type FieldValue } from 'firebase/firestore';
+import { arrayUnion, collection, deleteField, doc, getDoc } from 'firebase/firestore'
+import { setDoc } from '~/utils/trace';
 import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, User } from 'firebase/auth'
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User } from 'firebase/auth'
 import Lodash from 'lodash'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
-import { KnownCollectionName } from '@/utils/db'
-import { EventDescription, EventSubdocuments, FeedbackConfig, Feedback, UpdatePayload, SchedulePart, Subscriptions, UserInfo, Permissions, UserLevel } from '@/types/cloud'
+import { UserLevel } from '@/types/cloud'
+import type { KnownCollectionName } from '@/utils/db'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, UpdatePayload, SchedulePart, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -20,21 +24,40 @@ export function knownCollection(firestore: Firestore, name: KnownCollectionName)
 export const defaultQuestions = [
     'Rečník',
     'Osobní přínos',
-    'Srozumitelnost'
+    'Srozumitelnost',
 ]
 
 export const googleAuthProvider = new GoogleAuthProvider()
 
 
 let probe = true
-if (process.server) {
+if (import.meta.server) {
     // probe the firestore firstly because otherwise we get infinite loading
     try {
         await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })
     } catch (e) {
-        // eslint-disable-next-line no-console
+
         console.error(e)
         probe = false
+    }
+}
+
+export function eventSubCollection(fs: Firestore, event: string, document: EventSubcollection, ...segments: string[]): CollectionReference {
+    // typecheck:
+    if(!(fs instanceof Firestore && typeof document === 'string' && typeof event === 'string' && segments.every((s) => typeof s === 'string'))){
+        throw new Error(`Invalid arguments ${fs} ${event}, ${document}, ${segments.join(', ')}`)
+    }
+    return collection(fs, 'events', event, document, ...segments)
+}
+
+export function eventDocs(fs: Firestore, name: string): EventDocs {
+    return {
+        event: doc(knownCollection(fs, 'events'), name),
+        notes: eventSubCollection(fs, name, 'notes'),
+        feedback: eventSubCollection(fs, name, 'feedback'),
+        schedule: eventSubCollection(fs, name, 'schedule'),
+        subscriptions: eventSubCollection(fs, name, 'subscriptions'),
+        users: eventSubCollection(fs, name, 'users'),
     }
 }
 
@@ -52,67 +75,68 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const firebaseStorage = probe && useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)
-    const auth = probe && (config.public.ssrAuthEnabled || process.client) ? useFirebaseAuth() : null
-    if (process.client) {
+    const auth = probe && (config.public.ssrAuthEnabled || import.meta.client) ? useFirebaseAuth() : null
+    if (import.meta.client) {
         auth?.setPersistence(browserLocalPersistence)
     }
     const app = useNuxtApp()
 
     const ed = firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null
-    const eventDocuments = useDocument<EventDescription>(ed, {
+    const eventDocuments = useDocument<EventDescription<undefined>>(ed, {
         maxRefDepth: 4,
-        once: !!process.server,
-        wait: true
+        once: !!import.meta.server,
+        wait: true,
     })
 
-    const eventData = useAsyncData('defaultEventData', () => eventDocuments.promise.value, {
-        watch: [eventDocuments]
+    const eventData = useAsyncData('defaultEventData', () => eventDocuments.promise.value ?? {}, {//TODO useAsyncData should not return undefined?
+        watch: [eventDocuments],
     }).data
 
-    function currentEventDocument(docName: EventSubdocuments) {
+    function currentEventCollection(docName: EventSubcollection) {
         return computed(() => {
             if (!firestore) { return null }
-            return doc(firestore, selectedEvent.value, docName)
+            return eventSubCollection(firestore, selectedEvent.value, docName)
         })
     }
 
-    const subscriptionsDocument = currentEventDocument('subscriptions')
+    const subscriptionsCollection = currentEventCollection('subscriptions')
 
-    const eventImage = computed(() => eventData.value?.meta?.image && firebaseStorage
-        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.meta?.image)).url.value
+    const eventImage = computed(() => eventData.value?.image && firebaseStorage
+        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.image)).url.value
         : null)
-    const eventTitle = computed(() => eventData.value?.meta?.title)
-    const eventSubtitle = computed(() => eventData.value?.meta?.subtitle)
-    const eventDescription = computed(() => eventData.value?.meta?.description)
-    const eventWeb = computed(() => eventData.value?.meta?.web)
-    const groupNames = computed(() => eventData.value?.meta?.groups ?? [])
-    const fd = currentEventDocument('feedback')
+    const eventTitle = computed(() => eventData.value?.title)
+    const eventSubtitle = computed(() => eventData.value?.subtitle)
+    const eventDescription = computed(() => eventData.value?.description)
+    const eventWeb = computed(() => eventData.value?.web)
+    const groupNames = computed(() => eventData.value?.groups ?? [])
+    const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
-    const feedbackRepliesRaw = shallowRef(useDocument(fd, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!process.server }))
+    const feedbackRepliesRaw = shallowRef(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
     const feedback = {
-        config: computed<FeedbackConfig[] | undefined>(() => eventData.value?.meta?.feedback),
-        doc: fd,
+        config: computed<FeedbackConfig[] | undefined>(() => eventData.value?.feedbackConfig),
+        col: fc,
         dirtyTime: feedbackDirtyTime,
         error: ref(),
         fetchFailed: ref(false),
         fetching: ref(false),
-        infoText: computed(() => eventData.value?.meta?.feedbackInfo),
+        infoText: computed(() => eventData.value?.feedbackInfo),
         online: computed(() => {
             const result: { [key: string]: number | { [key: string | number]: { [user: string]: Feedback } } } = {}
-            const replies = feedbackRepliesRaw.value
+            const replies = feedbackRepliesRaw.value as any
             if (replies) {
                 for (const key in replies) {
-                    const val = replies[key]
+                    const val = replies[key as keyof typeof replies]
                     if (typeof val === 'object' && val !== null) {
                         for (const innerKey in val) {
-                            if (typeof replies[innerKey] === 'object' && isNaN(parseInt(innerKey))) {
-                                val[innerKey] = Lodash.merge(val[innerKey], replies[innerKey][0])
-                                delete replies[innerKey]
-                                delete result[innerKey]
+                            const k = innerKey as keyof typeof replies
+                            if (typeof replies[k] === 'object' && isNaN(parseInt(innerKey))) {
+                                val[k as keyof typeof val] = Lodash.merge(val[k as keyof typeof val], replies[k][0])
+                                // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                                delete replies[k], delete result[innerKey]
                             }
                         }
                     }
-                    result[key] = val
+                    result[key] = val as any
                 }
             }
             return result
@@ -125,16 +149,17 @@ export const useCloudStore = defineStore('cloud', () => {
             userIdentifier ??= settings.userIdentifier
             feedbackDirtyTime.value = new Date().getTime()
 
-            setDoc(feedback.doc.value!, {
-                [sIndex]: {
-                    [eIndex]: {
-                        [userIdentifier]: data !== null ? data : deleteField()
-                    }
+            setDoc(doc(feedback.col.value!, sIndex.toString()), {
+                [eIndex]: {
+                    [userIdentifier]: data !== null ? data : deleteField(),
                 },
-                [userIdentifier]: feedbackDirtyTime.value
-            }, {
-                merge: true
-            }).then(() => { feedback.fetching.value = feedback.fetchFailed.value = false }).catch((e) => { feedback.error.value = e })
+            }, { merge: true })
+                .then(() => { feedback.fetching.value = feedback.fetchFailed.value = false }).catch((e) => { feedback.error.value = e })
+
+            setDoc(doc(feedback.col.value!, userIdentifier), {
+                updated: feedbackDirtyTime.value,
+            }, { merge: true })
+
             setTimeout(() => {
                 feedback.fetchFailed.value = feedback.fetching.value
                 feedback.fetching.value = false
@@ -142,6 +167,7 @@ export const useCloudStore = defineStore('cloud', () => {
         },
         saveAgain() {
             feedback.fetching.value = true
+            const promises = []
 
             // Convert null reply to deleteField
             const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value
@@ -157,21 +183,20 @@ export const useCloudStore = defineStore('cloud', () => {
                     }
                     schedulePart[eIndex] = event
                 }
-                payload[sIndex] = schedulePart
+                promises.push(setDoc(doc(feedback.col.value!, sIndex), schedulePart, {
+                    merge: true,
+                }))
             }
 
-            const uploadingPromise = setDoc(feedback.doc.value!, payload, {
-                merge: true
-            }).then(() => { feedback.fetching.value = feedback.fetchFailed.value = false })
+            const result = Promise.all(promises).then(() => { feedback.fetching.value = feedback.fetchFailed.value = false }).catch((e) => { feedback.error.value = e })
             setTimeout(() => {
                 feedback.fetchFailed.value = feedback.fetching.value
                 feedback.fetching.value = false
             }, 5000)
-            uploadingPromise.catch((e) => { feedback.error.value = e })
-            return uploadingPromise
-        }
+            return result
+        },
     }
-    const userAuth = (config.public.ssrAuthEnabled || process.client) ? useCurrentUser() : null
+    const userAuth = (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : null
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
 
@@ -217,9 +242,9 @@ export const useCloudStore = defineStore('cloud', () => {
                     reasonPretty = reason
                 }
                 app.$Sentry.captureEvent(reason, {
-                    data: reasonPretty
+                    data: reasonPretty,
                 })
-                // eslint-disable-next-line no-console
+
                 console.error('Failed signin', reasonPretty)
                 user.error.value = reason
                 let nextResult = false
@@ -232,7 +257,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 user.pendingPopup.value = false
                 return nextResult
             }
-        }
+        },
     }
 
     async function onSignIn(newUser: User) {
@@ -252,13 +277,13 @@ export const useCloudStore = defineStore('cloud', () => {
             const payload: Partial<UpdatePayload<UserInfo>> = {
                 name: newUser.displayName || user.info.value?.name,
                 signature: {
-                    [selectedEvent.value]: settings.userNickname
+                    [selectedEvent.value]: settings.userNickname,
                 },
                 signatureId: {
-                    [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier'))
+                    [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier')),
                 },
                 subscriptions: {
-                    [selectedEvent.value]: arrayUnion(messagingToken.value)
+                    [selectedEvent.value]: arrayUnion(messagingToken.value),
                 },
                 email: newUser.email || user.info.value?.email,
                 photoURL: newUser.photoURL || user.info.value?.photoURL,
@@ -266,31 +291,32 @@ export const useCloudStore = defineStore('cloud', () => {
                 lastTimezone: now.getTimezoneOffset(),
                 permissions: !user.info.value?.permissions?.[selectedEvent.value]
                     ? {
-                        [selectedEvent.value]: UserLevel.Nothing
+                        [selectedEvent.value]: UserLevel.Nothing,
                     }
-                    : undefined
+                    : undefined,
             }
             // remove undefined values
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             Object.keys(payload).forEach(key => payload[<keyof UserInfo>key] === undefined ? delete payload[<keyof UserInfo>key] : {})
 
             await setDoc(user.doc.value, payload, {
-                merge: true
+                merge: true,
             })
             await updateUserInfo(user.doc.value)
         }
     }
 
-    watch(settings, (newSettings) => {
-        if (newSettings && user.doc.value && userAuth?.value?.uid && process.client) {
+    watch(settings, (newSettings) => {// TODO check user diff and not set always
+        if (newSettings && user.doc.value && userAuth?.value?.uid && import.meta.client) {
             setDoc(user.doc.value, {
                 signature: {
-                    [selectedEvent.value]: newSettings.userNickname
+                    [selectedEvent.value]: newSettings.userNickname,
                 },
                 signatureId: {
-                    [selectedEvent.value]: localStorage.getItem('uniqueIdentifier')
-                }
+                    [selectedEvent.value]: localStorage.getItem('uniqueIdentifier'),
+                },
             }, {
-                merge: true
+                merge: true,
             })
         }
     })
@@ -300,39 +326,39 @@ export const useCloudStore = defineStore('cloud', () => {
             return {
                 editSchedule: true,
                 editEvent: true,
-                superAdmin: true
+                superAdmin: true,
             }
         }
-        if (user.info.value?.permissions && user.auth?.value?.uid) {
-            const onlinePermission = user.info.value.permissions?.[selectedEvent.value]
+        const onlinePermission = user.info.value?.permissions?.[selectedEvent.value]
+        if (typeof onlinePermission !== 'undefined' && user.auth?.value?.uid) {
             return {
-                editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || user.info.value.permissions?.superAdmin === true,
-                editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || user.info.value.permissions?.superAdmin === true,
-                superAdmin: user.info.value.permissions?.superAdmin === true
+                editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || user.info.value!.permissions?.superAdmin === true,
+                editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || user.info.value!.permissions?.superAdmin === true,
+                superAdmin: user.info.value!.permissions?.superAdmin === true,
             }
         }
         return {
             editSchedule: false,
             editEvent: false,
-            superAdmin: false
+            superAdmin: false,
         }
     })
+    const scheduleCollection = useCollection<SchedulePart>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const scheduleParts = shallowRef(scheduleCollection)
 
-    const scheduleParts = computed<SchedulePart[]>(() => eventData.value?.meta?.schedule?.parts ?? [])
-
-    const notesDocument = currentEventDocument('notes')
+    const notesCollection = currentEventCollection('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
     const messagingToken = usePersistentRef('messagingToken', '')
     const isAuthenticated = usePersistentRef('isAuthenticated', false)
 
     watch(messagingToken, (newToken) => {
-        if (user.doc.value && userAuth?.value?.uid && process.client) {
+        if (user.doc.value && userAuth?.value?.uid && import.meta.client) {
             setDoc(user.doc.value, {
                 subscriptions: {
-                    [selectedEvent.value]: arrayUnion(newToken)
-                }
+                    [selectedEvent.value]: arrayUnion(newToken),
+                },
             }, {
-                merge: true
+                merge: true,
             })
         }
     })
@@ -374,10 +400,10 @@ export const useCloudStore = defineStore('cloud', () => {
             userAuth!.value = debugUser
         } else {
             await getRedirectResult(auth!).catch((reason) => {
-                // eslint-disable-next-line no-console
+
                 console.error('Failed redirect result', reason)
                 app.$Sentry.captureEvent(reason, {
-                    data: reason
+                    data: reason,
                 })
                 user.error.value = reason
             })
@@ -397,22 +423,22 @@ export const useCloudStore = defineStore('cloud', () => {
                     updateUserInfo(ud.value)
                 },
                 error: console.error,
-                complete: () => { console.log('completed') }
+                complete: () => { console.log('completed') },
             })
         }
     })
 
-    if (process.client) {
+    if (import.meta.client) {
         navigator.serviceWorker?.getRegistration().then((registration) => {
             if (registration?.active && firebaseApp) {
                 const messaging = getMessaging(firebaseApp)
                 getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((newToken) => {
                     if (newToken) {
                         messagingToken.value = newToken
-                        if (subscriptionsDocument.value) {
-                            setDoc(subscriptionsDocument.value, {
-                                [newToken]: true
-                            } as UpdatePayload<Subscriptions>, { merge: true })
+                        if (subscriptionsCollection.value) {
+                            setDoc(doc(subscriptionsCollection.value, newToken), {
+                                subscribed: true,
+                            } as UpdateRecordPayload<Subscriptions>, { merge: true })
                         }
                     }
                 })
@@ -427,16 +453,18 @@ export const useCloudStore = defineStore('cloud', () => {
         eventDescription,
         eventWeb,
         networkError: skipHydrate(eventDocuments.error),
-        metaLoading: skipHydrate(eventDocuments.pending),
+        eventLoading: skipHydrate(eventDocuments.pending),
         scheduleParts,
+        scheduleLoading: skipHydrate(scheduleCollection.pending),
         groupNames,
-        notesDocument: skipHydrate(notesDocument),
+        notesCollection: skipHydrate(notesCollection),
         feedback,
         offlineFeedback: skipHydrate(offlineFeedback),
         resolvedPermissions,
+        suggestions: shallowRef(useCollection<ScheduleEvent>(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })),
         user,
-        eventsCollection: useCollection<EventDescription>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!process.server }),
-        probe
+        eventsCollection: useCollection<EventDescription>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
+        probe,
     }
 })
 

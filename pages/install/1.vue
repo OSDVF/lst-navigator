@@ -34,15 +34,15 @@
 const { $deferredPrompt, $installPromptSupport, $pwa } = useNuxtApp()
 
 definePageMeta({
-    layout: 'install'
+    layout: 'install',
 })
 
-const onNextButtonClick = inject<(listener: Function) => void>('onNextButtonClick')
+const onNextButtonClick = inject<(listener: () => void) => void>('onNextButtonClick')
 onNextButtonClick?.(() => $deferredPrompt()?.prompt())
 
 const skipToNextIf = inject<(ref: Ref) => void>('skipToNextIf')
 skipToNextIf?.(asyncComputed(async () => {
-    if (process.client && window.matchMedia('(display-mode: standalone)').matches) { return true }
+    if (import.meta.client && window.matchMedia('(display-mode: standalone)').matches) { return true }
     const p = $deferredPrompt()
     return p !== null && (await p.userChoice).outcome === 'accepted'
 }, false))

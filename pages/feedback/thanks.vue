@@ -19,5 +19,5 @@
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
 const cloud = useCloudStore()
-const lang = computed(() => process.client ? navigator.language : 'cs-CZ')
+const lang = computed(() => import.meta.client ? navigator.language : 'cs-CZ')
 </script>

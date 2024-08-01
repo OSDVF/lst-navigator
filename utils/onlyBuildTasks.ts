@@ -1,3 +1,4 @@
 export default function onlyBuildTasks() {
-    return (process.argv.includes('dev') || process.argv.includes('generate'))
+    // Do not run additional tasks when developing, but always run them in CI scripts
+    return (process.argv.includes('dev') || process.argv.includes('generate')) && !process.argv.includes('ci')
 }

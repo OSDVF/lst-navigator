@@ -27,6 +27,6 @@ export const useNotifications = defineStore('notifications', () => {
     } */
 
     return {
-        permission
+        permission,
     }
 })

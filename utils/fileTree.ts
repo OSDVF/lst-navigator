@@ -1,4 +1,4 @@
-import { StorageReference, ref as storageRef, listAll } from 'firebase/storage'
+import { type StorageReference, ref as storageRef, listAll } from 'firebase/storage'
 
 export type FileTree = {
     directory?: {
@@ -12,7 +12,7 @@ const fileTree = ref<FileTree>({ directory: {} })
 
 const DIRECTORY_SEPARATOR = '/'
 
-function addToTree(file: StorageReference) {
+function addFileToTree(file: StorageReference, isDir: boolean) { // Register a file or a directory with all its parent directories
     const parts = file.fullPath.split(DIRECTORY_SEPARATOR)
     let dfsDir = fileTree.value
     for (const i in parts) {
@@ -21,7 +21,7 @@ function addToTree(file: StorageReference) {
         if (dfsDir.directory) {
             const existingFiOrDir = dfsDir.directory[part]
             if (typeof existingFiOrDir !== 'undefined') {
-                if (iInt === parts.length - 1) {
+                if (iInt === parts.length - 1 && !isDir) {
                     if (existingFiOrDir.file) {
                         console.log(`File updated with ${file.fullPath}`)
                     } else {
@@ -33,11 +33,11 @@ function addToTree(file: StorageReference) {
                     dfsDir = existingFiOrDir
                 }
             } else {
-                const newEntry = iInt === parts.length - 1 ? { file } : { directory: {} }
+                const newEntry = (iInt === parts.length - 1) && !isDir ? { file } : { directory: {} }
                 dfsDir.directory![part] = newEntry
                 dfsDir = newEntry
             }
-        } else if (iInt === parts.length - 1) {
+        } else if (iInt === parts.length - 1 && !isDir) {
             console.log(`File ${part} already exists for ${file.fullPath}`)
             dfsDir.file = file
         } else {
@@ -73,23 +73,27 @@ function getFromTree(path?: string) : FileTree | undefined {
 
 export default function useFileTree(file: MaybeRefOrGetter<string|undefined>) : Ref<FileTree | undefined> {
     const storage = useFirebaseStorage()
-    return asyncComputed(async () => {
-        if (!storage) {
-            return {}
-        }
-        const fileV = toValue(file)
-        let f : StorageReference | null = storageRef(storage, fileV)
-        if (fileV) {
+    const fileV = toValue(file)
+    let f : StorageReference | null = storageRef(storage, fileV)
+    const update = async () => {
+        if (fileV && f && storage) {
             do {
-                if (getFromTree(f.fullPath)) {
+                if (f.fullPath && getFromTree(f.fullPath)?.file) {
+                    f = f.parent
                     continue
                 }
-                const items = (await listAll(f)).items
+                const items = (await listAll(f))
                 console.log(items)
-                items.forEach(addToTree)
+                for(const item of items.items) {
+                    addFileToTree(item, false)
+                }
+                for(const item of items.prefixes) {
+                    addFileToTree(item, true)
+                }
                 f = f.parent
             } while (f !== null)
         }
-        return fileTree.value
-    }, {})
+    };
+    update();
+    return fileTree
 }

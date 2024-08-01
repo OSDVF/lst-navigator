@@ -54,7 +54,7 @@ declare global {
   }
 }
 
-declare module 'nuxt/dist/app/nuxt' {
+declare module '#app' {
   interface NuxtApp {
     $deferredPrompt: () => BeforeInstallPromptEvent | null
     $installPromptSupport: () => boolean,

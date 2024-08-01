@@ -1,6 +1,8 @@
 <template>
     <article>
-        <h1><IconCSS name="ant-design:notification-outlined" />&ensp;Oznámení</h1>
+        <h1>
+            <IconCSS name="ant-design:notification-outlined" />&ensp;Oznámení
+        </h1>
         <p v-if="supportsNotifications">
             <IconCSS name="mdi:alert" /> Váš prohlížeč nepodporuje notifikace
         </p>
@@ -12,11 +14,11 @@
 
 <script setup lang="ts">
 definePageMeta({
-    layout: 'install'
+    layout: 'install',
 })
-const supportsNotifications = process.client ? 'Notification' in window : false
+const supportsNotifications = import.meta.client ? 'Notification' in window : false
 
-const onNextButtonClick = inject<(listener: Function) => void>('onNextButtonClick')
+const onNextButtonClick = inject<(listener: () => void) => void>('onNextButtonClick')
 onNextButtonClick?.(() => supportsNotifications ? Notification.requestPermission() : null)
 
 const skipToNextIf = inject<(ref: Ref) => void>('skipToNextIf')

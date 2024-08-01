@@ -16,11 +16,15 @@ logs
 .DS_Store
 .fleet
 .idea
+.firebase
 
 # Local env files
 .env
 .env.*
 !.env.example
+
+#LST-Navigator specific
 service-account.json
 utils/swenv.js
-.firebase
+# google auth proxy 
+public/__

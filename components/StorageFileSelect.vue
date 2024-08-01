@@ -1,14 +1,43 @@
 <template>
-    <p v-if="tree">
-        <FileTree v-for="(item, name) in tree.directory" :key="name" v-model="currentPath" :tree="item" :path="name" />
+    <p v-if="tree" class="fileTree">
+        <FileTree
+            v-for="(item, name) in tree.directory" :key="name" v-model="currentPath" :tree="item"
+            :path="name.toString()" @open="(p) => useFileTree(p)" />
     </p>
 </template>
 
 <script setup lang="ts">
 import useFileTree from '~/utils/fileTree'
 
-const currentPath = defineModel<string>({ local: true })
-const base = computed(() => currentPath.value?.substring(0, currentPath.value.indexOf('/')))
+const currentPath = defineModel<string>()
 
-const tree = useFileTree(currentPath)
+const tree = computed(() => useFileTree(currentPath.value || "/").value)
 </script>
+
+<style lang="scss">
+@import '@/assets/styles/constants.scss';
+
+.selected {
+    background: rgba($color: $link-background, $alpha: 0.3)
+}
+
+.fileTree {
+    img {
+        @media (prefers-color-scheme: dark) {
+            filter: invert(1);
+        }
+
+        vertical-align: middle;
+    }
+
+    span {
+        display: inline-block;
+    }
+
+    span,
+    summary {
+        padding: .3rem 0;
+        cursor: pointer;
+    }
+}
+</style>

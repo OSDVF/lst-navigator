@@ -59,16 +59,18 @@
 </template>
 
 <script setup lang="ts">
-import { setDoc, FieldValue } from 'firebase/firestore'
-import type * as ExportToCsv from 'export-to-csv'
+import type { FieldValue } from 'firebase/firestore';
+import { setDoc } from '~/utils/trace'
 import Lodash from 'lodash'
 import { useCloudStore } from '~/stores/cloud'
-import { Feedback } from '@/types/cloud'
+import { doc } from 'firebase/firestore'
+import type * as ExportToCsv from 'export-to-csv'
+import type { Feedback } from '@/types/cloud'
 
 definePageMeta({
     title: 'Zpětná vazba',
     layout: 'admin',
-    middleware: ['auth']
+    middleware: ['auth'],
 })
 
 const cloudStore = useCloudStore()
@@ -96,7 +98,7 @@ function exportJson() {
 
 const { files, open: openFD, onChange, reset } = useFileDialog({
     accept: '.json',
-    multiple: false
+    multiple: false,
 })
 
 onChange(async (files) => {
@@ -110,9 +112,11 @@ async function importJson() {
     try {
         error.value = ''
         importText.value ||= await files?.value?.item(0)?.text() ?? ''
-        if (!importText.value || !cloudStore.feedback.doc) { return }
+        if (!importText.value || !cloudStore.feedback.col) { return }
         const json = await JSON.parse(importText.value)
-        setDoc(cloudStore.feedback.doc, json, { merge: merge.value })
+        for(const key in json) {
+            setDoc(doc(cloudStore.feedback.col, key), json[key], { merge: merge.value })
+        }
     } catch (e) {
         error.value = e
     }
@@ -189,7 +193,7 @@ async function csvExport() {
                     const complicatedCols = [
                         `${compoundIndex}-otazka1`,
                         `${compoundIndex}-otazka2`,
-                        `${compoundIndex}-otazka3`
+                        `${compoundIndex}-otazka3`,
                     ]
                     for (const col of complicatedCols) {
                         userData[col] = feedback.complicated?.[parseInt(col[col.length - 1]) - 1] as number ?? ''
@@ -211,7 +215,7 @@ async function csvExport() {
         }
         const csvConfig = exportToCsv.mkConfig({
             filename: `${cloudStore.selectedEvent}-feedback-${new Date().toLocaleString(navigator.language)}`,
-            columnHeaders: ['user', ...compoundIndexesExpanded]
+            columnHeaders: ['user', ...compoundIndexesExpanded],
         })
 
         exportToCsv.download(csvConfig)(exportToCsv.generateCsv(csvConfig)(csvData))

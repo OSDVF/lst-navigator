@@ -1,7 +1,4 @@
 {
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": true
-    },
     "[typescript]": {
         "foldEnd": "/* #endregion */",
         "foldEndRegex": "/\\*[\\s]*#endregion",
@@ -15,5 +12,37 @@
                 "isFoldedByDefault": true
             }
         ]
-    }
+    },
+    "cSpell.enableFiletypes": [
+        "!javascript",
+        "!javascriptreact",
+        "!json",
+        "!jsonc",
+        "!typescript",
+        "!vue"
+    ],
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/.nuxt": true,
+        "**/.firebase": true,
+        "**/.output": true,
+        "**/__": true
+    },
+    "npm.packageManager": "yarn",
+    "eslint.useFlatConfig": true,
+    "bun.debugTerminal.enabled": false,
+    "spellright.language": [
+        "Czech"
+    ],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex",
+        "plaintext"
+    ]
 }

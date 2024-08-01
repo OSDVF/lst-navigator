@@ -1,4 +1,4 @@
-import { User } from 'firebase/auth'
+import type { User } from 'firebase/auth'
 
 export default {
     uid: 'debug',
@@ -19,5 +19,5 @@ export default {
     async reload() {
     },
     async toJSON() {
-    }
+    },
 } as User

@@ -93,10 +93,10 @@
 </template>
 
 <script setup lang="ts">
-import { FeedbackConfig, ScheduleEvent, Feedback } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { getParallelEvents } from '@/utils/types'
+import type { FeedbackConfig, ScheduleEvent, Feedback } from '@/types/cloud';
 const router = useRouter()
 const cloudStore = useCloudStore()
 const settings = useSettings()
@@ -105,12 +105,12 @@ const feedbackPartIndex = parseInt(router.currentRoute.value.params.feedback as 
 definePageMeta({
     middleware(to, _from) {
         if (isNaN(parseInt(to.params.feedback as string))) {
-            if (process.client) { alert(`Neplatná část feedbackového dotazníku ${to.params.feedback}`) }
+            if (import.meta.client) { alert(`Neplatná část feedbackového dotazníku ${to.params.feedback}`) }
             return {
-                path: '/feedback'
+                path: '/feedback',
             }
         }
-    }
+    },
 })
 
 const currentPart = computed(() => {
@@ -128,7 +128,7 @@ const currentPart = computed(() => {
                         ...eventEntry,
                         data: cloudStore.offlineFeedback?.[scheduleIndex]?.[eventIndex]?.[settings.userIdentifier],
                         secondaryIndex: eventIndex,
-                        selectOptions: getParallelEvents(eventEntry)
+                        selectOptions: getParallelEvents(eventEntry),
                     })
                 }
             }
@@ -136,7 +136,7 @@ const currentPart = computed(() => {
                 subparts.push({
                     title: schedulePart.name,
                     primaryIndex: scheduleIndex,
-                    entries
+                    entries,
                 })
             }
         }
@@ -153,14 +153,14 @@ const currentPart = computed(() => {
                     detailQuestion: individualQuest.description,
                     selectOptions: individualQuest.questions,
                     questions: individualQuest.questions,
-                    data: cloudStore.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier] ?? cloudStore.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier]
-                }]
+                    data: cloudStore.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier] ?? cloudStore.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier],
+                }],
             })
         }
     }
     return {
         title: config?.title,
-        subparts
+        subparts,
     }
 })
 

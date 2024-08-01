@@ -2,7 +2,7 @@
     <NuxtLink :to="`/update?redirect=${encodeURIComponent($router.currentRoute.value.fullPath)}`">
         <button type="button" @click="forceUpdate">
             <IconCSS name="mdi:reload-alert" />
-            Přeaktualizovat
+            Přeaktualizovat aplikaci
         </button>
     </NuxtLink>
     <NuxtLink to="/clear">

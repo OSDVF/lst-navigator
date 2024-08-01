@@ -11,7 +11,7 @@
                 {{ day?.name ?? index }}
             </NuxtLink>
         </nav>
-        <ProgressBar :class="{ daysLoading: true, visible: cloudStore.metaLoading }" />
+        <ProgressBar :class="{ daysLoading: true, visible: cloudStore.scheduleLoading }" />
         <div
             v-drag="dragHandler" :style="{
                 transition: transitioning || moving ? 'none' : 'transform .2s ease',
@@ -29,11 +29,12 @@
 
 <script setup lang="ts">
 import type { Vector2 } from '@vueuse/gesture'
+import type { SchedulePart } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
-import { SchedulePart } from '@/types/cloud'
 
 const cloudStore = useCloudStore()
 const router = useRouter()
+const route = router.currentRoute.value
 const schedulePartIndex = computed(() => router.currentRoute.value.params.schedulePart as string)
 const now = new Date()
 function isToday(schedulePart: SchedulePart) {
@@ -44,15 +45,15 @@ function isToday(schedulePart: SchedulePart) {
 // Automatic redirect when no day is selected
 //
 watch(cloudStore, (newCloud) => {
-    if (typeof schedulePartIndex.value === 'undefined' && newCloud.metaLoading === false) {
+    if (typeof schedulePartIndex.value === 'undefined' && newCloud.scheduleLoading === false) {
         findToday(newCloud)
     }
 })
-onBeforeRouteUpdate((from) => {
-    if (typeof from.params.schedulePart === 'undefined' && cloudStore?.metaLoading === false) {
-        return findToday(cloudStore, true)
-    }
-})
+
+if (typeof route.params.schedulePart === 'undefined' && cloudStore?.scheduleLoading === false) {
+    findToday(cloudStore)
+}
+
 const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string))
 
 const currentTransition = ref('slide-left')
@@ -63,14 +64,7 @@ const transitioning = ref(false)
 const moving = ref(false)
 const translateX = ref(0)
 
-onBeforeRouteLeave((leaveGuard) => {
-    const targetEventItemIndex = parseInt(leaveGuard.params.event as string)
-    if (!isNaN(targetEventItemIndex)) {
-        currentTransition.value = targetEventItemIndex > eventIndex.value ? 'slide-left' : 'slide-right'
-    }
-})
-
-function findToday(newCloud: typeof cloudStore, fromRouter = false) {
+function findToday(newCloud: typeof cloudStore) {
     let index: number | string = 0
     if (newCloud.scheduleParts?.length) {
         for (const i in newCloud.scheduleParts) {
@@ -82,10 +76,7 @@ function findToday(newCloud: typeof cloudStore, fromRouter = false) {
         }
     }
     const newPath = `/schedule/${index}`
-    if (!fromRouter) {
-        router.replace(newPath)
-    }
-    return newPath
+    router.replace(newPath)
 }
 
 function onTrainsitionAfterLeave() {

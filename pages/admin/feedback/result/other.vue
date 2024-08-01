@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, FeedbackConfig } from '@/types/cloud'
+import type { Feedback, FeedbackConfig } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
 
 const cloudStore = useCloudStore()

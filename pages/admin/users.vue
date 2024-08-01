@@ -5,7 +5,9 @@
             <button @click="changePermissionsVisible = true">
                 Změnit oprávnění
             </button>
-            <form v-show="changePermissionsVisible" @submit.prevent="changePermissions(); changePermissionsVisible = false">
+            <form
+                v-show="changePermissionsVisible"
+                @submit.prevent="changePermissions(); changePermissionsVisible = false">
                 <select v-model="targetPermission" required>
                     <option v-for="(name, type) in permissionNames" :key="type" :value="type">
                         {{ name }}
@@ -35,8 +37,7 @@
                         [UserLevel.SuperAdmin]: 'shield-lock-open', [UserLevel.ScheduleAdmin]: 'calendar-check', [UserLevel.Admin]: 'account-lock-open', [UserLevel.Nothing]: null
                     })[data]}.svg);'></span>` : ''
                 }
-            ]" @select="selectionChanged" @deselect="selectionChanged"
-        >
+            ]" @select="selectionChanged" @deselect="selectionChanged">
             <thead>
                 <tr>
                     <th />
@@ -53,30 +54,37 @@
 </template>
 
 <script setup lang="ts">
-import type { Api } from 'datatables.net'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc } from 'firebase/firestore'
+import {setDoc} from '~/utils/trace'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
-import { UpdatePayload, UserInfo, UserLevel } from '@/types/cloud'
+import { type UpdatePayload, type UserInfo, UserLevel } from '@/types/cloud'
+import type { Api } from '@/types/datatables'
 
 definePageMeta({
     title: 'Uživatelé',
     middleware: ['auth'],
-    layout: 'admin'
+    layout: 'admin',
 })
 
 const cloudStore = useCloudStore()
 const permissionError = ref()
 const firestore = cloudStore.probe && useFirestore()
-const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(firestore ? knownCollection(firestore, 'users') : null, { maxRefDepth: 0, wait: true, once: !!process.server, onError(e: any) { permissionError.value = e } }).promise.value, {
+const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(firestore ? knownCollection(firestore, 'users') : null,
+    {
+        maxRefDepth: 0,
+        wait: true,
+        once: !!import.meta.server,
+        onError(e: any) { permissionError.value = e },
+    }).promise.value ?? {}, {
     server: false,
-    lazy: true
+    lazy: true,
 })
-const usersPending = users.pending
+const usersPending = users.status.value == 'pending'
 const permissionNames = computed(() => ({
     ...(cloudStore.resolvedPermissions.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
     ...(cloudStore.resolvedPermissions.editEvent ? { [UserLevel.Admin]: 'Správce' } : {}),
     [UserLevel.ScheduleAdmin]: 'Správce události',
-    [UserLevel.Nothing]: 'Nic'
+    [UserLevel.Nothing]: 'Nic',
 }))
 
 const usersIndexed = computed(() => {
@@ -92,7 +100,7 @@ const usersIndexed = computed(() => {
                 new Date(user.lastLogin).toLocaleString(),
                 cloudStore.feedback.online?.[effectiveSignature]?.toString() ?? 'Nikdy',
                 user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent],
-                user.id
+                user.id,
             ]
             result.push(values)
         }
@@ -120,14 +128,14 @@ function changePermissions() {
             setDoc(userDoc, {
                 permissions: targetPermission.value === UserLevel.SuperAdmin
                     ? {
-                        superAdmin: true
+                        superAdmin: true,
                     }
                     : {
                         [cloudStore.selectedEvent]: targetPermission.value,
-                        superAdmin: false
-                    }
+                        superAdmin: false,
+                    },
             } as Partial<UpdatePayload<UserInfo>>, {
-                merge: true
+                merge: true,
             })
         })
     }

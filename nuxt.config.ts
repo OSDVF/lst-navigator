@@ -19,32 +19,49 @@ const config = defineNuxtConfig({
     app: {
         head: {
             title: process.env.APP_SHORT_NAME,
-            link: [
-                { rel: 'icon', type: 'image/png', href: '/android/android-launchericon-96-96.png' }
+            link: [/* 
+
+                <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+                <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+                <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+                <link rel="manifest" href="/site.webmanifest">
+                <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+                <meta name="msapplication-TileColor" content="#da532c">
+                <meta name="theme-color" content="#ffffff">
+                
+                 */
+                { rel: 'icon', type: 'image/png', sizes: "32x32", href: '/favicon-32x32.png' },
+                { rel: 'icon', type: 'image/png', sizes: "16x16", href: '/favicon-16x16.png' },
+                { rel: 'apple-touch-icon', sizes: "180x180", href: '/apple-touch-icon.png' },
+                { rel: 'manifest', href: '/site.webmanifest' },
+                { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#5bbad5' },
             ],
             meta: [
-                { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no' }
-            ]
-        }
+                { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no' },
+                { name: 'msapplication-TileColor', content: '#da532c' },
+                { name: 'theme-color', content: '#ffffff' },
+            ],
+        },
     },
     build: {
         transpile: [
-            'lru-cache'
-        ]
+            'lru-cache',
+        ],
     },
+    compatibilityDate: "2024-07-07",
     css: [
         '~/assets/styles/base.scss',
-        '~/assets/styles/components.scss'
+        '~/assets/styles/components.scss',
     ],
     devtools: {
         enabled: process.env.NUXT_DEVTOOLS !== 'false',
         timeline: {
-            enabled: true
-        }
+            enabled: true,
+        },
     },
     experimental: {
         headNext: true,
-        polyfillVueUseHead: false
+        polyfillVueUseHead: false,
     },
     hooks: {
         'build:manifest' (manifest) {
@@ -56,10 +73,10 @@ const config = defineNuxtConfig({
                 mEntry.prefetch &&= mEntry.preload
                 manifest[key] = mEntry
             }
-        }
+        },
     },
     ignore: [
-        'maintenance/**'
+        'maintenance/**',
     ],
     modules: [
         '@vite-pwa/nuxt',
@@ -69,13 +86,14 @@ const config = defineNuxtConfig({
         '@vueuse/nuxt',
         '@vueuse/motion/nuxt',
         'nuxt-scheduler',
-        'nuxt-rating'
+        'nuxt-rating',
+        '@nuxt/eslint',
     ],
     pwa: {
         devOptions: isDevMode
             ? {
                 enabled: true,
-                type: 'classic'
+                type: 'classic',
             }
             : undefined,
         filename: 'sw.ts',
@@ -85,38 +103,38 @@ const config = defineNuxtConfig({
             globIgnores: [
                 '**/node_modules/**/*',
                 '**/public/audio/silence.zip',
-                '/404'
-            ]
+                '/404',
+            ],
         },
         injectRegister: 'inline',
         manifest: {
             name: process.env.VITE_APP_NAME,
             short_name: process.env.VITE_APP_SHORT_NAME,
-            icons
+            icons,
         },
         srcDir: 'utils',
         strategies: 'injectManifest',
         workbox: {
-            sourcemap: true
-        }
+            sourcemap: true,
+        },
     },
     sourcemap: {
         server: true,
-        client: true
+        client: true,
     },
     routeRules: {
         '/clear': {
             headers: {
-                [firebaseConfig.hosting.headers[0].headers[0].key]: firebaseConfig.hosting.headers[0].headers[0].value
-            }
-        }
+                [firebaseConfig.hosting.headers[0].headers[0].key]: firebaseConfig.hosting.headers[0].headers[0].value,
+            },
+        },
     },
     vite: {
         build: {
             modulePreload: {
                 resolveDependencies: (_filename, deps) => {
                     return deps.filter(v => !v.includes('file-extension-icon-js'))
-                }
+                },
             },
             minify: 'terser',
             rollupOptions: {
@@ -132,29 +150,29 @@ const config = defineNuxtConfig({
                         if (id.toLowerCase().includes('firebase')) {
                             return 'firebase'
                         }
-                    }
-                }
-            }
+                    },
+                },
+            },
         },
         resolve: {
             alias: [
                 {
-                    find: 'path', replacement: 'path-browserify'
+                    find: 'path', replacement: 'path-browserify',
                 },
                 {
-                    find: 'postcss', replacement: 'postcss/lib/postcss.mjs'
+                    find: 'postcss', replacement: 'postcss/lib/postcss.mjs',
                 },
                 {
-                    find: '@composi/idb/types', replacement: '@composi/idb/src/index.js'
-                }
-            ]
+                    find: '@composi/idb/types', replacement: '@composi/idb/src/index.js',
+                },
+            ],
         },
         plugins: [
             topLevelAwait({
                 // The export name of top-level await promise for each chunk module
                 promiseExportName: '__tla',
                 // The function to generate import names of top-level await promise in each chunk module
-                promiseImportName: (i: any) => `__tla_${i}`
+                promiseImportName: (i: any) => `__tla_${i}`,
             }),
             sentryVitePlugin({
                 authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -162,18 +180,15 @@ const config = defineNuxtConfig({
                 project: process.env.SENTRY_PROJECT,
                 disable: isDevMode || process.env.SENTRY_DISABLE === 'true' || process.env.SENTRY_PUBLISH_RELEASE === 'false',
                 release: {
-                    name: commitHash
-                }
+                    name: commitHash,
+                },
             }),
-            splitVendorChunkPlugin()
-        ]
-    },
-    vue: {
-        defineModel: true
+            splitVendorChunkPlugin(),
+        ],
     },
     vuefire: {
         emulators: {
-            enabled: process.env.FIREBASE_EMULATOR === 'true'
+            enabled: process.env.FIREBASE_EMULATOR === 'true',
         },
         config: {
             apiKey: process.env.VITE_APP_APIKEY,
@@ -182,20 +197,20 @@ const config = defineNuxtConfig({
             storageBucket: process.env.VITE_APP_STORAGEBUCKET,
             messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID,
             appId: process.env.VITE_APP_APPID,
-            measurementId: process.env.VITE_APP_MEASUREMENTID
+            measurementId: process.env.VITE_APP_MEASUREMENTID,
         },
         auth: {
             enabled: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
-            sessionCookie: !process.argv.includes('generate')
+            sessionCookie: !process.argv.includes('generate'),
         },
         appCheck: process.env.VITE_APP_RECAPTCHA && process.env.FIREBASE_APPCHECK !== 'false'
             ? {
                 debug: isDevMode,
                 key: process.env.VITE_APP_RECAPTCHA!,
                 provider: 'ReCaptchaV3',
-                isTokenAutoRefreshEnabled: true
+                isTokenAutoRefreshEnabled: true,
             }
-            : undefined
+            : undefined,
     },
     runtimeConfig: {
         public: {
@@ -214,7 +229,7 @@ const config = defineNuxtConfig({
                 body: process.env.VITE_APP_DEFAULT_NOTIFICATION_BODY,
                 image: process.env.VITE_APP_DEFAULT_NOTIFICATION_IMAGE,
                 icon: process.env.VITE_APP_DEFAULT_NOTIFICATION_ICON,
-                vapidKey: process.env.VAPID_PUBLIC
+                vapidKey: process.env.VAPID_PUBLIC,
             },
             ENV: process.env.NODE_ENV ?? 'production',
             SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
@@ -222,16 +237,16 @@ const config = defineNuxtConfig({
             SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET,
             debugUser: process.env.VITE_APP_DEBUG_USER,
             ssrAuthEnabled: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-            supportEmail: process.env.SUPPORT_EMAIL
-        }
+            supportEmail: process.env.SUPPORT_EMAIL,
+        },
     },
-    ssr: true
+    ssr: true,
 })
 
 fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
     firebase: config.vuefire?.config,
     messaging: config.runtimeConfig!.public!.messagingConfig,
-    commitHash
+    commitHash,
 })}`)
 
 export default config

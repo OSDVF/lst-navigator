@@ -1,35 +1,17 @@
-import path from 'path'
-import fs from 'fs'
 import { defineNuxtModule } from '@nuxt/kit'
 import onlyBuildTasks from '../utils/onlyBuildTasks'
-
-const files = [
-    'handler',
-    'handler.js',
-    'experiments.js',
-    'iframe',
-    'iframe.js'
-]
+import mirrorAuth from '../utils/mirrorAuth'
 
 export default defineNuxtModule({
     meta: {
-        name: 'mirror-auth'
+        name: 'mirror-auth',
     },
     hooks: {
         ready(nuxt) {
             if (!onlyBuildTasks()) { return }
 
             console.log('Mirroring auth files...')
-            for (const file of files) {
-                fetch(`https://${(nuxt.options as any).vuefire?.config?.projectId}.firebaseapp.com/__/auth/${file}`, {
-                    signal: AbortSignal.timeout(60000)// one minute timeout
-                }).then((response) => {
-                    return response.text()
-                }).then((content) => {
-                    console.log(`Fetched ${file}`)
-                    fs.writeFileSync(path.resolve(__dirname, '../public/__/auth', file), content, { encoding: 'utf8', flag: 'w' })
-                })
-            }
-        }
-    }
+            mirrorAuth(`${(nuxt.options as any).vuefire?.config?.projectId}.firebaseapp.com`)
+        },
+    },
 })

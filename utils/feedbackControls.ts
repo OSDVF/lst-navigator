@@ -1,5 +1,6 @@
-import { deleteField, FieldValue } from 'firebase/firestore'
-import { Feedback } from '@/types/cloud'
+import type { FieldValue } from 'firebase/firestore';
+import { deleteField } from 'firebase/firestore'
+import type { Feedback } from '@/types/cloud'
 
 type Props = {
     data: MaybeRefOrGetter<Feedback>,
@@ -24,7 +25,7 @@ export default function useFeedbackControls({ props }: {props: Props}) {
 
         props.onSetData({
             ...data,
-            complicated: prevComplicated
+            complicated: prevComplicated,
         })
     }
 
@@ -35,9 +36,9 @@ export default function useFeedbackControls({ props }: {props: Props}) {
         set(value: string | undefined): void {
             props.onSetData({
                 ...toValue(props.data),
-                detail: typeof value === 'undefined' ? deleteField() : value
+                detail: typeof value === 'undefined' ? deleteField() : value,
             })
-        }
+        },
     })
 
     const syncSelect = computed({
@@ -47,15 +48,15 @@ export default function useFeedbackControls({ props }: {props: Props}) {
         set(value: string | undefined | FieldValue) {
             props.onSetData({
                 ...toValue(props.data),
-                select: typeof value === 'undefined' ? deleteField() : value
+                select: typeof value === 'undefined' ? deleteField() : value,
             })
-        }
+        },
     })
 
     function syncBasic(value?: number) {
         props.onSetData({
             ...toValue(props.data),
-            basic: typeof value === 'undefined' ? deleteField() : value
+            basic: typeof value === 'undefined' ? deleteField() : value,
         })
     }
 
@@ -63,6 +64,6 @@ export default function useFeedbackControls({ props }: {props: Props}) {
         syncComplicated,
         syncBasic,
         syncDetail,
-        syncSelect
+        syncSelect,
     }
 }

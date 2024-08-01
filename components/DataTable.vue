@@ -21,7 +21,7 @@ const table = ref<{ dt: Api<T> }>()
 const dt = computed(() => table.value?.dt)
 
 defineExpose({
-    dt
+    dt,
 })
 
 const app = useNuxtApp()
@@ -32,26 +32,35 @@ function dtError(e: any, settings: any, techNote: string, message: string) {
         extra: {
             e,
             techNote,
-            message
-        }
+            message,
+        },
     })
     dtErrors.value += '\n' + message
 }
 
 const DataTable = shallowRef()
+watch(dt, (newDt, old) => {
+    if (!old)
+        nextTick(() => newDt?.responsive.recalc())
+})
+
 onMounted(() => {
     const dtModule = import('datatables.net-vue3')
+    const dtCore = import('datatables.net')
     const selectModule = import('datatables.net-select')
     const responsiveModule = import('datatables.net-responsive')
     dtModule.then(async (module) => {
         const $ = await import('jquery')
+        const Core = await dtCore
         const Select = await selectModule
         const Responsive = await responsiveModule
         DataTable.value = module.default
+        DataTable.value.use(Core.default)
         DataTable.value.use(Select.default)
         DataTable.value.use(Responsive.default)
-        $.fn.dataTable.ext.errMode = 'none'
-        nextTick(() => dt.value?.responsive.recalc)
+        if(!import.meta.dev) {
+            $.fn.dataTable.ext.errMode = 'none'
+        }
     })
 })
 </script>
@@ -71,9 +80,11 @@ onMounted(() => {
         mask-size: 100% 100%;
         mask-image: var(--icon);
     }
+
     &.collapsed {
         .dtr-control {
             white-space: nowrap;
+
             &::before {
                 position: relative;
                 top: -6px

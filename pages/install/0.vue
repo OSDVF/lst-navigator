@@ -12,6 +12,6 @@
 const config = useRuntimeConfig()
 
 definePageMeta({
-    layout: 'install'
+    layout: 'install',
 })
 </script>

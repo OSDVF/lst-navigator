@@ -59,8 +59,8 @@ onMounted(async () => {
     await router.replace({
         path: router.currentRoute.value.path,
         query: {
-            cleared: 'true'
-        }
+            cleared: 'true',
+        },
     })
     location.reload(true)
 })

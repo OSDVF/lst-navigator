@@ -39,7 +39,7 @@ onMounted(() => {
 
 async function download() {
     const updatePromise = $pwa.updateServiceWorker()
-    if (process.client) {
+    if (import.meta.client) {
         const regs = await navigator.serviceWorker?.getRegistrations()
         for (const reg of regs) {
             const currentState = (reg.waiting ?? reg.installing ?? reg.active)
@@ -56,8 +56,8 @@ async function download() {
             path,
             query: {
                 ...router.currentRoute.value.query,
-                installed: 'true'
-            }
+                installed: 'true',
+            },
         })
         updatePromise.finally(() => { location.reload(true) })
     }

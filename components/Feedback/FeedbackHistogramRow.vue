@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import randomcolor from 'randomcolor'
 import { metaphone } from 'metaphone'
-import { Feedback, FeedbackType } from '@/types/cloud'
+import type { Feedback, FeedbackType } from '@/types/cloud'
 import { defaultQuestions } from '~/stores/cloud'
 import { mapObject } from '~/utils/types'
 
@@ -72,7 +72,7 @@ const complicatedReplies = computed(() => {
     const byQuestion = []
     for (const qIndex in (props.questions ?? defaultQuestions)) {
         byQuestion.push(
-            getHistogram(mapObject(props.replies, r => typeof r?.complicated?.[qIndex] === 'number' ? r.complicated![qIndex] : null))
+            getHistogram(mapObject(props.replies, r => typeof r?.complicated?.[qIndex] === 'number' ? r.complicated![qIndex] : null)),
         )
     }
     return byQuestion

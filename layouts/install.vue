@@ -40,14 +40,14 @@ const lastPart = computed(() => pathParts.value[pathParts.value.length - 1])
 const partIndex = computed(() => parseInt(lastPart.value))
 const canGoNext = computed(() => partIndex.value < config.public.installStepCount - 1)
 
-const onNextButtonClickListeners = ref<Function[]>([])
+const onNextButtonClickListeners = ref<(() => void)[]>([])
 function onNextButtonClick() {
     onNextButtonClickListeners.value.forEach(listener => listener())
     onNextButtonClickListeners.value = []// clear after changing the page
     settings.installStep.data = partIndex.value + 1
 }
 
-provide('onNextButtonClick', (listener: Function) => {
+provide('onNextButtonClick', (listener: () => void) => {
     onNextButtonClickListeners.value.push(listener)
 })
 

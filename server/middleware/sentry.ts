@@ -8,7 +8,7 @@ export default defineEventHandler((event) => {
         debug: config.public.ENV !== 'production',
         dsn: config.public.SENTRY_DSN,
         release: config.public.commitHash,
-        environment: config.public.ENV
+        environment: config.public.ENV,
     })
 
     Sentry.configureScope((scope) => {

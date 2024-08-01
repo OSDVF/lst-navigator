@@ -4,5 +4,5 @@ globalThis.indexedDB = indexeddb
 
 export default defineNuxtPlugin({
     enforce: 'pre',
-    name: 'indexeddb'
+    name: 'indexeddb',
 })

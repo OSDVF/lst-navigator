@@ -38,7 +38,7 @@ const evaluating = ref(false)
 const eventImage = computedAsync(async () => await getCacheImage('eventImage', cloudStore.eventImage), null, { lazy: true, evaluating })
 
 definePageMeta({
-    title: 'Informace'
+    title: 'Informace',
 })
 
 </script>

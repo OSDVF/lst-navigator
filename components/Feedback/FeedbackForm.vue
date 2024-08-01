@@ -100,7 +100,7 @@
 </template>
 <script setup lang="ts">
 import { defaultQuestions } from '@/stores/cloud'
-import { Feedback, FeedbackType } from '@/types/cloud'
+import type { Feedback, FeedbackType } from '@/types/cloud'
 import useFeedbackControls from '@/utils/feedbackControls'
 
 const props = defineProps({
@@ -110,33 +110,33 @@ const props = defineProps({
         default: () => ({
             basic: null,
             detail: '',
-            complicated: []
-        })
+            complicated: [],
+        }),
     },
     type: {
         type: String as PropType<FeedbackType>,
         required: false,
-        default: 'basic'
+        default: 'basic',
     },
     complicatedQuestions: {
         type: Array as PropType<string[]>,
         required: false,
-        default: () => defaultQuestions
+        default: () => defaultQuestions,
     },
     selectOptions: {
         type: Array as PropType<string[]>,
         required: false,
-        default: () => []
+        default: () => [],
     },
     detailQuestion: {
         type: String,
         required: false,
-        default: 'Tipy a připomínky'
+        default: 'Tipy a připomínky',
     },
     onSetData: {
         type: Function as PropType<(data: Feedback) => void>,
-        required: true
-    }
+        required: true,
+    },
 })
 
 const normalizedData = computed(() => {
@@ -156,13 +156,13 @@ const controls = useFeedbackControls({
     props: {
         data: normalizedData,
         complicatedQuestions: props.complicatedQuestions ?? defaultQuestions,
-        onSetData: props.onSetData
-    }
+        onSetData: props.onSetData,
+    },
 })
 
 const updatedRating = ref({
     basic: true,
-    complicated: true
+    complicated: true,
 })
 watch(normalizedData, (newVal, oldVal) => {
     if (newVal.basic !== oldVal.basic) {

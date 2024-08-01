@@ -125,6 +125,7 @@ const gridPoints = computed(() => {
     if (level > max.value) {
         levels.push(level)
     }
+    return levels//TODO really levels are the grid points?
 })
 </script>
 <style lang="scss">

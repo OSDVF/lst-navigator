@@ -47,7 +47,7 @@
                 <IconCSS name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
-        <ProgressBar v-show="cloudStore.metaLoading" class="backgroundLoading" />
+        <ProgressBar v-show="cloudStore.eventLoading" class="backgroundLoading" />
         <ClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </ClientOnly>
@@ -82,7 +82,6 @@ const ui = useUI()
 const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
 const route = useRoute()
-const Sentry = app.$Sentry as typeof import('@sentry/vue/types')
 
 const title = computed(() => {
     if (route.meta.title) {
@@ -92,9 +91,9 @@ const title = computed(() => {
 })
 
 function captureError(error: unknown) {
-    // eslint-disable-next-line no-console
+     
     console.error(error, error instanceof TypeError ? error.stack : null)
-    Sentry.captureException(error)
+    app.$Sentry.captureException(error)
 }
 
 </script>

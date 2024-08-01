@@ -61,9 +61,9 @@
 </template>
 
 <script setup lang="ts">
-import { Feedback, FeedbackConfig, SchedulePart, TabulatedFeedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
+import type { Feedback, FeedbackConfig, SchedulePart, TabulatedFeedback } from '@/types/cloud';
 
 const props = defineProps<{
     schedulePart?: SchedulePart,
@@ -115,7 +115,7 @@ const tabulated = computed<TabulatedFeedback>(() => {
     }
     return {
         replies: result,
-        respondents: resultRespondents
+        respondents: resultRespondents,
     }
 })
 

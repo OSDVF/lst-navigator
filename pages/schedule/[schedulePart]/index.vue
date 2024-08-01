@@ -39,24 +39,28 @@
                     </span>
                 </NuxtLink>
             </details>
+            
+            <NuxtLink v-if="cloudStore.resolvedPermissions.editSchedule" :to="`/schedule/${route.params.schedulePart}/new`"><button><IconCSS name="mdi:pencil" />&nbsp;Přidat program</button></NuxtLink>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
-import { FeedbackType } from '@/types/cloud'
+import type { FeedbackType } from '@/types/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
 const route = useRoute()
 const selectedPart = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
-const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPart.value]?.program : [])
 const cloudStore = useCloudStore()
+const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPart.value]?.program : [])
 const settings = useSettings()
 const now = ref(new Date())
-setInterval(() => {
-    now.value = new Date()
-}, 1000 * 60)// Automatic time update
+onMounted(() => {
+    setInterval(() => {
+        now.value = new Date()
+    }, 1000 * 60)// Automatic time update
+})
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
 function getFeedback(entry: any, index: number) {
@@ -77,38 +81,39 @@ function getFeedback(entry: any, index: number) {
 @import "@/assets/styles/constants.scss";
 
 .schedule {
-    &>div {
-
-        // even-odd background
+    &>div {// even-odd background
         &:nth-child(odd) {
             backdrop-filter: brightness(0.9);
         }
     }
-
+    
     summary {
         cursor: pointer;
         background: transparent;
         transition: background .15s ease;
         padding: .5rem;
-
+    
         &:hover {
             background: #0001;
         }
-
-        &::marker {
-            content: '';
-        }
-        &::-webkit-details-marker {
-            display: none;
-        }
-
+    
         h4 {
             margin: 0;
             display: inline;
         }
-
+    
         h5 {
             margin: 0;
+        }
+    }
+    
+    &>summary {
+        &::marker {
+            content: '';
+        }
+    
+        &::-webkit-details-marker {
+            display: none;
         }
     }
 }

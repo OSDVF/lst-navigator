@@ -1,2 +1,2 @@
-export type KnownCollectionName = 'users' | 'events'
-export const CollectionsList : KnownCollectionName[] = ['users', 'events']
+export type KnownCollectionName = 'users' | 'events' | 'suggestions'
+export const CollectionsList : KnownCollectionName[] = ['users', 'events', 'suggestions']

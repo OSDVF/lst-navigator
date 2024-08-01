@@ -8,12 +8,12 @@ export default defineNuxtPlugin({
             try {
                 initializeFirestore(firebaseApp, {
                     localCache:
-                    process.client ? persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() }) : undefined
+                    import.meta.browser ? persistentLocalCache(/* settings */{ tabManager: persistentMultipleTabManager() }) : undefined,
                 })
             } catch (e) {
-            // eslint-disable-next-line no-console
+             
                 console.error(e)
             }
-        }
-    }
+        },
+    },
 })
