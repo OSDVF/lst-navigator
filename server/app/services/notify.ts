@@ -37,9 +37,9 @@ export default async function () {
         return
     }
 
-    const scheduleParts = (await (await getDoc(await currentEventDocument('schedule'))).data() as DocumentReference[])
+    const days = (await (await getDoc(await currentEventDocument('schedule'))).data() as DocumentReference[])
 
-    if (scheduleParts === null) {
+    if (days === null) {
         return
     }
     const now = new Date()
@@ -48,8 +48,8 @@ export default async function () {
 
     // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
     const promises: Promise<void | Response>[] = []
-    for (let partIndex = 0; partIndex < scheduleParts.length; partIndex++) {
-        const part = scheduleParts[partIndex]
+    for (let partIndex = 0; partIndex < days.length; partIndex++) {
+        const part = days[partIndex]
         const partData = await (await getDoc(part)).data()
         if (typeof partData === 'undefined') {
             continue

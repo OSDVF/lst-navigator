@@ -89,7 +89,7 @@ const model = defineModel<ScheduleEvent>({
     required: true,
 })
 const props = defineProps<{
-    schedulePart: number,
+    day: number,
 }>()
 const newEvent = reactive(model.value)
 watch(model, (val) => Object.assign(newEvent, val))

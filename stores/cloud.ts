@@ -12,7 +12,7 @@ import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, UpdatePayload, SchedulePart, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -172,18 +172,18 @@ export const useCloudStore = defineStore('cloud', () => {
             // Convert null reply to deleteField
             const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value
             for (const sIndex in payload) {
-                const schedulePart = payload[sIndex]
-                for (const eIndex in schedulePart) {
-                    const event = schedulePart[eIndex]
+                const day = payload[sIndex]
+                for (const eIndex in day) {
+                    const event = day[eIndex]
                     for (const uIndex in event) {
                         const reply = event[uIndex]
                         if (reply === null || typeof reply === 'undefined') {
                             event[uIndex] = deleteField()
                         }
                     }
-                    schedulePart[eIndex] = event
+                    day[eIndex] = event
                 }
-                promises.push(setDoc(doc(feedback.col.value!, sIndex), schedulePart, {
+                promises.push(setDoc(doc(feedback.col.value!, sIndex), day, {
                     merge: true,
                 }))
             }
@@ -343,8 +343,8 @@ export const useCloudStore = defineStore('cloud', () => {
             superAdmin: false,
         }
     })
-    const scheduleCollection = useCollection<SchedulePart>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null, { maxRefDepth: 0, once: !!import.meta.server })
-    const scheduleParts = shallowRef(scheduleCollection)
+    const scheduleCollection = useCollection<ScheduleDay>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const days = shallowRef(scheduleCollection)
 
     const notesCollection = currentEventCollection('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
@@ -454,7 +454,7 @@ export const useCloudStore = defineStore('cloud', () => {
         eventWeb,
         networkError: skipHydrate(eventDocuments.error),
         eventLoading: skipHydrate(eventDocuments.pending),
-        scheduleParts,
+        days,
         scheduleLoading: skipHydrate(scheduleCollection.pending),
         groupNames,
         notesCollection: skipHydrate(notesCollection),

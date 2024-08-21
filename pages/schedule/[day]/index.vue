@@ -1,14 +1,14 @@
 <template>
     <div>
-        <EditableField description="Vedení dne:" :document="`schedule/${selectedPartIndex}`" property="manager" />
-        <EditableField description="Vaření:" :document="`schedule/${selectedPartIndex}`" property="cooking" />
-        <EditableField description="Nádobí:" :document="`schedule/${selectedPartIndex}`" property="dishes" class="mb-2" />
+        <EditableField description="Vedení dne:" :document="`schedule/${selectedDayId}`" property="manager" />
+        <EditableField description="Vaření:" :document="`schedule/${selectedDayId}`" property="cooking" />
+        <EditableField description="Nádobí:" :document="`schedule/${selectedDayId}`" property="dishes" class="mb-2" />
 
         <div role="list" class="schedule">
             <details
                 v-for="(entry, index) in selectedProgram" :key="`e${index}`" role="listitem" :style="{
                     '--color': entry.color,
-                    'border-left': parseInt(cloudStore.scheduleParts[selectedPartIndex].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
+                    'border-left': parseInt(cloudStore.days[selectedDayIndex].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
                 }">
                 <summary>
                     <span class="align-top mr-1">
@@ -21,7 +21,7 @@
                         </h5>
                     </div>
                 </summary>
-                <NuxtLink :to="`/schedule/${selectedPartIndex}/${index}`" style="position: relative">
+                <NuxtLink :to="`/schedule/${selectedDayIndex}/${index}`" style="position: relative">
                     <IconCSS
                         v-if="!(entry.description?.match('<p|<br|<ol|<ul') ?? false)" class="icon"
                         :name="entry.icon ?? 'mdi:chevron-right'" />
@@ -44,7 +44,7 @@
 
             <NuxtLink
                 v-if="cloudStore.resolvedPermissions.editSchedule"
-                :to="`/schedule/${route.params.schedulePart}/new`"><button>
+                :to="`/schedule/${route.params.day}/new`"><button>
                     <IconCSS name="mdi:pencil" />&nbsp;Přidat program
                 </button></NuxtLink>
         </div>
@@ -58,9 +58,10 @@ import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
 
 const route = useRoute()
-const selectedPartIndex = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
+const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? parseInt(route.params.day) : 0)
+const selectedDayId = computed(()=>cloudStore.days[selectedDayIndex.value].id)
 const cloudStore = useCloudStore()
-const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPartIndex.value]?.program : [])
+const selectedProgram = computed(() => cloudStore.days ? cloudStore.days[selectedDayIndex.value]?.program : [])
 const settings = useSettings()
 const now = ref(new Date())
 
@@ -72,7 +73,7 @@ onMounted(() => {
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
 function getFeedback(entry: any, index: number) {
-    const feedback = cloudStore.offlineFeedback?.[selectedPartIndex.value]?.[index]?.[settings.userIdentifier]
+    const feedback = cloudStore.offlineFeedback?.[selectedDayIndex.value]?.[index]?.[settings.userIdentifier]
     if (!feedback) { return undefined }
     switch (entry.feedbackType as FeedbackType) {
     case 'basic':

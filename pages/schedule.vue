@@ -2,11 +2,11 @@
     <div style="padding-top: 4rem;">
         <nav role="navigation" class="days">
             <NuxtLink
-                v-for="(day, index) in cloudStore.scheduleParts" :key="day?.name ?? `day${index}`" :style="{
-                    'backdrop-filter': index === parseInt(schedulePartIndex) ? 'brightness(0.8)' : undefined,
+                v-for="(day, index) in cloudStore.days" :key="day?.name ?? `day${index}`" :style="{
+                    'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
                     'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
                 }" :to="`/schedule/${index}`"
-                @click="currentTransition = index > parseInt(schedulePartIndex) ? 'slide-left' : 'slide-right'"
+                @click="currentTransition = index > parseInt(dayIndex) ? 'slide-left' : 'slide-right'"
             >
                 {{ day?.name ?? index }}
             </NuxtLink>
@@ -29,28 +29,28 @@
 
 <script setup lang="ts">
 import type { Vector2 } from '@vueuse/gesture'
-import type { SchedulePart } from '@/types/cloud'
+import type { ScheduleDay } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
 
 const cloudStore = useCloudStore()
 const router = useRouter()
 const route = router.currentRoute.value
-const schedulePartIndex = computed(() => router.currentRoute.value.params.schedulePart as string)
+const dayIndex = computed(() => router.currentRoute.value.params.day as string)
 const now = new Date()
-function isToday(schedulePart: SchedulePart) {
-    const [year, month, day] = schedulePart?.date?.split('-') ?? [0, 0, 0]
+function isToday(scheduleDay: ScheduleDay) {
+    const [year, month, day] = scheduleDay?.date?.split('-') ?? [0, 0, 0]
     return (now.getFullYear() === parseInt(year) && now.getMonth() + 1 === parseInt(month) && now.getDate() === parseInt(day))
 }
 //
 // Automatic redirect when no day is selected
 //
 watch(cloudStore, (newCloud) => {
-    if (typeof schedulePartIndex.value === 'undefined' && newCloud.scheduleLoading === false) {
+    if (typeof dayIndex.value === 'undefined' && newCloud.scheduleLoading === false) {
         findToday(newCloud)
     }
 })
 
-if (typeof route.params.schedulePart === 'undefined' && cloudStore?.scheduleLoading === false) {
+if (typeof route.params.day === 'undefined' && cloudStore?.scheduleLoading === false) {
     findToday(cloudStore)
 }
 
@@ -66,10 +66,10 @@ const translateX = ref(0)
 
 function findToday(newCloud: typeof cloudStore) {
     let index: number | string = 0
-    if (newCloud.scheduleParts?.length) {
-        for (const i in newCloud.scheduleParts) {
-            const schedulePart = newCloud.scheduleParts[i]
-            if (isToday(schedulePart)) {
+    if (newCloud.days?.length) {
+        for (const i in newCloud.days) {
+            const day = newCloud.days[i]
+            if (isToday(day)) {
                 index = i
                 break
             }
@@ -97,7 +97,7 @@ let lastVerticalScroll = new Date().getTime()
 // Swipe Navigation
 //
 const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
-    const partIndex = parseInt(schedulePartIndex.value)
+    const intDay = parseInt(dayIndex.value)
     if (transitioning.value || !permitSwipe.value) {
         return
     }
@@ -112,15 +112,15 @@ const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[]
         if (!isNaN(eventIndex.value)) { // on event item detail page
             // move to the next event item
             if (x > 0 && eventIndex.value === 0) {
-                router.push(`/schedule/${partIndex - 1}/${(cloudStore.scheduleParts![partIndex - 1].program.length - 1 || 0)}`)// last event on the previous schedule part
-            } else if (x < 0 && eventIndex.value === cloudStore.scheduleParts![partIndex].program.length - 1) {
-                router.push(`/schedule/${partIndex + 1}/0`)// first event item on next schedule part (e.g. day)
+                router.push(`/schedule/${intDay - 1}/${(cloudStore.days![intDay - 1].program.length - 1 || 0)}`)// last event on the previous schedule part
+            } else if (x < 0 && eventIndex.value === cloudStore.days![intDay].program.length - 1) {
+                router.push(`/schedule/${intDay + 1}/0`)// first event item on next schedule part (e.g. day)
             } else {
-                router.push(`/schedule/${partIndex}/${eventIndex.value - swipe[0]}`)
+                router.push(`/schedule/${intDay}/${eventIndex.value - swipe[0]}`)
             }
         } else {
             // move to the next schedule part
-            router.push(`/schedule/${partIndex - swipe[0]}`)
+            router.push(`/schedule/${intDay - swipe[0]}`)
         }
         return
     } else if (!dragging || wasNearScrol) {
@@ -128,12 +128,12 @@ const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[]
         translateX.value = 0
         return
     }
-    const lastPartIndex = cloudStore.scheduleParts!.length - 1
+    const lastPartIndex = cloudStore.days!.length - 1
     if (isNaN(eventIndex.value)) {
-        if ((x > 0 && partIndex === 0) || (x < 0 && partIndex === lastPartIndex)) {
+        if ((x > 0 && intDay === 0) || (x < 0 && intDay === lastPartIndex)) {
             return
         }
-    } else if ((x > 0 && eventIndex.value === 0 && partIndex === 0) || (x < 0 && partIndex === lastPartIndex && eventIndex.value === cloudStore.scheduleParts![lastPartIndex].program.length - 1)) {
+    } else if ((x > 0 && eventIndex.value === 0 && intDay === 0) || (x < 0 && intDay === lastPartIndex && eventIndex.value === cloudStore.days![lastPartIndex].program.length - 1)) {
         // on event item detail page
         return
     }

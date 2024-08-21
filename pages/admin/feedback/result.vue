@@ -74,7 +74,7 @@
                     </span> &ensp; Výběr
                 </div>
             </div>
-            <template v-if="typeof cloudStore.scheduleParts?.findLast(() => true) === 'string'">
+            <template v-if="typeof cloudStore.days?.findLast(() => true) === 'string'">
                 Načítání
             </template>
             <template v-else>

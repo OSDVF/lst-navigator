@@ -23,10 +23,12 @@
             <label>Web <input
                 v-model.lazy="editedEvent.web" placeholder="https://msmladez.cz" type="text"
                 required></label><br>
-            <label>Začátek <input v-model.lazy="editedEvent.start" type="date" required></label><br>
+            <label>Začátek <input
+                v-model.lazy="editedEvent.start" type="date" required
+                :disabled="action == Actions.Edit"></label><br>
             <label>Konec <input
-                v-model.lazy="editedEvent.end" :min="editedEvent.start!" type="date"
-                required></label><br>
+                v-model.lazy="editedEvent.end" :min="editedEvent.start!" type="date" required
+                :disabled="action == Actions.Edit"></label><br>
             <ClientOnly>
                 <ckeditor v-if="ClassicEditor" v-model="editedEvent.description" :editor="ClassicEditor" />
             </ClientOnly>
@@ -44,11 +46,10 @@
                 <p v-if="files?.length === 1">
                     Soubor k nahrání: {{ files.item(0)!.name }}
                 </p>
-                
+
                 <p>
                     <label v-if="editedEvent.imageIdentifier">Výsledná lokace <input
-                        v-model="editedEvent.imageIdentifier"
-                        type="text"></label>
+                        v-model="editedEvent.imageIdentifier" type="text"></label>
                 </p>
             </fieldset>
             <input type="submit" value="Potvrdit">
@@ -82,7 +83,7 @@ import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
 import { toFirebaseMonthDay, toJSDate, toFirebaseDate } from '@/utils/types'
-import type { EventDescription, SchedulePart } from '~/types/cloud'
+import type { EventDescription, ScheduleDay } from '~/types/cloud'
 import type { Api } from '~/types/datatables'
 
 definePageMeta({
@@ -190,11 +191,13 @@ async function editEvent(createNew = false) {
 
     for (let i = new Date(editedEvent.value.start); i <= end; i.setDate(i.getDate() + 1)) {
         await setDoc(doc(docs.schedule, toFirebaseMonthDay(i)), {
+            cooking: null,
             date: toFirebaseDate(i),
+            dishes: null,
             name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' })),
             program: [],
             manager: null,
-        } as SchedulePart, { merge: true });
+        } as ScheduleDay, { merge: true });
     }
 
     setDoc(doc(docs.feedback, "dummy"), {}, { merge: true })

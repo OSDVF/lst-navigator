@@ -61,7 +61,7 @@
                             'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        :to="eventItemIndex < (cloudStore.scheduleParts?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.scheduleParts?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : $route.fullPath)"
+                        :to="eventItemIndex < (cloudStore.days?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : $route.fullPath)"
                     >
                         <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
                             nextEventData?.title ?? nextEventData?.subtitle }}
@@ -92,12 +92,12 @@ if (import.meta.client) {
 
 const route = useRoute()
 const settings = useSettings()
-const partIndex = parseInt(route.params.schedulePart as string ?? 0)
+const partIndex = parseInt(route.params.day as string ?? 0)
 const eventItemIndex = parseInt(route.params.event as string ?? 0)
 const cloudStore = useCloudStore()
 const globalBackground = inject('globalBackground', ref(''))
 const eventData = computed(() => {
-    const program = cloudStore.scheduleParts ? cloudStore.scheduleParts[partIndex]?.program : []
+    const program = cloudStore.days ? cloudStore.days[partIndex]?.program : []
     if (program) {
         const eventData = program[eventItemIndex]
         const hexColor = colorToHex(eventData?.color ?? 'gray')
@@ -108,8 +108,8 @@ const eventData = computed(() => {
     return undefined
 })
 
-const previousEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex - 1])
-const nextEventData = computed(() => cloudStore.scheduleParts?.[partIndex]?.program?.[eventItemIndex + 1])
+const previousEventData = computed(() => cloudStore.days?.[partIndex]?.program?.[eventItemIndex - 1])
+const nextEventData = computed(() => cloudStore.days?.[partIndex]?.program?.[eventItemIndex + 1])
 const noteError = ref()
 const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)

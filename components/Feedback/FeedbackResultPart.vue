@@ -1,6 +1,6 @@
 <template>
     <div>
-        <caption><span>{{ $props.schedulePart?.name ?? $props.config?.name }}</span>
+        <caption><span>{{ $props.day?.name ?? $props.config?.name }}</span>
             <div v-show="admin.displayKind === 'individual'" class="actions">
                 <button title="CSV Export" @click="csvExport">
                     <IconCSS name="mdi:file-document-arrow-right" />
@@ -37,7 +37,7 @@
                 <tbody ref="tableBody">
                     <template v-for="(replies, eIndex) in feedbackParts" :key="`e${eIndex}td`">
                         <SelectFeedbackRows
-                            v-if="isSelect(eIndex)" :event="schedulePart?.program[eIndex as number]"
+                            v-if="isSelect(eIndex)" :event="day?.program[eIndex as number]"
                             :replies="replies" :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
                             :config="config?.config?.[eIndex]"
                             @set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)"
@@ -49,7 +49,7 @@
                             <FeedbackCells
                                 :config="config?.config?.[eIndex]" :make-link="makeLink ? (() => makeLink!(eIndex)) : undefined"
                                 :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
-                                :replies="replies" :event="schedulePart?.program[eIndex as number]"
+                                :replies="replies" :event="day?.program[eIndex as number]"
                                 :on-set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)"
                             />
                         </tr>
@@ -63,10 +63,10 @@
 <script setup lang="ts">
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
-import type { Feedback, FeedbackConfig, SchedulePart, TabulatedFeedback } from '@/types/cloud';
+import type { Feedback, FeedbackConfig, ScheduleDay, TabulatedFeedback } from '@/types/cloud';
 
 const props = defineProps<{
-    schedulePart?: SchedulePart,
+    day?: ScheduleDay,
     config?: { name: string, config: { [partName: string]: FeedbackConfig['individual'][0] } },
     feedbackParts: { [key: string | number]: { [user: string]: Feedback } }, // firstly indexed by event, secondly by user
     onSetData?:(data: Feedback | null, eIndex: string, userIdentifier: string) => void
@@ -81,7 +81,7 @@ const syncHeader = ref<HTMLElement>()
 const tableBody = ref<HTMLElement>()
 
 function isSelect(eIndex: string | number) {
-    const config = props.config?.config?.[eIndex]?.type ?? props.schedulePart?.program[eIndex as number].feedbackType
+    const config = props.config?.config?.[eIndex]?.type ?? props.day?.program[eIndex as number].feedbackType
     return (config) && ['parallel', 'select'].includes(config)
 }
 

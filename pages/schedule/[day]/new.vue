@@ -26,7 +26,7 @@
                 <input v-model="union" type="checkbox" name="union" > Přidat k již existujícímu programu dne
             </label>
             <div class="flex flex-wrap pt-1">
-                <template v-for="part in cloud.scheduleParts" :key="part.id">
+                <template v-for="part in cloud.days" :key="part.id">
                     <button v-if="part.program" type="button" @click="copyDay(part)">
                         <h3>{{ part.name }}</h3>
                         {{ part.date }}
@@ -41,13 +41,13 @@
             <legend>
                 <IconCSS name="mdi:timeline" />&ensp; Nový program
             </legend>
-            <NewProgram v-model="newEvent" :schedule-part="selectedPart" />
+            <NewProgram v-model="newEvent" :day="selectedDay" />
         </fieldset>
     </div>
 </template>
 
 <script setup lang="ts">
-import type { ScheduleEvent, SchedulePart } from '@/types/cloud'
+import type { ScheduleEvent, ScheduleDay } from '@/types/cloud'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
 import { toHumanFeedback, toHumanTime } from '@/utils/types'
 import { setDoc } from '~/utils/trace'
@@ -63,7 +63,7 @@ const newEvent = ref<ScheduleEvent>({
 })
 
 const route = useRoute()
-const selectedPart = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
+const selectedDay = computed(() => typeof route.params.day === 'string' ? parseInt(route.params.day) : 0)
 
 const cloud = useCloudStore()
 const fs = useFirestore()
@@ -72,12 +72,12 @@ const union = ref(false)
 function useSuggested(event: ScheduleEvent) {
     confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.') && (Object.assign(newEvent.value, event))
 }
-function copyDay(part: NonNullable<VueFirestoreDocumentData<SchedulePart>>) {
+function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>) {
     confirm('Opravdu chcete načíst tento den? ' + (union.value ? 'Existující program dne bude zachován.' : 'Úplně celý den bude přepsán.')) && (setDoc(doc(knownCollection(fs, 'events'), cloud.selectedEvent, 'schedule', part.id), {
         date: part.date,
         name: part.name,
         manager: part.manager,
         program: union.value ? arrayUnion(...part.program) : part.program,
-    } as SchedulePart), { merge: true })
+    } as ScheduleDay), { merge: true })
 }
 </script>

@@ -118,11 +118,11 @@ const currentPart = computed(() => {
     const subparts: {title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & {data: Feedback | null, secondaryIndex: number | string, selectOptions: string[]})[]}[] = []
 
     if (config?.group) {
-        for (const scheduleIndex in cloudStore.scheduleParts) {
-            const schedulePart = cloudStore.scheduleParts[scheduleIndex]
+        for (const scheduleIndex in cloudStore.days) {
+            const day = cloudStore.days[scheduleIndex]
             const entries = []
-            for (const eventIndex in schedulePart.program) {
-                const eventEntry = schedulePart.program[eventIndex]
+            for (const eventIndex in day.program) {
+                const eventEntry = day.program[eventIndex]
                 if (eventEntry.title?.match(config.group)) {
                     entries.push({
                         ...eventEntry,
@@ -134,7 +134,7 @@ const currentPart = computed(() => {
             }
             if (entries.length > 0) {
                 subparts.push({
-                    title: schedulePart.name,
+                    title: day.name,
                     primaryIndex: scheduleIndex,
                     entries,
                 })

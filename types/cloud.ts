@@ -24,7 +24,7 @@ export type ScheduleEvent = {
     icon?: string // iconify code
 }
 
-export type SchedulePart = {
+export type ScheduleDay = {
     cooking: string | null,
     date: string,
     dishes: string | null,

@@ -152,7 +152,7 @@ async function csvExport() {
                             byUserData[user] = {}
                         }
                         let compoundIndex = `${partIndex}-${eventIndex}`
-                        const potentialTitle = cloudStore.scheduleParts[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
+                        const potentialTitle = cloudStore.days[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
                         if (potentialTitle) {
                             compoundIndex += `-${potentialTitle}`
                         }
