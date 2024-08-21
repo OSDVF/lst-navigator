@@ -33,20 +33,25 @@
   margin-left: auto;
 }
 
-.m-0 {
-  margin: 0;
-}
-
 .p-0_2 {
   padding: 0.2rem;
 }
 
-.p-1 {
-  padding: .45rem
-}
+$spaceamount: .45;
+$helpercount: 5;
+$sides: (top, bottom, left, right); // Leave this variable alone
 
-.p-2 {
-  padding: .9rem
+@for $i from 0 to $helpercount {
+  @each $side in $sides {
+    $value: $i * $spaceamount;
+    .m#{str-slice($side, 0, 1)}-#{$i} {
+      margin-#{$side}: #{$value}rem !important;
+    }
+  
+    .p#{str-slice($side, 0, 1)}-#{$i} {
+      padding-#{$side}: #{$value}rem !important;
+    }
+  }
 }
 
 .d-block {

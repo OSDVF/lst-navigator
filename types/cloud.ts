@@ -25,9 +25,12 @@ export type ScheduleEvent = {
 }
 
 export type SchedulePart = {
+    cooking: string | null,
     date: string,
+    dishes: string | null,
+    manager: string | null,
     name: string,
-    program: ScheduleEvent[]
+    program: ScheduleEvent[],
 };
 
 export type EventSubcollection = 'notes' | 'feedback' | 'subscriptions' | 'schedule' | 'users'

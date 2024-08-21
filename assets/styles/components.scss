@@ -55,18 +55,88 @@ main .average-rating {
         margin-top: 0;
     }
 }
+
 .firebase-emulator-warning {
     pointer-events: none;
     opacity: .4;
-    border:0 !important
+    border: 0 !important
 }
 
 .tab {
     &:focus {
         outline: none;
     }
+
     border-bottom: 3px solid #8787873d;
+
     &.router-link-active {
         border-color: #0e6aff85;
+    }
+}
+
+summary {
+    cursor: pointer;
+    background: transparent;
+    transition: background .15s ease;
+    padding: .5rem;
+
+    &:hover, &:focus {
+        background: #0001;
+    }
+
+    h4 {
+        margin: 0;
+        display: inline;
+    }
+
+    h5 {
+        margin: 0;
+    }
+}
+
+details.border {
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    padding: 0 0.5em 0;
+    margin: .1rem;
+    
+    summary {
+        padding: 0.5rem 0;
+        
+    }
+
+    &[open] {
+        padding: 0 0.5em .5em;
+        summary {
+            border-bottom: 1px solid #aaa;
+            margin-bottom: 0.5em;
+        }
+    }
+
+    &:not([open]) {
+        summary {
+            &:hover, &:focus {
+                background: unset;
+            }
+        }
+
+        &:hover, &:focus {
+            background: #0001;
+        }
+    }
+}
+
+
+
+.text-danger {
+    color: rgb(255, 94, 0);
+}
+
+.editable {
+    font-size: 1rem;
+    border: 0;
+
+    &:hover, &:focus {
+        border: unset;
     }
 }

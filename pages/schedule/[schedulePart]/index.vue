@@ -1,13 +1,15 @@
 <template>
     <div>
+        <EditableField description="Vedení dne:" :document="`schedule/${selectedPartIndex}`" property="manager" />
+        <EditableField description="Vaření:" :document="`schedule/${selectedPartIndex}`" property="cooking" />
+        <EditableField description="Nádobí:" :document="`schedule/${selectedPartIndex}`" property="dishes" class="mb-2" />
+
         <div role="list" class="schedule">
             <details
-                v-for="(entry, index) in selectedProgram" :key="`e${index}`" role="listitem"
-                :style="{
+                v-for="(entry, index) in selectedProgram" :key="`e${index}`" role="listitem" :style="{
                     '--color': entry.color,
-                    'border-left': parseInt(cloudStore.scheduleParts[selectedPart].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
-                }"
-            >
+                    'border-left': parseInt(cloudStore.scheduleParts[selectedPartIndex].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
+                }">
                 <summary>
                     <span class="align-top mr-1">
                         {{ toHumanTime(entry.time) }}
@@ -19,14 +21,15 @@
                         </h5>
                     </div>
                 </summary>
-                <NuxtLink :to="`/schedule/${selectedPart}/${index}`" style="position: relative">
+                <NuxtLink :to="`/schedule/${selectedPartIndex}/${index}`" style="position: relative">
                     <IconCSS
                         v-if="!(entry.description?.match('<p|<br|<ol|<ul') ?? false)" class="icon"
-                        :name="entry.icon ?? 'mdi:chevron-right'"
-                    />
+                        :name="entry.icon ?? 'mdi:chevron-right'" />
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description?.trim() || 'Žádné detaily'" />
-                    <button v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editSchedule" class="edit">
+                    <button
+                        v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editSchedule"
+                        class="edit">
                         <IconCSS class="icon" name="mdi:pencil" />
                     </button>
                     <span class="more">
@@ -34,28 +37,33 @@
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
                         <NuxtRating
                             v-else :rating-value="(getFeedback(entry, index) as number)" rating-size="1.2rem"
-                            inactive-color="#aaa" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
-                        />
+                            inactive-color="#aaa" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`" />
                     </span>
                 </NuxtLink>
             </details>
-            
-            <NuxtLink v-if="cloudStore.resolvedPermissions.editSchedule" :to="`/schedule/${route.params.schedulePart}/new`"><button><IconCSS name="mdi:pencil" />&nbsp;Přidat program</button></NuxtLink>
+
+            <NuxtLink
+                v-if="cloudStore.resolvedPermissions.editSchedule"
+                :to="`/schedule/${route.params.schedulePart}/new`"><button>
+                    <IconCSS name="mdi:pencil" />&nbsp;Přidat program
+                </button></NuxtLink>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { useCloudStore } from '@/stores/cloud'
 import type { FeedbackType } from '@/types/cloud'
+import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
+
 const route = useRoute()
-const selectedPart = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
+const selectedPartIndex = computed(() => typeof route.params.schedulePart === 'string' ? parseInt(route.params.schedulePart) : 0)
 const cloudStore = useCloudStore()
-const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPart.value]?.program : [])
+const selectedProgram = computed(() => cloudStore.scheduleParts ? cloudStore.scheduleParts[selectedPartIndex.value]?.program : [])
 const settings = useSettings()
 const now = ref(new Date())
+
 onMounted(() => {
     setInterval(() => {
         now.value = new Date()
@@ -64,7 +72,7 @@ onMounted(() => {
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
 function getFeedback(entry: any, index: number) {
-    const feedback = cloudStore.offlineFeedback?.[selectedPart.value]?.[index]?.[settings.userIdentifier]
+    const feedback = cloudStore.offlineFeedback?.[selectedPartIndex.value]?.[index]?.[settings.userIdentifier]
     if (!feedback) { return undefined }
     switch (entry.feedbackType as FeedbackType) {
     case 'basic':
@@ -81,37 +89,19 @@ function getFeedback(entry: any, index: number) {
 @import "@/assets/styles/constants.scss";
 
 .schedule {
-    &>div {// even-odd background
+    &>div {
+
+        // even-odd background
         &:nth-child(odd) {
             backdrop-filter: brightness(0.9);
         }
     }
-    
-    summary {
-        cursor: pointer;
-        background: transparent;
-        transition: background .15s ease;
-        padding: .5rem;
-    
-        &:hover {
-            background: #0001;
-        }
-    
-        h4 {
-            margin: 0;
-            display: inline;
-        }
-    
-        h5 {
-            margin: 0;
-        }
-    }
-    
+
     &>summary {
         &::marker {
             content: '';
         }
-    
+
         &::-webkit-details-marker {
             display: none;
         }

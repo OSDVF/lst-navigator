@@ -1,10 +1,10 @@
 <template>
     <form @submit.prevent="addProgram">
-        <label for="title">Titulek</label>&ensp;
+        <label for="title"><IconCSS name="mdi:timeline-alert" />&ensp; Titulek</label>&ensp;
         <input id="title" v-model="newEvent.title" type="text" name="title" placeholder="např. Večerní program">
 
         <p>
-            <label for="subtitle">Podtitulek</label>&ensp;
+            <label for="subtitle"><IconCSS name="mdi:timeline-text-outline" />&ensp; Podtitulek</label>&ensp;
             <input
                 id="subtitle" v-model="newEvent.subtitle" type="text" name="subtitle"
                 placeholder="např. Hra v týmech">
@@ -14,12 +14,12 @@
         </p>
 
         <br>
-        <label for="time">Čas</label>&ensp;
+        <label for="time"><IconCSS name="mdi:timeline-clock-outline" />&ensp; Čas</label>&ensp;
         <input id="time" v-model="newEvent.time" type="text" name="time" placeholder="HMM">
         <br><small>{{ newEvent.time ? `Bude zobrazeno ${toHumanTime(newEvent.time)}` : "Např. 730 = 7:30" }}</small>
 
         <br>
-        <label for="color">Barva</label>&ensp;
+        <label for="color"><IconCSS name="mdi:palette" />&ensp; Barva</label>&ensp;
         <input id="color" v-model="newEvent.color" type="text" name="color">&ensp;
         <input v-model="colorHex" type="color">&ensp;<span
             :style="`background: ${newEvent.color}`" title="Test barvy"
@@ -28,13 +28,14 @@
         &ensp;<button type="button" @click="newEvent.color = ''">Vymazat</button>
 
         <br>
-        <label for="description">Dlouhý popis</label>&ensp;
+        <label for="description"><IconCSS name="mdi:text" />&ensp; Dlouhý popis</label>&ensp;
         <ClientOnly>
             <ckeditor v-if="ClassicEditor" id="description" v-model="newEvent.description" :editor="ClassicEditor" />
         </ClientOnly>
 
+        <br>
         <fieldset>
-            <legend>Nastavení feedbacku</legend>
+            <legend><IconCSS name="mdi:rss"/>&ensp; Nastavení feedbacku</legend>
             <label for="feedbackType">Typ</label>&ensp;
 
             <select id="feedbackType" v-model="feedbackOrDefault" name="feedbackType">
@@ -59,7 +60,8 @@
                     @click="newEvent.questions!.push('')">+</button>
             </div>
             <p v-else-if="newEvent.feedbackType === 'parallel'">
-                <small>Paralelní programy: {{ getParallelEvents(newEvent).join(', ') }}</small>
+                <small>Paralelní programy: {{ parallel.join(', ') }}</small>
+                <small v-if="parallel.length < 2" class="text-danger"><br><IconCSS name="mdi:exclamation-thick" />&ensp;Varování: Zadáno méně než 2 názvů paralelních programů</small>
             </p>
             <p v-if="newEvent.feedbackType !== 'select'">
                 <label for="detailQuestion">Doplňující otázka</label>&ensp;
@@ -86,9 +88,13 @@ onBeforeRouteLeave(() => {
 const model = defineModel<ScheduleEvent>({
     required: true,
 })
+const props = defineProps<{
+    schedulePart: number,
+}>()
 const newEvent = reactive(model.value)
 watch(model, (val) => Object.assign(newEvent, val))
 watch(newEvent, (val) => Object.assign(model.value, val))
+const parallel = computed(() => getParallelEvents(newEvent))
 
 const colorHex = computed({
     get: () => newEvent.color ? colorToHex(newEvent.color) : undefined,

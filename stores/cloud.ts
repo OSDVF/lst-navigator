@@ -1,6 +1,6 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { Firestore, type CollectionReference, type DocumentReference, type FieldValue } from 'firebase/firestore';
+import { Firestore, type CollectionReference, type DocumentData, type DocumentReference, type FieldValue } from 'firebase/firestore';
 import { arrayUnion, collection, deleteField, doc, getDoc } from 'firebase/firestore'
 import { setDoc } from '~/utils/trace';
 import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
@@ -463,7 +463,7 @@ export const useCloudStore = defineStore('cloud', () => {
         resolvedPermissions,
         suggestions: shallowRef(useCollection<ScheduleEvent>(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })),
         user,
-        eventsCollection: useCollection<EventDescription>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
+        eventsCollection: useCollection<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
         probe,
     }
 })

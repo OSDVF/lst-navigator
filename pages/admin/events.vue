@@ -82,7 +82,7 @@ import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
 import { toFirebaseMonthDay, toJSDate, toFirebaseDate } from '@/utils/types'
-import type { EventDescription } from '~/types/cloud'
+import type { EventDescription, SchedulePart } from '~/types/cloud'
 import type { Api } from '~/types/datatables'
 
 definePageMeta({
@@ -192,8 +192,9 @@ async function editEvent(createNew = false) {
         await setDoc(doc(docs.schedule, toFirebaseMonthDay(i)), {
             date: toFirebaseDate(i),
             name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' })),
-            program: {},
-        }, { merge: true });
+            program: [],
+            manager: null,
+        } as SchedulePart, { merge: true });
     }
 
     setDoc(doc(docs.feedback, "dummy"), {}, { merge: true })
