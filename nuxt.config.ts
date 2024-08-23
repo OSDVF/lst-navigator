@@ -80,7 +80,7 @@ const config = defineNuxtConfig({
     ],
     modules: [
         '@vite-pwa/nuxt',
-        'nuxt-icon',
+        '@nuxt/icon',
         '@pinia/nuxt',
         'nuxt-vuefire',
         '@vueuse/nuxt',
@@ -238,6 +238,7 @@ const config = defineNuxtConfig({
             debugUser: process.env.VITE_APP_DEBUG_USER,
             ssrAuthEnabled: process.env.GOOGLE_APPLICATION_CREDENTIALS,
             supportEmail: process.env.SUPPORT_EMAIL,
+            iconifyCollection: process.env.ICONIFY_COLLECTION,
         },
     },
     ssr: true,

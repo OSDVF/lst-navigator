@@ -6,7 +6,7 @@
         </noscript>
         <a href="/">
             <button>
-                <IconCSS name="mdi:home" />
+                <Icon name="mdi:home" />
                 Zpátky do aplikace
             </button>
         </a>

@@ -17,7 +17,7 @@
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                         @click="controls.syncSelect.value = undefined"
                     >
-                        <IconCSS name="mdi:trash" />
+                        <Icon name="mdi:trash" />
                     </button>
                 </td>
             </tr>
@@ -35,7 +35,7 @@
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                         @click="controls.syncSelect.value = undefined"
                     >
-                        <IconCSS name="mdi:trash" />
+                        <Icon name="mdi:trash" />
                     </button>
                 </td>
             </tr>
@@ -54,7 +54,7 @@
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                         @click="controls.syncBasic(undefined)"
                     >
-                        <IconCSS name="mdi:trash" />
+                        <Icon name="mdi:trash" />
                     </button>
                 </td>
             </tr>
@@ -74,7 +74,7 @@
                             title="Odstranit odpověd" @pointerenter="permitSwipe = false"
                             @pointerleave="permitSwipe = true" @click="controls.syncComplicated(index, undefined)"
                         >
-                            <IconCSS name="mdi:trash" />
+                            <Icon name="mdi:trash" />
                         </button>
                     </td>
                 </tr>
@@ -91,7 +91,7 @@
                         title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                         @click="controls.syncDetail.value = undefined"
                     >
-                        <IconCSS name="mdi:trash" />
+                        <Icon name="mdi:trash" />
                     </button>
                 </td>
             </tr>

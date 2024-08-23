@@ -3,7 +3,7 @@
         <caption><span>{{ $props.day?.name ?? $props.config?.name }}</span>
             <div v-show="admin.displayKind === 'individual'" class="actions">
                 <button title="CSV Export" @click="csvExport">
-                    <IconCSS name="mdi:file-document-arrow-right" />
+                    <Icon name="mdi:file-document-arrow-right" />
                 </button>
             </div>
         </caption>

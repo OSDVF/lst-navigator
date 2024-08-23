@@ -4,36 +4,36 @@
         <p>
             <NuxtLink to="/admin/feedback/result">
                 <button>
-                    <IconCSS name="mdi:spreadsheet" />
+                    <Icon name="mdi:spreadsheet" />
                     Výsledky
                 </button>
             </NuxtLink>
         </p>
         <button @click="csvExport">
-            <IconCSS name="mdi:file-document-arrow-right" />
+            <Icon name="mdi:file-document-arrow-right" />
             CSV Export
         </button>
         <template v-if="cloudStore.resolvedPermissions.superAdmin">
             <button @click="exportJson">
-                <IconCSS name="mdi:export" />
+                <Icon name="mdi:export" />
                 Export
             </button>
             <form class="inline" @submit.prevent="importJson(); importing = false">
                 <button type="button" @click="importing = !importing">
-                    <IconCSS name="mdi:import" />
+                    <Icon name="mdi:import" />
                     Import
                 </button>
                 <template v-if="importing">
                     <p>
                         <button type="button" @click="openFD()">
-                            <IconCSS name="mdi:upload" />
+                            <Icon name="mdi:upload" />
                             Vybrat soubor
                         </button>
                         <button
                             type="button"
                             @click="importText ? null : (files?.item(0)?.text().then(t => t ? (importText = t) : null) ?? (importText = ''));reset()"
                         >
-                            <IconCSS name="mdi:text-box-edit-outline" />
+                            <Icon name="mdi:text-box-edit-outline" />
                             Vlastní text
                         </button>
                         <br>
@@ -45,7 +45,7 @@
                         <label for="merge">Sloučit s existující částí</label>
                         <br>
                         <button>
-                            <IconCSS name="mdi:flag" />
+                            <Icon name="mdi:flag" />
                             Potvrdit
                         </button>
                     </p>

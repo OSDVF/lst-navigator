@@ -5,7 +5,7 @@
             <p>{{ cloud.feedback.dirtyTime }}</p>
             <p>Tvé odpovědi jsou každopádně uložené offline, takže to zkus znovu později.</p>
             <button @click="cloud.feedback.saveAgain">
-                <IconCSS name="mdi:save" /> Zkusit znovu
+                <Icon name="mdi:save" /> Zkusit znovu
             </button>
         </template>
         <template v-else>

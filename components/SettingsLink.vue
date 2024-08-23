@@ -1,7 +1,7 @@
 <template>
     <NuxtLink to="/settings">
         <img v-show="showImage" :src="cloudStore.user.auth?.photoURL ?? ''" class="noinvert round-full w-1_8" referrerPolicy="no-referrer" crossorigin="anonymous" @load="loaded = true">
-        <IconCSS v-show="!showImage" name="mdi:cog" size="1.8rem" />
+        <Icon v-show="!showImage" name="mdi:cog" size="1.8rem" />
         {{ cloudStore.user.auth?.displayName || 'Nastavení' }}
     </NuxtLink>
 </template>

@@ -2,18 +2,18 @@
     <article>
         <h1>
             <NuxtLink :to="router.currentRoute.value.fullPath">
-                <IconCSS name="mdi:rss" /> Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
+                <Icon name="mdi:rss" /> Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
             </NuxtLink>
         </h1>
         <NuxtLink v-if="feedbackPartIndex > 0" :to="`/feedback/${feedbackPartIndex + 1}`">
-            <IconCSS name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;
+            <Icon name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;
         </NuxtLink>
         <NuxtLink
             v-if="feedbackPartIndex < (cloudStore.feedback.config?.length ?? 0) - 1"
             :to="`/feedback/${feedbackPartIndex - 1}`"
         >
             Skočit na další část
-            <IconCSS name="mdi:chevron-right" />
+            <Icon name="mdi:chevron-right" />
         </NuxtLink>
         <br>
         <NameChangeDialog>
@@ -58,16 +58,16 @@
             @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))"
         >
             Pokračovat na další část
-            <IconCSS name="mdi:chevron-right" />
+            <Icon name="mdi:chevron-right" />
         </button>
         <button v-else class="large d-block m-left-auto" @click="cloudStore.feedback.saveAgain().then(() => router.push('/feedback/thanks'))">
-            <IconCSS name="mdi:check" />
+            <Icon name="mdi:check" />
             Dokončit
         </button>
         <p v-if="cloudStore.feedback.fetchFailed" style="color:red">
             {{ cloudStore.feedback.error || 'Nepodařilo se uložit tvou odpověď' }}
             <button @click="cloudStore.feedback.saveAgain">
-                <IconCSS name="material-symbols:save" /> Zkusit znovu
+                <Icon name="material-symbols:save" /> Zkusit znovu
             </button>
         </p>
         <br>
@@ -82,9 +82,9 @@
                         v-for="(feedbackPart, fIndex) in cloudStore.feedback.config"
                         :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : $route.fullPath"
                     >
-                        <IconCSS v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
+                        <Icon v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
                         {{ fIndex === feedbackPartIndex ? '• ' : null }}<span class="muted">#{{ fIndex + 1 }}</span>&ensp;{{ feedbackPart.title }}
-                        <IconCSS v-if="fIndex > feedbackPartIndex" name="mdi:chevron-right" />
+                        <Icon v-if="fIndex > feedbackPartIndex" name="mdi:chevron-right" />
                     </NuxtLink>
                 </nav>
             </Teleport>

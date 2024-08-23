@@ -8,14 +8,14 @@
         <nav class="installNav">
             <ClientOnly>
                 <NuxtLink v-if="partIndex > 0" :to="`/install/${partIndex - 1}`">
-                    <IconCSS name="material-symbols:arrow-circle-left-outline" size="2rem" /> Předchozí
+                    <Icon name="material-symbols:arrow-circle-left-outline" size="2rem" /> Předchozí
                 </NuxtLink>
                 <NuxtLink v-if="canGoNext" :to="`/install/${partIndex + 1}`" @click="onNextButtonClick">
-                    <IconCSS name="material-symbols:arrow-circle-right-outline" size="2rem" />
+                    <Icon name="material-symbols:arrow-circle-right-outline" size="2rem" />
                     Další
                 </NuxtLink>
                 <NuxtLink v-else to="/schedule" @click="settings.installStep.data = partIndex + 1">
-                    <IconCSS name="material-symbols:trending-up" size="2rem" />
+                    <Icon name="material-symbols:trending-up" size="2rem" />
                     Začít
                 </NuxtLink>
                 <ServerPlaceholder>

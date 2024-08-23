@@ -75,6 +75,9 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const firebaseStorage = probe && useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)
+    function eventDoc(...path: string[]) {
+        return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
+    }
     const auth = probe && (config.public.ssrAuthEnabled || import.meta.client) ? useFirebaseAuth() : null
     if (import.meta.client) {
         auth?.setPersistence(browserLocalPersistence)
@@ -447,6 +450,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
     return {
         selectedEvent,
+        eventDoc,
         eventImage,
         eventTitle,
         eventSubtitle,

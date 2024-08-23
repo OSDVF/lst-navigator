@@ -12,7 +12,7 @@
                     v-show="admin.editingFeedback"
                     @click="$props.onSetData!(null, respondents[rIndex])"
                 >
-                    <IconCSS name="mdi:trash" />
+                    <Icon name="mdi:trash" />
                 </button>
             </template>
         </div>

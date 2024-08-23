@@ -14,7 +14,7 @@
         <p v-html="eventData?.description ?? 'Žádné podrobnosti'" />
 
         <h1>
-            <IconCSS name="mdi:rss" /> Zpětná vazba
+            <Icon name="mdi:rss" /> Zpětná vazba
         </h1>
         <template v-if="eventData?.feedbackType">
             <h4>Tvá zpětná vazba</h4>
@@ -35,7 +35,7 @@
                 {{ cloudStore.feedback.error }}
                 <br>
                 <button @click="cloudStore.feedback.saveAgain">
-                    <IconCSS name="material-symbols:save" /> Zkusit uložit znovu
+                    <Icon name="material-symbols:save" /> Zkusit uložit znovu
                 </button>
             </p>
         </template>
@@ -43,7 +43,7 @@
             Není k dispozici
         </p>
         <h1>Tvé poznámky&ensp;
-            <IconCSS title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
+            <Icon title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
         </h1>
         <p>
             <ClientOnly>
@@ -57,15 +57,15 @@
             <Teleport to="#additionalNav">
                 <nav class="eventItemNav">
                     <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${partIndex}/${eventItemIndex - 1}`">
-                        <IconCSS name="mdi:chevron-left" /> <span class="muted">{{ toHumanTime(previousEventData?.time) ||
+                        <Icon name="mdi:chevron-left" /> <span class="muted">{{ toHumanTime(previousEventData?.time) ||
                             'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        :to="eventItemIndex < (cloudStore.days?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : $route.fullPath)"
+                        :to="eventItemIndex < (cloudStore.days?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : route.fullPath)"
                     >
                         <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
                             nextEventData?.title ?? nextEventData?.subtitle }}
-                        <IconCSS name="mdi:chevron-right" />
+                        <Icon name="mdi:chevron-right" />
                     </NuxtLink>
                 </nav>
             </Teleport>
@@ -100,7 +100,7 @@ const eventData = computed(() => {
     const program = cloudStore.days ? cloudStore.days[partIndex]?.program : []
     if (program) {
         const eventData = program[eventItemIndex]
-        const hexColor = colorToHex(eventData?.color ?? 'gray')
+        const hexColor = colorToHex(eventData?.color || 'gray')
         const darkened = darkenColor(hexColor, -0.2)
         globalBackground.value = darkened === '#ffffff' ? hexColor : darkened
         return eventData

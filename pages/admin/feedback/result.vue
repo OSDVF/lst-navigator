@@ -2,7 +2,7 @@
     <div>
         <Teleport to="#topNav">
             <label class="p-1">
-                <IconCSS name="mdi:magnify" /><button @click="zoomFactor += 0.1">
+                <Icon name="mdi:magnify" /><button @click="zoomFactor += 0.1">
                     +
                 </button><button @click="zoomFactor -= 0.1">
                     -
@@ -13,15 +13,15 @@
             </label>
             <select v-model="admin.displayKind" class="p-1" title="Zobrazení">
                 <option v-for="(val,key) in displayKindOptionIcons" :key="key" :value="key">
-                    <IconCSS :name="val" />
+                    <Icon :name="val" />
                 </option>
             </select>
             <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-block tab">
-                <IconCSS name="mdi:calendar" />
+                <Icon name="mdi:calendar" />
                 Části programu
             </NuxtLink>
             <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-block tab">
-                <IconCSS name="mdi:form-select" />
+                <Icon name="mdi:form-select" />
                 Ostatní otázky
             </NuxtLink>
         </Teleport>
@@ -33,11 +33,11 @@
                             <br>
                             <button v-if="admin.editingFeedback" @click="admin.editingFeedback = false">
                                 Úpravy
-                                <IconCSS name="mdi:pencil" />
+                                <Icon name="mdi:pencil" />
                             </button>
                             <button v-else @click="admin.editingFeedback = true">
                                 Zobrazení
-                                <IconCSS name="mdi:eye" />
+                                <Icon name="mdi:eye" />
                             </button>
                         </template>
                         <br>

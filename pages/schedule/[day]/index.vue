@@ -8,7 +8,7 @@
             <details
                 v-for="(entry, index) in selectedProgram" :key="`e${index}`" role="listitem" :style="{
                     '--color': entry.color,
-                    'border-left': parseInt(cloudStore.days[selectedDayIndex].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
+                    'border-left': parseInt(cloud.days[selectedDayIndex].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
                 }">
                 <summary>
                     <span class="align-top mr-1">
@@ -22,18 +22,27 @@
                     </div>
                 </summary>
                 <NuxtLink :to="`/schedule/${selectedDayIndex}/${index}`" style="position: relative">
-                    <IconCSS
+                    <Icon
                         v-if="!(entry.description?.match('<p|<br|<ol|<ul') ?? false)" class="icon"
                         :name="entry.icon ?? 'mdi:chevron-right'" />
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description?.trim() || 'Žádné detaily'" />
-                    <button
-                        v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editSchedule"
-                        class="edit">
-                        <IconCSS class="icon" name="mdi:pencil" />
-                    </button>
+                    <template v-if="cloud.user.auth?.uid && cloud.resolvedPermissions.editSchedule">
+                        <NuxtLink :to="`/schedule/${selectedDayIndex}/edit/${index}`">
+                            <button
+                                class="edit"
+                                title="Upravit">
+                                <Icon class="icon" name="mdi:pencil" />
+                            </button>
+                        </NuxtLink>
+                        <button
+                            class="edit"
+                            title="Smazat">
+                            <Icon class="icon" name="mdi:trash-can" @click.stop="deleteProgram(entry)"/>
+                        </button>
+                    </template>
                     <span class="more">
-                        <IconCSS class="icon" name="mdi:rss" />
+                        <Icon class="icon" name="mdi:rss" />
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
                         <NuxtRating
                             v-else :rating-value="(getFeedback(entry, index) as number)" rating-size="1.2rem"
@@ -42,26 +51,27 @@
                 </NuxtLink>
             </details>
 
-            <NuxtLink
-                v-if="cloudStore.resolvedPermissions.editSchedule"
-                :to="`/schedule/${route.params.day}/new`"><button>
-                    <IconCSS name="mdi:pencil" />&nbsp;Přidat program
+            <NuxtLink v-if="cloud.resolvedPermissions.editSchedule" :to="`/schedule/${route.params.day}/edit`">
+                <button>
+                    <Icon name="mdi:pencil" />&nbsp;Přidat program
                 </button></NuxtLink>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import type { FeedbackType } from '@/types/cloud'
+import type { FeedbackType, ScheduleEvent } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
+import { setDoc } from '~/utils/trace'
+import { arrayRemove } from 'firebase/firestore'
 
 const route = useRoute()
 const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? parseInt(route.params.day) : 0)
-const selectedDayId = computed(()=>cloudStore.days[selectedDayIndex.value].id)
-const cloudStore = useCloudStore()
-const selectedProgram = computed(() => cloudStore.days ? cloudStore.days[selectedDayIndex.value]?.program : [])
+const cloud = useCloudStore()
+const selectedDayId = computed(() => cloud.days[selectedDayIndex.value]?.id)
+const selectedProgram = computed(() => cloud.days ? cloud.days[selectedDayIndex.value]?.program : [])
 const settings = useSettings()
 const now = ref(new Date())
 
@@ -73,7 +83,7 @@ onMounted(() => {
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
 function getFeedback(entry: any, index: number) {
-    const feedback = cloudStore.offlineFeedback?.[selectedDayIndex.value]?.[index]?.[settings.userIdentifier]
+    const feedback = cloud.offlineFeedback?.[selectedDayIndex.value]?.[index]?.[settings.userIdentifier]
     if (!feedback) { return undefined }
     switch (entry.feedbackType as FeedbackType) {
     case 'basic':
@@ -82,6 +92,12 @@ function getFeedback(entry: any, index: number) {
         return feedback.complicated ? (feedback.complicated.reduce((prev, cur) => prev! + cur!, 0) ?? 0) / feedback.complicated.length : undefined
     }
     return undefined
+}
+
+function deleteProgram(program: ScheduleEvent) {
+    setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+        program: arrayRemove(program),//TODO by index
+    }, { merge: true })
 }
 
 </script>
@@ -98,7 +114,7 @@ function getFeedback(entry: any, index: number) {
         }
     }
 
-    &>summary {
+    &>details>summary {
         &::marker {
             content: '';
         }
@@ -154,15 +170,14 @@ details {
 
 .more {
     color: #1a476ac0;
-
-    @media (hover: fine) {
-        opacity: 0
-    }
-
     position: absolute;
     right: 0;
     top:0;
     display: flex;
     align-items: center;
+
+    @media (hover: fine) {
+        opacity: 0
+    }
 }
 </style>

@@ -18,7 +18,7 @@
                 </button>
                 &ensp;
                 <button @click="settings.toggleSelectedAudio">
-                    <IconCSS :name="settings.isPlaying ? 'mdi:stop' : 'mdi:play'" />
+                    <Icon :name="settings.isPlaying ? 'mdi:stop' : 'mdi:play'" />
                 </button>
             </span>
         </fieldset>
@@ -49,7 +49,7 @@
                 </small>
                 &ensp;
                 <button @click="syncNotes">
-                    <IconCSS name="mdi:reload" /> Odeslat znovu
+                    <Icon name="mdi:reload" /> Odeslat znovu
                 </button>
             </span>
         </fieldset>
@@ -64,7 +64,7 @@
                 </small>
                 &ensp;
                 <button @click="cloud.feedback.saveAgain">
-                    <IconCSS name="mdi:reload" /> Odeslat znovu
+                    <Icon name="mdi:reload" /> Odeslat znovu
                 </button>
             </span>
         </fieldset>

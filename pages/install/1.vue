@@ -1,6 +1,6 @@
 <template>
     <article>
-        <h1><IconCSS name="carbon:package" />&ensp;Instalace</h1>
+        <h1><Icon name="carbon:package" />&ensp;Instalace</h1>
         <ClientOnly>
             <p v-if="$deferredPrompt() !== null">
                 Jsem hybridní webová aplikace, kterou nainstalujete kliknutím na tlačítko <code>Další</code>
@@ -16,16 +16,16 @@
                 Nebo někoho zavolejte a on vám pomůže.
             </p>
             <p v-if="$pwa.registrationError">
-                <IconCSS name="mdi:alert" /> Nepodařilo se zaregistrovat aplikaci do systému
+                <Icon name="mdi:alert" /> Nepodařilo se zaregistrovat aplikaci do systému
             </p>
             <p v-if="$pwa.getSWRegistration()">
-                <IconCSS name="mdi:check" /> Aplikace zaregistrována
+                <Icon name="mdi:check" /> Aplikace zaregistrována
             </p>
             <p v-if="$pwa.swActivated">
-                <IconCSS name="mdi:check" /> Aktivováno
+                <Icon name="mdi:check" /> Aktivováno
             </p>
             <p v-if="$pwa.offlineReady">
-                <IconCSS name="mdi:check" /> Stažení
+                <Icon name="mdi:check" /> Stažení
             </p>
         </ClientOnly>
     </article>

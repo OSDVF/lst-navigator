@@ -7,13 +7,13 @@
                 v-if="!!settings.userNickname"
                 @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"
             >
-                <IconCSS name="mdi:alert" /> Změnit
+                <Icon name="mdi:alert" /> Změnit
             </button>
             <button
                 v-else
                 @click="confirmDialog('Jméno by mělo být v rámci akce unikátní. Jeho změna v budoucnu může způsobit ztrátu přístupu k tvému feedbacku a poznámkám.') ? settings.userNickname = tempNickname : null"
             >
-                <IconCSS name="material-symbols:save" /> Uložit
+                <Icon name="material-symbols:save" /> Uložit
             </button>
         </form>
     </ClientOnly>

@@ -1,13 +1,13 @@
 <template>
     <article v-if="cloudStore.eventsCollection.length > 0">
         <button v-if="action == Actions.Nothing" @click="action = Actions.New">
-            <IconCSS name="mdi:plus" /> Nová
+            <Icon name="mdi:plus" /> Nová
         </button>
         <button v-if="action == Actions.Nothing && isSelection" @click="startEditingSelected">
-            <IconCSS name="mdi:pencil" /> Upravit
+            <Icon name="mdi:pencil" /> Upravit
         </button>
         <button v-if="action == Actions.Nothing && isSelection" @click="deleteSelected">
-            <IconCSS name="mdi:trash-can" /> Smazat
+            <Icon name="mdi:trash-can" /> Smazat
         </button>
         <form v-if="action == Actions.New || action == Actions.Edit" @submit.prevent="editEvent(action == Actions.New)">
             <label>Název <input
@@ -36,10 +36,10 @@
                 <legend>Obrázek</legend>
                 <p>
                     <button type="button" @click="openFD({ accept: 'image/*', multiple: false })">
-                        <IconCSS name="mdi:upload" /> Nahrát
+                        <Icon name="mdi:upload" /> Nahrát
                     </button>
                     <button type="button" @click="selectingImage = true">
-                        <IconCSS name="mdi:folder-multiple-image" /> Vybrat
+                        <Icon name="mdi:folder-multiple-image" /> Vybrat
                     </button>
                     <StorageFileSelect v-if="selectingImage" v-model="editedEvent.imageIdentifier" />
                 </p>

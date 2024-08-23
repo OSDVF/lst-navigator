@@ -3,7 +3,7 @@
         <label>
             <template v-if="cloudStore.resolvedPermissions.superAdmin">
 
-                <IconCSS name="mdi:shield-lock-open" title="Úpravy povoleny" />
+                <Icon name="mdi:shield-lock-open" title="Úpravy povoleny" />
                 &nbsp;
             </template>
             <template v-else-if="cloudStore.user.auth?.photoURL">
@@ -25,10 +25,10 @@
         <span>
             <ClientOnly>
                 <button v-if="cloudStore.user.auth?.uid" @click="cloudStore.user.signOut">
-                    <IconCSS name="mdi:logout" /> Odhlásit
+                    <Icon name="mdi:logout" /> Odhlásit
                 </button>
                 <button v-else @click="cloudStore.user.signIn">
-                    <IconCSS name="mdi:login" /> Přihlásit
+                    <Icon name="mdi:login" /> Přihlásit
                 </button>
                 <ProgressBar v-if="cloudStore.user.pendingAction" class="absolute left-0 bottom-0 right-0" />
             </ClientOnly>

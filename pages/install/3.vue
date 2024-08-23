@@ -1,6 +1,6 @@
 <template>
     <article>
-        <h1><IconCSS name="mdi:success-bold" /> Možno začít</h1>
+        <h1><Icon name="mdi:success-bold" /> Možno začít</h1>
     </article>
 </template>
 

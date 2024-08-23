@@ -6,7 +6,7 @@
         </Head>
         <nav class="flex justify-content-center flex-grow">
             <label class="m-auto p-1 text-right">
-                <IconCSS name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
+                <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
                 <select v-model="cloudStore.selectedEvent">
                     <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>
                 </select>
@@ -26,25 +26,25 @@
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
                 <NuxtLink to="/admin/feedback">
-                    <IconCSS name="mdi:rss" size="1.8rem" />
+                    <Icon name="mdi:rss" size="1.8rem" />
                     Zpětná vazba
                 </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/events" no-prefetch>
-                    <IconCSS name="mdi:calendar-text" size="1.8rem" />
+                    <Icon name="mdi:calendar-text" size="1.8rem" />
                     Akce
                 </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.superAdmin" to="/admin/users">
-                    <IconCSS name="mdi:person" size="1.8rem" />
+                    <Icon name="mdi:person" size="1.8rem" />
                     Uživatelé
                 </NuxtLink>
                 <NuxtLink to="/">
-                    <IconCSS name="mdi:backburger" size="1.8rem" />
+                    <Icon name="mdi:backburger" size="1.8rem" />
                     Program
                 </NuxtLink>
                 <SettingsLink />
             </nav>
             <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
-                <IconCSS name="mdi:cloud-off" /> Problém s připojením
+                <Icon name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
         <ProgressBar v-show="cloudStore.eventLoading" class="backgroundLoading" />

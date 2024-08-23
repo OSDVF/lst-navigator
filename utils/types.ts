@@ -118,3 +118,9 @@ function objectMap(obj: object, fn: (v: any, k: string, i: number) => any): { [k
 export function mapObject<T, U>(obj: { [key: string]: T }, fn: (v: T, k: string, i: number) => U): { [key: string]: U } {
     return objectMap(obj, fn)
 }
+
+export function parseIntOrNull(value?: string) {
+    if (typeof value === 'undefined') { return undefined }
+    const parsed = parseInt(value)
+    return isNaN(parsed) ? null : parsed
+}

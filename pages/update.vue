@@ -5,19 +5,19 @@
             <meta http-equiv="Expires" content="-1">
         </Head>
         <h1>
-            <IconCSS name="mdi:update" />&ensp;Dostupná aktualizace
+            <Icon name="mdi:update" />&ensp;Dostupná aktualizace
         </h1>
         <button @click="download">
-            <IconCSS name="mdi:download" />&ensp;Stáhnout
+            <Icon name="mdi:download" />&ensp;Stáhnout
         </button>
         <br>
         <ClientOnly>
             <button @click="$pwa.cancelInstall(); prevRoute !== null ? $router.back() : goToRedirectedFrom()">
-                <IconCSS name="mdi:sync-off" />&ensp;Ignorovat
+                <Icon name="mdi:sync-off" />&ensp;Ignorovat
             </button>
         </ClientOnly>
         <p class="small">
-            Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd><IconCSS name="mdi:apple-keyboard-command" />+Shift+R</kbd> na MacOS.
+            Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd><Icon name="mdi:apple-keyboard-command" />+Shift+R</kbd> na MacOS.
         </p>
     </article>
 </template>

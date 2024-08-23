@@ -22,21 +22,21 @@
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
                 <NuxtLink to="/info">
-                    <IconCSS name="mdi:information" size="1.8rem" />
+                    <Icon name="mdi:information" size="1.8rem" />
                     {{ config.public.title }}
                 </NuxtLink>
                 <NuxtLink to="/schedule">
-                    <IconCSS name="mdi:calendar-text" size="1.8rem" />
+                    <Icon name="mdi:calendar-text" size="1.8rem" />
                     Program
                 </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.editSchedule" to="/admin">
-                    <IconCSS name="mdi:account-cog" size="1.8rem" />
+                    <Icon name="mdi:account-cog" size="1.8rem" />
                     Administrace
                 </NuxtLink>
                 <SettingsLink />
             </nav>
             <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
-                <IconCSS name="mdi:cloud-off" /> Problém s připojením
+                <Icon name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
         <ProgressBar v-show="isServer || cloudStore.eventLoading" class="backgroundLoading" />
