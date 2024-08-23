@@ -66,6 +66,7 @@ import type { VueFirestoreDocumentData } from 'vuefire'
 const router = useRouter()
 const route = router.currentRoute
 const selectedDayIndex = computed(() => typeof route.value.params.day === 'string' ? parseInt(route.value.params.day) : 0)
+const selectedDayId = computed(() => cloud.days[selectedDayIndex.value].id)
 const selectedEditIndex = computed(() => route.value.params.edit ? parseInt(route.value.params.edit as string) : undefined)
 const program = computed(() => cloud.days[selectedDayIndex.value].program)
 const editing = computed(() => typeof selectedEditIndex.value !== 'undefined')
@@ -78,10 +79,18 @@ const editedEvent = ref<ScheduleEvent>({
     subtitle: '',
     title: '',
 })
+const dirty = ref(false)
+watch(editedEvent, () => dirty.value = true)
+
 onMounted(() => {
     if (editing.value) {
         Object.assign(editedEvent.value, { ...program.value[selectedEditIndex.value!] })
     }
+    window.addEventListener('beforeunload', () => {
+        if (dirty.value) {
+            return 'Opravdu chcete opustit tuto stránku? Neuložené změny budou ztraceny.'
+        }
+    })
 })
 
 const fs = useFirestore()
@@ -91,14 +100,16 @@ function useSuggested(event: ScheduleEvent) {
     confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.') && (Object.assign(editedEvent.value, event))
 }
 function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>) {
-    confirm('Opravdu chcete načíst tento den? ' + (union.value ? 'Existující program dne bude zachován.' : 'Úplně celý den bude přepsán.')) && (setDoc(doc(knownCollection(fs, 'events'), cloud.selectedEvent, 'schedule', part.id), {
-        date: part.date,
-        name: part.name,
-        manager: part.manager,
-        program: union.value ? arrayUnion(...part.program) : part.program,
-    } as ScheduleDay), { merge: true })
+    if (confirm('Opravdu chcete načíst tento den? ' + (union.value ? 'Existující program dne bude zachován.' : 'Úplně celý program dne bude přepsán.'))) {
+        setDoc(
+            cloud.eventDoc('schedule', selectedDayId.value), {
+                program: union.value ? arrayUnion(...part.program) : part.program,
+            } as ScheduleDay, { merge: true },
+        )
+    }
 }
 
+const config = useRuntimeConfig()
 async function editProgram(event: Event) {
     const data = new FormData(event.target as HTMLFormElement)
     const parsedData = {
@@ -113,7 +124,7 @@ async function editProgram(event: Event) {
         title: data.get('title'),
     } as ScheduleEvent;
 
-    await setDoc(cloud.eventDoc('schedule', cloud.days[selectedDayIndex.value].id), {
+    await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         program: editing.value ? [
             ...program.value.slice(0, selectedEditIndex.value!),
             parsedData,
@@ -121,7 +132,14 @@ async function editProgram(event: Event) {
         ] : arrayUnion(parsedData),
     }, { merge: true })
 
+    dirty.value = false // Reset dirty state
     router.push('/schedule/' + selectedDayIndex.value)
+
+    setDoc(
+        doc(knownCollection(fs, 'suggestions'),
+            ((cloud.lastSuggestion + 1) % parseInt(config.public.maxSuggestions)).toString()),
+        parsedData,
+    )
 }
 
 function emptyToNull(value?: any) {

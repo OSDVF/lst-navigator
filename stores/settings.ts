@@ -147,6 +147,14 @@ export const useSettings = defineStore('settings', () => {
 
     const selectedGroup = usePersistentRef<number>('selectedGroup', 0)
     const userNickname = usePersistentRef<string>('userNickname', '')
+    const userNicknameProxy = computed({
+        get() {
+            return userNickname.value
+        },
+        set(value: string) {
+            userNickname.value = value
+        },
+    })
     const userIdentifier = computed({
         get() {
             if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }

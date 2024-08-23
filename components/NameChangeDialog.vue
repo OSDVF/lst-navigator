@@ -5,7 +5,7 @@
             <input id="nickname" v-model="tempNickname" v-paste-model :disabled="!!settings.userNickname">
             <button
                 v-if="!!settings.userNickname"
-                @click="confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"
+                @click="() => confirmDialog('Změna jména způsobí ztrátu všech poznámek a feedbacku') ? tempNickname = settings.userNickname = '' : null"
             >
                 <Icon name="mdi:alert" /> Změnit
             </button>
@@ -15,6 +15,8 @@
             >
                 <Icon name="material-symbols:save" /> Uložit
             </button>
+            <br>
+            <small class="muted">UID: {{ settings.userIdentifier }}</small>
         </form>
     </ClientOnly>
 </template>
@@ -24,7 +26,7 @@ import { useSettings } from '@/stores/settings'
 const settings = useSettings()
 const tempNickname = ref(toRaw(settings.userNickname))
 watch(settings, (s) => {
-    if (s.userNickname !== tempNickname.value) {
+    if (s.userNickname !== tempNickname.value && tempNickname.value !== '') {
         tempNickname.value = s.userNickname
     }
 })

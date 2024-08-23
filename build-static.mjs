@@ -6,7 +6,7 @@ const p = childProcess.spawn('./node_modules/.bin/nuxt', ['generate'], { shell: 
 
 checkReadable(p.stdout)
 p.stdout.pipe(stdout)
-p.stdin.pipe(stdin)
+stdin.pipe(p.stdin)
 p.stderr.pipe(stderr)
 
 async function checkReadable(readable) {

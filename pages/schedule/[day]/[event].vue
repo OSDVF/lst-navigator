@@ -4,7 +4,8 @@
             'overflow-x': movingOrTrainsitioning ? 'hidden' : undefined,
         }"
     >
-        <h1>{{ eventData?.title }}&ensp;
+        <h1><template v-if="eventData?.icon"><Icon :name="eventData.icon" /></template>
+            {{ eventData?.title }}&ensp;
             <span class="muted">
                 {{ toHumanTime(eventData?.time) }}
             </span>

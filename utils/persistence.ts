@@ -1,32 +1,34 @@
+import { skipHydrate } from 'pinia'
 import { LocalKey, LocalStorage } from 'ts-localstorage'
 import type { UnwrapRef } from 'vue'
 
 export function usePersistentRef<T>(name: string, defaultValue: T) {
-    const key = new LocalKey<T, true>(name, defaultValue, {
+    const key = new LocalKey<UnwrapRef<T>, true>(name, toRaw(defaultValue) as UnwrapRef<T>, {
         hasDefaultValue: true,
     })
-    let internalRef: Ref<UnwrapRef<T>>
+    const internalRef: Ref<UnwrapRef<T>> = ref(toRaw(defaultValue))
     if (typeof localStorage !== 'undefined') {
-        internalRef = ref(LocalStorage.getItem(key)!)
-    } else {
-        internalRef = ref(defaultValue)
+        internalRef.value = LocalStorage.getItem(key)
     }
     const app = useNuxtApp()
-    function hydrate() {
+    const hydrate = () => {
         if (typeof localStorage !== 'undefined') {
-            const storedVal = ref(LocalStorage.getItem(key)!).value
+            const storedVal = LocalStorage.getItem(key)
             if (storedVal !== internalRef.value) {
                 internalRef.value = storedVal
+                console.log('Hydrated', name, storedVal)
             }
         }
-        watch(internalRef, (newValue) => {
-            LocalStorage.setItem(key, isRef(newValue) ? newValue.value as T : newValue as T)
-        }, {
-            deep: true,
-        })
         triggerRef(internalRef)
     }
     app.hook('app:mounted', hydrate)
     onMounted(hydrate)
-    return internalRef
+    console.log('Created persistent ref', name, internalRef.value)
+    watch(internalRef, (newValue) => {
+        LocalStorage.setItem(key, isRef(newValue) ? newValue.value as UnwrapRef<T> : newValue)
+        console.log('Persisted', name, newValue)
+    }, {
+        deep: true,
+    })
+    return skipHydrate(internalRef)
 }

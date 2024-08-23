@@ -60,6 +60,7 @@
     "@pinia/nuxt": "^0.4.11",
     "@sentry/vue": "^7.119.0",
     "@vueuse/integrations": "^10.11.0",
+    "caniuse-lite": "^1.0.30001651",
     "datatables.net-dt": "^1.13.11",
     "datatables.net-responsive-dt": "^2.5.1",
     "datatables.net-select": "^1.7.1",

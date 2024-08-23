@@ -30,9 +30,9 @@ const config = defineNuxtConfig({
                 <meta name="theme-color" content="#ffffff">
                 
                  */
-                { rel: 'icon', type: 'image/png', sizes: "32x32", href: '/favicon-32x32.png' },
-                { rel: 'icon', type: 'image/png', sizes: "16x16", href: '/favicon-16x16.png' },
-                { rel: 'apple-touch-icon', sizes: "180x180", href: '/apple-touch-icon.png' },
+                { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+                { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
+                { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
                 { rel: 'manifest', href: '/site.webmanifest' },
                 { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#5bbad5' },
             ],
@@ -48,7 +48,7 @@ const config = defineNuxtConfig({
             'lru-cache',
         ],
     },
-    compatibilityDate: "2024-07-07",
+    compatibilityDate: '2024-07-07',
     css: [
         '~/assets/styles/base.scss',
         '~/assets/styles/components.scss',
@@ -126,6 +126,11 @@ const config = defineNuxtConfig({
         '/clear': {
             headers: {
                 [firebaseConfig.hosting.headers[0].headers[0].key]: firebaseConfig.hosting.headers[0].headers[0].value,
+            },
+        },
+        '__/**': {
+            headers: {
+                'Content-Type': 'text/html',
             },
         },
     },
@@ -239,6 +244,7 @@ const config = defineNuxtConfig({
             ssrAuthEnabled: process.env.GOOGLE_APPLICATION_CREDENTIALS,
             supportEmail: process.env.SUPPORT_EMAIL,
             iconifyCollection: process.env.ICONIFY_COLLECTION,
+            maxSuggestions: process.env.MAX_SUGGESTIONS,
         },
     },
     ssr: true,

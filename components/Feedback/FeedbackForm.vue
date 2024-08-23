@@ -82,7 +82,7 @@
             <tr v-if="type !== 'select'">
                 <td colspan="2">
                     <textarea
-                        v-model.lazy="controls.syncDetail.value" v-paste-model :placeholder="props.detailQuestion"
+                        v-model.lazy="controls.syncDetail.value" v-paste-model :placeholder="props.detailQuestion ?? 'Tipy a připomínky'"
                         @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
                     />
                 </td>

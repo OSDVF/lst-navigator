@@ -43,11 +43,11 @@
 
         </p>
         <div class="flex-center">
-            <label class="nowrap">
+            <label class="nowrap" for="icon">
                 <Icon name="mdi:shape" />&ensp; Ikona
             </label>&ensp;
             <input v-model="editedEvent.icon" type="hidden" name="icon">
-            <IconSelect v-model="editedEvent.icon" />
+            <IconSelect id="icon" v-model="editedEvent.icon" />
         </div>
         <br>
 
@@ -55,8 +55,9 @@
             <Icon name="mdi:text" />&ensp; Dlouhý popis
         </label>&ensp;
         <ClientOnly>
-            <ckeditor v-if="ClassicEditor" id="description" v-model="editedEvent.description" :editor="ClassicEditor" />
+            <ckeditor v-if="ClassicEditor" id="description" v-model.lazy="editedEvent.description" :editor="ClassicEditor" />
         </ClientOnly>
+        <input v-model.lazy="editedEvent.description" type="hidden" name="description">
 
         <br>
         <fieldset>

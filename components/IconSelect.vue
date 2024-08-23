@@ -1,5 +1,6 @@
 <template>
     <Multiselect
+        :id="p.id"
         :model-value="p.modelValue" :options="icons" placeholder="Vyhledat ikonu"
         selected-label="Vybráno" select-label="Vybrat enterem" deselect-label="Odebrat enterem" :option-height="40" :options-limit="50" :limit="50"
         @update:model-value="(v: string) => e('update:modelValue', v)">
@@ -24,6 +25,7 @@
 <script setup lang="ts">
 const p = defineProps<{
     modelValue?: string,
+    id?: string,
 }>()
 
 const e = defineEmits<{

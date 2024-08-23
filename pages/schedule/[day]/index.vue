@@ -8,7 +8,7 @@
             <details
                 v-for="(entry, index) in selectedProgram" :key="`e${index}`" role="listitem" :style="{
                     '--color': entry.color,
-                    'border-left': parseInt(cloud.days[selectedDayIndex].date.split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
+                    'border-left': parseInt((cloud.days[selectedDayIndex].date ?? '').split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
                 }">
                 <summary>
                     <span class="align-top mr-1">
@@ -28,17 +28,19 @@
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description?.trim() || 'Žádné detaily'" />
                     <template v-if="cloud.user.auth?.uid && cloud.resolvedPermissions.editSchedule">
+                        <button v-if="index > 0" class="edit" title="Posunout nahoru">
+                            <Icon class="icon" name="mdi:arrow-up" @click.prevent="moveUp(entry, index)" />
+                        </button>
+                        <button v-if="index < selectedProgram.length - 1" class="edit" title="Posunout dolů">
+                            <Icon class="icon" name="mdi:arrow-down" @click.prevent="moveDown(entry, index)" />
+                        </button>
                         <NuxtLink :to="`/schedule/${selectedDayIndex}/edit/${index}`">
-                            <button
-                                class="edit"
-                                title="Upravit">
+                            <button class="edit" title="Upravit">
                                 <Icon class="icon" name="mdi:pencil" />
                             </button>
                         </NuxtLink>
-                        <button
-                            class="edit"
-                            title="Smazat">
-                            <Icon class="icon" name="mdi:trash-can" @click.stop="deleteProgram(entry)"/>
+                        <button class="edit" title="Smazat">
+                            <Icon class="icon" name="mdi:trash-can" @click.prevent="deleteProgram(entry)" />
                         </button>
                     </template>
                     <span class="more">
@@ -54,7 +56,8 @@
             <NuxtLink v-if="cloud.resolvedPermissions.editSchedule" :to="`/schedule/${route.params.day}/edit`">
                 <button>
                     <Icon name="mdi:pencil" />&nbsp;Přidat program
-                </button></NuxtLink>
+                </button>
+            </NuxtLink>
         </div>
     </div>
 </template>
@@ -97,6 +100,24 @@ function getFeedback(entry: any, index: number) {
 function deleteProgram(program: ScheduleEvent) {
     setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         program: arrayRemove(program),//TODO by index
+    }, { merge: true })
+}
+
+function moveUp(program: ScheduleEvent, index: number) {
+    const newProgram = selectedProgram.value
+    newProgram.splice(index, 1)
+    newProgram.splice(index - 1, 0, program)
+    setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+        program: newProgram,
+    }, { merge: true })
+}
+
+function moveDown(program: ScheduleEvent, index: number) {
+    const newProgram = selectedProgram.value
+    newProgram.splice(index, 1)
+    newProgram.splice(index + 1, 0, program)
+    setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+        program: newProgram,
     }, { merge: true })
 }
 
@@ -172,7 +193,7 @@ details {
     color: #1a476ac0;
     position: absolute;
     right: 0;
-    top:0;
+    top: 0;
     display: flex;
     align-items: center;
 

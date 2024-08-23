@@ -23,11 +23,11 @@ const tree = computed(() => useFileTree(currentPath.value || "/").value)
 
 .fileTree {
     img {
+        vertical-align: middle;
+
         @media (prefers-color-scheme: dark) {
             filter: invert(1);
         }
-
-        vertical-align: middle;
     }
 
     span {

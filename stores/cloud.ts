@@ -348,6 +348,9 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const scheduleCollection = useCollection<ScheduleDay>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null, { maxRefDepth: 0, once: !!import.meta.server })
     const days = shallowRef(scheduleCollection)
+    const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const suggestions = computed<ScheduleEvent[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last'))
+    const lastSuggestion = computed(() => (suggestionsAndLast.value.find((s) => s.id === 'last') ?? -1) as number)
 
     const notesCollection = currentEventCollection('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
@@ -465,7 +468,8 @@ export const useCloudStore = defineStore('cloud', () => {
         feedback,
         offlineFeedback: skipHydrate(offlineFeedback),
         resolvedPermissions,
-        suggestions: shallowRef(useCollection<ScheduleEvent>(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })),
+        suggestions,
+        lastSuggestion,
         user,
         eventsCollection: useCollection<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
         probe,

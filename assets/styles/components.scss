@@ -74,13 +74,18 @@ main .average-rating {
     }
 }
 
+.iconify {
+    vertical-align: middle
+}
+
 summary {
     cursor: pointer;
     background: transparent;
     transition: background .15s ease;
     padding: .5rem;
 
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
         background: #0001;
     }
 
@@ -99,14 +104,15 @@ details.border {
     border-radius: 4px;
     padding: 0 0.5em 0;
     margin: .1rem;
-    
+
     summary {
         padding: 0.5rem 0;
-        
+
     }
 
     &[open] {
         padding: 0 0.5em .5em;
+
         summary {
             border-bottom: 1px solid #aaa;
             margin-bottom: 0.5em;
@@ -115,12 +121,15 @@ details.border {
 
     &:not([open]) {
         summary {
-            &:hover, &:focus {
+
+            &:hover,
+            &:focus {
                 background: unset;
             }
         }
 
-        &:hover, &:focus {
+        &:hover,
+        &:focus {
             background: #0001;
         }
     }
@@ -136,7 +145,8 @@ details.border {
     font-size: 1rem;
     border: 0;
 
-    &:hover, &:focus {
+    &:hover,
+    &:focus {
         border: unset;
     }
 }
