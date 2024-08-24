@@ -55,6 +55,7 @@ export function eventDocs(fs: Firestore, name: string): EventDocs {
         event: doc(knownCollection(fs, 'events'), name),
         notes: eventSubCollection(fs, name, 'notes'),
         feedback: eventSubCollection(fs, name, 'feedback'),
+        feedbackConfig: eventSubCollection(fs, name, 'feedbackConfig'),
         schedule: eventSubCollection(fs, name, 'schedule'),
         subscriptions: eventSubCollection(fs, name, 'subscriptions'),
         users: eventSubCollection(fs, name, 'users'),
@@ -75,7 +76,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const firebaseStorage = probe && useFirebaseStorage()
     const selectedEvent = ref(config.public.defaultEvent)
-    function eventDoc(...path: string[]) {
+    function eventDoc(...path: (string | EventSubcollection)[]) {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
     }
     const auth = probe && (config.public.ssrAuthEnabled || import.meta.client) ? useFirebaseAuth() : null
@@ -85,8 +86,8 @@ export const useCloudStore = defineStore('cloud', () => {
     const app = useNuxtApp()
 
     const ed = firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null
-    const eventDocuments = useDocument<EventDescription<undefined>>(ed, {
-        maxRefDepth: 4,
+    const eventDocuments = useDocument<EventDescription<void>>(ed, {
+        maxRefDepth: 5,
         once: !!import.meta.server,
         wait: true,
     })
@@ -115,8 +116,9 @@ export const useCloudStore = defineStore('cloud', () => {
     const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
     const feedbackRepliesRaw = shallowRef(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
+    const feedbackConfig = shallowRef(useCollection<FeedbackConfig>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null))
     const feedback = {
-        config: computed<FeedbackConfig[] | undefined>(() => eventData.value?.feedbackConfig),
+        config: feedbackConfig,
         col: fc,
         dirtyTime: feedbackDirtyTime,
         error: ref(),
@@ -453,6 +455,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
     return {
         selectedEvent,
+        currentEventCollection,
         eventDoc,
         eventImage,
         eventTitle,

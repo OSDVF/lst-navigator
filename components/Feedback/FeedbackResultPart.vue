@@ -1,11 +1,11 @@
 <template>
     <div>
         <caption><span>{{ $props.day?.name ?? $props.config?.name }}</span>
-            <div v-show="admin.displayKind === 'individual'" class="actions">
+            <span v-show="admin.displayKind === 'individual'" class="actions">
                 <button title="CSV Export" @click="csvExport">
                     <Icon name="mdi:file-document-arrow-right" />
                 </button>
-            </div>
+            </span>
         </caption>
         <header
             ref="syncHeader" :style="{

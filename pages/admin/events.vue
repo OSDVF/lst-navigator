@@ -1,66 +1,66 @@
 <template>
-    <article v-if="cloudStore.eventsCollection.length > 0">
-        <button v-if="action == Actions.Nothing" @click="action = Actions.New">
-            <Icon name="mdi:plus" /> Nová
+    <article v-if='cloudStore.eventsCollection.length > 0'>
+        <button v-if='action == Actions.Nothing' @click='action = Actions.New'>
+            <Icon name='mdi:plus' /> Nová
         </button>
-        <button v-if="action == Actions.Nothing && isSelection" @click="startEditingSelected">
-            <Icon name="mdi:pencil" /> Upravit
+        <button v-if='action == Actions.Nothing && isSelection' @click='startEditingSelected'>
+            <Icon name='mdi:pencil' /> Upravit
         </button>
-        <button v-if="action == Actions.Nothing && isSelection" @click="deleteSelected">
-            <Icon name="mdi:trash-can" /> Smazat
+        <button v-if='action == Actions.Nothing && isSelection' @click='deleteSelected'>
+            <Icon name='mdi:trash-can' /> Smazat
         </button>
-        <form v-if="action == Actions.New || action == Actions.Edit" @submit.prevent="editEvent(action == Actions.New)">
+        <form v-if='action == Actions.New || action == Actions.Edit' @submit.prevent='editEvent(action == Actions.New)'>
             <label>Název <input
-                v-model.lazy="sanitizeTitleAndId" type="text" required
-                :disabled="action == Actions.Edit"></label>
+                v-model.lazy='sanitizeTitleAndId' type='text' required
+                :disabled='action == Actions.Edit'></label>
             &ensp;
             <small>
                 <label>Vlastní identifikátor <input
-                    v-model.lazy="editedEvent.identifier" type="text" required
-                    :disabled="action == Actions.Edit"></label><br>
+                    v-model.lazy='editedEvent.identifier' type='text' required
+                    :disabled='action == Actions.Edit'></label><br>
             </small>
-            <label>Podtitulek <input v-model.lazy="editedEvent.subtitle" type="text"></label><br>
+            <label>Podtitulek <input v-model.lazy='editedEvent.subtitle' type='text'></label><br>
             <label>Web <input
-                v-model.lazy="editedEvent.web" placeholder="https://msmladez.cz" type="text"
+                v-model.lazy='editedEvent.web' placeholder='https://msmladez.cz' type='text'
                 required></label><br>
             <label>Začátek <input
-                v-model.lazy="editedEvent.start" type="date" required
-                :disabled="action == Actions.Edit"></label><br>
+                v-model.lazy='editedEvent.start' type='date' required
+                :disabled='action == Actions.Edit'></label><br>
             <label>Konec <input
-                v-model.lazy="editedEvent.end" :min="editedEvent.start!" type="date" required
-                :disabled="action == Actions.Edit"></label><br>
+                v-model.lazy='editedEvent.end' :min='editedEvent.start!' type='date' required
+                :disabled='action == Actions.Edit'></label><br>
             <ClientOnly>
-                <ckeditor v-if="ClassicEditor" v-model="editedEvent.description" :editor="ClassicEditor" />
+                <ckeditor v-if='ClassicEditor' v-model='editedEvent.description' :editor='ClassicEditor' />
             </ClientOnly>
-            <fieldset :disabled="!!remoteImage.uploadTask.value">
+            <fieldset :disabled='!!remoteImage.uploadTask.value'>
                 <legend>Obrázek</legend>
                 <p>
-                    <button type="button" @click="openFD({ accept: 'image/*', multiple: false })">
-                        <Icon name="mdi:upload" /> Nahrát
+                    <button type='button' @click='openFD({ accept: "image/*", multiple: false })'>
+                        <Icon name='mdi:upload' /> Nahrát
                     </button>
-                    <button type="button" @click="selectingImage = true">
-                        <Icon name="mdi:folder-multiple-image" /> Vybrat
+                    <button type='button' @click='selectingImage = true'>
+                        <Icon name='mdi:folder-multiple-image' /> Vybrat
                     </button>
-                    <StorageFileSelect v-if="selectingImage" v-model="editedEvent.imageIdentifier" />
+                    <StorageFileSelect v-if='selectingImage' v-model='editedEvent.imageIdentifier' />
                 </p>
-                <p v-if="files?.length === 1">
+                <p v-if='files?.length === 1'>
                     Soubor k nahrání: {{ files.item(0)!.name }}
                 </p>
 
                 <p>
-                    <label v-if="editedEvent.imageIdentifier">Výsledná lokace <input
-                        v-model="editedEvent.imageIdentifier" type="text"></label>
+                    <label v-if='editedEvent.imageIdentifier'>Výsledná lokace <input
+                        v-model='editedEvent.imageIdentifier' type='text'></label>
                 </p>
             </fieldset>
-            <input type="submit" value="Potvrdit">
+            <input type='submit' value='Potvrdit'>
         </form>
-        <ProgressBar v-show="loading" />
+        <ProgressBar v-show='loading' />
         <LazyDataTable
-            ref="table" :data="eventsIndexed" :options="{
+            ref='table' :data='eventsIndexed' :options='{
                 responsive: true,
                 select: true,
-                order: [[0, 'desc']]
-            }" @select="selectionChanged" @unselect="selectionChanged">
+                order: [[0, "desc"]]
+            }' @select='selectionChanged' @unselect='selectionChanged'>
             <thead>
                 <tr>
                     <th>ID</th>
@@ -74,10 +74,10 @@
     <ProgressBar v-else />
 </template>
 
-<script setup lang="ts">
+<script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, getDoc, getDocs, orderBy, query, limit, deleteDoc, collection, writeBatch, type Query } from 'firebase/firestore'
-import { setDoc } from '~/utils/trace'
+import { doc, getDoc, getDocs, orderBy, query, limit, collection, writeBatch, type Query } from 'firebase/firestore'
+import { setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
@@ -200,10 +200,20 @@ async function editEvent(createNew = false) {
         } as ScheduleDay, { merge: true });
     }
 
-    setDoc(doc(docs.feedback, "dummy"), {}, { merge: true })
-    setDoc(doc(docs.notes, "dummy"), {}, { merge: true })
-    setDoc(doc(docs.subscriptions, "dummy"), {}, { merge: true })
-    setDoc(doc(docs.users, "dummy"), {}, { merge: true })
+    // Create subcollections
+    await Promise.allSettled([
+        setDoc(doc(docs.feedback, 'dummy'), {}, { merge: true }),
+        setDoc(doc(docs.notes, 'dummy'), {}, { merge: true }),
+        setDoc(doc(docs.subscriptions, 'dummy'), {}, { merge: true }),
+        setDoc(doc(docs.users, 'dummy'), {}, { merge: true }),
+        setDoc(doc(docs.feedbackConfig, 'dummy'), {}, { merge: true }),
+    ])
+
+    deleteDoc(doc(docs.feedback, 'dummy'))
+    deleteDoc(doc(docs.notes, 'dummy'))
+    deleteDoc(doc(docs.subscriptions, 'dummy'))
+    deleteDoc(doc(docs.users, 'dummy'))
+    deleteDoc(doc(docs.feedbackConfig, 'dummy'))
 
     action.value = Actions.Nothing
 }

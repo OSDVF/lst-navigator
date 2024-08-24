@@ -1,8 +1,5 @@
 <template>
     <div class="bar-chart">
-        <div v-for="(point, index) in gridPoints" :key="`p${index}`" class="grid">
-            {{ point }}
-        </div>
         <div
             v-for="(value, index) in normalizedValues" :key="index" class="bar"
             :style="{ height: `${value * 100}%`, '--count': normalizedValues.length, background: colors[index] }"
@@ -116,17 +113,6 @@ const colors = computed(() => {
     return randomcolor({ count: filteredValues.value.v.length })
 })
 
-const gridPoints = computed(() => {
-    const levels = []
-    let level
-    for (level = min.value; level <= max.value; level += (props.resolution ?? 1)) {
-        levels.push(level)
-    }
-    if (level > max.value) {
-        levels.push(level)
-    }
-    return levels//TODO really levels are the grid points?
-})
 </script>
 <style lang="scss">
 .bar-chart {

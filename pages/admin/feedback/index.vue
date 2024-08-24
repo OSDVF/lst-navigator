@@ -13,7 +13,7 @@
             <Icon name="mdi:file-document-arrow-right" />
             CSV Export
         </button>
-        <template v-if="cloudStore.resolvedPermissions.superAdmin">
+        <template v-if="cloud.resolvedPermissions.superAdmin">
             <button @click="exportJson">
                 <Icon name="mdi:export" />
                 Export
@@ -52,6 +52,16 @@
                 </template>
             </form>
         </template>
+        <h2>Závěrečný dotazník</h2>
+        <FeedbackConfig v-for="(_, index) in configCategoriesOrDefault" :key="`c${index}`" :index="index" :is-dummy="!cloud.feedback.config?.length" />
+        <br>
+        <button
+            v-show="cloud.feedback.config?.length"
+            title="Přidat sekci"
+            type="button"
+            @click="setDoc(cloud.eventDoc('feedbackConfig', configCategoriesOrDefault.length.toString()), {
+            }, { merge: true })">+</button>
+        
         <p>
             {{ error }}
         </p>
@@ -65,7 +75,7 @@ import Lodash from 'lodash'
 import { useCloudStore } from '~/stores/cloud'
 import { doc } from 'firebase/firestore'
 import type * as ExportToCsv from 'export-to-csv'
-import type { Feedback } from '@/types/cloud'
+import type { Feedback, FeedbackConfig } from '@/types/cloud'
 
 definePageMeta({
     title: 'Zpětná vazba',
@@ -73,11 +83,21 @@ definePageMeta({
     middleware: ['auth'],
 })
 
-const cloudStore = useCloudStore()
+const cloud = useCloudStore()
 const merge = ref(true)
 const importing = ref(false)
 const importText = ref<string | null>(null)
 const error = ref()
+
+const configCategoriesOrDefault = computed<FeedbackConfig[]>(()=> {
+    if((cloud.feedback.config?.length ?? 0) === 0) {
+        return [{
+            title: 'Sekce 1',
+            individual: [],
+        }]
+    }
+    return cloud.feedback.config!
+})
 
 function download(filename: string, text: string) {
     const element = document.createElement('a')
@@ -93,7 +113,7 @@ function download(filename: string, text: string) {
 }
 
 function exportJson() {
-    download(`${cloudStore.selectedEvent}-feedback-${new Date().toLocaleString().replace(':', '-')}.json`, JSON.stringify(cloudStore.feedback.online))
+    download(`${cloud.selectedEvent}-feedback-${new Date().toLocaleString().replace(':', '-')}.json`, JSON.stringify(cloud.feedback.online))
 }
 
 const { files, open: openFD, onChange, reset } = useFileDialog({
@@ -112,10 +132,10 @@ async function importJson() {
     try {
         error.value = ''
         importText.value ||= await files?.value?.item(0)?.text() ?? ''
-        if (!importText.value || !cloudStore.feedback.col) { return }
+        if (!importText.value || !cloud.feedback.col) { return }
         const json = await JSON.parse(importText.value)
         for(const key in json) {
-            setDoc(doc(cloudStore.feedback.col, key), json[key], { merge: merge.value })
+            setDoc(doc(cloud.feedback.col, key), json[key], { merge: merge.value })
         }
     } catch (e) {
         error.value = e
@@ -140,8 +160,8 @@ async function csvExport() {
         const csvData = []
         const compoundIndexes: string[] = []
         const byUserData: { [user: string]: { [compoundId: string]: Feedback } } = {}
-        for (const partIndex in cloudStore.feedback.online) {
-            const part = cloudStore.feedback.online[partIndex]
+        for (const partIndex in cloud.feedback.online) {
+            const part = cloud.feedback.online[partIndex]
             if (typeof part === 'number' || part === null) { continue }
             for (const eventIndex in part) {
                 const event = part[eventIndex]
@@ -152,7 +172,7 @@ async function csvExport() {
                             byUserData[user] = {}
                         }
                         let compoundIndex = `${partIndex}-${eventIndex}`
-                        const potentialTitle = cloudStore.days[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
+                        const potentialTitle = cloud.days[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
                         if (potentialTitle) {
                             compoundIndex += `-${potentialTitle}`
                         }
@@ -214,7 +234,7 @@ async function csvExport() {
             csvData.push({ user, ...userData })
         }
         const csvConfig = exportToCsv.mkConfig({
-            filename: `${cloudStore.selectedEvent}-feedback-${new Date().toLocaleString(navigator.language)}`,
+            filename: `${cloud.selectedEvent}-feedback-${new Date().toLocaleString(navigator.language)}`,
             columnHeaders: ['user', ...compoundIndexesExpanded],
         })
 

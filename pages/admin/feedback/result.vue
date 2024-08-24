@@ -8,19 +8,31 @@
                     -
                 </button><input
                     v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`"
-                    type="number" style="border:none;width: 7ex;display:inline"
-                >
+                    type="number" style="border:none;width: 7ex;display:inline">
             </label>
-            <select v-model="admin.displayKind" class="p-1" title="Zobrazení">
-                <option v-for="(val,key) in displayKindOptionIcons" :key="key" :value="key">
-                    <Icon :name="val" />
-                </option>
-            </select>
-            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-block tab">
+            <Multiselect
+                v-model="admin.displayKind"
+                style="width: auto;"
+                select-label=""
+                deselect-label=""
+                selected-label=""
+                :preselect-first="true"
+                :allow-empty="false" class="p-1" title="Zobrazení"
+                :options="Object.keys(displayKindOptionIcons)" :searchable="false">
+                <template #singleLabel="props">
+                    <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option] }}</small>
+                </template>
+                <template #option="props">
+                    <span class="flex-center">
+                        <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option] }}</small>
+                    </span>
+                </template>
+            </Multiselect>
+            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-flex align-items-center tab">
                 <Icon name="mdi:calendar" />
                 Části programu
             </NuxtLink>
-            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-block tab">
+            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-flex align-items-center tab">
                 <Icon name="mdi:form-select" />
                 Ostatní otázky
             </NuxtLink>
@@ -49,8 +61,7 @@
                         <br>
                         <textarea
                             v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly
-                            :value="showRespondents ? Array.from(respondents.names).join('\n') : ''"
-                        />
+                            :value="showRespondents ? Array.from(respondents.names).join('\n') : ''" />
                     </template>
                 </div>
                 <div>
@@ -108,9 +119,14 @@ const admin = useAdmin()
 const respondents = useRespondents()
 const zoomFactor = ref(1)
 
-const displayKindOptionIcons = {
+const displayKindOptionIcons: Record<string, string> = {
     histogram: 'mdi:chart-histogram',
     individual: 'mdi:list-status',
+}
+
+const displayKindCaptions: Record<string, string> = {
+    histogram: 'Histogram',
+    individual: 'Individuální',
 }
 
 const showRespondents = ref(false)
@@ -145,7 +161,8 @@ $border-color: rgba(128, 128, 128, 0.657);
                 }
             }
 
-            &.text, &.text td:first-child {
+            &.text,
+            &.text td:first-child {
                 background: #ffa6000d
             }
         }

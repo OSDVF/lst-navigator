@@ -33,8 +33,8 @@ export type ScheduleDay = {
     program: ScheduleEvent[],
 };
 
-export type EventSubcollection = 'notes' | 'feedback' | 'subscriptions' | 'schedule' | 'users'
-export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'subscriptions', 'schedule', 'users']
+export type EventSubcollection = 'notes' | 'feedback' | 'feedbackConfig' | 'subscriptions' | 'schedule' | 'users'
+export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'feedbackConfig', 'subscriptions', 'schedule', 'users']
 export type EventDocs = {
     [K in EventSubcollection]: CollectionReference
 } & {

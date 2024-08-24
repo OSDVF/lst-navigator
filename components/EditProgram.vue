@@ -24,7 +24,8 @@
             <Icon name="mdi:timeline-clock-outline" />&ensp; Čas*
         </label>&ensp;
         <input
-            id="time" :value="isNaN(editedEvent.time ?? NaN) ? '' : editedEvent.time" type="text" name="time" placeholder="HMM" required
+            id="time" :value="isNaN(editedEvent.time ?? NaN) ? '' : editedEvent.time" type="text" name="time"
+            placeholder="HMM" required
             @input="(e) => editedEvent.time = parseInt((e.target as HTMLInputElement).value.replace(/[^0-9]/g, ''))">
         <br><small>{{ editedEvent.time ? `Bude zobrazeno ${toHumanTime(editedEvent.time)}` : "Např. 730 = 7:30"
         }}</small>
@@ -55,7 +56,9 @@
             <Icon name="mdi:text" />&ensp; Dlouhý popis
         </label>&ensp;
         <ClientOnly>
-            <ckeditor v-if="ClassicEditor" id="description" v-model.lazy="editedEvent.description" :editor="ClassicEditor" />
+            <ckeditor
+                v-if="ClassicEditor" id="description" v-model.lazy="editedEvent.description"
+                :editor="ClassicEditor" />
         </ClientOnly>
         <input v-model.lazy="editedEvent.description" type="hidden" name="description">
 
@@ -64,43 +67,16 @@
             <legend>
                 <Icon name="mdi:rss" />&ensp; Nastavení feedbacku
             </legend>
-            <label for="feedbackType">Typ</label>&ensp;
 
-            <select id="feedbackType" v-model="feedbackOrDefault" name="feedbackType">
-                <option value="">Žádný</option>
-                <option value="basic">⭐⭐⭐⭐⭐</option>
-                <option value="complicated">Několik ⭐⭐⭐⭐⭐</option>
-                <option value="text">Textová otázka</option>
-                <option value="parallel">Paralelní programy</option>
-            </select>
-
-            <div v-if="editedEvent.feedbackType == 'complicated'">
-                <h4>Položky k hodnocení</h4>
-                <div v-for="(_question, index) in questionsOrBlank" :key="`q${index}`">
-                    <label :for="`question${index}`">Položka {{ index + 1 }}</label>&ensp;
-                    <input
-                        :id="`question${index}`" v-model="editedEvent.questions![index]" type="text"
-                        name="questions[]">
-                    <button type="button" title="Odebrat" @click="editedEvent.questions!.splice(index, 1)">
-                        <Icon name="mdi:trash-can" />
-                    </button>
-                </div>
-                <button
-                    v-show="questionsOrBlank[questionsOrBlank.length - 1]" type="button"
-                    @click="editedEvent.questions!.push('')">+</button>
-            </div>
-            <p v-else-if="editedEvent.feedbackType === 'parallel'">
-                <small>Paralelní programy: {{ parallel.join(', ') }}</small>
-                <small v-if="parallel.length < 2" class="text-danger"><br>
-                    <Icon name="mdi:exclamation-thick" />&ensp;Varování: Zadáno méně než 2 názvů paralelních programů
-                </small>
-            </p>
-            <p v-if="editedEvent.feedbackType !== 'select'">
-                <label for="detailQuestion">Doplňující otázka</label>&ensp;
-                <input
-                    id="detailQuestion" v-model="editedEvent.detailQuestion" type="text" name="detailQuestion"
-                    placeholder="Tipy a připomínky">
-            </p>
+            <FeedbackTypeSelect
+                id="feedbackType" :type="feedbackOrDefault" :permit-empty="true"
+                :event="editedEvent"
+                :detail-question="editedEvent.detailQuestion" 
+                :questions="editedEvent.questions"
+                @update:type="t => feedbackOrDefault = t"
+                @update:detail-question="q => editedEvent.detailQuestion = q"
+                @update:questions="q => editedEvent.questions = q"
+            />
         </fieldset>
     </div>
 </template>
@@ -108,8 +84,7 @@
 <script setup lang="ts">
 import type { FeedbackType, ScheduleEvent } from '@/types/cloud'
 import { colorToHex } from '@/utils/colors'
-import { toHumanTime, getParallelEvents } from '@/utils/types'
-
+import { toHumanTime } from '@/utils/types'
 const props = defineProps<{
     value: ScheduleEvent,
 }>()
@@ -124,7 +99,6 @@ const editedEvent = reactive(props.value)
 watch(props.value, (newValue) => {
     Object.assign(editedEvent, newValue)
 })
-const parallel = computed(() => getParallelEvents(editedEvent))
 
 const colorHex = computed({
     get: () => editedEvent.color ? colorToHex(editedEvent.color) : undefined,
@@ -140,7 +114,6 @@ const feedbackOrDefault = computed<FeedbackType | ''>({
     },
     set: (val) => editedEvent.feedbackType = val == '' ? undefined : val,
 })
-const questionsOrBlank = computed(() => editedEvent.questions?.length ? editedEvent.questions : [''])
 
 const ClassicEditor = ref()
 onMounted(() => {

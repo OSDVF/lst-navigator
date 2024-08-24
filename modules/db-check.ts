@@ -50,7 +50,7 @@ export default defineNuxtModule({
                 ///
                 for (const ref of EventSubcollectionsList) {
                     if (!event[ref] || !(await event[ref].get())) {
-                        console.warn(`Event '${evtDoc.id}' subdcollection reference '${ref}': '${event[ref] instanceof DocumentReference ? event[ref]?.path : event[ref]}' is not valid`)
+                        console.warn(`Event '${evtDoc.id}' subcollection reference '${ref}': '${event[ref] instanceof DocumentReference ? event[ref]?.path : event[ref]}' is not valid`)
                     }
                 }
             }

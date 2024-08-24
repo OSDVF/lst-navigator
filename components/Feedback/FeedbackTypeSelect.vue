@@ -1,0 +1,91 @@
+<template>
+    <div>
+        <label for="feedbackType">Typ</label>&ensp;
+        <select v-model="type" name="feedbackType">
+            <option v-if="p.permitEmpty" value="">Žádný</option>
+            <option value="basic">⭐⭐⭐⭐⭐</option>
+            <option value="complicated">Několik ⭐⭐⭐⭐⭐</option>
+            <option value="text">Textová otázka</option>
+            <option value="parallel">Paralelní programy</option>
+        </select>
+
+        <div v-if="type == 'complicated'">
+            <h4>Položky k hodnocení</h4>
+            <div v-for="(_question, index) in questionsOrBlank" :key="`q${index}`">
+                <label :for="`question${index}`">Položka {{ index + 1 }}</label>&ensp;
+                <input :id="`question${index}`" v-model="questions![index]" type="text" name="questions[]">
+                <button type="button" title="Odebrat" @click="questions!.splice(index, 1)">
+                    <Icon name="mdi:trash-can" />
+                </button>
+            </div>
+            <button
+                v-show="questionsOrBlank[questionsOrBlank.length - 1]" type="button"
+                @click="questions = [...(questions ?? []), '']">+</button>
+        </div>
+        <p v-else-if="type === 'parallel'">
+            <template v-if="typeof event !== 'undefined'">
+                <small>Paralelní programy: {{ parallel.join(', ') }}</small>
+                <small v-if="parallel.length < 2" class="text-danger"><br>
+                    <Icon name="mdi:exclamation-thick" />&ensp;Varování: Zadáno méně než 2 názvů paralelních programů
+                </small>
+            </template>
+        </p>
+        <p v-if="type !== 'select' && typeof event !== 'undefined'">
+            <label for="detailQuestion">Doplňující otázka</label>&ensp;
+            <input
+                id="detailQuestion" v-model="detailQuestion" type="text" name="detailQuestion"
+                placeholder="Tipy a připomínky">
+        </p>
+    </div>
+</template>
+
+<script setup lang="ts">
+import type { FeedbackType, ScheduleEvent } from '~/types/cloud'
+import { getParallelEvents } from '@/utils/types'
+
+const p = defineProps<{
+    type: FeedbackType | '',
+    permitEmpty?: boolean,
+    questions?: string[],
+    event?: ScheduleEvent,
+    detailQuestion?: string,
+}>()
+
+const e = defineEmits<{
+    'update:detailQuestion': [value: string],
+    'update:questions': [value: string[]],
+    'update:type': [value: FeedbackType | ''],
+}>()
+
+const questions = computed({
+    get() {
+        return p.questions
+    },
+    set(value: string[] | undefined) {
+        if (Array.isArray(value))
+            e('update:questions', value)
+    },
+})
+
+const questionsOrBlank = computed(() => questions.value?.length ? questions.value : [''])
+const parallel = computed(() => p.event ? getParallelEvents(p.event) : [])
+
+const type = computed({
+    get() {
+        return p.type
+    },
+    set(value: FeedbackType | '') {
+        e('update:type', value)
+    },
+})
+
+const detailQuestion = computed({
+    get() {
+        return p.detailQuestion
+    },
+    set(value?: string) {
+        if (typeof value === 'string')
+            e('update:detailQuestion', value)
+    },
+})
+</script>

@@ -4,6 +4,9 @@
 .inline-block {
   display: inline-block;
 }
+.inline-flex {
+  display: inline-flex;
+}
 
 .align-top {
   vertical-align: top;
@@ -42,8 +45,15 @@ $helpercount: 5;
 $sides: (top, bottom, left, right); // Leave this variable alone
 
 @for $i from 0 to $helpercount {
+  $value: $i * $spaceamount;
+  .m-#{$i} {
+    margin: #{$value}rem !important;
+  }
+
+  .p-#{$i} {
+    padding: #{$value}rem !important;
+  }
   @each $side in $sides {
-    $value: $i * $spaceamount;
     .m#{str-slice($side, 0, 1)}-#{$i} {
       margin-#{$side}: #{$value}rem !important;
     }
@@ -54,12 +64,26 @@ $sides: (top, bottom, left, right); // Leave this variable alone
   }
 }
 
+.editable {
+  font-size: 1rem;
+  border: 0;
+
+  &:hover,
+  &:focus {
+      border: unset;
+  }
+}
+
 .d-block {
   display: block;
 }
 
 .nowrap {
   white-space: nowrap;
+}
+
+.h3 {
+  font-size: 1.5rem;
 }
 
 .small {

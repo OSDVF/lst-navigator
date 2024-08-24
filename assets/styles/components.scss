@@ -140,13 +140,3 @@ details.border {
 .text-danger {
     color: rgb(255, 94, 0);
 }
-
-.editable {
-    font-size: 1rem;
-    border: 0;
-
-    &:hover,
-    &:focus {
-        border: unset;
-    }
-}
