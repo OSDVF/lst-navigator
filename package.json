@@ -27,7 +27,7 @@
     "@types/node": "^18.19.39",
     "@types/randomcolor": "^0.5.9",
     "@typescript-eslint/parser": "^6.21.0",
-    "@vite-pwa/nuxt": "^0.1.2",
+    "@vite-pwa/nuxt": "^0.10.1",
     "@vueuse/core": "^10.11.0",
     "@vueuse/gesture": "^2.0.0",
     "@vueuse/motion": "^2.2.3",
