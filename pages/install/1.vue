@@ -44,6 +44,7 @@ const skipToNextIf = inject<(ref: Ref) => void>('skipToNextIf')
 skipToNextIf?.(asyncComputed(async () => {
     if (import.meta.client && window.matchMedia('(display-mode: standalone)').matches) { return true }
     const p = $deferredPrompt()
+    await p.prompt()
     return p !== null && (await p.userChoice).outcome === 'accepted'
 }, false))
 </script>

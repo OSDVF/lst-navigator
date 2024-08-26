@@ -171,7 +171,7 @@ const iconsRoute = new Route(({ request }) => {
 
 registerRoute(iconsRoute)
 
-const fallbackRoute = new Route(() => {}, new StaleWhileRevalidate())
+const fallbackRoute = new Route(() => true, new StaleWhileRevalidate())
 
 registerRoute(fallbackRoute)
 

@@ -352,7 +352,13 @@ export const useCloudStore = defineStore('cloud', () => {
     const days = shallowRef(scheduleCollection)
     const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
     const suggestions = computed<ScheduleEvent[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last'))
-    const lastSuggestion = computed(() => (suggestionsAndLast.value.find((s) => s.id === 'last') ?? -1) as number)
+    const lastSuggestion = computed(() => {
+        let last = suggestionsAndLast.value.find((s) => s.id === 'last')?.last
+        if(isNaN(last)) {
+            last = 0
+        }
+        return (last ?? -1) as number
+    })
 
     const notesCollection = currentEventCollection('notes')
     const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})

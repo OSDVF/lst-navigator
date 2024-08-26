@@ -13,7 +13,7 @@
         </summary>
         <ul class="tree">
             <li v-for="(file, fileName) in tree?.directory" :key="fileName">
-                <FileTree
+                <LazyFileTree
                     v-model="selectedPath" :tree="file" :path="p.join(path, fileName as string)"
                     @open="(a) => emits('open', a)" />
             </li>
@@ -23,8 +23,7 @@
 
 <script setup lang="ts">
 import p from 'path'
-import type * as FI from 'file-extension-icon-js'
-const icons = ref<typeof FI>()
+const icons = ref()
 
 defineProps<{
     tree: FileTree | undefined,
@@ -36,6 +35,10 @@ const emits = defineEmits<{
 }>()
 
 onMounted(async () => {
-    icons.value = await import('file-extension-icon-js')
+    try {
+        icons.value = await import('file-extension-icon-js')
+    } catch {
+        console.log('No file extension icons')
+    }
 })
 </script>

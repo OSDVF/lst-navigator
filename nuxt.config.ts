@@ -47,8 +47,9 @@ const config = defineNuxtConfig({
         transpile: [
             'lru-cache',
         ],
+        analyze: true,
     },
-    compatibilityDate: '2024-07-07',
+    compatibilityDate: '2024-08-24',
     css: [
         '~/assets/styles/base.scss',
         '~/assets/styles/components.scss',
@@ -62,14 +63,15 @@ const config = defineNuxtConfig({
     experimental: {
         headNext: true,
         polyfillVueUseHead: false,
+        payloadExtraction: false,
     },
     hooks: {
         'build:manifest' (manifest) {
             for (const key in manifest) {
                 const mEntry = manifest[key]
-                mEntry.imports = mEntry.imports?.filter((v: string) => !v.includes('file-extension-icon-js'))
-                mEntry.dynamicImports = mEntry.dynamicImports?.filter((v: string) => !v.includes('file-extension-icon-js'))
-                mEntry.preload &&= !mEntry.file.includes('file-extension-icon-js')
+                mEntry.imports = mEntry.imports?.filter((v: string) => !v.includes('file-extension-icon-js') && !v.includes('ckeditor') && !v.includes('sentry'))
+                mEntry.dynamicImports = mEntry.dynamicImports?.filter((v: string) => !v.includes('file-extension-icon-js') && !v.includes('ckeditor') && !v.includes('sentry'))
+                mEntry.preload &&= !mEntry.file.includes('file-extension-icon-js') && !mEntry.file.includes('ckeditor') && !mEntry.file.includes('sentry')
                 mEntry.prefetch &&= mEntry.preload
                 manifest[key] = mEntry
             }
@@ -97,11 +99,14 @@ const config = defineNuxtConfig({
             }
             : undefined,
         filename: 'sw.ts',
-        includeAssets: ['__/**'],
         injectManifest: {
             rollupFormat: 'iife',
             globIgnores: [
                 '**/node_modules/**/*',
+                '**/__/**',
+                '**/public/android/**',
+                '**/public/ios/**',
+                '**/public/windows11/**',
                 '**/public/audio/silence.zip',
                 '/404',
             ],
@@ -138,10 +143,10 @@ const config = defineNuxtConfig({
         build: {
             modulePreload: {
                 resolveDependencies: (_filename, deps) => {
-                    return deps.filter(v => !v.includes('file-extension-icon-js'))
+                    return deps.filter(v => !v.includes('file-extension-icon-js') && !v.includes('sentry'))
                 },
             },
-            minify: 'terser',
+            minify: 'esbuild',
             rollupOptions: {
                 output: {
                     manualChunks(id: string) {

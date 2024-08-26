@@ -81,7 +81,7 @@ const syncHeader = ref<HTMLElement>()
 const tableBody = ref<HTMLElement>()
 
 function isSelect(eIndex: string | number) {
-    const config = props.config?.config?.[eIndex]?.type ?? props.day?.program[eIndex as number].feedbackType
+    const config = props.config?.config?.[eIndex]?.type ?? props.day?.program[eIndex as number]?.feedbackType
     return (config) && ['parallel', 'select'].includes(config)
 }
 

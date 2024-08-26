@@ -23,7 +23,6 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
     }
     app.hook('app:mounted', hydrate)
     onMounted(hydrate)
-    console.log('Created persistent ref', name, internalRef.value)
     watch(internalRef, (newValue) => {
         LocalStorage.setItem(key, isRef(newValue) ? newValue.value as UnwrapRef<T> : newValue)
         console.log('Persisted', name, newValue)

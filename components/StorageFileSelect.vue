@@ -1,6 +1,6 @@
 <template>
     <p v-if="tree" class="fileTree">
-        <FileTree
+        <LazyFileTree
             v-for="(item, name) in tree.directory" :key="name" v-model="currentPath" :tree="item"
             :path="name.toString()" @open="(p) => useFileTree(p)" />
     </p>
@@ -11,7 +11,7 @@ import useFileTree from '~/utils/fileTree'
 
 const currentPath = defineModel<string>()
 
-const tree = computed(() => useFileTree(currentPath.value || "/").value)
+const tree = computed(() => useFileTree(currentPath.value || '/').value)
 </script>
 
 <style lang="scss">

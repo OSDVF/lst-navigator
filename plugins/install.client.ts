@@ -4,7 +4,7 @@ import { useSettings } from '~/stores/settings'
 let deferredPrompt: BeforeInstallPromptEvent | null = null
 window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => {
     // Prevents the default mini-infobar or install dialog from appearing on mobile
-    e.preventDefault()
+    //e.preventDefault()
     // Save the event because you'll need to trigger it later.
     deferredPrompt = e
     // Show your customized install prompt for your PWA
@@ -26,8 +26,7 @@ export default defineNuxtPlugin({
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {
                     registration.installing?.addEventListener('statechange', async (ev) => {
-                        await settings.installStep.isRead
-                        if ((ev.target as ServiceWorker).state === 'activated' && (settings.installStep.data ?? 0) >= config.public.installStepCount) {
+                        if ((ev.target as ServiceWorker).state === 'activated' && (settings.installStep ?? 0) >= config.public.installStepCount) {
                             console.log('Update found')
                             onUpdateCallback.value(registration)
                             updateFound = true

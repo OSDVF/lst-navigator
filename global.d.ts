@@ -1,4 +1,4 @@
-import type { PwaInjection } from "@vite-pwa/nuxt";
+import type { PwaInjection } from '@vite-pwa/nuxt';
 import type * as Sentry from '@sentry/vue'
 import { idb } from '@composi/idb/types'
 
@@ -15,7 +15,7 @@ declare namespace NodeJS {
 declare function definePageMeta(pageMeta: any): void // Supress typescipt warning in VSCode
 
 declare global {
-  interface WindowEventMap { "beforeinstallprompt": BeforeInstallPromptEvent; }
+  interface WindowEventMap { 'beforeinstallprompt': BeforeInstallPromptEvent; }
 
   /**
    * The BeforeInstallPromptEvent is fired at the Window.onbeforeinstallprompt handler

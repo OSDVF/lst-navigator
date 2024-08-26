@@ -14,7 +14,7 @@
                     <Icon name="material-symbols:arrow-circle-right-outline" size="2rem" />
                     Další
                 </NuxtLink>
-                <NuxtLink v-else to="/schedule" @click="settings.installStep.data = partIndex + 1">
+                <NuxtLink v-else to="/schedule" @click="settings.installStep = partIndex + 1">
                     <Icon name="material-symbols:trending-up" size="2rem" />
                     Začít
                 </NuxtLink>
@@ -44,7 +44,7 @@ const onNextButtonClickListeners = ref<(() => void)[]>([])
 function onNextButtonClick() {
     onNextButtonClickListeners.value.forEach(listener => listener())
     onNextButtonClickListeners.value = []// clear after changing the page
-    settings.installStep.data = partIndex.value + 1
+    settings.installStep = partIndex.value + 1
 }
 
 provide('onNextButtonClick', (listener: () => void) => {

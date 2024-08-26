@@ -28,19 +28,19 @@
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <span class="content" v-html="entry.description?.trim() || 'Žádné detaily'" />
                     <template v-if="cloud.user.auth?.uid && cloud.resolvedPermissions.editSchedule">
-                        <button v-if="index > 0" class="edit" title="Posunout nahoru">
-                            <Icon class="icon" name="mdi:arrow-up" @click.prevent="moveUp(entry, index)" />
+                        <button v-if="index > 0" class="edit" title="Posunout nahoru" @click.prevent="moveUp(entry, index)">
+                            <Icon class="icon" name="mdi:arrow-up" />
                         </button>
-                        <button v-if="index < selectedProgram.length - 1" class="edit" title="Posunout dolů">
-                            <Icon class="icon" name="mdi:arrow-down" @click.prevent="moveDown(entry, index)" />
+                        <button v-if="index < selectedProgram.length - 1" class="edit" title="Posunout dolů" @click.prevent="moveDown(entry, index)">
+                            <Icon class="icon" name="mdi:arrow-down" />
                         </button>
                         <NuxtLink :to="`/schedule/${selectedDayIndex}/edit/${index}`">
                             <button class="edit" title="Upravit">
                                 <Icon class="icon" name="mdi:pencil" />
                             </button>
                         </NuxtLink>
-                        <button class="edit" title="Smazat">
-                            <Icon class="icon" name="mdi:trash-can" @click.prevent="deleteProgram(entry)" />
+                        <button class="edit" title="Smazat" @click.prevent="deleteProgram(entry)">
+                            <Icon class="icon" name="mdi:trash-can" />
                         </button>
                     </template>
                     <span class="more">

@@ -87,24 +87,22 @@ onMounted(() => {
     /// Redirection guards
     ///
 
-    installStep.isRead.then(() => {
-        const safeStep = installStep.data
-        if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
-            router.push('/install/' + safeStep)
-        }
-        const redirectRoute : RouteLocationRaw = {
-            path: '/update',
-            query: {
-                redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath,
-            },
-        }
-        if (app.$pwa.needRefresh) {
-            router.push(redirectRoute)
-        }
+    const safeStep = toRaw(installStep)
+    if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
+        router.push('/install/' + safeStep)
+    }
+    const redirectRoute : RouteLocationRaw = {
+        path: '/update',
+        query: {
+            redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath,
+        },
+    }
+    if (app.$pwa.needRefresh) {
+        router.push(redirectRoute)
+    }
 
-        app.$onUpdateCallback(() => {
-            router.push(redirectRoute)
-        })
+    app.$onUpdateCallback(() => {
+        router.push(redirectRoute)
     })
 })
 

@@ -135,10 +135,15 @@ async function editProgram(event: Event) {
     dirty.value = false // Reset dirty state
     router.push('/schedule/' + selectedDayIndex.value)
 
-    setDoc(
+    const last = (cloud.lastSuggestion + 1) % parseInt(config.public.maxSuggestions)
+    await setDoc(
         doc(knownCollection(fs, 'suggestions'),
-            ((cloud.lastSuggestion + 1) % parseInt(config.public.maxSuggestions)).toString()),
+            (last).toString()),
         parsedData,
+    )
+
+    await setDoc(
+        doc(knownCollection(fs, 'suggestions'), 'last'), { last }, { merge: true },
     )
 }
 

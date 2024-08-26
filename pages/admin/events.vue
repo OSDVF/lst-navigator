@@ -76,7 +76,7 @@
 
 <script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, getDoc, getDocs, orderBy, query, limit, collection, writeBatch, type Query } from 'firebase/firestore'
+import { doc, getDoc, getDocs, orderBy, query, limit, collection, writeBatch, type Query, arrayUnion } from 'firebase/firestore'
 import { setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
@@ -195,9 +195,9 @@ async function editEvent(createNew = false) {
             date: toFirebaseDate(i),
             dishes: null,
             name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' })),
-            program: [],
+            program: arrayUnion(),
             manager: null,
-        } as ScheduleDay, { merge: true });
+        }, { merge: true });
     }
 
     // Create subcollections
@@ -324,8 +324,11 @@ async function deleteQueryBatch(query: Query, resolve: () => void) {
     });
 }
 
-function toTitleCase(s: string) {
-    return s.replace(/\w\S*/ug, (txt) => txt[0].toUpperCase() + txt.substring(1).toLowerCase());
+// https://stackoverflow.com/a/11934819
+function toTitleCase(s: string){
+    return s.replace(/([^\s:-])([^\s:-]*)/g,function($0,$1,$2){
+        return $1.toUpperCase()+$2.toLowerCase();
+    });
 }
 
 </script>

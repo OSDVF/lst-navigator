@@ -147,14 +147,6 @@ export const useSettings = defineStore('settings', () => {
 
     const selectedGroup = usePersistentRef<number>('selectedGroup', 0)
     const userNickname = usePersistentRef<string>('userNickname', '')
-    const userNicknameProxy = computed({
-        get() {
-            return userNickname.value
-        },
-        set(value: string) {
-            userNickname.value = value
-        },
-    })
     const userIdentifier = computed({
         get() {
             if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
@@ -169,7 +161,7 @@ export const useSettings = defineStore('settings', () => {
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
     return {
-        installStep: useIDBKeyval('installStep', 0),
+        installStep: usePersistentRef<number>('installStep', 0),
         selectedAudioName: skipHydrate(selectedAudioName),
         selectedAudioUrl,
         audioList,
@@ -183,7 +175,7 @@ export const useSettings = defineStore('settings', () => {
         selectedGroup,
         userNickname,
         userIdentifier,
-        doNotifications: useIDBKeyval('doNotifications', true),
+        doNotifications: skipHydrate(useIDBKeyval('doNotifications', true)),
         notesDirtyTime,
     }
 })
