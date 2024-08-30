@@ -13,6 +13,7 @@ const commitHash = childProcess.execSync('git rev-parse HEAD').toString().trim()
 const compileTime = new Date().getTime().toString()
 const compileTimeZone = new Date().getTimezoneOffset().toString()
 const isDevMode = process.env.NODE_ENV !== 'production'
+const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
 
 const config = defineNuxtConfig({
     app: {
@@ -78,6 +79,22 @@ const config = defineNuxtConfig({
         '@nuxt/eslint',
         'nuxt-vitalizer',
     ],
+    nitro: {
+        prerender: {
+            crawlLinks: false,
+            failOnError: true,
+            routes: [
+                '/',
+                '/feedback',
+                '/info',
+                '/login',
+                '/schedule',
+                '/settings',
+                '/update',
+                ...[...Array(prerenderDays).keys()].map((i) => `/schedule/${i}`),
+            ],
+        },
+    },
     pwa: {
         devOptions: isDevMode
             ? {
@@ -123,10 +140,6 @@ const config = defineNuxtConfig({
         },
         '/admin/**': {
             prerender: false, 
-            static: false,
-        },
-        '/schedule/*/*' : {
-            prerender: false,
             static: false,
         },
         '/__/**': {

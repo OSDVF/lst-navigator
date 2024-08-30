@@ -50,8 +50,6 @@ watch(cloudStore, (newCloud) => {
     }
 })
 
-cloudStore.days.map((_, index) => prerenderRoutes('/schedule/' + index.toString()))
-
 if (typeof route.params.day === 'undefined' && cloudStore?.scheduleLoading === false) {
     findToday(cloudStore)
 }

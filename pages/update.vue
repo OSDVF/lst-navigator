@@ -59,7 +59,8 @@ async function download() {
                 installed: 'true',
             },
         })
-        updatePromise?.finally(() => { location.reload(true) })
+        // eslint-disable-next-line no-debugger
+        updatePromise?.finally(() => { debugger; confirm('Aktualizováno - přenačíst aplikaci?') && location.reload(true) })
     }
 }
 
