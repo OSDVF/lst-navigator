@@ -20,5 +20,15 @@ import { onlyIntIndexed } from '@/utils/types'
 import { useCloudStore } from '@/stores/cloud'
 
 const cloudStore = useCloudStore()
-const programPartsFeedback = computed(() => onlyIntIndexed(cloudStore.feedback.online) as Omit<typeof cloudStore.feedback.online[0], number>[])
+const programPartsFeedback = computed(() => {
+    const result: any[] = []
+    for (const key in cloudStore.feedback.online) {
+        const val = cloudStore.feedback.online[key]
+        const id = (val as any).id
+        if (typeof val === 'object' && !isNaN(parseInt(id))) {
+            result[id] = val
+        }
+    }
+    return result
+})
 </script>

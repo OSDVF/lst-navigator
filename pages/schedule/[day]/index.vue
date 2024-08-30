@@ -6,9 +6,9 @@
 
         <div role="list" class="schedule">
             <details
-                v-for="(entry, index) in selectedProgram" :key="`e${index}`" role="listitem" :style="{
+                v-for="(entry, index) in selectedProgram" :key="`e${index}`" ref="rows" role="listitem" :style="{
                     '--color': entry.color,
-                    'border-left': parseInt((cloud.days[selectedDayIndex].date ?? '').split('-')?.[2]) == new Date().getDate() && nowFormatted > (entry.time ?? 0) && nowFormatted < (selectedProgram[index + 1]?.time ?? 0) ? '4px solid #0000ffaa' : undefined
+                    'border-left': isCurrent[index] ? '4px solid #0000ffaa' : undefined
                 }">
                 <summary>
                     <span class="align-top mr-1">
@@ -74,15 +74,32 @@ const route = useRoute()
 const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? parseInt(route.params.day) : 0)
 const cloud = useCloudStore()
 const selectedDayId = computed(() => cloud.days[selectedDayIndex.value]?.id)
-const selectedProgram = computed(() => cloud.days ? cloud.days[selectedDayIndex.value]?.program : [])
+const selectedProgram = computed(() => cloud.days?.[selectedDayIndex.value]?.program || [])
 const settings = useSettings()
 const now = ref(new Date())
+const prerendering = import.meta.prerender ?? false
+const isCurrent = computed(()=> selectedProgram.value.map((p, i) => (!prerendering && parseInt((cloud.days[selectedDayIndex.value].date ?? '').split('-')?.[2]) == new Date().getDate() && nowFormatted.value > (p.time ?? 0) && nowFormatted.value < (selectedProgram.value[i + 1]?.time ?? 0))))
+
+const rows = ref<HTMLElement[]>([])
+let interval: NodeJS.Timeout | undefined
 
 onMounted(() => {
-    setInterval(() => {
+    interval = setInterval(() => {
         now.value = new Date()
     }, 1000 * 60)// Automatic time update
+
+    isCurrent.value.find((v,i) => {
+        if(v) {
+            rows.value[i].scrollIntoView()
+        }
+    })
 })
+onBeforeUnmount(() => {
+    if (interval) {
+        clearInterval(interval)
+    }
+})
+
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
 function getFeedback(entry: any, index: number) {

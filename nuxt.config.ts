@@ -3,7 +3,6 @@
 import fs from 'fs'
 import childProcess from 'child_process'
 import { sentryVitePlugin } from '@sentry/vite-plugin'
-import { splitVendorChunkPlugin } from 'vite'
 import topLevelAwait from 'vite-plugin-top-level-await'
 import { icons } from './icons.json'
 import firebaseConfig from './firebase.json'
@@ -63,19 +62,6 @@ const config = defineNuxtConfig({
     experimental: {
         headNext: true,
         polyfillVueUseHead: false,
-        payloadExtraction: false,
-    },
-    hooks: {
-        'build:manifest' (manifest) {
-            for (const key in manifest) {
-                const mEntry = manifest[key]
-                mEntry.imports = mEntry.imports?.filter((v: string) => !v.includes('file-extension-icon-js') && !v.includes('ckeditor') && !v.includes('sentry'))
-                mEntry.dynamicImports = mEntry.dynamicImports?.filter((v: string) => !v.includes('file-extension-icon-js') && !v.includes('ckeditor') && !v.includes('sentry'))
-                mEntry.preload &&= !mEntry.file.includes('file-extension-icon-js') && !mEntry.file.includes('ckeditor') && !mEntry.file.includes('sentry')
-                mEntry.prefetch &&= mEntry.preload
-                manifest[key] = mEntry
-            }
-        },
     },
     ignore: [
         'maintenance/**',
@@ -90,6 +76,7 @@ const config = defineNuxtConfig({
         'nuxt-scheduler',
         'nuxt-rating',
         '@nuxt/eslint',
+        'nuxt-vitalizer',
     ],
     pwa: {
         devOptions: isDevMode
@@ -100,28 +87,29 @@ const config = defineNuxtConfig({
             : undefined,
         filename: 'sw.ts',
         injectManifest: {
-            rollupFormat: 'iife',
             globIgnores: [
-                '**/node_modules/**/*',
                 '**/__/**',
-                '**/public/android/**',
-                '**/public/ios/**',
-                '**/public/windows11/**',
-                '**/public/audio/silence.zip',
-                '/404',
+                '**/schedule/+([0-9])/*',//ignore the leaf level schedule pages
+                '**/android/**',
+                '**/ios/**',
+                '**/windows11/**',
+                '**/audio/silence.zip',
+                '**/404',
             ],
+            sourcemap: true,
+            globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         },
         injectRegister: 'inline',
         manifest: {
-            name: process.env.VITE_APP_NAME,
-            short_name: process.env.VITE_APP_SHORT_NAME,
+            'name': process.env.VITE_APP_NAME,
+            'short_name': process.env.VITE_APP_SHORT_NAME,
             icons,
+            'start_url': './',
+            'id': 'cz.msmladez.lst24',
+            'theme_color': '#ffffff',
         },
         srcDir: 'utils',
         strategies: 'injectManifest',
-        workbox: {
-            sourcemap: true,
-        },
     },
     sourcemap: {
         server: true,
@@ -133,7 +121,15 @@ const config = defineNuxtConfig({
                 [firebaseConfig.hosting.headers[0].headers[0].key]: firebaseConfig.hosting.headers[0].headers[0].value,
             },
         },
-        '__/**': {
+        '/admin/**': {
+            prerender: false, 
+            static: false,
+        },
+        '/schedule/*/*' : {
+            prerender: false,
+            static: false,
+        },
+        '/__/**': {
             headers: {
                 'Content-Type': 'text/html',
             },
@@ -141,11 +137,7 @@ const config = defineNuxtConfig({
     },
     vite: {
         build: {
-            modulePreload: {
-                resolveDependencies: (_filename, deps) => {
-                    return deps.filter(v => !v.includes('file-extension-icon-js') && !v.includes('sentry'))
-                },
-            },
+            modulePreload: false,
             minify: 'esbuild',
             rollupOptions: {
                 output: {
@@ -193,8 +185,18 @@ const config = defineNuxtConfig({
                     name: commitHash,
                 },
             }),
-            splitVendorChunkPlugin(),
         ],
+        // revert chunk name
+        $client: {
+            build: {
+                rollupOptions: {
+                    output: {
+                        chunkFileNames: '_nuxt/[name].[hash].js',
+                        entryFileNames: '_nuxt/[name].[hash].js',
+                    },
+                },
+            },
+        },
     },
     vuefire: {
         emulators: {
@@ -250,6 +252,7 @@ const config = defineNuxtConfig({
             supportEmail: process.env.SUPPORT_EMAIL,
             iconifyCollection: process.env.ICONIFY_COLLECTION,
             maxSuggestions: process.env.MAX_SUGGESTIONS,
+            logWrites: process.env.LOG_WRITES === 'true',
         },
     },
     ssr: true,

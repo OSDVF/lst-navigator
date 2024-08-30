@@ -12,7 +12,7 @@
         </button>
         <br>
         <ClientOnly>
-            <button @click="$pwa.cancelInstall(); prevRoute !== null ? $router.back() : goToRedirectedFrom()">
+            <button @click="$pwa?.cancelInstall(); prevRoute !== null ? router.back() : goToRedirectedFrom()">
                 <Icon name="mdi:sync-off" />&ensp;Ignorovat
             </button>
         </ClientOnly>
@@ -38,7 +38,7 @@ onMounted(() => {
 })
 
 async function download() {
-    const updatePromise = $pwa.updateServiceWorker()
+    const updatePromise = $pwa?.updateServiceWorker()
     if (import.meta.client) {
         const regs = await navigator.serviceWorker?.getRegistrations()
         for (const reg of regs) {
@@ -59,7 +59,7 @@ async function download() {
                 installed: 'true',
             },
         })
-        updatePromise.finally(() => { location.reload(true) })
+        updatePromise?.finally(() => { location.reload(true) })
     }
 }
 

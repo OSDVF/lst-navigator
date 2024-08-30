@@ -2,8 +2,6 @@ import type { PwaInjection } from '@vite-pwa/nuxt';
 import type * as Sentry from '@sentry/vue'
 import { idb } from '@composi/idb/types'
 
-export { }
-
 // define environment variables here
 declare namespace NodeJS {
   interface ProcessEnv {
@@ -67,3 +65,5 @@ declare module '#app' {
 declare module '@composi/idb' {
   export = idb
 }
+
+export { }

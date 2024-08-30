@@ -19,8 +19,9 @@ const otherFeedback = computed(() => {
     if (replies) {
         for (const key in replies) {
             const val = replies[key]
-            if (typeof val === 'object' && isNaN(parseInt(key))) {
-                result[key] = val
+            const id = (val as any).id
+            if (typeof val === 'object' && isNaN(parseInt(id)) && Object.hasOwn(config.value, id)) {
+                result[id] = val
             }
         }
     }

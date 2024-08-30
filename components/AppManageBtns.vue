@@ -1,5 +1,5 @@
 <template>
-    <NuxtLink :to="`/update?redirect=${encodeURIComponent($router.currentRoute.value.fullPath)}`">
+    <NuxtLink :to="`/update?redirect=${encodeURIComponent(route.fullPath)}`">
         <button type="button" @click="forceUpdate">
             <Icon name="mdi:reload-alert" />
             Přeaktualizovat aplikaci
@@ -14,6 +14,8 @@
 </template>
 
 <script setup lang="ts">
+const route = useRoute()
+
 async function forceUpdate() {
     for (const registration of await navigator.serviceWorker.getRegistrations()) {
         registration.update()

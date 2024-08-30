@@ -13,6 +13,7 @@ import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
+import { debugRef } from '@diffx/debug-ref'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -44,7 +45,7 @@ if (import.meta.server) {
 
 export function eventSubCollection(fs: Firestore, event: string, document: EventSubcollection, ...segments: string[]): CollectionReference {
     // typecheck:
-    if(!(fs instanceof Firestore && typeof document === 'string' && typeof event === 'string' && segments.every((s) => typeof s === 'string'))){
+    if (!(fs instanceof Firestore && typeof document === 'string' && typeof event === 'string' && segments.every((s) => typeof s === 'string'))) {
         throw new Error(`Invalid arguments ${fs} ${event}, ${document}, ${segments.join(', ')}`)
     }
     return collection(fs, 'events', event, document, ...segments)
@@ -115,8 +116,8 @@ export const useCloudStore = defineStore('cloud', () => {
     const groupNames = computed(() => eventData.value?.groups ?? [])
     const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
-    const feedbackRepliesRaw = shallowRef(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
-    const feedbackConfig = shallowRef(useCollection<FeedbackConfig>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null))
+    const feedbackRepliesRaw = skipHydrate(shallowRef(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server })))
+    const feedbackConfig = skipHydrate(shallowRef(useCollection<FeedbackConfig>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)))
     const feedback = {
         config: feedbackConfig,
         col: fc,
@@ -124,13 +125,14 @@ export const useCloudStore = defineStore('cloud', () => {
         error: ref(),
         fetchFailed: ref(false),
         fetching: ref(false),
+        hydrate: hydrateOfflineFeedback,
         infoText: computed(() => eventData.value?.feedbackInfo),
         online: computed(() => {
             const result: { [key: string]: number | { [key: string | number]: { [user: string]: Feedback } } } = {}
             const replies = feedbackRepliesRaw.value as any
             if (replies) {
-                for (const key in replies) {
-                    const val = replies[key as keyof typeof replies]
+                for (const val of replies) {
+                    const key = val.id
                     if (typeof val === 'object' && val !== null) {
                         for (const innerKey in val) {
                             const k = innerKey as keyof typeof replies
@@ -348,13 +350,15 @@ export const useCloudStore = defineStore('cloud', () => {
             superAdmin: false,
         }
     })
-    const scheduleCollection = useCollection<ScheduleDay>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null, { maxRefDepth: 0, once: !!import.meta.server })
-    const days = shallowRef(scheduleCollection)
+    const scheduleCollection = useCollection<ScheduleDay>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null)
+    const days = skipHydrate(scheduleCollection)
+
+    debugRef('days', days)
     const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
     const suggestions = computed<ScheduleEvent[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last'))
     const lastSuggestion = computed(() => {
         let last = suggestionsAndLast.value.find((s) => s.id === 'last')?.last
-        if(isNaN(last)) {
+        if (isNaN(last)) {
             last = 0
         }
         return (last ?? -1) as number
@@ -380,7 +384,7 @@ export const useCloudStore = defineStore('cloud', () => {
     let hydrationDebounce: null | NodeJS.Timeout = null
     function hydrateOfflineFeedback(onlineFeedback: any) {
         hydrationDebounce = null
-        if (new Date(onlineFeedback?.[settings.userIdentifier] ?? 0).getTime() > feedback.dirtyTime.value) {
+        if (new Date(onlineFeedback?.[settings.userIdentifier]?.updated ?? 0).getTime() > feedback.dirtyTime.value) {
             for (const sIndex in onlineFeedback) {
                 const sPart = onlineFeedback[sIndex]
                 for (const eIndex in sPart) {
@@ -406,7 +410,7 @@ export const useCloudStore = defineStore('cloud', () => {
             hydrationDebounce = setTimeout(hydrateOfflineFeedback, 800)
         }
     })
-    hydrateOfflineFeedback(feedback.online)
+    hydrateOfflineFeedback(feedback.online.value)
 
     // Hydrate user
     onMounted(async () => {

@@ -2,9 +2,10 @@
     <article
         :style="{
             'overflow-x': movingOrTrainsitioning ? 'hidden' : undefined,
-        }"
-    >
-        <h1><template v-if="eventData?.icon"><Icon :name="eventData.icon" /></template>
+        }">
+        <h1><template v-if="eventData?.icon">
+                <Icon :name="eventData.icon" />
+            </template>
             {{ eventData?.title }}&ensp;
             <span class="muted">
                 {{ toHumanTime(eventData?.time) }}
@@ -21,15 +22,13 @@
             <h4>Tvá zpětná vazba</h4>
             <small>Odpovídáš jako <NuxtLink
                 class="dotted-underline" to="/settings"
-                title="Jméno je možné nastavit v nastavení"
-            >
+                title="Jméno je možné nastavit v nastavení">
                 {{ settings?.userNickname || 'anonym' }}</NuxtLink></small>
             <FeedbackForm
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
                 :complicated-questions="eventData?.questions" :select-options="getParallelEvents(eventData)"
                 :detail-question="eventData?.detailQuestion"
-                @set-data="(data: Feedback) => cloudStore.feedback.set(partIndex, eventItemIndex, data)"
-            />
+                @set-data="(data: Feedback) => cloudStore.feedback.set(partIndex, eventItemIndex, data)" />
             <p v-if="cloudStore.feedback.fetchFailed">
                 Nepodařilo se uložit tvou odpověď
                 <br>
@@ -48,7 +47,9 @@
         </h1>
         <p>
             <ClientOnly>
-                <ckeditor v-if="ClassicEditor" v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false" @blur="permitSwipe = true" />
+                <ckeditor
+                    v-if="ClassicEditor" v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false"
+                    @blur="permitSwipe = true" />
             </ClientOnly>
             <ProgressBar v-if="fetchingNote" />
         </p>
@@ -62,8 +63,7 @@
                             'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        :to="eventItemIndex < (cloudStore.days?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : route.fullPath)"
-                    >
+                        :to="eventItemIndex < (cloudStore.days?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : route.fullPath)">
                         <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
                             nextEventData?.title ?? nextEventData?.subtitle }}
                         <Icon name="mdi:chevron-right" />
@@ -94,7 +94,7 @@ if (import.meta.client) {
 const route = useRoute()
 const settings = useSettings()
 const partIndex = parseInt(route.params.day as string ?? 0)
-const eventItemIndex = parseInt(route.params.event as string ?? 0)
+const eventItemIndex = parseInt(route.params.event as string) || 0
 const cloudStore = useCloudStore()
 const globalBackground = inject('globalBackground', ref(''))
 const eventData = computed(() => {
@@ -119,7 +119,7 @@ const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[partInd
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocument(computed(()=>cloudStore.notesCollection ? doc(cloudStore.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
+const notesDocument = useDocument(computed(() => cloudStore.notesCollection ? doc(cloudStore.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
 const offlineNote = usePersistentRef(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 
@@ -131,7 +131,7 @@ const noteModel = computed({
             return onlineVal.note
         }
         return offlineNote.value.note
-    }, 
+    },
     set(value: string) {
         const newValue = {
             time: settings.notesDirtyTime = new Date().getTime(),
@@ -147,8 +147,8 @@ const noteModel = computed({
                             [eventItemIndex]: newValue,
                         },
                     },
-                    { merge: true }).then(() => { 
-                        fetchingNote.value = couldNotFetchNote.value = false 
+                    { merge: true }).then(() => {
+                        fetchingNote.value = couldNotFetchNote.value = false
                     }).catch((e) => { noteError.value = e })
 
                     setTimeout(() => {

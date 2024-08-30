@@ -16,7 +16,7 @@
             <div class="flex-full">
                 <ProgressBar v-if="cloudStore.feedback.fetching" />
                 <nav v-if="cloudStore.feedback.fetchFailed" class="p-1">
-                    {{ cloudStore.feedback.error || 'Nepodařilo se odeslat tvou odpověď. Ale ždáný strach, je uložená offline ve tvém zařízení.' }}
+                    {{ cloudStore.feedback.error || 'Nepodařilo se odeslat tvou odpověď. Ale žádný strach, je uložená offline ve tvém zařízení.' }}
                 </nav>
             </div>
             <div id="additionalNav" class="flex-full" />

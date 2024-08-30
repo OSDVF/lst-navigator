@@ -5,12 +5,12 @@
                 <Icon name="mdi:rss" /> Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
             </NuxtLink>
         </h1>
-        <NuxtLink v-if="feedbackPartIndex > 0" :to="`/feedback/${feedbackPartIndex + 1}`">
+        <NuxtLink v-if="feedbackPartIndex > 0" :to="`/feedback/${feedbackPartIndex - 1}`">
             <Icon name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;
         </NuxtLink>
         <NuxtLink
             v-if="feedbackPartIndex < (cloudStore.feedback.config?.length ?? 0) - 1"
-            :to="`/feedback/${feedbackPartIndex - 1}`"
+            :to="`/feedback/${feedbackPartIndex + 1}`"
         >
             Skočit na další část
             <Icon name="mdi:chevron-right" />
@@ -80,7 +80,7 @@
                 <nav class="eventItemNav">
                     <NuxtLink
                         v-for="(feedbackPart, fIndex) in cloudStore.feedback.config"
-                        :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : $route.fullPath"
+                        :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : router.currentRoute.value.fullPath"
                     >
                         <Icon v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
                         {{ fIndex === feedbackPartIndex ? '• ' : null }}<span class="muted">#{{ fIndex + 1 }}</span>&ensp;{{ feedbackPart.title }}

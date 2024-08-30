@@ -2,7 +2,7 @@
     <div style="padding-top: 4rem;">
         <nav role="navigation" class="days">
             <NuxtLink
-                v-for="(day, index) in cloudStore.days" :key="day?.name ?? `day${index}`" :style="{
+                v-for="(day, index) in cloudStore.days" :key="`day${index}`" :style="{
                     'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
                     'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
                 }" :to="`/schedule/${index}`"
@@ -50,11 +50,13 @@ watch(cloudStore, (newCloud) => {
     }
 })
 
+cloudStore.days.map((_, index) => prerenderRoutes('/schedule/' + index.toString()))
+
 if (typeof route.params.day === 'undefined' && cloudStore?.scheduleLoading === false) {
     findToday(cloudStore)
 }
 
-const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string))
+const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string) || 0)
 
 const currentTransition = ref('slide-left')
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
@@ -78,6 +80,7 @@ function findToday(newCloud: typeof cloudStore) {
     const newPath = `/schedule/${index}`
     router.replace(newPath)
 }
+
 
 function onTrainsitionAfterLeave() {
     transitioning.value = false
