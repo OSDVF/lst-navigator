@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - 
         name: Inject secrets
@@ -41,6 +41,9 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+
+      - name: Run postinstall scripts
+        run: bun pm trust --all
 
       - name: Build
         run: bun run build ci

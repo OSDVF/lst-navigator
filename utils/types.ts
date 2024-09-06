@@ -20,11 +20,11 @@ export function toHumanTime(time?: number) {
 export function toHumanFeedback(feedback?: FeedbackType) {
     if (!feedback) { return undefined }
     return {
-        'basic': '⭐⭐⭐⭐⭐',
-        'complicated': 'Několik ⭐⭐⭐⭐⭐',
-        'text': 'Textová otázka',
-        'parallel': 'Paralelní programy',
-        'select': 'Výběr z možností',
+        basic: '⭐⭐⭐⭐⭐',
+        complicated: 'Několik ⭐⭐⭐⭐⭐',
+        text: 'Textová otázka',
+        parallel: 'Paralelní programy',
+        select: 'Výběr z možností',
     }[feedback]
 }
 

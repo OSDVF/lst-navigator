@@ -40,8 +40,9 @@ function dtError(e: any, settings: any, techNote: string, message: string) {
 
 const DataTable = shallowRef()
 watch(dt, (newDt, old) => {
-    if (!old)
+    if (!old) {
         nextTick(() => newDt?.responsive.recalc())
+    }
 })
 
 onMounted(() => {
@@ -58,7 +59,7 @@ onMounted(() => {
         DataTable.value.use(Core.default)
         DataTable.value.use(Select.default)
         DataTable.value.use(Responsive.default)
-        if(!import.meta.dev) {
+        if (!import.meta.dev) {
             $.fn.dataTable.ext.errMode = 'none'
         }
     })

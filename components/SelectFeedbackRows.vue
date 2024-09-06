@@ -1,7 +1,7 @@
 <template>
-    <caption :title="config?.description ?? event?.description">
+    <div class="caption" :title="config?.description ?? event?.description">
         {{ (config?.name ?? event?.title) }}
-    </caption>
+    </div>
     <!-- Filtered by selected option -->
     <tr v-for="(filteredByOption, option) in repliesByOption" :key="option">
         <td :title="Object.keys(filteredByOption.replies).join(', ')">

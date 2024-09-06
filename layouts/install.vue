@@ -2,7 +2,7 @@
     <main>
 
         <Head>
-            <Title>{{ $config.public.title }}</Title>
+            <Title>{{ config.public.title }}</Title>
         </Head>
         <slot />
         <nav class="installNav">

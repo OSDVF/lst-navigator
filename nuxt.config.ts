@@ -118,12 +118,12 @@ const config = defineNuxtConfig({
         },
         injectRegister: 'inline',
         manifest: {
-            'name': process.env.VITE_APP_NAME,
-            'short_name': process.env.VITE_APP_SHORT_NAME,
+            name: process.env.VITE_APP_NAME,
+            short_name: process.env.VITE_APP_SHORT_NAME,
             icons,
-            'start_url': './',
-            'id': 'cz.msmladez.lst24',
-            'theme_color': '#ffffff',
+            start_url: './',
+            id: 'cz.msmladez.lst24',
+            theme_color: '#ffffff',
         },
         srcDir: 'utils',
         strategies: 'injectManifest',
@@ -139,7 +139,7 @@ const config = defineNuxtConfig({
             },
         },
         '/admin/**': {
-            prerender: false, 
+            prerender: false,
             static: false,
         },
         '/__/**': {

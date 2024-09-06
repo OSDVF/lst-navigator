@@ -1,10 +1,9 @@
 <template>
     <div>
         <FeedbackResultPart
-            v-for="key in Object.keys(otherFeedback).filter(key => !!otherFeedback[key])" :key="`p${key}`"
-            :feedback-parts="otherFeedback[key as any]" :config="{config: config[key], name: key}"
-            @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)"
-        />
+            v-for="key in Object.keys(otherFeedback).filter(key => !!otherFeedback[key])"
+            :key="`p${key}`" :feedback-parts="otherFeedback[key as any]" :config="{ config: config[key], name: key }"
+            @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)" />
     </div>
 </template>
 
@@ -29,8 +28,8 @@ const otherFeedback = computed(() => {
 })
 const config = computed(() => {
     const result: { [category: string]: { [question: string]: FeedbackConfig['individual'][0] } } = {}
-    if (cloudStore.feedback.config) {
-        for (const part of cloudStore.feedback.config.toSorted((a, b) => (a as any).id - (b as any).id)) {
+    if (Array.isArray(cloudStore.feedback.config)) {
+        for (const part of cloudStore.feedback.config.toSorted((a, b) => (a as any).id - (b as any).id) || []) {
             if (part.individual) {
                 if (!result[part.title]) {
                     result[part.title] = {}

@@ -86,7 +86,6 @@ onMounted(() => {
     ///
     /// Redirection guards
     ///
-
     const safeStep = toRaw(installStep)
     if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
         router.push('/install/' + safeStep)
@@ -94,10 +93,10 @@ onMounted(() => {
     const redirectRoute : RouteLocationRaw = {
         path: '/update',
         query: {
-            redirect: (route.path === '/update' ? route.params.redirect : null) ?? route.fullPath,
+            redirect: (route.path === '/update' ? route.query.redirect : null) ?? route.fullPath,
         },
     }
-    if (app.$pwa.needRefresh) {
+    if (app.$pwa?.needRefresh) {
         router.push(redirectRoute)
     }
 

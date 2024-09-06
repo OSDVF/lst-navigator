@@ -1,6 +1,7 @@
 import { defineStore, skipHydrate } from 'pinia'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { usePersistentRef } from '@/utils/persistence'
+import { useCloudStore } from '@/stores/cloud'
 
 let uniqueIdentifier = new Date().getTime().toString(36)
 try {
@@ -147,6 +148,15 @@ export const useSettings = defineStore('settings', () => {
 
     const selectedGroup = usePersistentRef<number>('selectedGroup', 0)
     const userNickname = usePersistentRef<string>('userNickname', '')
+    const cloud = useCloudStore()
+    watch(userNickname, (newNickname) => {
+        if(newNickname) {
+            cloud.feedback.dirtyTime = 0// force refresh from remote
+            cloud.feedback.hydrate(cloud.feedback.online)
+        } else {// clear feedback if user is not logged in
+            cloud.offlineFeedback.value = {}
+        }
+    })
     const userIdentifier = computed({
         get() {
             if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }

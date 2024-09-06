@@ -62,8 +62,9 @@ const questions = computed({
         return p.questions
     },
     set(value: string[] | undefined) {
-        if (Array.isArray(value))
+        if (Array.isArray(value)) {
             e('update:questions', value)
+        }
     },
 })
 
@@ -84,8 +85,9 @@ const detailQuestion = computed({
         return p.detailQuestion
     },
     set(value?: string) {
-        if (typeof value === 'string')
+        if (typeof value === 'string') {
             e('update:detailQuestion', value)
+        }
     },
 })
 </script>

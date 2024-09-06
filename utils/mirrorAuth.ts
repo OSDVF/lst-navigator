@@ -27,7 +27,10 @@ export default function mirrorAuth(base: string) {
 // If ran from command line, use the first argument as the base URL
 if (process.argv[1].endsWith('mirrorAuth.ts')) {
     const base = process.argv[2]
-    if (base)
+    if (base) {
         mirrorAuth(base)
-    else console.error('Enter base domain as an argument')
+    }
+    else {
+        console.error('Enter base domain as an argument')
+    }
 }

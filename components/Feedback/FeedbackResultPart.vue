@@ -1,17 +1,17 @@
 <template>
     <div>
-        <caption><span>{{ $props.day?.name ?? $props.config?.name }}</span>
+        <div class="caption">
+            <span>{{ $props.day?.name ?? $props.config?.name }}</span>
             <span v-show="admin.displayKind === 'individual'" class="actions">
                 <button title="CSV Export" @click="csvExport">
                     <Icon name="mdi:file-document-arrow-right" />
                 </button>
             </span>
-        </caption>
+        </div>
         <header
             ref="syncHeader" :style="{
                 transform: `translateX(${-scrollX}px)`
-            }"
-        >
+            }">
             <div class="th">
                 Název
             </div>
@@ -29,6 +29,11 @@
             <template v-else>
                 <div v-for="respondent in tabulated.respondents" :key="respondent" class="th">
                     {{ respondent }}
+                    <button
+                        title="Smazat respondentovy odpovědi v této kategorii"
+                        @click="deleteRespondentSection(respondent)">
+                        <Icon name="mdi:trash-can" />
+                    </button>
                 </div>
             </template>
         </header>
@@ -38,20 +43,18 @@
                     <template v-for="(replies, eIndex) in feedbackParts" :key="`e${eIndex}td`">
                         <SelectFeedbackRows
                             v-if="isSelect(eIndex)" :event="day?.program[eIndex as number]"
-                            :replies="replies" :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
-                            :config="config?.config?.[eIndex]"
-                            @set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)"
-                        />
+                            :replies="replies" :tabulated="tabulated.replies[eIndex]"
+                            :respondents="tabulated.respondents" :config="config?.config?.[eIndex]"
+                            @set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)" />
                         <tr
                             v-else-if="replies && Object.keys(replies).length > 0"
-                            :class="config?.config?.[eIndex].type"
-                        >
+                            :class="config?.config?.[eIndex]?.type">
                             <FeedbackCells
-                                :config="config?.config?.[eIndex]" :make-link="makeLink ? (() => makeLink!(eIndex)) : undefined"
+                                :config="config?.config?.[eIndex]"
+                                :make-link="makeLink ? (() => makeLink!(eIndex)) : undefined"
                                 :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
                                 :replies="replies" :event="day?.program[eIndex as number]"
-                                :on-set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)"
-                            />
+                                :on-set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)" />
                         </tr>
                     </template>
                 </tbody>
@@ -63,15 +66,21 @@
 <script setup lang="ts">
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
+import { useCloudStore } from '@/stores/cloud'
+import { storeToRefs } from 'pinia'
 import type { Feedback, FeedbackConfig, ScheduleDay, TabulatedFeedback } from '@/types/cloud';
 
 const props = defineProps<{
     day?: ScheduleDay,
     config?: { name: string, config: { [partName: string]: FeedbackConfig['individual'][0] } },
     feedbackParts: { [key: string | number]: { [user: string]: Feedback } }, // firstly indexed by event, secondly by user
-    onSetData?:(data: Feedback | null, eIndex: string, userIdentifier: string) => void
+    onSetData?: (data: Feedback | null, eIndex: string, userIdentifier: string) => void
     makeLink?: (eIndex: string | number) => string
 }>()
+
+defineExpose({
+    syncHeaders: doSyncHeaders,
+})
 
 const admin = useAdmin()
 const allRespondents = useRespondents()
@@ -139,6 +148,19 @@ function doSyncHeaders() {
     }
 }
 
+function deleteRespondentSection(respondent: string) {
+    if (props.onSetData) {
+        if (confirm('Opravdu chcete smazat odpovědi respondenta v této sekci?')) {
+            for (const feedbackPartI in props.feedbackParts) {
+                props.onSetData(null, feedbackPartI as string, respondent)
+            }
+        }
+    } else {
+        alert('No access to delete function')
+    }
+    allRespondents.names.delete(respondent)
+}
+
 onMounted(() => {
     doSyncHeaders()
     if (tableBody.value) {
@@ -146,14 +168,24 @@ onMounted(() => {
     }
 })
 
-function csvExport() {
+const cloud = useCloudStore()
+let triggeredSync = false
+cloud.feedback.watchFetching((loading, old) => {
+    if (!loading && old && triggeredSync) {//loaded
+        doSyncHeaders()
+        triggeredSync = false
+    }
+})
+watch(allRespondents.names, () => triggeredSync = true)
 
+function csvExport() {
+    alert('Not implemented')
 }
 
 </script>
 
 <style lang="scss">
-caption {
+.caption {
     .actions {
         visibility: hidden;
         padding-left: 1rem;

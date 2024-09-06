@@ -15,7 +15,7 @@
             <li v-for="(file, fileName) in tree?.directory" :key="fileName">
                 <LazyFileTree
                     v-model="selectedPath" :tree="file" :path="p.join(path, fileName as string)"
-                    @open="(a) => emits('open', a)" />
+                    @open="(a: string) => emits('open', a)" />
             </li>
         </ul>
     </details>
@@ -35,10 +35,12 @@ const emits = defineEmits<{
 }>()
 
 onMounted(async () => {
-    try {
-        icons.value = await import('file-extension-icon-js')
-    } catch {
-        console.log('No file extension icons')
+    if(!import.meta.prerender) {
+        try {
+            icons.value = await import('file-extension-icon-js')
+        } catch {
+            console.log('No file extension icons')
+        }
     }
 })
 </script>

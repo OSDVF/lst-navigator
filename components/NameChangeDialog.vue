@@ -19,11 +19,9 @@
 
 <script lang="ts" setup>
 import { useSettings } from '@/stores/settings'
-import { useCloudStore } from '@/stores/cloud'
 
 const settings = useSettings()
 const tempNickname = ref(toRaw(settings.userNickname))
-const cloud = useCloudStore()
 watch(settings, (s) => {
     if (s.userNickname !== tempNickname.value && tempNickname.value !== '') {
         tempNickname.value = s.userNickname
@@ -38,8 +36,6 @@ function confirmDialog(message: string) {
 function change() {
     if (confirmDialog('Jméno by mělo být v rámci akce unikátní. Jeho změna znamená ztrátu přístupu k současnému feedbacku a poznámkám.')) {
         settings.userNickname = tempNickname.value
-        cloud.feedback.dirtyTime = 0// force refresh from remote
-        cloud.feedback.hydrate(cloud.feedback.online)
     }
 }
 </script>

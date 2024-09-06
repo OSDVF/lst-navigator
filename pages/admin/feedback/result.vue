@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <ClientOnly>
         <Teleport to="#topNav">
             <label class="p-1">
                 <Icon name="mdi:magnify" /><button @click="zoomFactor += 0.1">
@@ -11,20 +11,17 @@
                     type="number" style="border:none;width: 7ex;display:inline">
             </label>
             <Multiselect
-                v-model="admin.displayKind"
-                style="width: auto;"
-                select-label=""
-                deselect-label=""
-                selected-label=""
-                :preselect-first="true"
-                :allow-empty="false" class="p-1" title="Zobrazení"
+                v-model="admin.displayKind" style="width: auto;" select-label="" deselect-label=""
+                selected-label="" :preselect-first="true" :allow-empty="false" class="p-1" title="Zobrazení"
                 :options="Object.keys(displayKindOptionIcons)" :searchable="false">
                 <template #singleLabel="props">
-                    <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option] }}</small>
+                    <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option]
+                    }}</small>
                 </template>
                 <template #option="props">
                     <span class="flex-center">
-                        <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option] }}</small>
+                        <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option]
+                        }}</small>
                     </span>
                 </template>
             </Multiselect>
@@ -59,9 +56,14 @@
                             Vypsat
                         </button>
                         <br>
-                        <textarea
-                            v-if="showRespondents" :rows="showRespondents ? respondents.names.size : 1" readonly
-                            :value="showRespondents ? Array.from(respondents.names).join('\n') : ''" />
+                        <template v-if="showRespondents">
+                            <div v-for="resp in respondents.names" :key="`r${resp}`">
+                                {{ resp }}
+                                <button title="Smazat respondenta" @click="deleteRespondent(resp)">
+                                    <Icon name="mdi:trash-can" />
+                                </button>
+                            </div>
+                        </template>
                     </template>
                 </div>
                 <div>
@@ -92,7 +94,7 @@
                 <NuxtPage :style="`font-size: ${zoomFactor}rem`" />
             </template>
         </div>
-    </div>
+    </ClientOnly>
 </template>
 
 <script setup lang="ts">
@@ -130,6 +132,24 @@ const displayKindCaptions: Record<string, string> = {
 }
 
 const showRespondents = ref(false)
+
+function deleteRespondent(respondent: string) {
+    if (confirm(`Opravdu chcete smazat odpovědi respondenta ${respondent}?`)) {
+        if (cloudStore.feedback.online) {
+            for (const section in cloudStore.feedback.online) {
+                const sectionData = cloudStore.feedback.online[section]
+                if (typeof sectionData !== 'number' && typeof sectionData !== 'string') {
+                    for (const question in sectionData) {
+                        if (sectionData[question]?.[respondent]) {
+                            cloudStore.feedback.set(section, question, null, respondent)
+                        }
+                    }
+                }
+            }
+            respondents.names.delete(respondent)
+        }
+    }
+}
 </script>
 
 <style lang="scss">
@@ -224,7 +244,7 @@ $border-color: rgba(128, 128, 128, 0.657);
         }
     }
 
-    caption {
+    .caption {
         display: flex;
         justify-content: center;
         width: 100%;

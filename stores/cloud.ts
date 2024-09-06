@@ -13,7 +13,7 @@ import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
-import { debugRef } from '@diffx/debug-ref'
+import type { WatchCallback } from 'vue'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -126,6 +126,9 @@ export const useCloudStore = defineStore('cloud', () => {
         fetchFailed: ref(false),
         fetching: ref(false),
         hydrate: hydrateOfflineFeedback,
+        watchFetching(cb: WatchCallback<boolean, boolean>) {
+            watch(feedback.fetching, cb)
+        },
         infoText: computed(() => eventData.value?.feedbackInfo),
         online: computed(() => {
             const result: { [key: string]: number | { [key: string | number]: { [user: string]: Feedback } } } = {}
@@ -148,10 +151,25 @@ export const useCloudStore = defineStore('cloud', () => {
             }
             return result
         }),
+        /**
+         * Set both online and offline feedback for a program item
+         * @param sIndex Section index
+         * @param eIndex Program item index
+         * @param data Feedback data
+         * @param userIdentifier Specify to set feedback for another user - it will not be saved offline
+         */
         set(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
             feedback.fetching.value = true
             if (typeof userIdentifier === 'undefined') {
-                offlineFeedback.value[sIndex] = { ...offlineFeedback.value[sIndex], [eIndex]: { [settings.userIdentifier]: data } }
+                // when userIdentifier is not set, it means that the user is setting his own feedback
+                // so cache it offline
+                offlineFeedback.value[selectedEvent.value] = {
+                    ...offlineFeedback.value[selectedEvent.value],
+                    [sIndex]: {
+                        ...offlineFeedback.value[selectedEvent.value]?.[sIndex],
+                        [eIndex]: { [settings.userIdentifier]: data },
+                    },
+                }
             }
             userIdentifier ??= settings.userIdentifier
             feedbackDirtyTime.value = new Date().getTime()
@@ -179,18 +197,18 @@ export const useCloudStore = defineStore('cloud', () => {
             // Convert null reply to deleteField
             const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value
             for (const sIndex in payload) {
-                const day = payload[sIndex]
-                for (const eIndex in day) {
-                    const event = day[eIndex]
+                const section = payload[sIndex]
+                for (const eIndex in section) {
+                    const event = section[eIndex]
                     for (const uIndex in event) {
                         const reply = event[uIndex]
                         if (reply === null || typeof reply === 'undefined') {
                             event[uIndex] = deleteField()
                         }
                     }
-                    day[eIndex] = event
+                    section[eIndex] = event
                 }
-                promises.push(setDoc(doc(feedback.col.value!, sIndex), day, {
+                promises.push(setDoc(doc(feedback.col.value!, sIndex), section, {
                     merge: true,
                 }))
             }
@@ -211,11 +229,13 @@ export const useCloudStore = defineStore('cloud', () => {
     async function updateUserInfo(newDoc: DocumentReference | null) { // User info is updated on-demand
         const wasPending = uPending.value
         if (newDoc) {
+            console.log('Updating user info with', newDoc.id)
             uPending.value = true
             const data = await (await getDoc(newDoc)).data()
             if (data) { user.info.value = data as UserInfo }
         } else {
             user.info.value = null
+            console.log('Erasing user info')
         }
         if (!wasPending) {
             uPending.value = false
@@ -353,7 +373,6 @@ export const useCloudStore = defineStore('cloud', () => {
     const scheduleCollection = useCollection<ScheduleDay>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null)
     const days = skipHydrate(scheduleCollection)
 
-    debugRef('days', days)
     const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
     const suggestions = computed<ScheduleEvent[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last'))
     const lastSuggestion = computed(() => {
@@ -365,7 +384,7 @@ export const useCloudStore = defineStore('cloud', () => {
     })
 
     const notesCollection = currentEventCollection('notes')
-    const offlineFeedback = usePersistentRef<{ [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } }>('lastNewFeedback', {})
+    const offlineFeedback = usePersistentRef<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } } }>('lastNewFeedback', {})
     const messagingToken = usePersistentRef('messagingToken', '')
     const isAuthenticated = usePersistentRef('isAuthenticated', false)
 
@@ -391,13 +410,13 @@ export const useCloudStore = defineStore('cloud', () => {
                     const ePart = sPart[eIndex]
                     const uPart = ePart[settings.userIdentifier]
                     if (uPart) {
-                        let offSPart = offlineFeedback.value[sIndex]
+                        let offSPart = offlineFeedback.value[selectedEvent.value][sIndex]
                         if (!offSPart) { offSPart = {} }
                         let offEPart = offSPart[eIndex]
                         if (!offEPart) { offEPart = {} }
                         offEPart[settings.userIdentifier] = uPart
                         offSPart[eIndex] = offEPart
-                        offlineFeedback.value[sIndex] = offSPart
+                        offlineFeedback.value[selectedEvent.value][sIndex] = offSPart
                     }
                 }
             }
@@ -413,38 +432,40 @@ export const useCloudStore = defineStore('cloud', () => {
     hydrateOfflineFeedback(feedback.online.value)
 
     // Hydrate user
-    onMounted(async () => {
-        if (config.public.debugUser) {
-            userAuth!.value = debugUser
-        } else {
-            await getRedirectResult(auth!).catch((reason) => {
+    if (import.meta.client) {
+        setTimeout(async () => {
+            if (config.public.debugUser) {
+                userAuth!.value = debugUser
+            } else {
+                await getRedirectResult(auth!).catch((reason) => {
 
-                console.error('Failed redirect result', reason)
-                app.$Sentry.captureEvent(reason, {
-                    data: reason,
+                    console.error('Failed redirect result', reason)
+                    app.$Sentry.captureEvent(reason, {
+                        data: reason,
+                    })
+                    user.error.value = reason
                 })
-                user.error.value = reason
-            })
-            watch(ud, (newDoc) => {
-                updateUserInfo(newDoc)
-            })
-            auth!.onAuthStateChanged({
-                next: (user) => {
-                    if (user) {
-                        if (!isAuthenticated.value) {
-                            onSignIn(user)
-                            isAuthenticated.value = true
+                watch(ud, (newDoc) => {
+                    updateUserInfo(newDoc)
+                })
+                auth!.onAuthStateChanged({
+                    next: (user) => {
+                        if (user) {
+                            if (!isAuthenticated.value) {
+                                onSignIn(user)
+                                isAuthenticated.value = true
+                            }
+                        } else {
+                            isAuthenticated.value = false
                         }
-                    } else {
-                        isAuthenticated.value = false
-                    }
-                    updateUserInfo(ud.value)
-                },
-                error: console.error,
-                complete: () => { console.log('completed') },
-            })
-        }
-    })
+                        updateUserInfo(ud.value)
+                    },
+                    error: console.error,
+                    complete: () => { console.log('completed') },
+                })
+            }
+        }, 1)
+    }
 
     if (import.meta.client) {
         navigator.serviceWorker?.getRegistration().then((registration) => {
@@ -478,8 +499,8 @@ export const useCloudStore = defineStore('cloud', () => {
         scheduleLoading: skipHydrate(scheduleCollection.pending),
         groupNames,
         notesCollection: skipHydrate(notesCollection),
-        feedback,
-        offlineFeedback: skipHydrate(offlineFeedback),
+        feedback: skipHydrate(feedback),
+        offlineFeedback: skipHydrate(computed(() => offlineFeedback.value[selectedEvent.value])),
         resolvedPermissions,
         suggestions,
         lastSuggestion,

@@ -12,7 +12,7 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.get('superAdmin', false) == true;
     }
     function isEventAdmin(event) {
-      return isSignedIn() && isSuperAdmin() || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.get(event, 0) >= 1;
+      return isSuperAdmin() || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.get(event, 0) >= 1;
     }
     match /users {
 			match /{userId}/{field=**} {
@@ -30,7 +30,7 @@ service cloud.firestore {
         allow create, delete: if isSuperAdmin();
       }
     
-      match /feedback/{sessionId} {
+      match /feedback/{sectionId} {
         allow read: if true;
         allow write: if true;
       }
@@ -44,7 +44,7 @@ service cloud.firestore {
       }
       match /schedule/{day} {
         allow read: if true;
-        allow write: if true;
+        allow write: if isEventAdmin(event);
       }
       match /users/{eventUser} {
         allow read: if true;

@@ -83,7 +83,7 @@ import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
 import { toFirebaseMonthDay, toJSDate, toFirebaseDate } from '@/utils/types'
-import type { EventDescription, ScheduleDay } from '~/types/cloud'
+import type { EventDescription } from '~/types/cloud'
 import type { Api } from '~/types/datatables'
 
 definePageMeta({
@@ -290,7 +290,7 @@ onMounted(() => {
 })
 
 async function deleteCollection(collectionPath: string, batchSize: number) {
-    if (!fs) return
+    if (!fs) {return}
     const collectionRef = collection(fs, collectionPath);
     const q = query(collectionRef, orderBy('__name__'), limit(batchSize))
 
@@ -300,7 +300,7 @@ async function deleteCollection(collectionPath: string, batchSize: number) {
 }
 
 async function deleteQueryBatch(query: Query, resolve: () => void) {
-    if (!fs) return
+    if (!fs) {return}
     const snapshot = await getDocs(query)
 
     const batchSize = snapshot.size;
@@ -325,9 +325,9 @@ async function deleteQueryBatch(query: Query, resolve: () => void) {
 }
 
 // https://stackoverflow.com/a/11934819
-function toTitleCase(s: string){
-    return s.replace(/([^\s:-])([^\s:-]*)/g,function($0,$1,$2){
-        return $1.toUpperCase()+$2.toLowerCase();
+function toTitleCase(s: string) {
+    return s.replace(/([^\s:-])([^\s:-]*)/g, function ($0, $1, $2) {
+        return $1.toUpperCase() + $2.toLowerCase();
     });
 }
 

@@ -19,13 +19,13 @@
         class="mt-3"
         :type="p.modelValue.type ?? ''" 
         :questions="p.modelValue.questions"
-        @update:type="t => e('update:modelValue', { ...p.modelValue, type: t ? t : undefined })"
-        @update:questions="q => e('update:modelValue', { ...p.modelValue, questions: q })"
+        @update:type="(t: FeedbackType | '') => e('update:modelValue', { ...p.modelValue, type: t ? t : undefined })"
+        @update:questions="(q: string[]) => e('update:modelValue', { ...p.modelValue, questions: q })"
     />
 </template>
 
 <script setup lang="ts">
-import type { FeedbackConfig } from '@/types/cloud'
+import type { FeedbackConfig, FeedbackType } from '@/types/cloud'
 
 const p = defineProps<{
     modelValue: FeedbackConfig['individual'][0],

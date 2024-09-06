@@ -13,11 +13,11 @@
             <Icon name="mdi:file-document-arrow-right" />
             CSV Export
         </button>
+        <button @click="exportJson">
+            <Icon name="mdi:export" />
+            Export
+        </button>
         <template v-if="cloud.resolvedPermissions.superAdmin">
-            <button @click="exportJson">
-                <Icon name="mdi:export" />
-                Export
-            </button>
             <form class="inline" @submit.prevent="importJson(); importing = false">
                 <button type="button" @click="importing = !importing">
                     <Icon name="mdi:import" />
@@ -31,13 +31,14 @@
                         </button>
                         <button
                             type="button"
-                            @click="importText ? null : (files?.item(0)?.text().then(t => t ? (importText = t) : null) ?? (importText = ''));reset()"
-                        >
+                            @click="importText ? null : (files?.item(0)?.text().then(t => t ? (importText = t) : null) ?? (importText = '')); reset()">
                             <Icon name="mdi:text-box-edit-outline" />
                             Vlastní text
                         </button>
                         <br>
-                        <textarea v-if="importText !== null" v-model="importText" :disabled="!!files?.length" placeholder="Vložit z textu" />
+                        <textarea
+                            v-if="importText !== null" v-model="importText" :disabled="!!files?.length"
+                            placeholder="Vložit z textu" />
                     </p>
                     <p>
                         <span v-show="files?.length === 1">Soubor k nahrání: {{ files?.item(0)?.name }} <br></span>
@@ -53,15 +54,14 @@
             </form>
         </template>
         <h2>Závěrečný dotazník</h2>
-        <FeedbackConfig v-for="(_, index) in configCategoriesOrDefault" :key="`c${index}`" :index="index" :is-dummy="!cloud.feedback.config?.length" />
+        <FeedbackConfig
+            v-for="(_, index) in configCategoriesOrDefault" :key="`c${index}`" :index="index"
+            :is-dummy="!cloud.feedback.config?.length" />
         <br>
         <button
-            v-show="cloud.feedback.config?.length"
-            title="Přidat sekci"
-            type="button"
-            @click="setDoc(cloud.eventDoc('feedbackConfig', configCategoriesOrDefault.length.toString()), {
+            v-show="cloud.feedback.config?.length" title="Přidat sekci" type="button" @click="setDoc(cloud.eventDoc('feedbackConfig', configCategoriesOrDefault.length.toString()), {
             }, { merge: true })">+</button>
-        
+
         <p>
             {{ error }}
         </p>
@@ -89,8 +89,8 @@ const importing = ref(false)
 const importText = ref<string | null>(null)
 const error = ref()
 
-const configCategoriesOrDefault = computed<FeedbackConfig[]>(()=> {
-    if((cloud.feedback.config?.length ?? 0) === 0) {
+const configCategoriesOrDefault = computed<FeedbackConfig[]>(() => {
+    if ((cloud.feedback.config?.length ?? 0) === 0) {
         return [{
             title: 'Sekce 1',
             individual: [],
@@ -134,7 +134,7 @@ async function importJson() {
         importText.value ||= await files?.value?.item(0)?.text() ?? ''
         if (!importText.value || !cloud.feedback.col) { return }
         const json = await JSON.parse(importText.value)
-        for(const key in json) {
+        for (const key in json) {
             setDoc(doc(cloud.feedback.col, key), json[key], { merge: merge.value })
         }
     } catch (e) {

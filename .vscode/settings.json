@@ -34,7 +34,7 @@
         "**/.output": true,
         "**/__": true
     },
-    "npm.packageManager": "yarn",
+    "npm.packageManager": "npm",
     "eslint.useFlatConfig": true,
     "bun.debugTerminal.enabled": false,
     "spellright.language": [
