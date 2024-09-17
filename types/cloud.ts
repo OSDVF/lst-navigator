@@ -106,6 +106,9 @@ export type UpdateRecordPayload<T> = {
 }
 
 export type Feedback = FeedbackOr<undefined>
+export type FeedbackQuestionsProgram = { [question: number]: { [user: string]: Feedback } }
+export type FeedbackQuestionsCustom = { [question: string]: { [user: string]: Feedback } }
+export type FeedbackSections = { [section: string]: number | FeedbackQuestionsProgram & FeedbackQuestionsCustom }
 
 export type FeedbackOr<T> = {
     basic?: number | T,

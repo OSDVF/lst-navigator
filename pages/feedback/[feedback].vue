@@ -96,7 +96,7 @@
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { getParallelEvents } from '@/utils/types'
-import type { FeedbackConfig, ScheduleEvent, Feedback } from '@/types/cloud';
+import type { FeedbackConfig, ScheduleEvent, Feedback } from '@/types/cloud'
 const router = useRouter()
 const cloudStore = useCloudStore()
 const settings = useSettings()

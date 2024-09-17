@@ -11,7 +11,7 @@
             <div v-for="(compl, index) in $props.reply.complicated" :key="`c${index}`">
                 <NuxtRating
                     :read-only="!admin.editingFeedback" :active-color="darkenColor('#ffff00', index / 5)"
-                    :rating-value="compl" :title="questions?.[index] ?? defaultQuestions[index]"
+                    :rating-value="compl ?? undefined" :title="questions?.[index] ?? defaultQuestions[index]"
                     rating-size="1.2em" @rating-selected="(val: number) => controls?.syncComplicated(index, val)"
                 /> {{
                     Math.round(((compl ?? 0) + Number.EPSILON) * 10) / 10 }}

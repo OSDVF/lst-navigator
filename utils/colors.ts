@@ -42,3 +42,8 @@ export function darkenColor(color: string, amount: number) {
         return newNumber.toString(16).padStart(2, '0')
     })
 }
+
+export function setColorTransparency(color: string, alpha: number) {
+    const rgba = colorToRGBA(color)
+    return `rgba(${rgba[0]}, ${rgba[1]}, ${rgba[2]}, ${alpha})`
+}

@@ -4,7 +4,7 @@
 
  
 import { defineNuxtModule } from '@nuxt/kit'
-import type { CollectionReference} from 'firebase-admin/firestore';
+import type { CollectionReference} from 'firebase-admin/firestore'
 import { DocumentReference, getFirestore } from 'firebase-admin/firestore'
 import { CollectionsList, type KnownCollectionName } from '../utils/db'
 import useFirebase from '../server/utils/firebase'

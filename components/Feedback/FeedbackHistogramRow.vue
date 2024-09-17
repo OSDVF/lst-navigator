@@ -17,7 +17,7 @@
             <div v-if="feedbackType === 'text'">
                 <BarChart
                     :values="clusteredTextIndexed" :min="0"
-                    :colors="randomcolor({ count: seenCategories.length, hue: 'orange' })"
+                    :colors="randomcolor({ count: seenCategories.length, hue: 'orange' }).map(c => setColorTransparency(c, 0.8))"
                     :categories="Object.keys(seenCategories)" :labels="seenCategories.map(c => c?.substring(0, 4) ?? '')"
                     :popups="buckets.map(b => Array.from(b).join('\n'))" class="rotated"
                 />
@@ -50,11 +50,12 @@ import { metaphone } from 'metaphone'
 import type { Feedback, FeedbackType } from '@/types/cloud'
 import { defaultQuestions } from '~/stores/cloud'
 import { mapObject } from '~/utils/types'
+import { setColorTransparency } from '~/utils/colors'
 
 const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
-const basicColors = randomcolor({ count: 5, hue: 'blue' })
+const basicColors = randomcolor({ count: 5, hue: 'blue' }).map(c => setColorTransparency(c, 0.8))
 const hues = ['yellow', 'orange', 'red']
-const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue }))
+const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue })).map(colors => colors.map(c => setColorTransparency(c, 0.8)))
 
 const props = defineProps<{
     replies: { [respondent: string]: Feedback },

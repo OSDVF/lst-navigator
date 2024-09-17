@@ -9,7 +9,7 @@
                 </button>
             </NuxtLink>
         </p>
-        <button @click="csvExport">
+        <button @click="csvExportAll">
             <Icon name="mdi:file-document-arrow-right" />
             CSV Export
         </button>
@@ -69,13 +69,11 @@
 </template>
 
 <script setup lang="ts">
-import type { FieldValue } from 'firebase/firestore';
 import { setDoc } from '~/utils/trace'
-import Lodash from 'lodash'
 import { useCloudStore } from '~/stores/cloud'
 import { doc } from 'firebase/firestore'
-import type * as ExportToCsv from 'export-to-csv'
-import type { Feedback, FeedbackConfig } from '@/types/cloud'
+import { csvExport } from '~/utils/csvExport'
+import type { FeedbackConfig } from '@/types/cloud'
 
 definePageMeta({
     title: 'Zpětná vazba',
@@ -88,6 +86,10 @@ const merge = ref(true)
 const importing = ref(false)
 const importText = ref<string | null>(null)
 const error = ref()
+
+function csvExportAll() {
+    csvExport(cloud.selectedEvent ,error, cloud.feedback.online, cloud)
+}
 
 const configCategoriesOrDefault = computed<FeedbackConfig[]>(() => {
     if ((cloud.feedback.config?.length ?? 0) === 0) {
@@ -142,105 +144,4 @@ async function importJson() {
     }
 }
 
-function sanitize(str: string | FieldValue) {
-    if (typeof str === 'object') {
-        return ''
-    }
-    return str.replace('"', '\'')
-        .replace(',', '，')
-}
-let exportToCsv: null | typeof ExportToCsv = null
-async function csvExport() {
-    try {
-        error.value = ''
-        if (!exportToCsv) {
-            exportToCsv = await import('export-to-csv')
-        }
-
-        const csvData = []
-        const compoundIndexes: string[] = []
-        const byUserData: { [user: string]: { [compoundId: string]: Feedback } } = {}
-        for (const partIndex in cloud.feedback.online) {
-            const part = cloud.feedback.online[partIndex]
-            if (typeof part === 'number' || part === null) { continue }
-            for (const eventIndex in part) {
-                const event = part[eventIndex]
-                for (const user in event) {
-                    const feedback = event[user] as Feedback | null
-                    if (feedback?.basic || feedback?.detail || feedback?.select || feedback?.complicated?.find(c => !!c)) {
-                        if (!byUserData[user]) {
-                            byUserData[user] = {}
-                        }
-                        let compoundIndex = `${partIndex}-${eventIndex}`
-                        const potentialTitle = cloud.days[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
-                        if (potentialTitle) {
-                            compoundIndex += `-${potentialTitle}`
-                        }
-                        byUserData[user][compoundIndex] = feedback
-                        if (!compoundIndexes.includes(compoundIndex)) {
-                            compoundIndexes.push(compoundIndex)
-                        }
-                        const potentialInner = `${eventIndex}-0`
-                        if (compoundIndexes.includes(potentialInner)) {
-                            byUserData[user][compoundIndex] = Lodash.merge(byUserData[user][compoundIndex], byUserData[user][potentialInner])
-                        }
-                    }
-                }
-            }
-        }
-
-        const compoundIndexesExpanded: string[] = []
-        for (const user in byUserData) {
-            const userData: { [key: string]: boolean | string | number } = {}
-            for (const compoundIndex of compoundIndexes) {
-                const feedback = byUserData[user][compoundIndex]
-                if (feedback) {
-                    const basicCol = `${compoundIndex}-celkove`
-                    userData[basicCol] = feedback.basic as number ?? ''
-                    if (feedback.basic && !compoundIndexesExpanded.includes(basicCol)) {
-                        compoundIndexesExpanded.push(basicCol)
-                    }
-                    const detailCol = `${compoundIndex}-detail`
-                    userData[detailCol] = sanitize(feedback.detail as string ?? '')
-                    if (feedback.detail && !compoundIndexesExpanded.includes(detailCol)) {
-                        compoundIndexesExpanded.push(detailCol)
-                    }
-                    const selectCol = `${compoundIndex}-vyber`
-                    userData[selectCol] = sanitize(feedback.select as string ?? '')
-                    if (feedback.select && !compoundIndexesExpanded.includes(selectCol)) {
-                        compoundIndexesExpanded.push(selectCol)
-                    }
-                    const complicatedCols = [
-                        `${compoundIndex}-otazka1`,
-                        `${compoundIndex}-otazka2`,
-                        `${compoundIndex}-otazka3`,
-                    ]
-                    for (const col of complicatedCols) {
-                        userData[col] = feedback.complicated?.[parseInt(col[col.length - 1]) - 1] as number ?? ''
-                        if (feedback.complicated?.[parseInt(col[col.length - 1]) - 1] && !compoundIndexesExpanded.includes(col)) {
-                            compoundIndexesExpanded.push(col)
-                        }
-                    }
-                } else {
-                    userData[`${compoundIndex}-celkove`] = ''
-                    userData[`${compoundIndex}-detail`] = ''
-                    userData[`${compoundIndex}-vyber`] = ''
-                    userData[`${compoundIndex}-otazka1`] = ''
-                    userData[`${compoundIndex}-otazka2`] = ''
-                    userData[`${compoundIndex}-otazka3`] = ''
-                }
-            }
-
-            csvData.push({ user, ...userData })
-        }
-        const csvConfig = exportToCsv.mkConfig({
-            filename: `${cloud.selectedEvent}-feedback-${new Date().toLocaleString(navigator.language)}`,
-            columnHeaders: ['user', ...compoundIndexesExpanded],
-        })
-
-        exportToCsv.download(csvConfig)(exportToCsv.generateCsv(csvConfig)(csvData))
-    } catch (e) {
-        error.value = e
-    }
-}
 </script>

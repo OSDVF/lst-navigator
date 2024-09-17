@@ -122,7 +122,7 @@ async function editProgram(event: Event) {
         subtitle: data.get('subtitle'),
         time: parseIntOrNull(data.get('time')?.toString()),
         title: data.get('title'),
-    } as ScheduleEvent;
+    } as ScheduleEvent
 
     await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         program: editing.value ? [

@@ -1,4 +1,4 @@
-import type { App} from 'firebase-admin/app';
+import type { App} from 'firebase-admin/app'
 import { initializeApp } from 'firebase-admin/app'
 import type { Nitro } from 'nitropack'
 import type { Nuxt } from '@nuxt/schema'

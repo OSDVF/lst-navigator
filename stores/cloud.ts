@@ -1,8 +1,8 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { Firestore, type CollectionReference, type DocumentData, type DocumentReference, type FieldValue } from 'firebase/firestore';
+import { Firestore, type CollectionReference, type DocumentData, type DocumentReference, type FieldValue } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc, getDoc } from 'firebase/firestore'
-import { setDoc } from '~/utils/trace';
+import { setDoc } from '~/utils/trace'
 import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
@@ -12,7 +12,7 @@ import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
 
 /**
@@ -131,7 +131,7 @@ export const useCloudStore = defineStore('cloud', () => {
         },
         infoText: computed(() => eventData.value?.feedbackInfo),
         online: computed(() => {
-            const result: { [key: string]: number | { [key: string | number]: { [user: string]: Feedback } } } = {}
+            const result: FeedbackSections = {}
             const replies = feedbackRepliesRaw.value as any
             if (replies) {
                 for (const val of replies) {

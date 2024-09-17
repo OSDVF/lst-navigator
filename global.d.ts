@@ -1,4 +1,4 @@
-import type { PwaInjection } from '@vite-pwa/nuxt';
+import type { PwaInjection } from '@vite-pwa/nuxt'
 import type * as Sentry from '@sentry/vue'
 import { idb } from '@composi/idb/types'
 

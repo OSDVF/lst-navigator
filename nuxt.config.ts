@@ -169,13 +169,13 @@ const config = defineNuxtConfig({
                 },
             },
         },
+        optimizeDeps: {
+            exclude: ['sanitize-html'],
+        },
         resolve: {
             alias: [
                 {
                     find: 'path', replacement: 'path-browserify',
-                },
-                {
-                    find: 'postcss', replacement: 'postcss/lib/postcss.mjs',
                 },
                 {
                     find: '@composi/idb/types', replacement: '@composi/idb/src/index.js',

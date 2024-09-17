@@ -166,6 +166,10 @@ $sides: (top, bottom, left, right); // Leave this variable alone
   border-radius: 100%;
 }
 
+.sticky {
+  position: sticky;
+}
+
 .w-1_8 {
   width: 1.8rem;
 }

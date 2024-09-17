@@ -1,19 +1,20 @@
 <template>
     <div>
-        <div class="caption">
-            <span>{{ $props.day?.name ?? $props.config?.name }}</span>
-            <span v-show="admin.displayKind === 'individual'" class="actions">
-                <button title="CSV Export" @click="csvExport">
+        <div class="caption header">
+            <span>{{ day?.name ?? props.config?.name }}</span>
+            <span class="actions">
+                <button title="CSV Export" @click="exportPart">
                     <Icon name="mdi:file-document-arrow-right" />
                 </button>
             </span>
         </div>
+        <code v-if="error">{{ error }}</code>
         <header
             ref="syncHeader" :style="{
                 transform: `translateX(${-scrollX}px)`
             }">
             <div class="th">
-                Název
+                Název (odpovědí)
             </div>
             <div class="th">
                 <strong>Průměr</strong>
@@ -40,20 +41,26 @@
         <div class="scroll-x" @scroll.passive="e => scrollX = (e.target as HTMLElement).scrollLeft">
             <table>
                 <tbody ref="tableBody">
-                    <template v-for="(replies, eIndex) in feedbackParts" :key="`e${eIndex}td`">
+                    <template
+                        v-for="(replies, eIndex) in (feedbackSection as FeedbackQuestionsCustom)"
+                        :key="`e${eIndex}td`">
                         <SelectFeedbackRows
-                            v-if="isSelect(eIndex)" :event="day?.program[eIndex as number]"
+                            v-if="isSelect(eIndex)" :event="event?.[eIndex as number]"
                             :replies="replies" :tabulated="tabulated.replies[eIndex]"
                             :respondents="tabulated.respondents" :config="config?.config?.[eIndex]"
+                            :link="makeLink?.(eIndex)"
                             @set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)" />
                         <tr
                             v-else-if="replies && Object.keys(replies).length > 0"
                             :class="config?.config?.[eIndex]?.type">
                             <FeedbackCells
-                                :config="config?.config?.[eIndex]"
-                                :make-link="makeLink ? (() => makeLink!(eIndex)) : undefined"
+                                :config="config?.config?.[eIndex] ?? {
+                                    name: eIndex as string,
+                                    description: '(poškozená data)',
+                                    questions: [],
+                                }" :link="makeLink?.(eIndex)"
                                 :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
-                                :replies="replies" :event="day?.program[eIndex as number]"
+                                :replies="replies" :event="event?.[eIndex as number]"
                                 :on-set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)" />
                         </tr>
                     </template>
@@ -67,13 +74,13 @@
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
 import { useCloudStore } from '@/stores/cloud'
-import { storeToRefs } from 'pinia'
-import type { Feedback, FeedbackConfig, ScheduleDay, TabulatedFeedback } from '@/types/cloud';
+import { csvExport } from '~/utils/csvExport'
+import type { Feedback, FeedbackConfig, FeedbackQuestionsCustom, FeedbackQuestionsProgram, TabulatedFeedback } from '@/types/cloud'
 
 const props = defineProps<{
-    day?: ScheduleDay,
+    sectionKey: string | number,
     config?: { name: string, config: { [partName: string]: FeedbackConfig['individual'][0] } },
-    feedbackParts: { [key: string | number]: { [user: string]: Feedback } }, // firstly indexed by event, secondly by user
+    feedbackSection: FeedbackQuestionsCustom | FeedbackQuestionsProgram, // firstly indexed by event, secondly by user
     onSetData?: (data: Feedback | null, eIndex: string, userIdentifier: string) => void
     makeLink?: (eIndex: string | number) => string
 }>()
@@ -85,12 +92,19 @@ defineExpose({
 const admin = useAdmin()
 const allRespondents = useRespondents()
 
+const error = ref()
+function exportPart() {
+    csvExport(`${cloud.selectedEvent}-${props.sectionKey}`, error, { [props.sectionKey]: props.feedbackSection }, cloud)
+}
 const scrollX = ref(0)
 const syncHeader = ref<HTMLElement>()
 const tableBody = ref<HTMLElement>()
 
+const day = computed(() => cloud.days[props.sectionKey as number])
+const event = computed(() => day.value?.program)
+
 function isSelect(eIndex: string | number) {
-    const config = props.config?.config?.[eIndex]?.type ?? props.day?.program[eIndex as number]?.feedbackType
+    const config = props.config?.config?.[eIndex]?.type ?? event.value?.[eIndex as number]?.feedbackType
     return (config) && ['parallel', 'select'].includes(config)
 }
 
@@ -99,8 +113,8 @@ const tabulated = computed<TabulatedFeedback>(() => {
     const result: TabulatedFeedback['replies'] = {}
 
     // first pass finds respondents
-    for (const feedbackPartI in props.feedbackParts) {
-        const feedbackPart = props.feedbackParts[feedbackPartI]
+    for (const feedbackPartI in props.feedbackSection) {// Need of explicit cast to supress errors, but it's safe
+        const feedbackPart = (props.feedbackSection as FeedbackQuestionsCustom)[feedbackPartI]
         for (const respondentName in feedbackPart) {
             allRespondents.names.add(respondentName)
             partRespondents.add(respondentName)
@@ -109,8 +123,8 @@ const tabulated = computed<TabulatedFeedback>(() => {
 
     // second pass fills replies
     const resultRespondents = Array.from(partRespondents).sort()
-    for (const feedbackPartI in props.feedbackParts) {
-        const feedbackPart = props.feedbackParts[feedbackPartI]
+    for (const feedbackPartI in props.feedbackSection) {
+        const feedbackPart = (props.feedbackSection as FeedbackQuestionsCustom)[feedbackPartI]
         const repliesByUserIndex: TabulatedFeedback['replies'][''] = []
         for (const i in resultRespondents) {
             const respondent = resultRespondents[i]
@@ -151,7 +165,7 @@ function doSyncHeaders() {
 function deleteRespondentSection(respondent: string) {
     if (props.onSetData) {
         if (confirm('Opravdu chcete smazat odpovědi respondenta v této sekci?')) {
-            for (const feedbackPartI in props.feedbackParts) {
+            for (const feedbackPartI in props.feedbackSection) {
                 props.onSetData(null, feedbackPartI as string, respondent)
             }
         }
@@ -177,10 +191,6 @@ cloud.feedback.watchFetching((loading, old) => {
     }
 })
 watch(allRespondents.names, () => triggeredSync = true)
-
-function csvExport() {
-    alert('Not implemented')
-}
 
 </script>
 

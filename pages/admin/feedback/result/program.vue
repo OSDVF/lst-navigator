@@ -2,8 +2,8 @@
     <div>
         <FeedbackResultPart
             v-for="key in Object.keys(programPartsFeedback).filter(key => !!programPartsFeedback[key as keyof typeof programPartsFeedback])"
-            :key="`p${key}`" :day="onlyIntIndexed(cloudStore.days)[key as any]"
-            :feedback-parts="onlyIntIndexed(programPartsFeedback[key as any])"
+            :key="`p${key}`" :section-key="key"
+            :feedback-section="onlyIntIndexed(programPartsFeedback[key as any])"
             :make-link="(eIndex: string | number) => `/schedule/${key}/${eIndex}`"
             @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)" />
         <NuxtLink to="other">

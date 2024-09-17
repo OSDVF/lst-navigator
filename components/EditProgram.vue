@@ -123,7 +123,7 @@ onMounted(() => {
 })
 
 function canBeParallel(s: string) {
-    return s.indexOf(',') !== s.lastIndexOf(',');
+    return s.indexOf(',') !== s.lastIndexOf(',')
 }
 
 </script>

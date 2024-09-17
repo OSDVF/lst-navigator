@@ -93,7 +93,7 @@ export default function useFileTree(file: MaybeRefOrGetter<string|undefined>) : 
                 f = f.parent
             } while (f !== null)
         }
-    };
-    update();
+    }
+    update()
     return fileTree
 }

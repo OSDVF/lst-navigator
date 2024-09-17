@@ -1,4 +1,4 @@
-import type { FieldValue } from 'firebase/firestore';
+import type { FieldValue } from 'firebase/firestore'
 import { deleteField } from 'firebase/firestore'
 import type { Feedback } from '@/types/cloud'
 

@@ -1,5 +1,5 @@
  
-import type { DocumentReference} from 'firebase/firestore';
+import type { DocumentReference} from 'firebase/firestore'
 import { doc, getDoc, terminate } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'

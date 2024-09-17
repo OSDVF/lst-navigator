@@ -2,6 +2,7 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt({
     rules: {
+        semi: ['error', 'never'],
         indent: ['error', 4],
         curly: ['error', 'all'],
         '@typescript-eslint/no-explicit-any': ['off'],

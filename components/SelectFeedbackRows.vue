@@ -1,7 +1,20 @@
 <template>
-    <div class="caption" :title="config?.description ?? event?.description">
-        {{ (config?.name ?? event?.title) }}
-    </div>
+    <tr>
+        <td
+            :colspan="Object.keys(props.replies).length" class="caption"
+            :title="stripHtml(config?.description ?? event?.description)">
+            <div v-if="link">
+                <NuxtLink :to="link" class="sticky left-0">
+                    {{ (config?.name ?? event?.title) }}
+                </NuxtLink>
+            </div>
+            <div v-else>
+                <span class="sticky left-0">
+                    {{ (config?.name ?? event?.title) }}
+                </span>
+            </div>
+        </td>
+    </tr>
     <!-- Filtered by selected option -->
     <tr v-for="(filteredByOption, option) in repliesByOption" :key="option">
         <td :title="Object.keys(filteredByOption.replies).join(', ')">
@@ -30,6 +43,7 @@ import randomColor from 'randomcolor'
 import type { FeedbackConfig, Feedback, ScheduleEvent, TabulatedFeedback } from '~/types/cloud'
 import { getAverage } from '@/utils/types'
 import { useAdmin } from '~/stores/admin'
+import { stripHtml } from '~/utils/sanitize'
 
 const props = defineProps<{
     config?: FeedbackConfig['individual'][0],
@@ -38,6 +52,7 @@ const props = defineProps<{
     tabulated: TabulatedFeedback['replies'][''],
     respondents: string[],
     onSetData?: (data: Feedback | null, userIdentifier: string) => void,
+    link?: string
 }>()
 
 const admin = useAdmin()

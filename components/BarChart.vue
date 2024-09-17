@@ -3,15 +3,19 @@
         <div
             v-for="(value, index) in normalizedValues" :key="index" class="bar"
             :style="{ height: `${value * 100}%`, '--count': normalizedValues.length, background: colors[index] }"
-            :title="(filteredValues.v[index]?.toString() ?? 'N/A') + (popups && filteredValues.p[index] ? (`:\n${filteredValues.p[index]}`) : '')"
-        >
-            <span class="label">{{ labels[index] ?? '\xa0' }}</span>
+            :title="(filteredValues.v[index]?.toString() ?? 'N/A') + (popups && filteredValues.p[index] ? (`:\n${filteredValues.p[index]}`) : '')">
+            <span class="label">{{ labels[index] ?? '\xa0'
+            }}<span v-if="value > 0" class="muted">({{
+                filteredValues.v[index] }})
+            </span>
+            </span>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import randomcolor from 'randomcolor'
+import { setColorTransparency } from '~/utils/colors'
 
 const props = defineProps<{
     values: { [key: number]: number },
@@ -110,7 +114,7 @@ const colors = computed(() => {
     if (typeof props.colors !== 'undefined') {
         return props.colors
     }
-    return randomcolor({ count: filteredValues.value.v.length })
+    return randomcolor({ count: filteredValues.value.v.length }).map(c => setColorTransparency(c, 0.8))
 })
 
 </script>
@@ -129,6 +133,7 @@ const colors = computed(() => {
 
     .label {
         position: relative; //To appear before the chart
+        padding: 0 .2rem;
     }
 
     &.rotated {

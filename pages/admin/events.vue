@@ -197,7 +197,7 @@ async function editEvent(createNew = false) {
             name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' })),
             program: arrayUnion(),
             manager: null,
-        }, { merge: true });
+        }, { merge: true })
     }
 
     // Create subcollections
@@ -291,44 +291,44 @@ onMounted(() => {
 
 async function deleteCollection(collectionPath: string, batchSize: number) {
     if (!fs) {return}
-    const collectionRef = collection(fs, collectionPath);
+    const collectionRef = collection(fs, collectionPath)
     const q = query(collectionRef, orderBy('__name__'), limit(batchSize))
 
     return new Promise<void>((resolve, reject) => {
-        deleteQueryBatch(q, resolve).catch(reject);
-    });
+        deleteQueryBatch(q, resolve).catch(reject)
+    })
 }
 
 async function deleteQueryBatch(query: Query, resolve: () => void) {
     if (!fs) {return}
     const snapshot = await getDocs(query)
 
-    const batchSize = snapshot.size;
+    const batchSize = snapshot.size
     if (batchSize === 0) {
         // When there are no documents left, we are done
-        resolve();
-        return;
+        resolve()
+        return
     }
 
     // Delete documents in a batch
-    const batch = writeBatch(fs);
+    const batch = writeBatch(fs)
     snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-    });
-    await batch.commit();
+        batch.delete(doc.ref)
+    })
+    await batch.commit()
 
     // Recurse on the next process tick, to avoid
     // exploding the stack.
     nextTick(() => {
-        deleteQueryBatch(query, resolve);
-    });
+        deleteQueryBatch(query, resolve)
+    })
 }
 
 // https://stackoverflow.com/a/11934819
 function toTitleCase(s: string) {
     return s.replace(/([^\s:-])([^\s:-]*)/g, function ($0, $1, $2) {
-        return $1.toUpperCase() + $2.toLowerCase();
-    });
+        return $1.toUpperCase() + $2.toLowerCase()
+    })
 }
 
 </script>

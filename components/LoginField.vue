@@ -27,7 +27,7 @@
                 <button v-if="cloudStore.user.auth?.uid" @click="cloudStore.user.signOut">
                     <Icon name="mdi:logout" /> Odhlásit
                 </button>
-                <button v-else @click="cloudStore.user.signIn">
+                <button v-else @click="cloudStore.user.signIn()">
                     <Icon name="mdi:login" /> Přihlásit
                 </button>
                 <ProgressBar v-if="cloudStore.user.pendingAction" class="absolute left-0 bottom-0 right-0" />

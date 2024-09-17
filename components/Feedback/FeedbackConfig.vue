@@ -44,19 +44,19 @@ import type { FeedbackConfig } from '~/types/cloud'
 const p = defineProps<{
     index: number;
     isDummy?: boolean;
-}>();
+}>()
 
-const cloud = useCloudStore();
+const cloud = useCloudStore()
 const editedCategory = ref<FeedbackConfig>(toRaw(cloud.feedback.config?.[p.index] ?? {
     title: 'Nová sekce',
     individual: [],
-}));
+}))
 
 watch(editedCategory, (value) => {
-    setDoc(cloud.eventDoc('feedbackConfig', p.index.toString()), value, { merge: true });
-}, { deep: true });
+    setDoc(cloud.eventDoc('feedbackConfig', p.index.toString()), value, { merge: true })
+}, { deep: true })
 
-const type = ref(editedCategory.value.group ? editedCategory.value.individual ? 'both' : 'group' : 'individual');
+const type = ref(editedCategory.value.group ? editedCategory.value.individual ? 'both' : 'group' : 'individual')
 const blank: FeedbackConfig['individual'][0] = {
     name: '',
     questions: [],

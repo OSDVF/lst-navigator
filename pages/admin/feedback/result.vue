@@ -178,12 +178,19 @@ $border-color: rgba(128, 128, 128, 0.657);
                 &>th,
                 &>td {
                     background-color: rgba(128, 128, 128, 0.1);
+
+                    &:first-child {
+                        background-color: rgb(233, 233, 233);
+                    }
                 }
             }
 
-            &.text,
-            &.text td:first-child {
-                background: #ffa6000d
+            &.text {
+                background: #ffa6000d;
+
+                td:first-child {
+                    background: #fbf3e3;
+                }
             }
         }
 
@@ -245,8 +252,6 @@ $border-color: rgba(128, 128, 128, 0.657);
     }
 
     .caption {
-        display: flex;
-        justify-content: center;
         width: 100%;
         font-size: 1.5em;
         font-weight: bold;
@@ -254,6 +259,11 @@ $border-color: rgba(128, 128, 128, 0.657);
         background-color: rgba(128, 128, 128, 0.2);
         border-top-left-radius: 1rem;
         border-top-right-radius: 1rem;
+
+        &.header {
+            display: flex;
+            justify-content: center;
+        }
     }
 
     .bar-chart {
