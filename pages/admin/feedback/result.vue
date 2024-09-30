@@ -65,6 +65,9 @@
                             </div>
                         </template>
                     </template>
+                    <div v-else>
+                        <input type="checkbox" name="anonymize" id="anonymize" v-model="admin.anonymize"><label for="anonymize">Plně anonymizovat</label>
+                    </div>
                 </div>
                 <div>
                     <span style="color:blue">

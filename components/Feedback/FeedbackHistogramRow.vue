@@ -36,7 +36,7 @@
         <table>
             <tbody>
                 <tr v-for="detailReply in repliesWithDetails" :key="`d${detailReply.i}`">
-                    <td>{{ detailReply.i }}</td>
+                    <td v-if="!admin.anonymize">{{ detailReply.i }}</td>
                     <td>{{ detailReply.r.detail }}</td>
                 </tr>
             </tbody>
@@ -51,6 +51,7 @@ import type { Feedback, FeedbackType } from '@/types/cloud'
 import { defaultQuestions } from '~/stores/cloud'
 import { mapObject } from '~/utils/types'
 import { setColorTransparency } from '~/utils/colors'
+import { useAdmin } from '~/stores/admin'
 
 const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
 const basicColors = randomcolor({ count: 5, hue: 'blue' }).map(c => setColorTransparency(c, 0.8))
@@ -64,6 +65,7 @@ const props = defineProps<{
 }>()
 
 const repliesValues = computed(() => Object.values(props.replies))
+const admin = useAdmin()
 
 const repliesWithDetails = computed(() => {
     return Object.entries(props.replies).map(([i, r]) => ({ i, r })).filter(({ r }) => r.detail)
