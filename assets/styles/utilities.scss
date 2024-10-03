@@ -64,6 +64,10 @@ $sides: (top, bottom, left, right); // Leave this variable alone
   }
 }
 
+.clear {
+  clear: both;
+}
+
 .editable {
   font-size: 1rem;
   border: 0;
@@ -107,6 +111,10 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 
 .h-full {
   height: 100%;
+}
+
+.w-full {
+  width: 100%;
 }
 
 .mh-5 {

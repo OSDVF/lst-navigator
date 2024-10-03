@@ -18,6 +18,7 @@
     "typecheck": "nuxt typecheck"
   },
   "devDependencies": {
+    "@ckeditor/ckeditor5-vue": "^7.2.0",
     "@diffx/debug-ref": "^0.0.6",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@nuxt/devtools": "^0.8.5",
@@ -62,12 +63,11 @@
     "vue-tsc": "^2.1.6"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-build-classic": "^39.0.2",
-    "@ckeditor/ckeditor5-vue": "^5.1.0",
     "@pinia/nuxt": "^0.4.11",
     "@sentry/vue": "^7.119.0",
     "@vueuse/integrations": "^10.11.1",
-    "caniuse-lite": "^1.0.30001655",
+    "caniuse-lite": "^1.0.30001666",
+    "ckeditor5": "^43.2.0",
     "datatables.net-dt": "^1.13.11",
     "datatables.net-responsive-dt": "^2.5.1",
     "datatables.net-select": "^1.7.1",

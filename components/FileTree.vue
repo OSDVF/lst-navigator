@@ -3,12 +3,12 @@
         v-if="tree?.file" tabindex="0" :class="{
             selected: selectedPath === tree.file.fullPath
         }" @click="selectedPath = tree.file.fullPath">
-        <img :src="icons?.getVSIFileIcon(tree.file.name)" width="24">
+        <Icon :name="imageExtensions.some(e => tree!.file!.name.endsWith(e)) ? 'mdi:image' : 'mdi:file'" />
         {{ tree.file.name }}
     </span>
     <details v-else-if="tree" @toggle="emits('open', path)">
         <summary>
-            <img :src="icons?.getVSIFolderIcon(path ?? 'folder')" width="24">
+            <Icon name="mdi:folder" />
             {{ p.basename($props.path ?? '') }}
         </summary>
         <ul class="tree">
@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import p from 'path'
-const icons = ref()
+const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']
 
 defineProps<{
     tree: FileTree | undefined,
@@ -33,14 +33,4 @@ const selectedPath = defineModel<string>()
 const emits = defineEmits<{
     open: [string]
 }>()
-
-onMounted(async () => {
-    if(!import.meta.prerender) {
-        try {
-            icons.value = await import('file-extension-icon-js')
-        } catch {
-            console.log('No file extension icons')
-        }
-    }
-})
 </script>

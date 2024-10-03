@@ -44,6 +44,23 @@ const config = defineNuxtConfig({
         '~/assets/styles/base.scss',
         '~/assets/styles/components.scss',
     ],
+    devServerHandlers: [
+        {
+            route: '/__/auth/',
+            async handler(event) {
+                const questIndex = event.path.indexOf('?')
+                if (['/iframe', '/handler'].includes(event.path.substring(0, questIndex === -1 ? undefined : questIndex))) {
+                    event.headers.set('Content-Type', 'text/html; charset=utf-8')
+                    event.headers.set('Cache-Control', 'no-store')
+                    return event.respondWith(new Response(await fs.promises.readFile('./public/__/auth/handler', { encoding: 'utf-8' }), {
+                        headers: {
+                            'Content-Type': 'text/html',
+                        },
+                    }))
+                }
+            },
+        },
+    ],
     devtools: {
         enabled: process.env.NUXT_DEVTOOLS !== 'false',
         timeline: {
@@ -53,6 +70,10 @@ const config = defineNuxtConfig({
     experimental: {
         headNext: true,
         polyfillVueUseHead: false,
+    },
+    icon: {
+        serverBundle: 'remote',
+        provider: 'iconify',
     },
     ignore: [
         'maintenance/**',
@@ -132,7 +153,12 @@ const config = defineNuxtConfig({
             prerender: false,
             static: false,
         },
-        '/__/**': {
+        '/__/auth/handler': {
+            headers: {
+                'Content-Type': 'text/html',
+            },
+        },
+        '/__/auth/iframe': {
             headers: {
                 'Content-Type': 'text/html',
             },
@@ -145,10 +171,6 @@ const config = defineNuxtConfig({
             rollupOptions: {
                 output: {
                     manualChunks(id: string) {
-                        const fei = id.toLowerCase().indexOf('file-extension-icon-js')
-                        if (fei !== -1) {
-                            return 'file-extension-icon-js'
-                        }
                         if (id.toLowerCase().includes('@sentry')) { // the @ is important so plugins/sentry.*.ts is not included
                             return 'sentry'
                         }

@@ -10,7 +10,7 @@
                     '--color': entry.color,
                     'border-left': isCurrent[index] ? '4px solid #0000ffaa' : undefined
                 }">
-                <summary>
+                <summary class="flex">
                     <span class="align-top mr-1">
                         {{ toHumanTime(entry.time) }}
                     </span>
@@ -20,29 +20,42 @@
                             {{ entry.subtitle }}
                         </h5>
                     </div>
+                    <div class="inline-block text-right" style="flex-grow: 1;">
+                        <span v-if="cloud.user.auth?.uid && cloud.resolvedPermissions.editSchedule" class="edit">
+                            <button
+                                v-if="index > 0" class="edit" title="Posunout nahoru"
+                                @click.prevent="moveUp(entry, index)">
+                                <Icon class="icon" name="mdi:arrow-up" />
+                            </button>
+                            <button
+                                v-if="index < selectedProgram.length - 1" class="edit" title="Posunout dolů"
+                                @click.prevent="moveDown(entry, index)">
+                                <Icon class="icon" name="mdi:arrow-down" />
+                            </button>
+                            <NuxtLink :to="`/schedule/${selectedDayIndex}/edit/${index}`">
+                                <button class="edit" title="Upravit">
+                                    <Icon class="icon" name="mdi:pencil" />
+                                </button>
+                            </NuxtLink>
+                            <button
+                                class="edit" title="Kopírovat do schránky" type="button"
+                                @click="admin.clipboard = { ...entry }">
+                                <Icon class="icon" name="mdi:clipboard-text" />
+                            </button>
+                            <button class="edit" title="Smazat" @click.prevent="deleteProgram(index)">
+                                <Icon class="icon" name="mdi:trash-can" />
+                            </button>
+                            &ensp;
+                        </span>
+                        <Icon v-if="entry.icon" :name="entry.icon" />
+                    </div>
                 </summary>
                 <NuxtLink :to="`/schedule/${selectedDayIndex}/${index}`" style="position: relative">
                     <Icon
                         v-if="!(entry.description?.match('<p|<br|<ol|<ul') ?? false)" class="icon"
-                        :name="entry.icon ?? 'mdi:chevron-right'" />
+                        name="mdi:chevron-right" />
                     <!-- eslint-disable-next-line vue/no-v-html -->
-                    <span class="content" v-html="entry.description?.trim() || 'Žádné detaily'" />
-                    <template v-if="cloud.user.auth?.uid && cloud.resolvedPermissions.editSchedule">
-                        <button v-if="index > 0" class="edit" title="Posunout nahoru" @click.prevent="moveUp(entry, index)">
-                            <Icon class="icon" name="mdi:arrow-up" />
-                        </button>
-                        <button v-if="index < selectedProgram.length - 1" class="edit" title="Posunout dolů" @click.prevent="moveDown(entry, index)">
-                            <Icon class="icon" name="mdi:arrow-down" />
-                        </button>
-                        <NuxtLink :to="`/schedule/${selectedDayIndex}/edit/${index}`">
-                            <button class="edit" title="Upravit">
-                                <Icon class="icon" name="mdi:pencil" />
-                            </button>
-                        </NuxtLink>
-                        <button class="edit" title="Smazat" @click.prevent="deleteProgram(entry)">
-                            <Icon class="icon" name="mdi:trash-can" />
-                        </button>
-                    </template>
+                    <div class="content" v-html="entry.description?.trim() || '<p>Žádné detaily</p>'" />
                     <span class="more">
                         <Icon class="icon" name="mdi:rss" />
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
@@ -53,11 +66,25 @@
                 </NuxtLink>
             </details>
 
-            <NuxtLink v-if="cloud.resolvedPermissions.editSchedule" :to="`/schedule/${route.params.day}/edit`">
-                <button>
-                    <Icon name="mdi:pencil" />&nbsp;Přidat program
-                </button>
-            </NuxtLink>
+            <template v-if="cloud.resolvedPermissions.editSchedule">
+                <NuxtLink :to="`/schedule/${route.params.day}/edit`">
+                    <button type="button">
+                        <Icon name="mdi:pencil" />&nbsp;Přidat program
+                    </button>
+                </NuxtLink>
+                <template v-if="admin.clipboard">
+                    <button
+                        type="button"
+                        :title="`${admin.clipboard.title?.toUpperCase()}: ${admin.clipboard.subtitle || '--'}\n${stripHtml(admin.clipboard.description) || 'Žádný popis'}`"
+                        @click="router.push(`/schedule/${route.params.day}/edit/paste`)" @contextmenu.prevent="pasteNow"
+                        @auxclick.prevent="pasteNow">
+                        <Icon name="mdi:clipboard-arrow-right" />&nbsp;Vložit
+                    </button>
+                    <button type="button" @click="admin.clipboard = null">
+                        <Icon name="mdi:clipboard-remove" />&nbsp;Smazat schránku
+                    </button>
+                </template>
+            </template>
         </div>
     </div>
 </template>
@@ -69,16 +96,20 @@ import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
 import { setDoc } from '~/utils/trace'
 import { arrayRemove } from 'firebase/firestore'
+import { useAdmin } from '~/stores/admin'
+import { stripHtml } from '~/utils/sanitize'
 
-const route = useRoute()
+const router = useRouter()
+const route = router.currentRoute.value
 const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? parseInt(route.params.day) : 0)
 const cloud = useCloudStore()
 const selectedDayId = computed(() => cloud.days[selectedDayIndex.value]?.id)
 const selectedProgram = computed(() => cloud.days?.[selectedDayIndex.value]?.program || [])
 const settings = useSettings()
+const admin = useAdmin()
 const now = ref(new Date())
 const prerendering = import.meta.prerender ?? false
-const isCurrent = computed(()=> selectedProgram.value.map((p, i) => (!prerendering && parseInt((cloud.days[selectedDayIndex.value].date ?? '').split('-')?.[2]) == new Date().getDate() && nowFormatted.value > (p.time ?? 0) && nowFormatted.value < (selectedProgram.value[i + 1]?.time ?? 0))))
+const isCurrent = computed(() => selectedProgram.value.map((p, i) => (!prerendering && parseInt((cloud.days[selectedDayIndex.value].date ?? '').split('-')?.[2]) == new Date().getDate() && nowFormatted.value > (p.time ?? 0) && nowFormatted.value < (selectedProgram.value[i + 1]?.time ?? 0))))
 
 const rows = ref<HTMLElement[]>([])
 let interval: NodeJS.Timeout | undefined
@@ -88,8 +119,8 @@ onMounted(() => {
         now.value = new Date()
     }, 1000 * 60)// Automatic time update
 
-    isCurrent.value.find((v,i) => {
-        if(v) {
+    isCurrent.value.find((v, i) => {
+        if (v) {
             rows.value[i].scrollIntoView()
         }
     })
@@ -99,6 +130,10 @@ onBeforeUnmount(() => {
         clearInterval(interval)
     }
 })
+
+function pasteNow() {
+    router.push(`/schedule/${route.params.day}/edit/pastenow`)
+}
 
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
@@ -114,9 +149,12 @@ function getFeedback(entry: any, index: number) {
     return undefined
 }
 
-function deleteProgram(program: ScheduleEvent) {
+function deleteProgram(index: number) {
     setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
-        program: arrayRemove(program),//TODO by index
+        program: [
+            ...selectedProgram.value.slice(0, index),
+            ...selectedProgram.value.slice(index + 1),
+        ],
     }, { merge: true })
 }
 
@@ -153,6 +191,18 @@ function moveDown(program: ScheduleEvent, index: number) {
     }
 
     &>details>summary {
+        .edit {
+            visibility: hidden;
+        }
+
+        &:hover,
+        &:focus,
+        &:focus-within {
+            .edit {
+                visibility: visible;
+            }
+        }
+
         &::marker {
             content: '';
         }
@@ -166,12 +216,14 @@ function moveDown(program: ScheduleEvent, index: number) {
 details {
     background: var(--color);
 
-    .content,
-    .more {
-        margin: .5rem;
+    .content {
 
         &>p:first-child {
-            margin-top: 1.7rem;
+            margin-top: .5rem;
+        }
+
+        &>p:last-child {
+            margin-bottom: .5rem;
         }
 
         p {
@@ -189,6 +241,7 @@ details {
 
     &>a {
         display: block;
+        overflow: hidden;
 
         &>.icon {
             margin-left: 2.9rem;
@@ -208,11 +261,10 @@ details {
 
 .more {
     color: #1a476ac0;
-    position: absolute;
-    right: 0;
-    top: 0;
+    float: right;
     display: flex;
     align-items: center;
+    margin: .5rem;
 
     @media (hover: fine) {
         opacity: 0

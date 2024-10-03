@@ -1,10 +1,8 @@
 <template>
     <div>
-        <ClientOnly>
-            <Component :is="DataTable" v-bind="$attrs" ref="table" @error="dtError">
-                <slot />
-            </Component>
-        </ClientOnly>
+        <Component :is="DataTable" v-bind="$attrs" ref="table" @error="dtError">
+            <slot />
+        </Component>
         <p v-if="dtErrors" class="flex align-items-start">
             <button @click="dtErrors = ''">
                 x

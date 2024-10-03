@@ -124,3 +124,18 @@ export function parseIntOrNull(value?: string) {
     const parsed = parseInt(value)
     return isNaN(parsed) ? null : parsed
 }
+
+export function getBrowserDateFormat() {
+    return new Intl.DateTimeFormat((new Intl.NumberFormat()).resolvedOptions().locale).formatToParts(new Date()).map(obj => {
+        switch (obj.type) {
+        case 'day':
+            return 'DD'
+        case 'month':
+            return 'MM'
+        case 'year':
+            return 'YYYY'
+        default:
+            return obj.value
+        }
+    }).join('')
+}

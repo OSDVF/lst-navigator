@@ -9,6 +9,9 @@
             {{ eventData?.title }}&ensp;
             <span class="muted">
                 {{ toHumanTime(eventData?.time) }}
+                <NuxtLink :to="`/schedule/${dayIndex}/edit/${eventItemIndex}`" title="Upravit program">
+                    <Icon name="mdi:pencil" />
+                </NuxtLink>
             </span>
         </h1>
         <h3>{{ eventData?.subtitle }}</h3>
@@ -28,7 +31,7 @@
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
                 :complicated-questions="eventData?.questions" :select-options="getParallelEvents(eventData)"
                 :detail-question="eventData?.detailQuestion"
-                @set-data="(data: Feedback) => cloudStore.feedback.set(partIndex, eventItemIndex, data)" />
+                @set-data="(data: Feedback) => cloudStore.feedback.set(dayIndex, eventItemIndex, data)" />
             <p v-if="cloudStore.feedback.fetchFailed">
                 Nepodařilo se uložit tvou odpověď
                 <br>
@@ -46,11 +49,7 @@
             <Icon title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
         </h1>
         <p>
-            <ClientOnly>
-                <ckeditor
-                    v-if="ClassicEditor" v-model="noteModel" :editor="ClassicEditor" @focus="permitSwipe = false"
-                    @blur="permitSwipe = true" />
-            </ClientOnly>
+            <ClassicCKEditor v-model="noteModel" @focus="permitSwipe = false" @blur="permitSwipe = true" />
             <ProgressBar v-if="fetchingNote" />
         </p>
         <p />
@@ -58,12 +57,12 @@
         <ClientOnly>
             <Teleport to="#additionalNav">
                 <nav class="eventItemNav">
-                    <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${partIndex}/${eventItemIndex - 1}`">
+                    <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${dayIndex}/${eventItemIndex - 1}`">
                         <Icon name="mdi:chevron-left" /> <span class="muted">{{ toHumanTime(previousEventData?.time) ||
                             'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        :to="eventItemIndex < (cloudStore.days?.[partIndex]?.program?.length ?? 0) - 1 ? `/schedule/${partIndex}/${eventItemIndex + 1}` : (partIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${partIndex + 1}/0` : route.fullPath)">
+                        :to="eventItemIndex < (cloudStore.days?.[dayIndex]?.program?.length ?? 0) - 1 ? `/schedule/${dayIndex}/${eventItemIndex + 1}` : (dayIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${dayIndex + 1}/0` : route.fullPath)">
                         <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
                             nextEventData?.title ?? nextEventData?.subtitle }}
                         <Icon name="mdi:chevron-right" />
@@ -84,21 +83,14 @@ import { useSettings } from '@/stores/settings'
 import { toHumanTime, getParallelEvents } from '@/utils/types'
 import { usePersistentRef } from '@/utils/persistence'
 
-const ClassicEditor = ref()
-if (import.meta.client) {
-    import('@ckeditor/ckeditor5-build-classic').then((c) => {
-        ClassicEditor.value = c.default
-    })
-}
-
 const route = useRoute()
 const settings = useSettings()
-const partIndex = parseInt(route.params.day as string ?? 0)
+const dayIndex = parseInt(route.params.day as string ?? 0)
 const eventItemIndex = parseInt(route.params.event as string) || 0
 const cloudStore = useCloudStore()
 const globalBackground = inject('globalBackground', ref(''))
 const eventData = computed(() => {
-    const program = cloudStore.days ? cloudStore.days[partIndex]?.program : []
+    const program = cloudStore.days ? cloudStore.days[dayIndex]?.program : []
     if (program) {
         const eventData = program[eventItemIndex]
         const hexColor = colorToHex(eventData?.color || 'gray')
@@ -109,23 +101,23 @@ const eventData = computed(() => {
     return undefined
 })
 
-const previousEventData = computed(() => cloudStore.days?.[partIndex]?.program?.[eventItemIndex - 1])
-const nextEventData = computed(() => cloudStore.days?.[partIndex]?.program?.[eventItemIndex + 1])
+const previousEventData = computed(() => cloudStore.days?.[dayIndex]?.program?.[eventItemIndex - 1])
+const nextEventData = computed(() => cloudStore.days?.[dayIndex]?.program?.[eventItemIndex + 1])
 const noteError = ref()
 const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
 
-const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[partIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
+const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[dayIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
 const notesDocument = useDocument(computed(() => cloudStore.notesCollection ? doc(cloudStore.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
-const offlineNote = usePersistentRef(`note.${partIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
+const offlineNote = usePersistentRef(`note.${dayIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 
 const noteModel = computed({
     get() {
-        const onlineVal = notesDocument.value?.[partIndex]?.[eventItemIndex]
+        const onlineVal = notesDocument.value?.[dayIndex]?.[eventItemIndex]
         const onlineDate = new Date(onlineVal?.time ?? 0).getTime()
         if (onlineDate > offlineNote.value.time) {
             return onlineVal.note
@@ -143,7 +135,7 @@ const noteModel = computed({
                 if (cloudStore.notesCollection) {
                     fetchingNote.value = true
                     setDoc(doc(cloudStore.notesCollection, settings.userIdentifier), {
-                        [partIndex]: {
+                        [dayIndex]: {
                             [eventItemIndex]: newValue,
                         },
                     },

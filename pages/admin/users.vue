@@ -1,21 +1,5 @@
 <template>
     <div class="p-2">
-        <ProgressBar v-if="usersPending" />
-        <div v-show="someSelection">
-            <button @click="changePermissionsVisible = true">
-                Změnit oprávnění
-            </button>
-            <form
-                v-show="changePermissionsVisible"
-                @submit.prevent="changePermissions(); changePermissionsVisible = false">
-                <select v-model="targetPermission" required>
-                    <option v-for="(name, type) in permissionNames" :key="type" :value="type">
-                        {{ name }}
-                    </option>
-                </select>
-                <input type="submit" value="Potvrdit">
-            </form>
-        </div>
         <LazyDataTable
             ref="table" :data="usersIndexed" :options="{
                 order: [[1, 'asc']],
@@ -25,7 +9,7 @@
                 {
                     searchable: false,
                     orderable: false,
-                    render: (data: string) => data ? `<img class='noinvert' width='24px' referrerPolicy='no-referrer' crossorigin='anonymous' src='${data}' />` : null
+                    render: (data: string) => data ? `<img class='noinvert' width='24px' referrerPolicy='no-referrer' src='${data}' />` : null
                 },
                 null,
                 null,
@@ -33,9 +17,7 @@
                 null,
                 null,
                 {
-                    render: (data: keyof typeof permissionNames) => data ? `<span title='${permissionNames[data]}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${({
-                        [UserLevel.SuperAdmin]: 'shield-lock-open', [UserLevel.ScheduleAdmin]: 'calendar-check', [UserLevel.Admin]: 'account-lock-open', [UserLevel.Nothing]: null
-                    })[data]}.svg);'></span>` : ''
+                    render: (data: UserLevel) => data ? `<span title='${cloudStore.permissionNames[data]}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${(userLevelToIcon)[data]}.svg);'></span>` : ''
                 }
             ]" @select="selectionChanged" @deselect="selectionChanged">
             <thead>
@@ -50,6 +32,26 @@
                 </tr>
             </thead>
         </LazyDataTable>
+        <ProgressBar v-if="usersPending" />
+        <div v-show="someSelection">
+            Akce:&ensp;
+            <button @click="changePermissionsVisible = true">
+                <Icon name="mdi:shield-edit"/> Změnit oprávnění
+            </button>
+            <form
+                v-show="changePermissionsVisible"
+                @submit.prevent="changePermissions(); changePermissionsVisible = false">
+                <select v-model="targetPermission" required>
+                    <option v-for="(name, type) in cloudStore.permissionNames" :key="type" :value="type">
+                        {{ name }}
+                    </option>
+                </select>
+                <input type="submit" value="Potvrdit">
+            </form>
+        </div>
+        <div v-show="!someSelection">
+            Pro editaci uživatelských oprávnění nejdříve vyberte uživatele. Oprávnění se nastavují <strong>pro každou akci separátně</strong>.
+        </div>
     </div>
 </template>
 
@@ -57,7 +59,7 @@
 import { doc } from 'firebase/firestore'
 import {setDoc} from '~/utils/trace'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
-import { type UpdatePayload, type UserInfo, UserLevel } from '@/types/cloud'
+import { type UpdatePayload, type UserInfo, UserLevel, userLevelToIcon } from '@/types/cloud'
 import type { Api } from '@/types/datatables'
 
 definePageMeta({
@@ -66,26 +68,17 @@ definePageMeta({
     layout: 'admin',
 })
 
-const cloudStore = useCloudStore()
 const permissionError = ref()
+const cloudStore = useCloudStore()
 const firestore = cloudStore.probe && useFirestore()
-const users = useAsyncData('usersCollection', () => useCollection<UserInfo>(firestore ? knownCollection(firestore, 'users') : null,
+const users = useCollection<UserInfo>(firestore ? knownCollection(firestore, 'users') : null,
     {
         maxRefDepth: 0,
         wait: true,
         once: !!import.meta.server,
         onError(e: any) { permissionError.value = e },
-    }).promise.value ?? {}, {
-    server: false,
-    lazy: true,
-})
-const usersPending = users.status.value == 'pending'
-const permissionNames = computed(() => ({
-    ...(cloudStore.resolvedPermissions.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
-    ...(cloudStore.resolvedPermissions.editEvent ? { [UserLevel.Admin]: 'Správce' } : {}),
-    [UserLevel.ScheduleAdmin]: 'Správce události',
-    [UserLevel.Nothing]: 'Nic',
-}))
+    })
+const usersPending = users.pending
 
 const usersIndexed = computed(() => {
     const result = []
@@ -99,7 +92,7 @@ const usersIndexed = computed(() => {
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
                 cloudStore.feedback.online?.[effectiveSignature]?.toString() ?? 'Nikdy',
-                user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent],
+                user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent] ?? UserLevel.Nothing,
                 user.id,
             ]
             result.push(values)

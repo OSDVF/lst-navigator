@@ -170,7 +170,10 @@ export const useSettings = defineStore('settings', () => {
     if (import.meta.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
+    const animations = usePersistentRef('animations', true)
+
     return {
+        animations,
         installStep: usePersistentRef<number>('installStep', 0),
         selectedAudioName: skipHydrate(selectedAudioName),
         selectedAudioUrl,

@@ -48,14 +48,17 @@ export type EventDescription<T = string> = {
 
     description: string,
     subtitle: string,
-    image: string, // url
+    image: {
+        type: 'cloud' | 'url',
+        data: string, // url
+    },
     feedbackConfig: FeedbackConfig[],// subcollection
     feedbackInfo: string,
     groups: string[],
     web: string
 } & {
-        [key in EventSubcollection]: T
-    }
+    [key in EventSubcollection]: T
+}
 
 export type Permissions = {
     superAdmin: boolean,
@@ -77,6 +80,13 @@ export enum UserLevel {
     Admin,
     /// Can manage all events
     SuperAdmin
+}
+
+export const userLevelToIcon = {
+    [UserLevel.SuperAdmin]: 'shield-lock-open',
+    [UserLevel.ScheduleAdmin]: 'calendar-check',
+    [UserLevel.Admin]: 'account-lock-open',
+    [UserLevel.Nothing]: null,
 }
 
 export type UserInfo = {

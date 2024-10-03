@@ -44,5 +44,6 @@
         "markdown",
         "latex",
         "plaintext"
-    ]
+    ],
+    "workspaceKeybindings.eslintAutoFix.enabled": true,
 }

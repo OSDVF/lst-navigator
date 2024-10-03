@@ -44,12 +44,17 @@
             <legend>
                 <Icon name="mdi:timeline" />&ensp; Nový program
             </legend>
-            <form @submit.prevent="editProgram">
+            <form ref="form" @submit.prevent="editProgram">
                 <EditProgram :value="editedEvent" />
-                <button type="submit" class="mt-1">
+                <button type="submit" class="mt-1 large">
                     <Icon :name="editing ? 'mdi:pencil' : 'mdi:plus-circle'" />
                     {{ editing ? 'Upravit' : 'Přidat' }}
                 </button>
+                <template v-if="!editing">
+                    <input id="autoOrder" v-model="autoOrder" type="checkbox"> <label
+                        title="Jinak se program přidá na konec" for="autoOrder">Automaticky
+                        vpasovat do harmonogramu</label>
+                </template>
             </form>
         </fieldset>
     </div>
@@ -62,14 +67,24 @@ import { toHumanFeedback, toHumanTime, parseIntOrNull } from '@/utils/types'
 import { setDoc } from '~/utils/trace'
 import { doc, arrayUnion } from 'firebase/firestore'
 import type { VueFirestoreDocumentData } from 'vuefire'
+import { useAdmin } from '~/stores/admin'
 
 const router = useRouter()
 const route = router.currentRoute
 const selectedDayIndex = computed(() => typeof route.value.params.day === 'string' ? parseInt(route.value.params.day) : 0)
 const selectedDayId = computed(() => cloud.days[selectedDayIndex.value].id)
-const selectedEditIndex = computed(() => route.value.params.edit ? parseInt(route.value.params.edit as string) : undefined)
+const selectedEditIndex = computed(() => {
+    if (route.value.params.edit) {
+        const parsed = parseInt(route.value.params.edit as string)
+        if (!isNaN(parsed)) {
+            return parsed
+        }
+    }
+    return undefined
+})
 const program = computed(() => cloud.days[selectedDayIndex.value].program)
 const editing = computed(() => typeof selectedEditIndex.value !== 'undefined')
+const autoOrder = usePersistentRef('autoOrder', false)
 
 const cloud = useCloudStore()
 const editedEvent = ref<ScheduleEvent>({
@@ -80,17 +95,38 @@ const editedEvent = ref<ScheduleEvent>({
     title: '',
 })
 const dirty = ref(false)
-watch(editedEvent, () => dirty.value = true)
+watch(editedEvent, () => dirty.value = true, { deep: true })
+const warning = 'Opravdu chcete opustit tuto stránku? Neuložené změny budou ztraceny.'
 
-onMounted(() => {
-    if (editing.value) {
-        Object.assign(editedEvent.value, { ...program.value[selectedEditIndex.value!] })
+function beforeunload() {
+    if (dirty.value) {
+        return warning
     }
-    window.addEventListener('beforeunload', () => {
-        if (dirty.value) {
-            return 'Opravdu chcete opustit tuto stránku? Neuložené změny budou ztraceny.'
-        }
-    })
+}
+
+const admin = useAdmin()
+const form = ref()
+onMounted(() => {
+    if (route.value.params.edit == 'paste') {
+        Object.assign(editedEvent.value, toRaw({ ...admin.clipboard }))
+    } else if (route.value.params.edit == 'pastenow') {
+        Object.assign(editedEvent.value, toRaw({ ...admin.clipboard }))
+        nextTick(() => editProgram({ target: form.value } as any))
+    }
+    else if (editing.value) {
+        Object.assign(editedEvent.value, toRaw({ ...program.value[selectedEditIndex.value!] }))
+    }
+    window.addEventListener('beforeunload', beforeunload)
+})
+
+onBeforeUnmount(() => {
+    window.removeEventListener('beforeunload', beforeunload)
+})
+
+onBeforeRouteLeave(() => {
+    if (dirty.value) {
+        return confirm(warning)
+    }
 })
 
 const fs = useFirestore()
@@ -99,13 +135,14 @@ const union = ref(false)
 function useSuggested(event: ScheduleEvent) {
     confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.') && (Object.assign(editedEvent.value, event))
 }
-function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>) {
+async function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>) {
     if (confirm('Opravdu chcete načíst tento den? ' + (union.value ? 'Existující program dne bude zachován.' : 'Úplně celý program dne bude přepsán.'))) {
-        setDoc(
+        await setDoc(
             cloud.eventDoc('schedule', selectedDayId.value), {
                 program: union.value ? arrayUnion(...part.program) : part.program,
             } as ScheduleDay, { merge: true },
         )
+        router.push('/schedule/' + selectedDayIndex.value)
     }
 }
 
@@ -124,12 +161,25 @@ async function editProgram(event: Event) {
         title: data.get('title'),
     } as ScheduleEvent
 
+    let autoOrderIndex = 0
+    for (const event of program.value) {
+        if (event.time && event.time < parsedData.time!) {
+            autoOrderIndex++
+        } else {
+            break
+        }
+    }
+
     await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
-        program: editing.value ? [
+        program: editing.value ? [// Replace at selectedEditIndex
             ...program.value.slice(0, selectedEditIndex.value!),
             parsedData,
             ...program.value.slice(selectedEditIndex.value! + 1),
-        ] : arrayUnion(parsedData),
+        ] : autoOrder.value ? [// Insert at autoOrderIndex
+            ...program.value.slice(0, autoOrderIndex),
+            parsedData,
+            ...program.value.slice(autoOrderIndex),
+        ] : arrayUnion(parsedData),// Append
     }, { merge: true })
 
     dirty.value = false // Reset dirty state

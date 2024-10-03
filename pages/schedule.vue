@@ -1,5 +1,5 @@
 <template>
-    <div style="padding-top: 4rem;">
+    <div style="padding: 4rem 0 3rem 0;">
         <nav role="navigation" class="days">
             <NuxtLink
                 v-for="(day, index) in cloudStore.days" :key="`day${index}`" :style="{
@@ -20,7 +20,7 @@
         >
             <div>
                 <NuxtPage
-                    :transition="{ name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTrainsitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTrainsitionBeforeLeave }"
+                    :transition="settings.animations ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTrainsitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTrainsitionBeforeLeave } : undefined"
                 />
             </div>
         </div>
@@ -31,10 +31,12 @@
 import type { Vector2 } from '@vueuse/gesture'
 import type { ScheduleDay } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
+import { useSettings } from '~/stores/settings'
 
 const cloudStore = useCloudStore()
 const router = useRouter()
 const route = router.currentRoute.value
+const settings = useSettings()
 const dayIndex = computed(() => router.currentRoute.value.params.day as string)
 const now = new Date()
 function isToday(scheduleDay: ScheduleDay) {

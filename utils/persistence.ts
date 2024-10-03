@@ -16,7 +16,9 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
             const storedVal = LocalStorage.getItem(key)
             if (storedVal !== internalRef.value) {
                 internalRef.value = storedVal
-                console.log('Hydrated', name, storedVal)
+                if (import.meta.dev) {
+                    console.log('Hydrated', name, storedVal)
+                }
             }
         }
         triggerRef(internalRef)
@@ -28,7 +30,9 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
     }
     watch(internalRef, (newValue) => {
         LocalStorage.setItem(key, isRef(newValue) ? newValue.value as UnwrapRef<T> : newValue)
-        console.log('Persisted', name, newValue)
+        if (import.meta.dev) {
+            console.log('Persisted', name, newValue)
+        }
     }, {
         deep: true,
     })

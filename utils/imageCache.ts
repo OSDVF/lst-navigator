@@ -44,6 +44,9 @@ function getBlobFromImage(img: HTMLImageElement): Promise<Blob | null> {
 
 export async function saveCacheImage(name: string, event: Event) {
     const image = event.target as HTMLImageElement
+    if (image.src.startsWith('data:')) {
+        return
+    }
     const blob = await getBlobFromImage(image)
     return await useIDBKeyval<Blob | null>(name, null).set(blob)
 }

@@ -6,7 +6,7 @@ import { setDoc } from '~/utils/trace'
 import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User } from 'firebase/auth'
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver } from 'firebase/auth'
 import Lodash from 'lodash'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
@@ -76,7 +76,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     const firebaseStorage = probe && useFirebaseStorage()
-    const selectedEvent = ref(config.public.defaultEvent)
+    const selectedEvent = usePersistentRef('selectedEvent-' + config.public.defaultEvent, config.public.defaultEvent)// invalidate the selected event when the default settings change
     function eventDoc(...path: (string | EventSubcollection)[]) {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
     }
@@ -106,9 +106,9 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const subscriptionsCollection = currentEventCollection('subscriptions')
 
-    const eventImage = computed(() => eventData.value?.image && firebaseStorage
-        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.image)).url.value
-        : null)
+    const eventImage = computed(() => eventData.value?.image.type == 'cloud' && firebaseStorage
+        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.image.data)).url.value
+        : eventData.value?.image.data)
     const eventTitle = computed(() => eventData.value?.title)
     const eventSubtitle = computed(() => eventData.value?.subtitle)
     const eventDescription = computed(() => eventData.value?.description)
@@ -259,7 +259,7 @@ export const useCloudStore = defineStore('cloud', () => {
             user.pendingAction.value = true
             try {
                 // With emulators the popup version would throw cross-origin error
-                await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider)
+                await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver)
                 user.pendingAction.value = false
                 user.pendingPopup.value = false
                 return true
@@ -356,12 +356,20 @@ export const useCloudStore = defineStore('cloud', () => {
                 superAdmin: true,
             }
         }
-        const onlinePermission = user.info.value?.permissions?.[selectedEvent.value]
-        if (typeof onlinePermission !== 'undefined' && user.auth?.value?.uid) {
+        if (user.auth?.value?.uid) {
+            const onlinePermission = user.info.value?.permissions?.[selectedEvent.value]
+            const superAdmin = user.info.value?.permissions?.superAdmin
+            if (typeof onlinePermission !== 'undefined') {
+                return {
+                    editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || superAdmin === true,
+                    editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || superAdmin === true,
+                    superAdmin: superAdmin === true,
+                }
+            }
             return {
-                editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || user.info.value!.permissions?.superAdmin === true,
-                editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || user.info.value!.permissions?.superAdmin === true,
-                superAdmin: user.info.value!.permissions?.superAdmin === true,
+                editSchedule: superAdmin === true,
+                editEvent: superAdmin === true,
+                superAdmin: superAdmin === true,
             }
         }
         return {
@@ -369,8 +377,15 @@ export const useCloudStore = defineStore('cloud', () => {
             editEvent: false,
             superAdmin: false,
         }
+
     })
-    const scheduleCollection = useCollection<ScheduleDay>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null)
+    const permissionNames = computed(() => ({
+        ...(resolvedPermissions.value.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
+        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce' } : {}),
+        [UserLevel.ScheduleAdmin]: 'Správce události',
+        [UserLevel.Nothing]: 'Nic',
+    }))
+    const scheduleCollection = useCollection<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null))
     const days = skipHydrate(scheduleCollection)
 
     const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
@@ -501,6 +516,7 @@ export const useCloudStore = defineStore('cloud', () => {
         notesCollection: skipHydrate(notesCollection),
         feedback: skipHydrate(feedback),
         offlineFeedback: skipHydrate(computed(() => offlineFeedback.value[selectedEvent.value])),
+        permissionNames,
         resolvedPermissions,
         suggestions,
         lastSuggestion,

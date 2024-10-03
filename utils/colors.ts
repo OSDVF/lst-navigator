@@ -47,3 +47,7 @@ export function setColorTransparency(color: string, alpha: number) {
     const rgba = colorToRGBA(color)
     return `rgba(${rgba[0]}, ${rgba[1]}, ${rgba[2]}, ${alpha})`
 }
+
+export function windowIsDark() {
+    return import.meta.browser && window.matchMedia('(prefers-color-scheme: dark)').matches
+}

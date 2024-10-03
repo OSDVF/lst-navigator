@@ -38,10 +38,9 @@
             <input id="color" v-model="editedEvent.color" type="text" name="color">&ensp;
             <input v-model="colorHex" type="color">&ensp;<span
                 :style="`background: ${editedEvent.color}`"
-                title="Test barvy" class="inline-block p-1">DAY</span>
-            <span :style="`background: ${colorOrWhite};filter:invert(1)`" class="inline-block p-1">NIGHT</span>
+                title="Test barvy" class="inline-block p-1">{{ dayNight[windowDark ? 1 : 0] }}</span>
+            <span :style="`background: ${colorOrWhite};filter:invert(1)`" class="inline-block p-1">{{ dayNight[windowDark ? 0 : 1] }}</span>
             &ensp;<button type="button" @click="editedEvent.color = ''">Vymazat</button>
-
         </p>
         <div class="flex-center">
             <label class="nowrap" for="icon">
@@ -55,11 +54,7 @@
         <label for="description">
             <Icon name="mdi:text" />&ensp; Dlouhý popis
         </label>&ensp;
-        <ClientOnly>
-            <ckeditor
-                v-if="ClassicEditor" id="description" v-model.lazy="editedEvent.description"
-                :editor="ClassicEditor" />
-        </ClientOnly>
+        <ClassicCKEditor id="description" v-model.lazy="editedEvent.description" />
         <input v-model.lazy="editedEvent.description" type="hidden" name="description">
 
         <br>
@@ -69,22 +64,21 @@
             </legend>
 
             <FeedbackTypeSelect
-                id="feedbackType" :type="feedbackOrDefault" :permit-empty="true"
-                :event="editedEvent"
-                :detail-question="editedEvent.detailQuestion" 
-                :questions="editedEvent.questions"
-                @update:type="t => feedbackOrDefault = t"
-                @update:detail-question="q => editedEvent.detailQuestion = q"
-                @update:questions="q => editedEvent.questions = q"
-            />
+                id="feedbackType" :type="feedbackOrDefault" :permit-empty="true" :event="editedEvent"
+                :detail-question="editedEvent.detailQuestion" :questions="editedEvent.questions"
+                @update:type="t => feedbackOrDefault = t" @update:detail-question="q => editedEvent.detailQuestion = q"
+                @update:questions="q => editedEvent.questions = q" />
         </fieldset>
     </div>
 </template>
 
 <script setup lang="ts">
 import type { FeedbackType, ScheduleEvent } from '@/types/cloud'
-import { colorToHex } from '@/utils/colors'
+import { colorToHex, windowIsDark } from '@/utils/colors'
 import { toHumanTime } from '@/utils/types'
+const dayNight = ['DAY', 'NIGHT']
+const windowDark = windowIsDark()
+
 const props = defineProps<{
     value: ScheduleEvent,
 }>()
@@ -113,13 +107,6 @@ const feedbackOrDefault = computed<FeedbackType | ''>({
         return editedEvent.feedbackType ?? ''
     },
     set: (val) => editedEvent.feedbackType = val == '' ? undefined : val,
-})
-
-const ClassicEditor = ref()
-onMounted(() => {
-    import('@ckeditor/ckeditor5-build-classic').then((c) => {
-        ClassicEditor.value = c.default
-    })
 })
 
 function canBeParallel(s: string) {

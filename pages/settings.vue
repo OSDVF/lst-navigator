@@ -1,5 +1,28 @@
 <template>
     <article class="settings">
+        <h4>Obecné</h4>
+        <fieldset>
+            <label for="selectedEvent">Událost</label>
+            <span>
+                <small class="muted">{{ cloud.selectedEvent }}</small>
+                <small v-if="cloud.user.info?.permissions[cloud.selectedEvent] as number > UserLevel.Nothing">
+                    <Icon
+                        :name="`mdi:${userLevelToIcon[cloud.user.info?.permissions[cloud.selectedEvent] as UserLevel]}`" />
+                </small>
+                &ensp;
+                <select id="selectedEvent" v-model="cloud.selectedEvent">
+                    <option v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id">
+                        {{ event.title }}
+                    </option>
+                </select>
+            </span>
+        </fieldset>
+        <fieldset>
+            <label for="animations">Animace</label>
+            <span>
+                <input id="animations" v-model="settings.animations" type="checkbox" >
+            </span>
+        </fieldset>
         <fieldset>
             <label for="selectedAudioName">Zvuk upozornění</label>
             <span>
@@ -93,6 +116,7 @@ import { setDoc } from '~/utils/trace'
 import { doc } from 'firebase/firestore'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
+import { UserLevel, userLevelToIcon } from '~/types/cloud'
 definePageMeta({
     title: 'Nastavení',
 })

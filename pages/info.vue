@@ -2,15 +2,16 @@
     <article role="article">
         <div class="eventBanner">
             <img
-                v-if="eventImage"
-                crossorigin="anonymous" class="eventImage" :src="eventImage"
-                @click="ui.showLightBox(eventImage)" @load="saveCacheImage('eventImage', $event)"
-            >
+                v-if="eventImage" crossorigin="anonymous" class="eventImage" :src="eventImage"
+                @click="ui.showLightBox(eventImage)"
+                @load="saveCacheImage('eventImage-' + cloudStore.selectedEvent, $event)">
         </div>
         <h1>{{ cloudStore.eventTitle }}</h1>
         <h2>{{ cloudStore.eventSubtitle }}</h2>
         <h6>
-            <a :href="cloudStore.eventWeb"><Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{ cloudStore.eventWeb }}</a>
+            <a :href="cloudStore.eventWeb">
+                <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{ cloudStore.eventWeb }}
+            </a>
             &ensp;
             <NuxtLink to="/feedback">
                 <button style="float:right">
@@ -35,7 +36,7 @@ const cloudStore = useCloudStore()
 
 const evaluating = ref(false)
 
-const eventImage = computedAsync(async () => await getCacheImage('eventImage', cloudStore.eventImage), null, { lazy: true, evaluating })
+const eventImage = computedAsync(async () => await getCacheImage('eventImage-' + cloudStore.selectedEvent, cloudStore.eventImage), null, { lazy: true, evaluating })
 
 definePageMeta({
     title: 'Informace',

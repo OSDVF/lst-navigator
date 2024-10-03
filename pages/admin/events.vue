@@ -1,12 +1,12 @@
 <template>
-    <article v-if='cloudStore.eventsCollection.length > 0'>
-        <button v-if='action == Actions.Nothing' @click='action = Actions.New'>
+    <article v-if='cloud.eventsCollection.length > 0'>
+        <button v-if='action == Actions.Nothing && cloud.resolvedPermissions.superAdmin' @click='action = Actions.New'>
             <Icon name='mdi:plus' /> Nová
         </button>
-        <button v-if='action == Actions.Nothing && isSelection' @click='startEditingSelected'>
+        <button v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.editEvent' @click='startEditingSelected'>
             <Icon name='mdi:pencil' /> Upravit
         </button>
-        <button v-if='action == Actions.Nothing && isSelection' @click='deleteSelected'>
+        <button v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.superAdmin' @click='deleteSelected'>
             <Icon name='mdi:trash-can' /> Smazat
         </button>
         <form v-if='action == Actions.New || action == Actions.Edit' @submit.prevent='editEvent(action == Actions.New)'>
@@ -25,31 +25,51 @@
                 required></label><br>
             <label>Začátek <input
                 v-model.lazy='editedEvent.start' type='date' required
-                :disabled='action == Actions.Edit'></label><br>
+                :disabled='action == Actions.Edit'></label> <DateFormat /><br>
             <label>Konec <input
                 v-model.lazy='editedEvent.end' :min='editedEvent.start!' type='date' required
-                :disabled='action == Actions.Edit'></label><br>
-            <ClientOnly>
-                <ckeditor v-if='ClassicEditor' v-model='editedEvent.description' :editor='ClassicEditor' />
-            </ClientOnly>
+                :disabled='action == Actions.Edit'></label> <DateFormat /><br>
+            <ClassicCKEditor v-model.lazy='editedEvent.description' />
             <fieldset :disabled='!!remoteImage.uploadTask.value'>
                 <legend>Obrázek</legend>
-                <p>
+                <div class="p">
                     <button type='button' @click='openFD({ accept: "image/*", multiple: false })'>
                         <Icon name='mdi:upload' /> Nahrát
                     </button>
-                    <button type='button' @click='selectingImage = true'>
+                    <input
+                        id="image-select" v-model="editedEvent.imageIdentifier.type" type='radio'
+                        name="imageSourceType" value="cloud">
+                    <label for="image-select">
                         <Icon name='mdi:folder-multiple-image' /> Vybrat
-                    </button>
-                    <StorageFileSelect v-if='selectingImage' v-model='editedEvent.imageIdentifier' />
-                </p>
+                    </label>
+                    <input
+                        id="image-url" v-model="editedEvent.imageIdentifier.type" type='radio'
+                        name="imageSourceType" value="url">
+                    <label for="image-url">
+                        <Icon name='mdi:link' /> z existující URL
+                    </label>
+
+                    <StorageFileSelect
+                        v-if='editedEvent.imageIdentifier.type === "cloud"'
+                        v-model='editedEvent.imageIdentifier.data' />
+                    <fieldset v-else>
+                        <legend>Externí URL</legend>
+                        <input
+                            v-model.lazy="imageExternalUrl" type="text" name="imageUrl"
+                            placeholder="Existující URL nebo data:image/...">
+                        <p>
+                            <ProgressBar v-if="loadingImage" />
+                            <img v-else-if="_imageExternalUrl" :src="_imageExternalUrl" alt="Náhled" style="max-width: 100%">
+                        </p>
+                    </fieldset>
+                </div>
                 <p v-if='files?.length === 1'>
                     Soubor k nahrání: {{ files.item(0)!.name }}
                 </p>
 
                 <p>
-                    <label v-if='editedEvent.imageIdentifier'>Výsledná lokace <input
-                        v-model='editedEvent.imageIdentifier' type='text'></label>
+                    <label v-if='editedEvent.imageIdentifier.type === "cloud"'>Výsledná lokace<input
+                        v-model.lazy='editedEvent.imageIdentifier.data' type='text'></label>
                 </p>
             </fieldset>
             <input type='submit' value='Potvrdit'>
@@ -92,13 +112,12 @@ definePageMeta({
     middleware: ['auth'],
 })
 
-const cloudStore = useCloudStore()
+const cloud = useCloudStore()
 const lang = computed(() => import.meta.client ? navigator.language : 'cs-CZ')
 enum Actions {
     Nothing, New, Edit
 }
 const action = ref<Actions>(Actions.Nothing)
-const selectingImage = ref(false)
 
 const now = toFirebaseDate(new Date())!
 const editedEvent = ref({
@@ -106,7 +125,10 @@ const editedEvent = ref({
     description: '',
     end: now,
     identifier: '',
-    imageIdentifier: '',
+    imageIdentifier: {
+        type: 'cloud',
+        data: '',
+    },
     start: now,
     subtitle: '',
     web: '',
@@ -128,11 +150,55 @@ const sanitizeTitleAndId = computed({
     },
 })
 
-const storage = cloudStore.probe && useFirebaseStorage()
-const fs = cloudStore.probe && useFirestore()
+const _imageExternalUrl = ref('')
+const loadingImage = ref(false)
+const permittedTypes = ['png', 'jpg', 'jpe', 'web']
+const imageExternalUrl = computed({
+    get() {
+        return _imageExternalUrl.value
+    },
+    set(changedValue: string) {
+        if (!changedValue) {
+            _imageExternalUrl.value = ''
+            return
+        }
+        if (changedValue.length > 50000) {
+            alert('Odkaz na obrázek musí být kratší než 50000 znaků. Tento má ' + changedValue.length)
+            return
+        }
+        const lower = changedValue.toLowerCase()
+        if (lower.startsWith('http://') || lower.startsWith('https://')) {
+            loadingImage.value = true
+            fetch(changedValue, { method: 'HEAD' }).then((response) => {
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type')
+                    if (contentType && permittedTypes.includes(contentType.substring(6, 9))) {
+                        _imageExternalUrl.value = changedValue
+                        return
+                    }
+                }
+                alert('Odkaz na obrázek je neplatný')
+            }).finally(() => {
+                loadingImage.value = false
+            })
+        } else if (lower.startsWith('data:image/') && permittedTypes.includes(lower.substring(11, 14))) {
+            _imageExternalUrl.value = changedValue
+        } else {
+            alert('Odkaz na obrázek je neplatný')
+        }
+        _imageExternalUrl.value = changedValue
+        editedEvent.value.imageIdentifier = {
+            type: 'external',
+            data: changedValue,
+        }
+    },
+})
+
+const storage = cloud.probe && useFirebaseStorage()
+const fs = cloud.probe && useFirestore()
 
 const { files, open: openFD } = useFileDialog()
-const remoteImage = useStorageFile(computed(() => storage ? storageRef(storage, `${editedEvent.value.identifier}/${files.value?.item(0)?.name ?? 'image'}`) : null))
+const remoteImage = useStorageFile(computed(() => storage && editedEvent.value.identifier ? storageRef(storage, `${editedEvent.value.identifier}/${files.value?.item(0)?.name ?? 'image'}`) : null))
 function uploadImage() {
     const data = files.value?.item(0)
     if (data) {
@@ -144,7 +210,10 @@ async function editEvent(createNew = false) {
     if (files.value?.length) {
         await uploadImage()
         if (remoteImage.metadata.value) {
-            editedEvent.value.imageIdentifier = remoteImage.metadata.value.fullPath
+            editedEvent.value.imageIdentifier = {
+                type: 'cloud',
+                data: remoteImage.metadata.value.fullPath,
+            }
         }
     }
     if (!fs) {
@@ -160,19 +229,19 @@ async function editEvent(createNew = false) {
             alert('Dokument \'notes\' k akci s tímto názvem již existuje')
             return
         }
-        if ((await getDocs(docs.feedback)).empty) {
+        if (!(await getDocs(docs.feedback)).empty) {
             alert('Dokument \'feedback\' k akci s tímto názvem již existuje')
             return
         }
-        if ((await getDocs(docs.subscriptions)).empty) {
+        if (!(await getDocs(docs.subscriptions)).empty) {
             alert('Dokument \'subscriptions\' k akci s tímto názvem již existuje')
             return
         }
-        if ((await getDocs(docs.schedule)).empty) {
+        if (!(await getDocs(docs.schedule)).empty) {
             alert('Dokument \'schedule\' k akci s tímto názvem již existuje')
             return
         }
-        if ((await getDocs(docs.users)).empty) {
+        if (!(await getDocs(docs.users)).empty) {
             alert('Dokument \'users\' k akci s tímto názvem již existuje')
             return
         }
@@ -194,7 +263,7 @@ async function editEvent(createNew = false) {
             cooking: null,
             date: toFirebaseDate(i),
             dishes: null,
-            name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' })),
+            name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' }).replace('. ', '. ')),
             program: arrayUnion(),
             manager: null,
         }, { merge: true })
@@ -220,8 +289,8 @@ async function editEvent(createNew = false) {
 
 const eventsIndexed = computed(() => {
     const result = []
-    if (cloudStore.eventsCollection) {
-        for (const eventData of cloudStore.eventsCollection) {
+    if (cloud.eventsCollection) {
+        for (const eventData of cloud.eventsCollection) {
             result.push([
                 eventData.id,
                 eventData.title,
@@ -247,7 +316,7 @@ async function startEditingSelected() {
             alert('Vyberte jednu akci')
             return
         }
-        const selectedEvent = cloudStore.eventsCollection.find(e => e.id === selectedData[0][0])
+        const selectedEvent = cloud.eventsCollection.find(e => e.id === selectedData[0][0])
         if (selectedEvent) {
             loading.value = true
             loading.value = false
@@ -257,7 +326,10 @@ async function startEditingSelected() {
                 identifier: selectedEvent.id,
                 description: selectedEvent.description,
                 end: selectedEvent.end,
-                imageIdentifier: selectedEvent.image,
+                imageIdentifier: selectedEvent.image || {
+                    type: 'cloud',
+                    data: '',
+                },
                 start: selectedEvent.start,
                 subtitle: selectedEvent.subtitle,
                 web: selectedEvent.web,
@@ -272,7 +344,7 @@ function deleteSelected() {
             alert('Vyberte jednu akci')
             return
         }
-        const selectedEvent = cloudStore.eventsCollection.find(e => e.id === selectedData[0][0])
+        const selectedEvent = cloud.eventsCollection.find(e => e.id === selectedData[0][0])
         if (selectedEvent) {
             if (confirm(`Opravdu chcete smazat akci ${selectedEvent.title}?`)) {
                 deleteDoc(doc(fs, 'events', selectedEvent.id))
@@ -282,15 +354,9 @@ function deleteSelected() {
     }
 }
 
-const ClassicEditor = ref()
-onMounted(() => {
-    import('@ckeditor/ckeditor5-build-classic').then((c) => {
-        ClassicEditor.value = c.default
-    })
-})
 
 async function deleteCollection(collectionPath: string, batchSize: number) {
-    if (!fs) {return}
+    if (!fs) { return }
     const collectionRef = collection(fs, collectionPath)
     const q = query(collectionRef, orderBy('__name__'), limit(batchSize))
 
@@ -300,7 +366,7 @@ async function deleteCollection(collectionPath: string, batchSize: number) {
 }
 
 async function deleteQueryBatch(query: Query, resolve: () => void) {
-    if (!fs) {return}
+    if (!fs) { return }
     const snapshot = await getDocs(query)
 
     const batchSize = snapshot.size
