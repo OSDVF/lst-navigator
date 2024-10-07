@@ -1,7 +1,9 @@
 <template>
-    <ckeditor
-        v-if="ClassicEditor" style="max-width: 99vw;" v-bind="$attrs" :model-value="props.modelValue || ''"
-        :config="config" :editor="ClassicEditor" @update:model-value="v => emit('update:modelValue', v)" />
+    <client-only>
+        <ckeditor
+            v-if="ClassicEditor" style="max-width: 99vw;" v-bind="$attrs" :model-value="props.modelValue || ''"
+            :config="config" :editor="ClassicEditor" @update:model-value="v => emit('update:modelValue', v)" />
+    </client-only>
 </template>
 <script setup lang="ts">
 import type { EditorConfig } from 'ckeditor5'

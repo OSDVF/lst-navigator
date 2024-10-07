@@ -1,5 +1,5 @@
 <template>
-    <ClientOnly>
+    <LazyClientOnly>
         <Teleport to="#topNav">
             <label class="p-1">
                 <Icon name="mdi:magnify" /><button @click="zoomFactor += 0.1">
@@ -97,7 +97,7 @@
                 <NuxtPage :style="`font-size: ${zoomFactor}rem`" />
             </template>
         </div>
-    </ClientOnly>
+    </LazyClientOnly>
 </template>
 
 <script setup lang="ts">

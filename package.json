@@ -32,7 +32,6 @@
     "@types/lodash": "^4.17.7",
     "@types/node": "^18.19.47",
     "@types/randomcolor": "^0.5.9",
-    "@types/sanitize-html": "^2.13.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vite-pwa/nuxt": "^0.10.1",
     "@vueuse/core": "^10.11.1",

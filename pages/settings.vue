@@ -64,11 +64,11 @@
             <label>Datum synchronizace poznámek</label>
             <span>
                 <small>
-                    <ClientOnly>
+                    <LazyClientOnly>
                         {{
                             settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime).toLocaleString(lang)
                         }}
-                    </ClientOnly>
+                    </LazyClientOnly>
                 </small>
                 &ensp;
                 <button @click="syncNotes">
@@ -80,10 +80,10 @@
             <label>Datum synchronizace feedbacku</label>
             <span>
                 <small>
-                    <ClientOnly>
+                    <LazyClientOnly>
                         {{ cloud.feedback.dirtyTime === 0 ? 'Nikdy' : new
                             Date(cloud.feedback.dirtyTime).toLocaleString(lang) }}
-                    </ClientOnly>
+                    </LazyClientOnly>
                 </small>
                 &ensp;
                 <button @click="cloud.feedback.saveAgain">
@@ -96,10 +96,10 @@
         <fieldset>
             <p>Verze</p>
             <p>
-                <ClientOnly>
+                <LazyClientOnly>
                     {{ new Date(parseInt(config.public.compileTime)).toLocaleString(lang) }}
                     {{ leadingPlus(parseInt(config.public.compileTimeZone) / 60) }}
-                </ClientOnly>
+                </LazyClientOnly>
             </p>
         </fieldset>
         <fieldset>

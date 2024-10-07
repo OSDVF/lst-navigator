@@ -45,6 +45,10 @@ export default defineNuxtModule({
             const events = await knownCollection('events').listDocuments()
             for (const evtDoc of events) {
                 const event = (await evtDoc.get()).data() as EventDescription<CollectionReference>
+                if(!event) {
+                    continue
+                    // This document does not really exist, there is only a reference to it
+                }
                 ///
                 /// Check references
                 ///

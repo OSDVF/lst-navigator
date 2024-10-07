@@ -75,7 +75,7 @@
         <br>
         <br>
         <br>
-        <ClientOnly>
+        <LazyClientOnly>
             <Teleport to="#additionalNav">
                 <nav class="eventItemNav">
                     <NuxtLink
@@ -88,7 +88,7 @@
                     </NuxtLink>
                 </nav>
             </Teleport>
-        </ClientOnly>
+        </LazyClientOnly>
     </article>
 </template>
 

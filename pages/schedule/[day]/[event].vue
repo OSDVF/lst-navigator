@@ -16,7 +16,7 @@
         </h1>
         <h3>{{ eventData?.subtitle }}</h3>
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <p v-html="eventData?.description ?? 'Žádné podrobnosti'" />
+        <div class="p" v-html="eventData?.description ?? 'Žádné podrobnosti'" />
 
         <h1>
             <Icon name="mdi:rss" /> Zpětná vazba
@@ -48,13 +48,12 @@
         <h1>Tvé poznámky&ensp;
             <Icon title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
         </h1>
-        <p>
+        <div class="p">
             <ClassicCKEditor v-model="noteModel" @focus="permitSwipe = false" @blur="permitSwipe = true" />
             <ProgressBar v-if="fetchingNote" />
-        </p>
-        <p />
+        </div>
         <br>
-        <ClientOnly>
+        <LazyClientOnly>
             <Teleport to="#additionalNav">
                 <nav class="eventItemNav">
                     <NuxtLink v-if="eventItemIndex > 0" :to="`/schedule/${dayIndex}/${eventItemIndex - 1}`">
@@ -69,7 +68,7 @@
                     </NuxtLink>
                 </nav>
             </Teleport>
-        </ClientOnly>
+        </LazyClientOnly>
     </article>
 </template>
 

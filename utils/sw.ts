@@ -1,17 +1,21 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
-import { registerRoute, Route } from 'workbox-routing'
+import { registerRoute, Route, setCatchHandler } from 'workbox-routing'
 import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, type MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
-import type { SeverityLevel } from '@sentry/browser'
 import * as idb from 'idb-keyval'
 import type { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
 
-
 declare let self: ServiceWorkerGlobalScope
+try {
+    Sentry.init(swConfig.sentry)
+    Sentry.setTag('commitHash', swConfig.commitHash)
+} catch (e) {
+    console.error('Sentry init failed', e)
+}
 
 cleanupOutdatedCaches()
 // Precaching behaviour
@@ -103,7 +107,8 @@ isSupported().then((supported) => {
         }
     })
 })
-addEventListener('message', (event: MessageEvent) => {
+
+addEventListener('message', async (event: MessageEvent) => {
     if (event.data) {
         switch (event.data.type) {
         // Prompt For Update behaviour
@@ -113,19 +118,18 @@ addEventListener('message', (event: MessageEvent) => {
         case 'CLIENTS_CLAIM':
             self.clients.claim()
             break
-        case 'INITIALIZE_SENTRY':
-            Sentry.init(event.data.config)
-            Sentry.setTag('commitHash', swConfig.commitHash)
-            break
         }
     }
-    Sentry.captureMessage('Message received', {
-        level: 'debug' as SeverityLevel,
-        extra: event.data,
+
+    Sentry.addBreadcrumb({
+        category: 'message',
+        data: event.data,
+        timestamp: Date.now(),
+        level: 'debug',
     })
 })
 
-self.addEventListener('notificationclick', (event: NotificationEvent) => {
+self.addEventListener('notificationclick', async (event: NotificationEvent) => {
     event.notification.close()
     console.log('[SW] Notification click Received.', event.notification)
     Sentry.addBreadcrumb({
@@ -138,7 +142,7 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
 
 self.addEventListener(
     'pushsubscriptionchange',
-    (event: any) => {
+    async (event: any) => {
         Sentry.captureMessage('Push subscription change', {
             level: 'debug',
             extra: event,
@@ -164,14 +168,31 @@ self.addEventListener(
 //
 // Runtime caching
 //
+const FALLBACK_STRATEGY = new CacheFirst()
 // Icons
 const iconsRoute = new Route(({ request }) => {
     return request.url.startsWith('https://api.iconify.design/')
-}, new CacheFirst())
+}, FALLBACK_STRATEGY)
 
 registerRoute(iconsRoute)
 
-const fallbackRoute = new Route(() => true, new StaleWhileRevalidate())
+const fallbackRoute = new Route((options) => swConfig.hostnames.includes(options.url.hostname), new StaleWhileRevalidate())
 
 registerRoute(fallbackRoute)
 
+// This "catch" handler is triggered when any of the other routes fail to
+// generate a response.
+setCatchHandler(async ({ event, request }) => {
+    // The warmStrategyCache recipe is used to add the fallback assets ahead of
+    // time to the runtime cache, and are served in the event of an error below.
+    // Use `event`, `request`, and `url` to figure out how to respond, or
+    // use request.destination to match requests for specific resource types.
+    switch (request.destination) {
+    case 'document':
+        return FALLBACK_STRATEGY.handle({ event, request: '/' })
+
+    default:
+        // If we don't have a fallback, return an error response.
+        return Response.error()
+    }
+})

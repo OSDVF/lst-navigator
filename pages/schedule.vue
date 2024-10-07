@@ -100,10 +100,10 @@ let lastVerticalScroll = new Date().getTime()
 // Swipe Navigation
 //
 const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
-    const intDay = parseInt(dayIndex.value)
-    if (transitioning.value || !permitSwipe.value) {
+    if (transitioning.value || !permitSwipe.value || !settings.animations) {
         return
     }
+    const intDay = parseInt(dayIndex.value)
     if (Math.abs(y) > 50 && (Math.abs(y) > 5 && Math.abs(y) > Math.abs(x))) {
         lastVerticalScroll = new Date().getTime()
     }

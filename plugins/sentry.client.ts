@@ -1,9 +1,9 @@
-import * as Sentry from '@sentry/vue'
+import type * as Sentry from '@sentry/vue'
 import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin({
     parallel: true,
-    setup(nuxtApp) {
+    async setup(nuxtApp) {
         const sentryConfig: Partial<Sentry.BrowserOptions> = {
             enabled: nuxtApp.$config.public.SENTRY_ENABLED,
             autoSessionTracking: true,
@@ -13,6 +13,7 @@ export default defineNuxtPlugin({
             environment: nuxtApp.$config.public.ENV,
         }
 
+        const Sentry = await import('@sentry/vue')
         Sentry.init({
             ...sentryConfig,
             app: nuxtApp.vueApp,
@@ -28,12 +29,6 @@ export default defineNuxtPlugin({
             replaysSessionSampleRate: 0.1,
             replaysOnErrorSampleRate: 1,
         })
-        if (import.meta.client) {
-            navigator.serviceWorker?.controller?.postMessage({
-                type: 'INITIALIZE_SENTRY',
-                config: sentryConfig,
-            })
-        }
         nuxtApp.hook('vue:error', (err) => {
             Sentry.captureException(err)
             console.error('vue:error', err)

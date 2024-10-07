@@ -48,9 +48,9 @@
             </div>
         </div>
         <ProgressBar v-show="cloudStore.eventLoading" class="backgroundLoading" />
-        <ClientOnly>
+        <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
-        </ClientOnly>
+        </LazyClientOnly>
 
         <template #error="{ error, clearError }">
             <main>

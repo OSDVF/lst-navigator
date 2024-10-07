@@ -1,5 +1,5 @@
 <template>
-    <ClientOnly>
+    <LazyClientOnly>
         <form @submit.prevent>
             <slot />
             <input id="nickname" v-model="tempNickname" v-paste-model :disabled="!!settings.userNickname">
@@ -14,7 +14,7 @@
             <br>
             <small class="muted">UID: {{ settings.userIdentifier }}</small>
         </form>
-    </ClientOnly>
+    </LazyClientOnly>
 </template>
 
 <script lang="ts" setup>

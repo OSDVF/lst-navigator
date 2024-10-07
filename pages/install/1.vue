@@ -1,7 +1,7 @@
 <template>
     <article>
         <h1><Icon name="carbon:package" />&ensp;Instalace</h1>
-        <ClientOnly>
+        <LazyClientOnly>
             <p v-if="$deferredPrompt() !== null">
                 Jsem hybridní webová aplikace, kterou nainstalujete kliknutím na tlačítko <code>Další</code>
             </p>
@@ -27,7 +27,7 @@
             <p v-if="$pwa.offlineReady">
                 <Icon name="mdi:check" /> Stažení
             </p>
-        </ClientOnly>
+        </LazyClientOnly>
     </article>
 </template>
 <script setup lang="ts">

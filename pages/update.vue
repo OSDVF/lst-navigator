@@ -1,5 +1,6 @@
 <template>
     <article>
+
         <Head>
             <meta http-equiv="Cache-control" content="no-cache">
             <meta http-equiv="Expires" content="-1">
@@ -11,13 +12,15 @@
             <Icon name="mdi:download" />&ensp;Stáhnout
         </button>
         <br>
-        <ClientOnly>
+        <LazyClientOnly>
             <button @click="$pwa?.cancelInstall(); prevRoute !== null ? router.back() : goToRedirectedFrom()">
                 <Icon name="mdi:sync-off" />&ensp;Ignorovat
             </button>
-        </ClientOnly>
+        </LazyClientOnly>
         <p class="small">
-            Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd><Icon name="mdi:apple-keyboard-command" />+Shift+R</kbd> na MacOS.
+            Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd>
+                <Icon name="mdi:apple-keyboard-command" />+Shift+R
+            </kbd> na MacOS.
         </p>
     </article>
 </template>
@@ -37,20 +40,24 @@ onMounted(() => {
     }
 })
 
+async function repairWorkerState() {
+    const regs = await navigator.serviceWorker?.getRegistrations()
+    for (const reg of regs) {
+        const currentState = (reg.waiting ?? reg.installing ?? reg.active)
+        try {
+            currentState?.postMessage({ type: 'CLIENTS_CLAIM' })
+            currentState?.postMessage({ type: 'SKIP_WAITING' })
+        } catch (e) {
+            console.error(e)
+            $Sentry.captureException(e)
+        }
+    }
+}
+
 async function download() {
     const updatePromise = $pwa?.updateServiceWorker()
     if (import.meta.client) {
-        const regs = await navigator.serviceWorker?.getRegistrations()
-        for (const reg of regs) {
-            const currentState = (reg.waiting ?? reg.installing ?? reg.active)
-            try {
-                currentState?.postMessage({ type: 'CLIENTS_CLAIM' })
-                currentState?.postMessage({ type: 'SKIP_WAITING' })
-            } catch (e) {
-                console.error(e)
-                $Sentry.captureException(e)
-            }
-        }
+        await repairWorkerState()
         const path = router.currentRoute.value.fullPath
         await router.push({
             path,
@@ -65,6 +72,7 @@ async function download() {
 }
 
 function goToRedirectedFrom() {
+    repairWorkerState()
     const redirectString = router.currentRoute.value.query.redirect as string
     if (redirectString?.includes('://')) {
         const url = new URL(redirectString)

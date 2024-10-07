@@ -6,7 +6,7 @@
         </Head>
         <slot />
         <nav class="installNav">
-            <ClientOnly>
+            <LazyClientOnly>
                 <NuxtLink v-if="partIndex > 0" :to="`/install/${partIndex - 1}`">
                     <Icon name="material-symbols:arrow-circle-left-outline" size="2rem" /> Předchozí
                 </NuxtLink>
@@ -23,7 +23,7 @@
                     <br>
                     <ProgressBar />
                 </ServerPlaceholder>
-            </ClientOnly>
+            </LazyClientOnly>
         </nav>
     </main>
 </template>

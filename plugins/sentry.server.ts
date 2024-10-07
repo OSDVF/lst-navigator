@@ -1,9 +1,9 @@
-import * as Sentry from '@sentry/node'
 import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin({
     parallel: true,
-    setup(nuxtApp) {
+    async setup(nuxtApp) {
+        const Sentry = await import('@sentry/node')
         Sentry.init({
             enabled: nuxtApp.$config.public.SENTRY_ENABLED,
             autoSessionTracking: import.meta.client,

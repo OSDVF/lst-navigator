@@ -3,13 +3,13 @@ import type { DocumentReference} from 'firebase/firestore'
 import { doc, getDoc, terminate } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
-import * as Sentry from '@sentry/node'
 import { initializeApp } from 'firebase/app'
 import type { EventDescription } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 
 
 export default async function () {
+    const Sentry = await import('@sentry/node')
     const config = useRuntimeConfig()
     initializeApp((config.vuefire as any).options.config)
     const selectedEvent = config.public.defaultEvent

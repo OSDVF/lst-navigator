@@ -1,8 +1,7 @@
-import * as Sentry from '@sentry/node'
-
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig()
 
+    const Sentry = await import('@sentry/node')
     Sentry.init({
         enabled: config.public.SENTRY_ENABLED,
         debug: config.public.ENV !== 'production',

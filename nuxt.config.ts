@@ -71,6 +71,18 @@ const config = defineNuxtConfig({
         headNext: true,
         polyfillVueUseHead: false,
     },
+    hooks: {
+        'build:manifest': (manifest) => {
+            const notWanted = ['sentry']
+            // remove preload links
+            for (const key in manifest) {
+                const entry = manifest[key]
+                entry.dynamicImports = entry.dynamicImports?.filter((x) => !notWanted.some((y) => x.includes(y)))
+                entry.preload = entry.preload = false
+                entry.prefetch = false
+            }
+        },
+    },
     icon: {
         serverBundle: 'remote',
         provider: 'iconify',
@@ -168,6 +180,7 @@ const config = defineNuxtConfig({
         build: {
             modulePreload: false,
             minify: 'esbuild',
+            sourcemap: true,
             rollupOptions: {
                 output: {
                     manualChunks(id: string) {
@@ -180,9 +193,6 @@ const config = defineNuxtConfig({
                     },
                 },
             },
-        },
-        optimizeDeps: {
-            exclude: ['sanitize-html'],
         },
         resolve: {
             alias: [
@@ -214,6 +224,8 @@ const config = defineNuxtConfig({
         // revert chunk name
         $client: {
             build: {
+                modulePreload: false,
+                sourcemap: true,
                 rollupOptions: {
                     output: {
                         chunkFileNames: '_nuxt/[name].[hash].js',
@@ -287,6 +299,19 @@ fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
     firebase: config.vuefire?.config,
     messaging: config.runtimeConfig!.public!.messagingConfig,
     commitHash,
+    sentry: {
+        enabled: config.runtimeConfig!.public!.SENTRY_ENABLED,
+        autoSessionTracking: true,
+        debug: process.env.NODE_ENV !== 'production',
+        dsn: process.env.VITE_APP_DSN,
+        release: commitHash,
+        environment: process.env.NODE_ENV ?? 'production',
+    },
+    hostnames: [
+        'localhost',
+        config.vuefire!.config.authDomain,
+        'api.iconify.design',
+    ],
 })}`)
 
 export default config

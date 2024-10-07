@@ -12,17 +12,17 @@
                 >
                 &nbsp;
             </template>
-            <ClientOnly>
+            <LazyLazyClientOnly>
                 {{ cloudStore.user.pendingPopup ? 'Postupujte podle pokynů v druhém okně' :
                     cloudStore.user.auth?.displayName ?? prettyError ?? 'Přihlášení' }} <span
                     v-if="cloudStore.user.auth?.email"
                     class="muted nowrap"
                 >{{
                     cloudStore.user.auth.email }}</span>
-            </ClientOnly>
+            </LazyLazyClientOnly>
         </label>
         <span>
-            <ClientOnly>
+            <LazyLazyClientOnly>
                 <button v-if="cloudStore.user.auth?.uid" @click="cloudStore.user.signOut">
                     <Icon name="mdi:logout" /> Odhlásit
                 </button>
@@ -30,7 +30,7 @@
                     <Icon name="mdi:login" /> Přihlásit
                 </button>
                 <ProgressBar v-if="cloudStore.user.pendingAction" class="absolute left-0 bottom-0 right-0" />
-            </ClientOnly>
+            </LazyLazyClientOnly>
         </span>
     </fieldset>
 </template>
