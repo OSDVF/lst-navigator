@@ -9,7 +9,7 @@
         <h1>{{ cloudStore.eventTitle }}</h1>
         <h2>{{ cloudStore.eventSubtitle }}</h2>
         <h6>
-            <a :href="cloudStore.eventWeb">
+            <a :href="cloudStore.eventWeb" target="_blank">
                 <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{ cloudStore.eventWeb }}
             </a>
             &ensp;

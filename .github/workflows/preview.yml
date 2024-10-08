@@ -32,7 +32,7 @@ jobs:
           path: .output/public
 
       - name: Inject source maps
-        run: bun inject-sourcemaps.mjs
+        run: node inject-sourcemaps.mjs
           
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
