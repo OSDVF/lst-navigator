@@ -2,7 +2,7 @@
     <fieldset class="relative">
         <label>
             <template v-if="cloudStore.resolvedPermissions.superAdmin">
-                <Icon name="mdi:shield-lock-open" title="Úpravy povoleny" />
+                <Icon name="mdi:shield-lock-open" title="Úpravy povoleny" tabindex="-1" />
                 &nbsp;
             </template>
             <template v-else-if="cloudStore.user.auth?.photoURL">

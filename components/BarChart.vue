@@ -1,7 +1,7 @@
 <template>
     <div class="bar-chart">
         <div
-            v-for="(value, index) in normalizedValues" :key="index" class="bar"
+            v-for="(value, index) in normalizedValues" :key="index" tabindex="-1" class="bar"
             :style="{ height: `${value * 100}%`, '--count': normalizedValues.length, background: colors[index] }"
             :title="(filteredValues.v[index]?.toString() ?? 'N/A') + (popups && filteredValues.p[index] ? (`:\n${filteredValues.p[index]}`) : '')">
             <span class="label">{{ labels[index] ?? '\xa0'

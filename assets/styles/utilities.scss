@@ -64,6 +64,13 @@ $sides: (top, bottom, left, right); // Leave this variable alone
   }
 }
 
+@media screen and (max-width: 640px) {
+  .sm-hide {
+    display: none;
+  }
+  
+}
+
 .clear {
   clear: both;
 }

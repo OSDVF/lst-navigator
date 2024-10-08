@@ -46,7 +46,7 @@
             Není k dispozici
         </p>
         <h1>Tvé poznámky&ensp;
-            <Icon title="Experimantální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
+            <Icon tabindex="-1" title="Experimentální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
         </h1>
         <div class="p">
             <ClassicCKEditor v-model="noteModel" @focus="permitSwipe = false" @blur="permitSwipe = true" />

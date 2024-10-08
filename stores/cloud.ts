@@ -453,6 +453,25 @@ export const useCloudStore = defineStore('cloud', () => {
         setTimeout(async () => {
             if (config.public.debugUser) {
                 userAuth!.value = debugUser
+                user.info.value = {
+                    lastLogin: new Date().getTime(),
+                    name: 'Debug User',
+                    permissions: {
+                        superAdmin: true,
+                    },
+                    lastTimezone: new Date().getTimezoneOffset(),
+                    signature: {
+                        [selectedEvent.value]: 'Debug User',
+                    },
+                    signatureId: {
+                        [selectedEvent.value]: 'debug',
+                    },
+                    subscriptions: {
+
+                    },
+                    email: debugUser.email ?? undefined,
+                    photoURL: debugUser.photoURL ?? undefined,
+                }
             } else {
                 await getRedirectResult(auth!).catch((reason) => {
 

@@ -61,7 +61,8 @@
                         <template v-if="!getFeedback(entry, index)">Feedback a detaily</template>
                         <NuxtRating
                             v-else :rating-value="(getFeedback(entry, index) as number)" rating-size="1.2rem"
-                            inactive-color="#aaa" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`" />
+                            inactive-color="#aaa" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
+                            tabindex="-1" />
                     </span>
                 </NuxtLink>
             </details>

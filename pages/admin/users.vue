@@ -17,7 +17,7 @@
                 null,
                 null,
                 {
-                    render: (data: UserLevel) => data ? `<span title='${cloudStore.permissionNames[data]}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${(userLevelToIcon)[data]}.svg);'></span>` : ''
+                    render: (data: UserLevel) => data ? `<span tabindex='-1' title='${cloudStore.permissionNames[data]}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${(userLevelToIcon)[data]}.svg);'></span>` : ''
                 }
             ]" @select="selectionChanged" @deselect="selectionChanged">
             <thead>

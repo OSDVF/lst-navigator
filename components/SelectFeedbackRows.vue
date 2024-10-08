@@ -2,7 +2,7 @@
     <tr>
         <td
             :colspan="Object.keys(props.replies).length" class="caption"
-            :title="stripHtml(config?.description ?? event?.description)">
+            :title="stripHtml(config?.description ?? event?.description) || undefined" tabindex="-1">
             <div v-if="link">
                 <NuxtLink :to="link" class="sticky left-0">
                     {{ (config?.name ?? event?.title) }}
@@ -17,7 +17,7 @@
     </tr>
     <!-- Filtered by selected option -->
     <tr v-for="(filteredByOption, option) in repliesByOption" :key="option">
-        <td :title="Object.keys(filteredByOption.replies).join(', ')">
+        <td :title="Object.keys(filteredByOption.replies).join(', ') || undefined" tabindex="-1">
             <div
                 class="absolute left-0 top-0 bottom-0 z--1"
                 :style="{ width: `${100 * filteredByOption.count / maxCount}%`, background: randomColors?.[option] }" />

@@ -38,6 +38,7 @@
             <input id="color" v-model="editedEvent.color" type="text" name="color">&ensp;
             <input v-model="colorHex" type="color">&ensp;<span
                 :style="`background: ${editedEvent.color}`"
+                tabindex="-1"
                 title="Test barvy" class="inline-block p-1">{{ dayNight[windowDark ? 1 : 0] }}</span>
             <span :style="`background: ${colorOrWhite};filter:invert(1)`" class="inline-block p-1">{{ dayNight[windowDark ? 0 : 1] }}</span>
             &ensp;<button type="button" @click="editedEvent.color = ''">Vymazat</button>

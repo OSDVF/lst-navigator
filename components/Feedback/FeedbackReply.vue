@@ -2,19 +2,19 @@
     <div>
         <template v-if="typeof $props.reply?.basic === 'number' && !isNaN($props.reply.basic)">
             <NuxtRating
-                :read-only="!admin.editingFeedback" active-color="blue" :rating-value="$props.reply.basic"
-                title="Celkový dojem" rating-size="1.2em" @rating-selected="(val: number) => controls?.syncBasic(val)"
-            />
+                tabindex="-1" :read-only="!admin.editingFeedback" active-color="blue"
+                :rating-value="$props.reply.basic" title="Celkový dojem" rating-size="1.2em"
+                @rating-selected="(val: number) => controls?.syncBasic(val)" />
             {{ Math.round(($props.reply.basic + Number.EPSILON) * 10) / 10 }}
         </template>
         <template v-if="$props.reply?.complicated?.length">
             <div v-for="(compl, index) in $props.reply.complicated" :key="`c${index}`">
                 <NuxtRating
                     :read-only="!admin.editingFeedback" :active-color="darkenColor('#ffff00', index / 5)"
-                    :rating-value="compl ?? undefined" :title="questions?.[index] ?? defaultQuestions[index]"
-                    rating-size="1.2em" @rating-selected="(val: number) => controls?.syncComplicated(index, val)"
-                /> {{
-                    Math.round(((compl ?? 0) + Number.EPSILON) * 10) / 10 }}
+                    :rating-value="compl ?? undefined" tabindex="-1"
+                    :title="questions?.[index] ?? defaultQuestions[index]" rating-size="1.2em"
+                    @rating-selected="(val: number) => controls?.syncComplicated(index, val)" /> {{
+                        Math.round(((compl ?? 0) + Number.EPSILON) * 10) / 10 }}
             </div>
         </template>
         <template v-else-if="$props.reply?.detail">
@@ -47,7 +47,7 @@ const props = defineProps<{
     reply: Feedback
     questions?: string[]
     respondent?: string,
-    onSetData?:(value: Feedback, respondent: string) => void
+    onSetData?: (value: Feedback, respondent: string) => void
 }>()
 
 const admin = useAdmin()
@@ -57,7 +57,7 @@ const controls = props.onSetData
         props: {
             data: props.reply,
             complicatedQuestions: props.questions || defaultQuestions,
-            onSetData: (value:Feedback) => props.onSetData?.(value, props.respondent!),
+            onSetData: (value: Feedback) => props.onSetData?.(value, props.respondent!),
         },
     })
     : null
@@ -68,12 +68,12 @@ const controls = props.onSetData
 .feedbackResult {
     textarea {
         font-size: .9em;
-        border:0;
+        border: 0;
         scrollbar-width: auto;
     }
+
     .average-rating {
         display: inline-flex;
     }
 }
 </style>
-

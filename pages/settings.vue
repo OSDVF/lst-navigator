@@ -4,9 +4,9 @@
         <fieldset>
             <label for="selectedEvent">Událost</label>
             <span>
-                <small class="muted" title="ID události">{{ cloud.selectedEvent }}</small>
+                <small tabindex="-1" class="muted" title="ID události">{{ cloud.selectedEvent }}</small>
                 <small
-                    v-if="myPermission > UserLevel.Nothing"
+                    v-if="myPermission > UserLevel.Nothing" tabindex="-1"
                     :title="`U této události jste ${cloud.permissionNames[myPermission]}`" class="muted ml-1">
                     <Icon :name="`mdi:${userLevelToIcon[myPermission]}`" />
                 </small>
@@ -39,7 +39,6 @@
                 <button v-if="settings.isSelectedAudioCustom" @click="deleteCustomAudio">
                     Smazat
                 </button>
-                &ensp;
                 <button @click="settings.toggleSelectedAudio">
                     <Icon :name="settings.isPlaying ? 'mdi:stop' : 'mdi:play'" />
                 </button>

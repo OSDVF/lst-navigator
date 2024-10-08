@@ -15,7 +15,7 @@
                 selected-label="" :preselect-first="true" :allow-empty="false" class="p-1" title="Zobrazení"
                 :options="Object.keys(displayKindOptionIcons)" :searchable="false">
                 <template #singleLabel="props">
-                    <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option]
+                    <Icon :name="displayKindOptionIcons[props.option]" /><small class="sm-hide">{{ displayKindCaptions[props.option]
                     }}</small>
                 </template>
                 <template #option="props">
@@ -25,13 +25,13 @@
                     </span>
                 </template>
             </Multiselect>
-            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-flex align-items-center tab">
+            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-flex align-items-center tab" title="Části programu">
                 <Icon name="mdi:calendar" />
-                Části programu
+                <span class="sm-hide">Části programu</span>
             </NuxtLink>
-            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-flex align-items-center tab">
+            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-flex align-items-center tab" title="Ostatní otázky">
                 <Icon name="mdi:form-select" />
-                Ostatní otázky
+                <span class="sm-hide">Ostatní otázky</span>
             </NuxtLink>
         </Teleport>
         <div :class="'p-1 feedbackResult ' + admin.displayKind">
