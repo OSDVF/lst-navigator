@@ -58,7 +58,8 @@ declare module '#app' {
     $installPromptSupport: () => boolean,
     $onUpdateCallback: (callback: (reg?: ServiceWorkerRegistration) => void) => void,
     $pwa: PwaInjection,
-    $Sentry: typeof Sentry
+    $Sentry: typeof Sentry,
+    $location: string,
   }
 }
 

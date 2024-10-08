@@ -1,4 +1,3 @@
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
 import childProcess from 'child_process'
@@ -70,6 +69,7 @@ const config = defineNuxtConfig({
     experimental: {
         headNext: true,
         polyfillVueUseHead: false,
+        payloadExtraction: false,
     },
     hooks: {
         'build:manifest': (manifest) => {
@@ -152,7 +152,6 @@ const config = defineNuxtConfig({
         strategies: 'injectManifest',
     },
     sourcemap: {
-        server: true,
         client: true,
     },
     routeRules: {
@@ -180,7 +179,6 @@ const config = defineNuxtConfig({
         build: {
             modulePreload: false,
             minify: 'esbuild',
-            sourcemap: true,
             rollupOptions: {
                 output: {
                     manualChunks(id: string) {

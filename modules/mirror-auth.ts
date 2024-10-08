@@ -8,7 +8,8 @@ export default defineNuxtModule({
     },
     hooks: {
         ready(nuxt) {
-            if (!onlyBuildTasks()) { return }
+            // eslint-disable-next-line nuxt/prefer-import-meta
+            if (!onlyBuildTasks() || !process.prerender) { return }
 
             console.log('Mirroring auth files...')
             mirrorAuth(`${(nuxt.options as any).vuefire?.config?.projectId}.firebaseapp.com`)

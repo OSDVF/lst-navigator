@@ -6,8 +6,7 @@
                     'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
                     'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
                 }" :to="`/schedule/${index}`"
-                @click="currentTransition = index > parseInt(dayIndex) ? 'slide-left' : 'slide-right'"
-            >
+                @click="currentTransition = index > parseInt(dayIndex) ? 'slide-left' : 'slide-right'">
                 {{ day?.name ?? index }}
             </NuxtLink>
         </nav>
@@ -16,13 +15,16 @@
             v-drag="dragHandler" :style="{
                 transition: transitioning || moving ? 'none' : 'transform .2s ease',
                 transform: `translateX(${translateX}px)`
-            }"
-        >
-            <div>
-                <NuxtPage
-                    :transition="settings.animations ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTrainsitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTrainsitionBeforeLeave } : undefined"
-                />
-            </div>
+            }">
+            <NuxtPage v-if="edit" />
+            <LazyClientOnly v-else>
+                <Transition
+                    :name="currentTransition" :duration="{ enter: 200, leave: 100 }" appear
+                    @after-leave="onTrainsitionAfterLeave" @after-enter="onTransitionAfterEnter"
+                    @before-leave="onTrainsitionBeforeLeave">
+                    <LazyProgramSchedule :key="dayIndex" />
+                </Transition>
+            </LazyClientOnly>
         </div>
     </div>
 </template>
@@ -35,9 +37,10 @@ import { useSettings } from '~/stores/settings'
 
 const cloudStore = useCloudStore()
 const router = useRouter()
-const route = router.currentRoute.value
 const settings = useSettings()
-const dayIndex = computed(() => router.currentRoute.value.params.day as string)
+const lastDay = usePersistentRef('lastDay', '0')// workaround for nuxt not remembering nested page on reload
+const dayIndex = computed(() => router.currentRoute.value.params.day as string ?? lastDay.value)
+const edit = computed(() => router.currentRoute.value.params.edit as string | undefined)// a workaround for NuxtPage not rendering on first load
 const now = new Date()
 function isToday(scheduleDay: ScheduleDay) {
     const [year, month, day] = scheduleDay?.date?.split('-') ?? [0, 0, 0]
@@ -47,13 +50,21 @@ function isToday(scheduleDay: ScheduleDay) {
 // Automatic redirect when no day is selected
 //
 watch(cloudStore, (newCloud) => {
-    if (typeof dayIndex.value === 'undefined' && newCloud.scheduleLoading === false) {
+    if (typeof router.currentRoute.value.params.day === 'undefined' && newCloud.scheduleLoading === false) {
         findToday(newCloud)
     }
 })
 
-if (typeof route.params.day === 'undefined' && cloudStore?.scheduleLoading === false) {
-    findToday(cloudStore)
+watch(dayIndex, (value) => {
+    if (typeof value !== 'undefined') {
+        lastDay.value = value
+    }
+})
+
+if (import.meta.browser) {
+    if (typeof router.currentRoute.value.params.day === 'undefined' && cloudStore?.scheduleLoading === false) {
+        findToday(cloudStore)
+    }
 }
 
 const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string) || 0)
@@ -67,7 +78,7 @@ const moving = ref(false)
 const translateX = ref(0)
 
 function findToday(newCloud: typeof cloudStore) {
-    let index: number | string = 0
+    let index: number | string = dayIndex.value ?? 0
     if (newCloud.days?.length) {
         for (const i in newCloud.days) {
             const day = newCloud.days[i]
@@ -77,8 +88,7 @@ function findToday(newCloud: typeof cloudStore) {
             }
         }
     }
-    const newPath = `/schedule/${index}`
-    router.replace(newPath)
+    router.replace(`/schedule/${index}`)
 }
 
 
@@ -112,7 +122,7 @@ const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[]
         currentTransition.value = swipe[0] > 0 ? 'slide-right' : 'slide-left'
         transitioning.value = true
 
-        if (!isNaN(eventIndex.value)) { // on event item detail page
+        if (typeof router.currentRoute.value.params.event === 'undefined') { // on event item detail page
             // move to the next event item
             if (x > 0 && eventIndex.value === 0) {
                 router.push(`/schedule/${intDay - 1}/${(cloudStore.days![intDay - 1].program.length - 1 || 0)}`)// last event on the previous schedule part

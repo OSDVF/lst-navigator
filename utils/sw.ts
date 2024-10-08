@@ -1,5 +1,5 @@
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
-import { registerRoute, Route, setCatchHandler } from 'workbox-routing'
+import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching'
+import { registerRoute, Route, NavigationRoute } from 'workbox-routing'
 import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
@@ -19,7 +19,12 @@ try {
 
 cleanupOutdatedCaches()
 // Precaching behaviour
-precacheAndRoute(self.__WB_MANIFEST)
+precacheAndRoute(self.__WB_MANIFEST, {
+    // Ignore all URL parameters.
+    ignoreURLParametersMatching: [/.*/],
+},
+)
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/')))
 
 // Service worker lifecycle
 self.skipWaiting()
@@ -176,23 +181,10 @@ const iconsRoute = new Route(({ request }) => {
 
 registerRoute(iconsRoute)
 
-const fallbackRoute = new Route((options) => swConfig.hostnames.includes(options.url.hostname), new StaleWhileRevalidate())
+const fallbackRoute = new Route(
+    (options) => (swConfig.hostnames.includes(options.url.hostname) || location.hostname == options.url.hostname)
+        && options.request.destination !== 'document', // do not cache app's documents as this is a SPA
+    new StaleWhileRevalidate(),
+)
 
 registerRoute(fallbackRoute)
-
-// This "catch" handler is triggered when any of the other routes fail to
-// generate a response.
-setCatchHandler(async ({ event, request }) => {
-    // The warmStrategyCache recipe is used to add the fallback assets ahead of
-    // time to the runtime cache, and are served in the event of an error below.
-    // Use `event`, `request`, and `url` to figure out how to respond, or
-    // use request.destination to match requests for specific resource types.
-    switch (request.destination) {
-    case 'document':
-        return FALLBACK_STRATEGY.handle({ event, request: '/' })
-
-    default:
-        // If we don't have a fallback, return an error response.
-        return Response.error()
-    }
-})

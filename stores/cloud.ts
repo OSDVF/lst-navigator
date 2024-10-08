@@ -385,7 +385,9 @@ export const useCloudStore = defineStore('cloud', () => {
         [UserLevel.ScheduleAdmin]: 'Správce události',
         [UserLevel.Nothing]: 'Nic',
     }))
-    const scheduleCollection = useCollection<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null))
+    const scheduleCollection = useCollection<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null), {
+        maxRefDepth: 1,
+    })
     const days = skipHydrate(scheduleCollection)
 
     const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
