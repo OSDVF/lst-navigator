@@ -97,11 +97,11 @@ onMounted(() => {
         },
     }
     if (app.$pwa?.needRefresh) {
-        router.push(redirectRoute)
+        router.replace(redirectRoute)
     }
 
     app.$onUpdateCallback(() => {
-        router.push(redirectRoute)
+        router.replace(redirectRoute)
     })
 })
 

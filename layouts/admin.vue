@@ -30,7 +30,7 @@
                     Zpětná vazba
                 </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/events" no-prefetch>
-                    <Icon name="mdi:calendar-text" size="1.8rem" />
+                    <Icon name="mdi:calendar-month" size="1.8rem" />
                     Akce
                 </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.superAdmin" to="/admin/users">
@@ -38,7 +38,7 @@
                     Uživatelé
                 </NuxtLink>
                 <NuxtLink to="/">
-                    <Icon name="mdi:backburger" size="1.8rem" />
+                    <Icon name="mdi:calendar-arrow-left" size="1.8rem" />
                     Program
                 </NuxtLink>
                 <SettingsLink />

@@ -59,7 +59,7 @@ async function download() {
     if (import.meta.client) {
         await repairWorkerState()
         const path = router.currentRoute.value.fullPath
-        await router.push({
+        await router.replace({
             path,
             query: {
                 ...router.currentRoute.value.query,

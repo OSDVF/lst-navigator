@@ -1,6 +1,6 @@
 import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching'
 import { registerRoute, Route, NavigationRoute } from 'workbox-routing'
-import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
+import { StaleWhileRevalidate, CacheFirst, NetworkOnly } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, type MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
@@ -24,7 +24,11 @@ precacheAndRoute(self.__WB_MANIFEST, {
     ignoreURLParametersMatching: [/.*/],
 },
 )
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/')))
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/'), {
+    denylist: [
+        /\/__\/*/, //  ignore firebase auth routes  
+    ],
+}))
 
 // Service worker lifecycle
 self.skipWaiting()

@@ -4,13 +4,13 @@
         <fieldset>
             <label for="selectedEvent">Událost</label>
             <span>
-                <small class="muted">{{ cloud.selectedEvent }}</small>
-                <small v-if="cloud.user.info?.permissions[cloud.selectedEvent] as number > UserLevel.Nothing">
-                    <Icon
-                        :name="`mdi:${userLevelToIcon[cloud.user.info?.permissions[cloud.selectedEvent] as UserLevel]}`" />
+                <small class="muted" title="ID události">{{ cloud.selectedEvent }}</small>
+                <small
+                    v-if="myPermission > UserLevel.Nothing"
+                    :title="`U této události jste ${cloud.permissionNames[myPermission]}`" class="muted ml-1">
+                    <Icon :name="`mdi:${userLevelToIcon[myPermission]}`" />
                 </small>
-                &ensp;
-                <select id="selectedEvent" v-model="cloud.selectedEvent">
+                <select id="selectedEvent" v-model="cloud.selectedEvent" class="ml-2">
                     <option v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id">
                         {{ event.title }}
                     </option>
@@ -20,7 +20,7 @@
         <fieldset>
             <label for="animations">Animace</label>
             <span>
-                <input id="animations" v-model="settings.animations" type="checkbox" >
+                <input id="animations" v-model="settings.animations" type="checkbox">
             </span>
         </fieldset>
         <fieldset>
@@ -126,6 +126,7 @@ const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
+const myPermission = computed(() => cloud.user.info?.permissions?.[cloud.selectedEvent] as UserLevel)
 
 const lang = computed(() => import.meta.client ? navigator.language : 'cs-CZ')
 

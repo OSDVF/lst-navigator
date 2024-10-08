@@ -13,15 +13,6 @@ try {
     }
 } catch (e) { /* empty */ }
 
-/* async function getUncompressedSilenceFile() {
-    const compressed = '/audio/silence.zip'
-    const { entries } = await unzip(compressed)
-    const file = Object.entries(entries).find(([key]) => key.endsWith('.mp3'))
-    const arrayBuffer = await file?.[1].arrayBuffer()
-    if (!arrayBuffer) { throw new Error('Could not load silence file') }
-    return URL.createObjectURL(new Blob([arrayBuffer], { type: 'audio/mpeg' }))
-} */
-
 export const useSettings = defineStore('settings', () => {
     const uploadedAudioList = useIDBKeyval<string[]>('uploadedAudioList', [])
     async function getUploadedAudio() {
