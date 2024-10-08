@@ -45,7 +45,7 @@ jobs:
       - name: Run postinstall scripts
         run: bun pm trust --all
 
-      - name: SSR Generate
+      - name: SSG Generate
         run: bun generate ci
 
       - name: Archive distribution artifacts

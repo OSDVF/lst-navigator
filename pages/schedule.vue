@@ -16,15 +16,11 @@
                 transition: transitioning || moving ? 'none' : 'transform .2s ease',
                 transform: `translateX(${translateX}px)`
             }">
-            <NuxtPage v-if="edit" />
-            <LazyClientOnly v-else>
-                <Transition
-                    :name="currentTransition" :duration="{ enter: 200, leave: 100 }" appear
-                    @after-leave="onTrainsitionAfterLeave" @after-enter="onTransitionAfterEnter"
-                    @before-leave="onTrainsitionBeforeLeave">
-                    <LazyProgramSchedule :key="dayIndex" />
-                </Transition>
-            </LazyClientOnly>
+            <div>
+                <NuxtPage
+                    :transition="settings.animations ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTrainsitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTrainsitionBeforeLeave } : undefined"
+                />
+            </div>
         </div>
     </div>
 </template>
@@ -40,7 +36,6 @@ const router = useRouter()
 const settings = useSettings()
 const lastDay = usePersistentRef('lastDay', '0')// workaround for nuxt not remembering nested page on reload
 const dayIndex = computed(() => router.currentRoute.value.params.day as string ?? lastDay.value)
-const edit = computed(() => router.currentRoute.value.params.edit as string | undefined)// a workaround for NuxtPage not rendering on first load
 const now = new Date()
 function isToday(scheduleDay: ScheduleDay) {
     const [year, month, day] = scheduleDay?.date?.split('-') ?? [0, 0, 0]
