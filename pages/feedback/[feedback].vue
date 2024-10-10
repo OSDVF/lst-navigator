@@ -4,19 +4,25 @@
             <NuxtLink :to="router.currentRoute.value.fullPath">
                 <Icon name="mdi:rss" /> Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
             </NuxtLink>
+            <NuxtLink
+                v-if="cloudStore.resolvedPermissions.editEvent" class="ml-2" to="/admin/feedback"
+                title="Nastavení zpětné vazby">
+                <button type="button" class="large">
+                    <Icon name="mdi:pencil" class="baseline" /> Upravit
+                </button>
+            </NuxtLink>
         </h1>
         <NuxtLink v-if="feedbackPartIndex > 0" :to="`/feedback/${feedbackPartIndex - 1}`">
             <Icon name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;
         </NuxtLink>
         <NuxtLink
-            v-if="feedbackPartIndex < (cloudStore.feedback.config?.length ?? 0) - 1"
-            :to="`/feedback/${feedbackPartIndex + 1}`"
-        >
+            v-if="feedbackPartIndex < (cloudStore.feedbackConfig?.length ?? 0) - 1"
+            :to="`/feedback/${feedbackPartIndex + 1}`">
             Skočit na další část
             <Icon name="mdi:chevron-right" />
         </NuxtLink>
         <br>
-        <NameChangeDialog>
+        <NameChangeDialog v-if="feedbackPartIndex == 0">
             <br>
             Odpovídáš jako&ensp;
         </NameChangeDialog>
@@ -31,10 +37,14 @@
                     <h3>{{ entry.title }}</h3>
                 </legend>
                 <template v-if="entry.subtitle || entry.description">
-                    <details v-if="(entry.subtitle?.length ?? 0) + (entry.description?.length ?? 0) > 100" class="hoverable">
-                        <summary v-if="entry.subtitle"><h4 class="inline-block">
-                            {{ entry.subtitle }}
-                        </h4></summary>
+                    <details
+                        v-if="(entry.subtitle?.length ?? 0) + (entry.description?.length ?? 0) > 100"
+                        class="hoverable">
+                        <summary v-if="entry.subtitle">
+                            <h4 class="inline-block">
+                                {{ entry.subtitle }}
+                            </h4>
+                        </summary>
                         <!-- eslint-disable-next-line vue/no-v-html -->
                         <p v-html="entry.description ?? 'Žádné detaily'" />
                     </details>
@@ -45,22 +55,23 @@
                     </template>
                 </template>
                 <FeedbackForm
-                    :detail-question="entry.detailQuestion" :type="entry.feedbackType" :data="entry.data ?? undefined"
-                    :complicated-questions="entry.questions"
+                    :detail-question="entry.detailQuestion" :type="entry.feedbackType"
+                    :data="entry.data ?? undefined" :complicated-questions="entry.questions"
                     :select-options="entry.selectOptions"
-                    @set-data="(data: Feedback) => cloudStore.feedback.set(subPart.primaryIndex, entry.secondaryIndex, data)"
-                />
+                    @set-data="(data: Feedback) => cloudStore.feedback.set(subPart.primaryIndex, entry.secondaryIndex, data)" />
             </fieldset>
         </div>
         <br>
         <button
-            v-if="feedbackPartIndex < (cloudStore.feedback.config?.length ?? 0) - 1" class="large d-block m-left-auto"
-            @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))"
-        >
+            v-if="feedbackPartIndex < (cloudStore.feedbackConfig?.length ?? 0) - 1"
+            class="large d-block m-left-auto"
+            @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))">
             Pokračovat na další část
             <Icon name="mdi:chevron-right" />
         </button>
-        <button v-else class="large d-block m-left-auto" @click="cloudStore.feedback.saveAgain().then(() => router.push('/feedback/thanks'))">
+        <button
+            v-else class="large d-block m-left-auto"
+            @click="cloudStore.feedback.saveAgain().then(() => router.push('/feedback/thanks'))">
             <Icon name="mdi:check" />
             Dokončit
         </button>
@@ -79,11 +90,12 @@
             <Teleport to="#additionalNav">
                 <nav class="eventItemNav">
                     <NuxtLink
-                        v-for="(feedbackPart, fIndex) in cloudStore.feedback.config"
-                        :key="feedbackPart.title" :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : router.currentRoute.value.fullPath"
-                    >
+                        v-for="(feedbackPart, fIndex) in cloudStore.feedbackConfig" :key="feedbackPart.title"
+                        :to="fIndex !== feedbackPartIndex ? `/feedback/${fIndex}` : router.currentRoute.value.fullPath">
                         <Icon v-if="fIndex < feedbackPartIndex" name="mdi:chevron-left" />
-                        {{ fIndex === feedbackPartIndex ? '• ' : null }}<span class="muted">#{{ fIndex + 1 }}</span>&ensp;{{ feedbackPart.title }}
+                        {{ fIndex === feedbackPartIndex ? '• ' : null }}<span class="muted">#{{ fIndex + 1
+                        }}</span>&ensp;{{
+                            feedbackPart.title }}
                         <Icon v-if="fIndex > feedbackPartIndex" name="mdi:chevron-right" />
                     </NuxtLink>
                 </nav>
@@ -114,8 +126,8 @@ definePageMeta({
 })
 
 const currentPart = computed(() => {
-    const config: FeedbackConfig | undefined = cloudStore.feedback.config?.[feedbackPartIndex]
-    const subparts: {title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & {data: Feedback | null, secondaryIndex: number | string, selectOptions: string[]})[]}[] = []
+    const config: FeedbackConfig | undefined = cloudStore.feedbackConfig?.[feedbackPartIndex]
+    const subparts: { title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })[] }[] = []
 
     if (config?.group) {
         for (const scheduleIndex in cloudStore.days) {
@@ -170,16 +182,22 @@ const currentPart = computed(() => {
     padding: 0 1rem 1rem 1rem;
     border-radius: .5rem;
     cursor: pointer;
-    &:hover, &:focus, &:focus-within {
+
+    &:hover,
+    &:focus,
+    &:focus-within {
         background: #0000000a;
     }
+
     h4 {
         margin: .1rem 0;
     }
 }
+
 fieldset {
     border-radius: .5rem;
 }
+
 .eventItemNav {
     overflow-x: auto;
     width: 100vw;

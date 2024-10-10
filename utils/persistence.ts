@@ -6,7 +6,7 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
     const key = new LocalKey<UnwrapRef<T>, true>(name, toRaw(defaultValue) as UnwrapRef<T>, {
         hasDefaultValue: true,
     })
-    const internalRef: Ref<UnwrapRef<T>> = ref(toRaw(defaultValue))
+    const internalRef = ref(toRaw(defaultValue))
     if (typeof localStorage !== 'undefined') {
         internalRef.value = LocalStorage.getItem(key)
     }

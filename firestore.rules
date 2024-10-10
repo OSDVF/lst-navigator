@@ -15,9 +15,14 @@ service cloud.firestore {
       return isSuperAdmin() || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.get(event, 0) >= 1;
     }
     match /users {
-			match /{userId}/{field=**} {
+			match /{userId} {
       	allow read: if isSignedIn();
-        allow write: if (isSignedIn() && request.auth.uid == userId && request.resource.data.permissions.get('superAdmin', false) == false) || isSuperAdmin();
+        allow write: if (isSignedIn() && request.auth.uid == userId && request.resource.data.permissions.get('superAdmin', false) == false) || 
+        isSuperAdmin() ||
+        (request.resource.data.get('permissions', {}).size == 1 &&
+        	isEventAdmin(request.resource.data.permissions.keys()[0]) && 
+          request.resource.data.permissions.values()[0] <= resource.data.permissions.get(request.resource.data.permissions.keys()[0], 0)
+        );
       }
       allow read: if isSignedIn();
       allow write: if false;

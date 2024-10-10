@@ -4,9 +4,9 @@
         <fieldset>
             <label for="selectedEvent">Událost</label>
             <span>
-                <small tabindex="-1" class="muted" title="ID události">{{ cloud.selectedEvent }}</small>
+                <small tabindex="0" class="muted" title="ID události">{{ cloud.selectedEvent }}</small>
                 <small
-                    v-if="myPermission > UserLevel.Nothing" tabindex="-1"
+                    v-if="myPermission > UserLevel.Nothing" tabindex="0"
                     :title="`U této události jste ${cloud.permissionNames[myPermission]}`" class="muted ml-1">
                     <Icon :name="`mdi:${userLevelToIcon[myPermission]}`" />
                 </small>
@@ -147,13 +147,13 @@ function uploadAudio(e: Event) {
 function deleteCustomAudio() {
     settings.deleteCustomAudio(settings.selectedAudioName)
 }
-function syncNotes() {
+async function syncNotes() {
     if (cloud.notesCollection) {
         for (const key in localStorage) {
             if (key.startsWith('note.')) {
                 const value = localStorage.getItem(key)
                 const indexes = key.split('.')
-                setDoc(doc(cloud.notesCollection, settings.userIdentifier), {
+                await setDoc(doc(cloud.notesCollection, settings.userIdentifier), {
                     [indexes[1]]: {
                         [indexes[2]]: value,
                     },

@@ -71,6 +71,10 @@ $sides: (top, bottom, left, right); // Leave this variable alone
   
 }
 
+.baseline, .iconify.baseline {
+  vertical-align: baseline;
+}
+
 .clear {
   clear: both;
 }
@@ -78,10 +82,10 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 .editable {
   font-size: 1rem;
   border: 0;
+  background: #00000000;
 
-  &:hover,
-  &:focus {
-      border: unset;
+  &:hover {
+      outline: 1px auto;
   }
 }
 
@@ -181,12 +185,20 @@ $sides: (top, bottom, left, right); // Leave this variable alone
   border-radius: 100%;
 }
 
+.round-1 {
+  border-radius: .5rem;
+}
+
 .sticky {
   position: sticky;
 }
 
 .w-1_8 {
   width: 1.8rem;
+}
+
+.mw-full {
+  max-width: 100%;
 }
 
 .absolute {
@@ -214,6 +226,10 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 
 .top-0 {
   top: 0
+}
+
+.top, .iconify.top {
+  vertical-align: top;
 }
 
 .z--1 {

@@ -8,7 +8,8 @@
             <label class="m-auto p-1 text-right">
                 <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
                 <select v-model="cloudStore.selectedEvent">
-                    <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{ event.title }}</option>
+                    <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{
+                        event.title }}</option>
                 </select>
             </label>
             <div id="topNav" class="flex" />
@@ -33,7 +34,7 @@
                     <Icon name="mdi:calendar-month" size="1.8rem" />
                     Akce
                 </NuxtLink>
-                <NuxtLink v-if="cloudStore.resolvedPermissions.superAdmin" to="/admin/users">
+                <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/users">
                     <Icon name="mdi:person" size="1.8rem" />
                     Uživatelé
                 </NuxtLink>
@@ -52,23 +53,8 @@
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
 
-        <template #error="{ error, clearError }">
-            <main>
-                <article>
-                    <h1>Chyba</h1>
-                    <p>
-                        <code>{{ error }}</code>
-                    </p>
-                    <button @click="clearError">
-                        Zkusit znovu
-                    </button>
-                    <p>
-                        Pokud chyba přetrvává, zkuste
-                        <AppManageBtns />
-                    </p>
-                </article>
-            </main>
-
+        <template #error="props">
+            <ErrorSolver v-bind="props" />
         </template>
     </NuxtErrorBoundary>
 </template>
@@ -91,7 +77,7 @@ const title = computed(() => {
 })
 
 function captureError(error: unknown) {
-     
+
     console.error(error, error instanceof TypeError ? error.stack : null)
     app.$Sentry.captureException(error)
 }

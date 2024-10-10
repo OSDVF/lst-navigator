@@ -10,26 +10,25 @@
                     v-model="zoomFactor" min="0" max="5" step="0.1" :title="`${zoomFactor * 100}%`"
                     type="number" style="border:none;width: 7ex;display:inline">
             </label>
-            <Multiselect
-                v-model="admin.displayKind" style="width: auto;" select-label="" deselect-label=""
-                selected-label="" :preselect-first="true" :allow-empty="false" class="p-1" title="Zobrazení"
-                :options="Object.keys(displayKindOptionIcons)" :searchable="false">
+            <SimpleSelect
+                v-model="admin.displayKind" style="width: auto;" class="p-1" title="Zobrazení"
+                :labels="displayKindOptions">
                 <template #singleLabel="props">
-                    <Icon :name="displayKindOptionIcons[props.option]" /><small class="sm-hide">{{ displayKindCaptions[props.option]
-                    }}</small>
+                    <small class="sm-hide">&nbsp;{{ props.text }}</small>
                 </template>
                 <template #option="props">
-                    <span class="flex-center">
-                        <Icon :name="displayKindOptionIcons[props.option]" /><small>{{ displayKindCaptions[props.option]
-                        }}</small>
-                    </span>
+                    &nbsp;<small>{{ props.text }}</small>
                 </template>
-            </Multiselect>
-            <NuxtLink to="/admin/feedback/result/program" class="p-1 inline-flex align-items-center tab" title="Části programu">
+            </SimpleSelect>
+            <NuxtLink
+                to="/admin/feedback/result/program" class="p-1 inline-flex align-items-center tab"
+                title="Části programu">
                 <Icon name="mdi:calendar" />
                 <span class="sm-hide">Části programu</span>
             </NuxtLink>
-            <NuxtLink to="/admin/feedback/result/other" class="p-1 inline-flex align-items-center tab" title="Ostatní otázky">
+            <NuxtLink
+                to="/admin/feedback/result/other" class="p-1 inline-flex align-items-center tab"
+                title="Ostatní otázky">
                 <Icon name="mdi:form-select" />
                 <span class="sm-hide">Ostatní otázky</span>
             </NuxtLink>
@@ -40,11 +39,11 @@
                     <template v-if="admin.displayKind == 'individual'">
                         <template v-if="cloudStore.user.auth?.uid && cloudStore.resolvedPermissions.editEvent">
                             <br>
-                            <button v-if="admin.editingFeedback" @click="admin.editingFeedback = false">
+                            <button v-if="admin.editingFeedback" @click="admin.setEditingFeedback(false)">
                                 Úpravy
                                 <Icon name="mdi:pencil" />
                             </button>
-                            <button v-else @click="admin.editingFeedback = true">
+                            <button v-else @click="admin.setEditingFeedback(true)">
                                 Zobrazení
                                 <Icon name="mdi:eye" />
                             </button>
@@ -66,7 +65,8 @@
                         </template>
                     </template>
                     <div v-else>
-                        <input type="checkbox" name="anonymize" id="anonymize" v-model="admin.anonymize"><label for="anonymize">Plně anonymizovat</label>
+                        <input id="anonymize" v-model="admin.anonymize" type="checkbox" name="anonymize"><label
+                            for="anonymize">Plně anonymizovat</label>
                     </div>
                 </div>
                 <div>
@@ -124,14 +124,15 @@ const admin = useAdmin()
 const respondents = useRespondents()
 const zoomFactor = ref(1)
 
-const displayKindOptionIcons: Record<string, string> = {
-    histogram: 'mdi:chart-histogram',
-    individual: 'mdi:list-status',
-}
-
-const displayKindCaptions: Record<string, string> = {
-    histogram: 'Histogram',
-    individual: 'Individuální',
+const displayKindOptions = {
+    histogram: {
+        icon: 'mdi:chart-histogram',
+        text: 'Histogram',
+    },
+    individual: {
+        icon: 'mdi:list-status',
+        text: 'Individuální',
+    },
 }
 
 const showRespondents = ref(false)

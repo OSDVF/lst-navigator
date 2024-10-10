@@ -1,6 +1,6 @@
-import { cleanupOutdatedCaches, precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching'
-import { registerRoute, Route, NavigationRoute } from 'workbox-routing'
-import { StaleWhileRevalidate, CacheFirst, NetworkOnly } from 'workbox-strategies'
+import { cleanupOutdatedCaches, PrecacheController, PrecacheRoute, createHandlerBoundToURL } from 'workbox-precaching'
+import { registerRoute, Route, NavigationRoute, Router } from 'workbox-routing'
+import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, type MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
@@ -18,30 +18,47 @@ try {
 }
 
 cleanupOutdatedCaches()
+const router = new Router()
+
 // Precaching behaviour
-precacheAndRoute(self.__WB_MANIFEST, {
+const precacheController = new PrecacheController()
+precacheController.addToCacheList(self.__WB_MANIFEST)
+router.registerRoute(new PrecacheRoute(precacheController, {
     // Ignore all URL parameters.
     ignoreURLParametersMatching: [/.*/],
-},
-)
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/'), {
+}))
+
+router.registerRoute(new NavigationRoute(createHandlerBoundToURL('/'), {
     denylist: [
         /\/__\/*/, //  ignore firebase auth routes  
     ],
 }))
 
+const comChannel = new BroadcastChannel('SWCom')
+self.addEventListener('fetch', async(event) => {
+    const { request } = event
+    const responsePromise = router.handleRequest({
+        event,
+        request,
+    }) ?? fetch(request)
+    event.respondWith(responsePromise)
+    const resp = await responsePromise
+    
+    comChannel.postMessage(resp.status)
+})
+
 // Service worker lifecycle
 self.skipWaiting()
 clientsClaim()
 
-const comChannel = new BroadcastChannel('SWCom')
 comChannel.addEventListener('message', (ev) => {
     if (ev.data === 'install') {
         onUpdate()
     }
 })
-self.addEventListener('install', () => {
+self.addEventListener('install', event => {
     comChannel.postMessage('install')
+    precacheController.install(event)
 })
 
 async function onUpdate() {

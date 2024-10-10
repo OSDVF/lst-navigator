@@ -108,9 +108,9 @@ const admin = useAdmin()
 const form = ref()
 onMounted(() => {
     if (route.value.params.edit == 'paste') {
-        Object.assign(editedEvent.value, toRaw({ ...admin.clipboard }))
+        Object.assign(editedEvent.value, toRaw({ ...admin.eventClipboard }))
     } else if (route.value.params.edit == 'pastenow') {
-        Object.assign(editedEvent.value, toRaw({ ...admin.clipboard }))
+        Object.assign(editedEvent.value, toRaw({ ...admin.eventClipboard }))
         nextTick(() => editProgram({ target: form.value } as any))
     }
     else if (editing.value) {

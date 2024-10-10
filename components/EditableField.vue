@@ -1,15 +1,17 @@
 <template>
     <div>
-        <label v-if="cloudStore.resolvedPermissions.editSchedule" :for="key">
+        <label v-if="cloudStore.resolvedPermissions.editSchedule">
             &ensp;
             <strong>{{ props.description }}</strong>
             &nbsp;
+            <Icon v-if="valueOrValue" name="mdi:pencil" />
             <input
-                :value="value" type="text" :class="value ? 'editable' : ''" :name="key" @change="sendValue"
-                @focus="permitSwipe = false" @blur="permitSwipe = true">
+                v-autowidth :value="valueOrValue" type="text" :class="valueOrValue ? 'editable' : ''"
+                :placeholder="props.placeholder ?? 'Prázdné'" @change="sendValue" @focus="permitSwipe = false"
+                @blur="permitSwipe = true">
         </label>
 
-        <strong v-else-if="value">&ensp;{{ props.description }} {{ value }}</strong>
+        <strong v-else-if="valueOrValue">&ensp;{{ props.description }} {{ valueOrValue }}</strong>
         <template v-else>
             {{ props.empty ?? '' }}
         </template>
@@ -17,32 +19,26 @@
 </template>
 
 <script setup lang="ts">
-import { doc } from 'firebase/firestore'
 import { setDoc } from '~/utils/trace'
-import { knownCollection, useCloudStore } from '@/stores/cloud'
-import { getCurrentInstance } from 'vue'
+import { useCloudStore } from '~/stores/cloud'
 
 const props = defineProps<{
-    document: string,
+    document?: string,
     description: string,
     empty?: string | null
     property: string,
     value?: any,
+    placeholder?: string,
 }>()
 
-const vnodeKey = getCurrentInstance()?.vnode.key
-const propKey = props.document + props.property
-const key = typeof vnodeKey === 'symbol' ? propKey : vnodeKey?.toString() ?? propKey
-
-const fs = useFirestore()
 const cloudStore = useCloudStore()
 
-const document = useDocument(doc(knownCollection(fs, 'events'), cloudStore.selectedEvent, props.document))
-const value = computed(() => props.value ?? document.value?.[props.property])
+const document = useDocument(props.document ? cloudStore.eventDoc(props.document) : cloudStore.eventDoc())
+const valueOrValue = computed(() => props.value ?? document.value?.[props.property])
 
-function sendValue(event: Event) {
+async function sendValue(event: Event) {
     const target = event.target as HTMLInputElement
-    setDoc(doc(knownCollection(fs, 'events'), cloudStore.selectedEvent, props.document), { [props.property]: target.value }, { merge: true })
+    await setDoc(props.document ? cloudStore.eventDoc(props.document) : cloudStore.eventDoc(), { [props.property]: target.value }, { merge: true })
 }
 
 const permitSwipe = inject('permitSwipe', ref(false))

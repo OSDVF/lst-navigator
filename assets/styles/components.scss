@@ -140,3 +140,35 @@ details.border {
 .text-danger {
     color: rgb(255, 94, 0);
 }
+
+.button {
+    cursor: pointer;
+    display: inline-block;
+    padding: .3rem;
+
+    &:hover,
+    &:focus {
+        background: #0001;
+    }
+}
+
+.fieldset-edit {
+    display: none;
+}
+
+fieldset {
+    &:hover, &:focus, &:focus-within {
+        .fieldset-edit {
+            display: block
+        }
+    }
+}
+
+textarea.autosize {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}

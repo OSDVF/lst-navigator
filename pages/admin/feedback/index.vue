@@ -3,9 +3,15 @@
         <h1>Nastavení zpětné vazby</h1>
         <p>
             <NuxtLink to="/admin/feedback/result">
-                <button>
+                <button class="large">
                     <Icon name="mdi:spreadsheet" />
                     Výsledky
+                </button>
+            </NuxtLink>
+            <NuxtLink to="/feedback">
+                <button class="large">
+                    <Icon name="mdi:form-select" />
+                    Dotazník
                 </button>
             </NuxtLink>
         </p>
@@ -37,8 +43,8 @@
                         </button>
                         <br>
                         <textarea
-                            v-if="importText !== null" v-model="importText" :disabled="!!files?.length"
-                            placeholder="Vložit z textu" />
+                            v-if="importText !== null" ref="textarea" v-model="importText" class="autosize"
+                            :disabled="!!files?.length" placeholder="Vložit z textu" />
                     </p>
                     <p>
                         <span v-show="files?.length === 1">Soubor k nahrání: {{ files?.item(0)?.name }} <br></span>
@@ -54,14 +60,43 @@
             </form>
         </template>
         <h2>Závěrečný dotazník</h2>
-        <FeedbackConfig
-            v-for="(_, index) in configCategoriesOrDefault" :key="`c${index}`" :index="index"
-            :is-dummy="!cloud.feedback.config?.length" />
-        <br>
-        <button
-            v-show="cloud.feedback.config?.length" title="Přidat sekci" type="button" @click="setDoc(cloud.eventDoc('feedbackConfig', configCategoriesOrDefault.length.toString()), {
-            }, { merge: true })">+</button>
-
+        <template v-if="cloud.resolvedPermissions.editEvent">
+            <select value="" @change="e => { copyFrom(e.target as HTMLSelectElement) }">
+                <option value="">Zkopírovat z akce...</option>
+                <option
+                    v-for="event in cloud.eventsCollection.filter(e => e.id != cloud.selectedEvent)" :key="event.id"
+                    :value="event.id">
+                    {{ event.title }}
+                </option>
+            </select>
+            <EditableField
+                class="p" description="Informace pro respondenty:" property="feedbackInfo"
+                placeholder="Vyplňte všechno jako..." />
+            <FeedbackConfig
+                v-for="(_, index) in configCategoriesOrDefault" :key="`c${index}`" class="mb-2"
+                :index="index" :is-dummy="!cloud.feedbackConfig?.length" />
+            <br>
+            <button
+                v-show="cloud.feedbackConfig?.length" title="Přidat sekci" type="button" @click="setDoc(cloud.eventDoc('feedbackConfig', configCategoriesOrDefault.length.toString()), {
+                }, { merge: true }).catch(e => error = e)">+
+                <Icon name="mdi:selection" />
+            </button>
+            <ClientOnly>
+                <template v-if="admin.feedbackConfigClipboard">
+                    <button
+                        type="button"
+                        @click="setDoc(cloud.eventDoc('feedbackConfig', cloud.feedbackConfig?.length.toString() ?? '0'), admin.feedbackConfigClipboard).catch(e => error = e)">
+                        <Icon name="mdi:clipboard-text" /> Vložit ze schránky
+                    </button>
+                    <button type="button" @click="admin.feedbackConfigClipboard = null">
+                        <Icon name="mdi:clipboard-remove" /> Smazat schránku
+                    </button>
+                </template>
+            </ClientOnly>
+        </template>
+        <p v-else>
+            Nemáte práva na úpravu zpětné vazby.
+        </p>
         <p>
             {{ error }}
         </p>
@@ -70,35 +105,37 @@
 
 <script setup lang="ts">
 import { setDoc } from '~/utils/trace'
-import { useCloudStore } from '~/stores/cloud'
-import { doc } from 'firebase/firestore'
+import { knownCollection, useCloudStore } from '~/stores/cloud'
+import { collection, doc } from 'firebase/firestore'
 import { csvExport } from '~/utils/csvExport'
-import type { FeedbackConfig } from '@/types/cloud'
+import type { EventSubcollection, FeedbackConfig } from '@/types/cloud'
+import { useAdmin } from '~/stores/admin'
 
+const { textarea, input: importText } = useTextareaAutosize()
 definePageMeta({
     title: 'Zpětná vazba',
     layout: 'admin',
     middleware: ['auth'],
 })
 
+const admin = useAdmin()
 const cloud = useCloudStore()
 const merge = ref(true)
 const importing = ref(false)
-const importText = ref<string | null>(null)
 const error = ref()
 
 function csvExportAll() {
-    csvExport(cloud.selectedEvent ,error, cloud.feedback.online, cloud)
+    csvExport(cloud.selectedEvent, error, cloud.feedback.online, cloud)
 }
 
 const configCategoriesOrDefault = computed<FeedbackConfig[]>(() => {
-    if ((cloud.feedback.config?.length ?? 0) === 0) {
+    if ((cloud.feedbackConfig?.length ?? 0) === 0) {
         return [{
             title: 'Sekce 1',
             individual: [],
         }]
     }
-    return cloud.feedback.config!
+    return cloud.feedbackConfig!
 })
 
 function download(filename: string, text: string) {
@@ -130,6 +167,29 @@ onChange(async (files) => {
     importText.value = await file.text()
 })
 
+async function copyFrom(target: HTMLSelectElement) {
+    if (!target.value) { return }
+
+    const other = useCollection<FeedbackConfig>(collection(knownCollection(useFirestore(), 'events'), target.value, 'feedbackConfig' as EventSubcollection), {
+        wait: true,
+        once: true,
+    })
+    await other.promise.value
+
+    if (!other.value) { alert('Akce nebyla nalezena nebo má prázdný feedbackový formulář.'); return }
+    if (confirm(`Opravdu chcete zkopírovat nastavení zpětné vazby z akce ${target.value}? Přepíšete tím současnou zpětnou vazbu.`)) {
+        for (const part of other.value) {
+            try {
+                await setDoc(cloud.eventDoc('feedbackConfig', part.id), part, { merge: true })
+            } catch (e) {
+                error.value = e
+                if (!confirm(`Nepodařilo se zkopírovat část ${part.id}. Chcete pokračovat?`)) { return }
+            }
+        }
+    }
+    target.value = ''
+}
+
 async function importJson() {
     try {
         error.value = ''
@@ -137,7 +197,7 @@ async function importJson() {
         if (!importText.value || !cloud.feedback.col) { return }
         const json = await JSON.parse(importText.value)
         for (const key in json) {
-            setDoc(doc(cloud.feedback.col, key), json[key], { merge: merge.value })
+            await setDoc(doc(cloud.feedback.col, key), json[key], { merge: merge.value })
         }
     } catch (e) {
         error.value = e

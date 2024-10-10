@@ -8,7 +8,7 @@
                 </button>
             </span>
         </div>
-        <code v-if="error">{{ error }}</code>
+        <code v-if="error" class="error" tabindex="0" title="Chyba">{{ error }}</code>
         <header
             ref="syncHeader" :style="{
                 transform: `translateX(${-scrollX}px)`

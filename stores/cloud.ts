@@ -14,6 +14,7 @@ import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
+import type { ShallowRefMarker } from '@vue/reactivity'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -116,10 +117,9 @@ export const useCloudStore = defineStore('cloud', () => {
     const groupNames = computed(() => eventData.value?.groups ?? [])
     const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
-    const feedbackRepliesRaw = skipHydrate(shallowRef(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server })))
-    const feedbackConfig = skipHydrate(shallowRef(useCollection<FeedbackConfig>(firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)))
+    const feedbackRepliesRaw = skipHydrate(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
+    const feedbackConfig = useSorted(useCollection<FeedbackConfig>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)), (a, b) => parseInt(a.id) - parseInt(b.id))
     const feedback = {
-        config: feedbackConfig,
         col: fc,
         dirtyTime: feedbackDirtyTime,
         error: ref(),
@@ -183,7 +183,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
             setDoc(doc(feedback.col.value!, userIdentifier), {
                 updated: feedbackDirtyTime.value,
-            }, { merge: true })
+            }, { merge: true }).catch((e) => { feedback.error.value = e })
 
             setTimeout(() => {
                 feedback.fetchFailed.value = feedback.fetching.value
@@ -221,46 +221,43 @@ export const useCloudStore = defineStore('cloud', () => {
             return result
         },
     }
-    const userAuth = (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : null
+    const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : null
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
 
-    const uPending = ref(false)
-    async function updateUserInfo(newDoc: DocumentReference | null) { // User info is updated on-demand
-        const wasPending = uPending.value
-        if (newDoc) {
-            console.log('Updating user info with', newDoc.id)
-            uPending.value = true
-            const data = await (await getDoc(newDoc)).data()
-            if (data) { user.info.value = data as UserInfo }
-        } else {
-            user.info.value = null
-            console.log('Erasing user info')
-        }
-        if (!wasPending) {
-            uPending.value = false
-        }
-    }
     const user = {
         auth: skipHydrate(userAuth),
         doc: skipHydrate(ud),
-        info: ref<UserInfo | null>(null),
+        info: config.public.debugUser ? ref(<UserInfo>{
+            lastLogin: new Date().getTime(),
+            name: 'Debug User',
+            permissions: {
+                superAdmin: true,
+            },
+            lastTimezone: new Date().getTimezoneOffset(),
+            signature: {
+                [selectedEvent.value]: 'Debug User',
+            },
+            signatureId: {
+                [selectedEvent.value]: 'debug',
+            },
+            subscriptions: {
+
+            },
+            email: debugUser.email ?? undefined,
+            photoURL: debugUser.photoURL ?? undefined,
+        }) : useDocument<UserInfo>(ud),
         error: ref(),
-        pendingAction: uPending,
         pendingPopup: ref(false),
         async signOut() {
-            user.pendingAction.value = true
             await signOut(auth!)
             isAuthenticated.value = false
-            user.pendingAction.value = false
         },
         async signIn(useRedirect = false, secondAttempt = false): Promise<boolean> {
             if (!useRedirect) { user.pendingPopup.value = true }
-            user.pendingAction.value = true
             try {
                 // With emulators the popup version would throw cross-origin error
                 await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver)
-                user.pendingAction.value = false
                 user.pendingPopup.value = false
                 return true
             } catch (reason: any) {
@@ -280,7 +277,6 @@ export const useCloudStore = defineStore('cloud', () => {
                 } else if (useRedirect !== true && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
                     nextResult = await user.signIn(true, true)
                 }
-                user.pendingAction.value = false
                 user.pendingPopup.value = false
                 return nextResult
             }
@@ -288,13 +284,12 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     async function onSignIn(newUser: User) {
-        await updateUserInfo(user.doc.value)
         if (user.doc.value) {
             if (user.info.value) {
                 const signatureId = user.info.value.signatureId?.[selectedEvent.value]
                 if (signatureId) {
                     if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
-                        settings.userIdentifier = signatureId
+                        settings.setUserIdentifier(signatureId)
                         settings.userNickname = user.info.value!.signature[selectedEvent.value]
                     }
                 }
@@ -329,13 +324,12 @@ export const useCloudStore = defineStore('cloud', () => {
             await setDoc(user.doc.value, payload, {
                 merge: true,
             })
-            await updateUserInfo(user.doc.value)
         }
     }
 
-    watch(settings, (newSettings) => {// TODO check user diff and not set always
+    watch(settings, async (newSettings) => {// TODO check user diff and not set always
         if (newSettings && user.doc.value && userAuth?.value?.uid && import.meta.client) {
-            setDoc(user.doc.value, {
+            await setDoc(user.doc.value, {
                 signature: {
                     [selectedEvent.value]: newSettings.userNickname,
                 },
@@ -381,8 +375,8 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const permissionNames = computed(() => ({
         ...(resolvedPermissions.value.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
-        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce' } : {}),
-        [UserLevel.ScheduleAdmin]: 'Správce události',
+        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + eventTitle.value } : {}),
+        [UserLevel.ScheduleAdmin]: 'Editor programu',
         [UserLevel.Nothing]: 'Nic',
     }))
     const scheduleCollection = useCollection<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null), {
@@ -405,9 +399,9 @@ export const useCloudStore = defineStore('cloud', () => {
     const messagingToken = usePersistentRef('messagingToken', '')
     const isAuthenticated = usePersistentRef('isAuthenticated', false)
 
-    watch(messagingToken, (newToken) => {
+    watch(messagingToken, async (newToken) => {
         if (user.doc.value && userAuth?.value?.uid && import.meta.client) {
-            setDoc(user.doc.value, {
+            await setDoc(user.doc.value, {
                 subscriptions: {
                     [selectedEvent.value]: arrayUnion(newToken),
                 },
@@ -451,74 +445,46 @@ export const useCloudStore = defineStore('cloud', () => {
     // Hydrate user
     if (import.meta.client) {
         setTimeout(async () => {
-            if (config.public.debugUser) {
-                userAuth!.value = debugUser
-                user.info.value = {
-                    lastLogin: new Date().getTime(),
-                    name: 'Debug User',
-                    permissions: {
-                        superAdmin: true,
-                    },
-                    lastTimezone: new Date().getTimezoneOffset(),
-                    signature: {
-                        [selectedEvent.value]: 'Debug User',
-                    },
-                    signatureId: {
-                        [selectedEvent.value]: 'debug',
-                    },
-                    subscriptions: {
-
-                    },
-                    email: debugUser.email ?? undefined,
-                    photoURL: debugUser.photoURL ?? undefined,
-                }
-            } else {
-                await getRedirectResult(auth!).catch((reason) => {
-
-                    console.error('Failed redirect result', reason)
-                    app.$Sentry.captureEvent(reason, {
-                        data: reason,
-                    })
-                    user.error.value = reason
+            await getRedirectResult(auth!).catch((reason) => {
+                console.error('Failed redirect result', reason)
+                app.$Sentry.captureEvent(reason, {
+                    data: reason,
                 })
-                watch(ud, (newDoc) => {
-                    updateUserInfo(newDoc)
-                })
-                auth!.onAuthStateChanged({
-                    next: (user) => {
-                        if (user) {
-                            if (!isAuthenticated.value) {
-                                onSignIn(user)
-                                isAuthenticated.value = true
-                            }
-                        } else {
-                            isAuthenticated.value = false
+                user.error.value = reason
+            })
+            auth!.onAuthStateChanged({
+                next: (user) => {
+                    if (user) {
+                        if (!isAuthenticated.value) {
+                            onSignIn(user)
+                            isAuthenticated.value = true
                         }
-                        updateUserInfo(ud.value)
-                    },
-                    error: console.error,
-                    complete: () => { console.log('completed') },
-                })
-            }
+                    } else {
+                        isAuthenticated.value = false
+                    }
+                },
+                error: console.error,
+                complete: () => { console.log('completed') },
+            })
         }, 1)
     }
 
     if (import.meta.client) {
-        navigator.serviceWorker?.getRegistration().then((registration) => {
+        navigator.serviceWorker?.getRegistration().then(async (registration) => {
             if (registration?.active && firebaseApp) {
                 const messaging = getMessaging(firebaseApp)
-                getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then((newToken) => {
+                await getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then(async (newToken) => {
                     if (newToken) {
                         messagingToken.value = newToken
                         if (subscriptionsCollection.value) {
-                            setDoc(doc(subscriptionsCollection.value, newToken), {
+                            await setDoc(doc(subscriptionsCollection.value, newToken), {
                                 subscribed: true,
                             } as UpdateRecordPayload<Subscriptions>, { merge: true })
                         }
                     }
                 })
             }
-        })
+        }).catch(e => { console.error(e), app.$Sentry.captureException(e) })
     }
     return {
         selectedEvent,
@@ -536,6 +502,7 @@ export const useCloudStore = defineStore('cloud', () => {
         groupNames,
         notesCollection: skipHydrate(notesCollection),
         feedback: skipHydrate(feedback),
+        feedbackConfig: feedbackConfig,
         offlineFeedback: skipHydrate(computed(() => offlineFeedback.value[selectedEvent.value])),
         permissionNames,
         resolvedPermissions,

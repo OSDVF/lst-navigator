@@ -2,7 +2,7 @@
     <div>
         <template v-if="typeof $props.reply?.basic === 'number' && !isNaN($props.reply.basic)">
             <NuxtRating
-                tabindex="-1" :read-only="!admin.editingFeedback" active-color="blue"
+                tabindex="0" :read-only="!admin.editingFeedback" active-color="blue"
                 :rating-value="$props.reply.basic" title="Celkový dojem" rating-size="1.2em"
                 @rating-selected="(val: number) => controls?.syncBasic(val)" />
             {{ Math.round(($props.reply.basic + Number.EPSILON) * 10) / 10 }}
@@ -11,7 +11,7 @@
             <div v-for="(compl, index) in $props.reply.complicated" :key="`c${index}`">
                 <NuxtRating
                     :read-only="!admin.editingFeedback" :active-color="darkenColor('#ffff00', index / 5)"
-                    :rating-value="compl ?? undefined" tabindex="-1"
+                    :rating-value="compl ?? undefined" tabindex="0"
                     :title="questions?.[index] ?? defaultQuestions[index]" rating-size="1.2em"
                     @rating-selected="(val: number) => controls?.syncComplicated(index, val)" /> {{
                         Math.round(((compl ?? 0) + Number.EPSILON) * 10) / 10 }}

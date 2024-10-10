@@ -141,21 +141,15 @@ export const useSettings = defineStore('settings', () => {
     const userNickname = usePersistentRef<string>('userNickname', '')
     const cloud = useCloudStore()
     watch(userNickname, (newNickname) => {
-        if(newNickname) {
+        if (newNickname) {
             cloud.feedback.dirtyTime = 0// force refresh from remote
             cloud.feedback.hydrate(cloud.feedback.online)
         } else {// clear feedback if user is not logged in
             cloud.offlineFeedback.value = {}
         }
     })
-    const userIdentifier = computed({
-        get() {
-            if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
-        },
-        set(value: string) {
-            localStorage.setItem('uniqueIdentifier', value)
-            uniqueIdentifier = value
-        },
+    const userIdentifier = computed(() => {
+        if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
     })
 
     if (import.meta.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
@@ -181,5 +175,9 @@ export const useSettings = defineStore('settings', () => {
         userIdentifier,
         doNotifications: skipHydrate(useIDBKeyval('doNotifications', true)),
         notesDirtyTime,
+        setUserIdentifier(value: string) {
+            localStorage.setItem('uniqueIdentifier', value)
+            uniqueIdentifier = value
+        },
     }
 })

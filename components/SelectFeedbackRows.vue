@@ -1,23 +1,23 @@
 <template>
     <tr>
         <td
-            :colspan="Object.keys(props.replies).length" class="caption"
-            :title="stripHtml(config?.description ?? event?.description) || undefined" tabindex="-1">
-            <div v-if="link">
-                <NuxtLink :to="link" class="sticky left-0">
-                    {{ (config?.name ?? event?.title) }}
+            :colspan="Object.keys(p.replies).length" class="caption"
+            :title="stripHtml(p.config?.description ?? p.event?.description) || undefined" tabindex="0">
+            <div v-if="p.link">
+                <NuxtLink :to="p.link" class="sticky left-0">
+                    {{ (p.config?.name ?? p.event?.title) }}
                 </NuxtLink>
             </div>
             <div v-else>
                 <span class="sticky left-0">
-                    {{ (config?.name ?? event?.title) }}
+                    {{ (p.config?.name ?? p.event?.title) }}
                 </span>
             </div>
         </td>
     </tr>
     <!-- Filtered by selected option -->
     <tr v-for="(filteredByOption, option) in repliesByOption" :key="option">
-        <td :title="Object.keys(filteredByOption.replies).join(', ') || undefined" tabindex="-1">
+        <td :title="Object.keys(filteredByOption.replies).join(', ') || undefined" tabindex="0">
             <div
                 class="absolute left-0 top-0 bottom-0 z--1"
                 :style="{ width: `${100 * filteredByOption.count / maxCount}%`, background: randomColors?.[option] }" />
@@ -45,7 +45,7 @@ import { getAverage } from '@/utils/types'
 import { useAdmin } from '~/stores/admin'
 import { stripHtml } from '~/utils/sanitize'
 
-const props = defineProps<{
+const p = defineProps<{
     config?: FeedbackConfig['individual'][0],
     event?: ScheduleEvent,
     replies: { [user: string]: Feedback },
@@ -56,9 +56,9 @@ const props = defineProps<{
 }>()
 
 const admin = useAdmin()
-const questions = computed(() => (props.event ?? props.config)?.questions)
-const type = computed(() => (props.event?.feedbackType ?? props.config?.type))
-const options = computed(() => getParallelOrSelectEvents(props.event ?? props.config))
+const questions = computed(() => (p.event ?? p.config)?.questions)
+const type = computed(() => (p.event?.feedbackType ?? p.config?.type))
+const options = computed(() => getParallelOrSelectEvents(p.event ?? p.config))
 const randomColors: { [option: string]: string } = {}
 if (options.value) {
     for (const option of options.value) {
@@ -74,8 +74,8 @@ const repliesByOption = computed(() => {
         }
     } = {}
     if (options.value) {
-        for (const user in props.replies) {
-            const reply = props.replies[user]
+        for (const user in p.replies) {
+            const reply = p.replies[user]
             for (const option of options.value) {
                 if (reply.select === option) {
                     if (!result[option]) {
@@ -94,8 +94,8 @@ const repliesByOption = computed(() => {
 
 const maxCount = computed(() => {
     const bySelected: { [option: string]: number } = {}
-    for (const replyI in props.replies) {
-        const reply = props.replies[replyI]
+    for (const replyI in p.replies) {
+        const reply = p.replies[replyI]
         if (reply?.select) {
             if (!bySelected[reply.select as string]) {
                 bySelected[reply.select as string] = 0
@@ -106,8 +106,8 @@ const maxCount = computed(() => {
     return Math.max(...Object.values(bySelected))
 })
 
-function getParallelOrSelectEvents(event: ScheduleEvent | typeof props.config) {
-    switch ((event as ScheduleEvent).feedbackType ?? (event as typeof props.config)?.type) {
+function getParallelOrSelectEvents(event: ScheduleEvent | typeof p.config) {
+    switch ((event as ScheduleEvent).feedbackType ?? (event as typeof p.config)?.type) {
     case 'select':
         return event!.questions
     case 'parallel':

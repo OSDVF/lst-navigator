@@ -22,8 +22,9 @@
             filter: invert(100%);
             background: black;
             color: white;
-            border: 1px solid white;
-            ;
+            &:not(.editable) {
+                border: 1px solid white;
+            }
         }
 
         .text-invert {
@@ -113,8 +114,16 @@ article {
     opacity: .5
 }
 
-emph {
-    font-style: italic
+code {
+    background: #f4f4f4;
+    padding: .4rem;
+    border-radius: .4rem;
+    font-family: 'Fira Code', 'Cascadia Code', 'Cascadia Mono', 'Consolas', 'Courier New', monospace;
+    font-size: .9rem;
+}
+
+.error {
+    color: red
 }
 
 kbd {
@@ -122,6 +131,11 @@ kbd {
     border-radius: .4rem;
     padding: .1rem .2rem;
     color: white;
+}
+
+.p {
+    margin-block-start: 1em;
+    margin-block-end: 1em;
 }
 
 @import './utilities.scss';

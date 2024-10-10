@@ -39,7 +39,7 @@
                             </NuxtLink>
                             <button
                                 class="edit" title="Kopírovat do schránky" type="button"
-                                @click="admin.clipboard = { ...entry }">
+                                @click="admin.eventClipboard = { ...entry }">
                                 <Icon class="icon" name="mdi:clipboard-text" />
                             </button>
                             <button class="edit" title="Smazat" @click.prevent="deleteProgram(index)">
@@ -62,7 +62,7 @@
                         <NuxtRating
                             v-else :rating-value="(getFeedback(entry, index) as number)" rating-size="1.2rem"
                             inactive-color="#aaa" :title="`Tvé hodnocení: ${getFeedback(entry, index)}`"
-                            tabindex="-1" />
+                            tabindex="0" />
                     </span>
                 </NuxtLink>
             </details>
@@ -73,15 +73,15 @@
                         <Icon name="mdi:pencil" />&nbsp;Přidat program
                     </button>
                 </NuxtLink>
-                <template v-if="admin.clipboard">
+                <template v-if="admin.eventClipboard">
                     <button
                         type="button"
-                        :title="`${admin.clipboard.title?.toUpperCase()}: ${admin.clipboard.subtitle || '--'}\n${stripHtml(admin.clipboard.description) || 'Žádný popis'}`"
+                        :title="`${admin.eventClipboard.title?.toUpperCase()}: ${admin.eventClipboard.subtitle || '--'}\n${stripHtml(admin.eventClipboard.description) || 'Žádný popis'}`"
                         @click="router.push(`/schedule/${route.params.day}/edit/paste`)" @contextmenu.prevent="pasteNow"
                         @auxclick.prevent="pasteNow">
                         <Icon name="mdi:clipboard-arrow-right" />&nbsp;Vložit
                     </button>
-                    <button type="button" @click="admin.clipboard = null">
+                    <button type="button" @click="admin.eventClipboard = null">
                         <Icon name="mdi:clipboard-remove" />&nbsp;Smazat schránku
                     </button>
                 </template>
@@ -149,8 +149,8 @@ function getFeedback(entry: any, index: number) {
     return undefined
 }
 
-function deleteProgram(index: number) {
-    setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+async function deleteProgram(index: number) {
+    await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         program: [
             ...selectedProgram.value.slice(0, index),
             ...selectedProgram.value.slice(index + 1),
@@ -158,20 +158,20 @@ function deleteProgram(index: number) {
     }, { merge: true })
 }
 
-function moveUp(program: ScheduleEvent, index: number) {
+async function moveUp(program: ScheduleEvent, index: number) {
     const newProgram = selectedProgram.value
     newProgram.splice(index, 1)
     newProgram.splice(index - 1, 0, program)
-    setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+    await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         program: newProgram,
     }, { merge: true })
 }
 
-function moveDown(program: ScheduleEvent, index: number) {
+async function moveDown(program: ScheduleEvent, index: number) {
     const newProgram = selectedProgram.value
     newProgram.splice(index, 1)
     newProgram.splice(index + 1, 0, program)
-    setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+    await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         program: newProgram,
     }, { merge: true })
 }

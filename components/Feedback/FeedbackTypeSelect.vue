@@ -1,7 +1,7 @@
 <template>
     <div>
-        <label for="feedbackType">Typ</label>&ensp;
-        <select v-model="type" name="feedbackType">
+        <label for="feedbackType">Typ otázky</label>&ensp;
+        <select id="feedbackType" v-model="type">
             <option v-if="p.permitEmpty" value="">Žádný</option>
             <option value="basic">⭐⭐⭐⭐⭐</option>
             <option value="complicated">Několik ⭐⭐⭐⭐⭐</option>
@@ -23,14 +23,14 @@
                 @click="questions = [...(questions ?? []), '']">+</button>
         </div>
         <p v-else-if="type === 'parallel'">
-            <template v-if="typeof event !== 'undefined'">
+            <template v-if="typeof p.event !== 'undefined'">
                 <small>Paralelní programy: {{ parallel.join(', ') }}</small>
                 <small v-if="parallel.length < 2" class="text-danger"><br>
                     <Icon name="mdi:exclamation-thick" />&ensp;Varování: Zadáno méně než 2 názvů paralelních programů
                 </small>
             </template>
         </p>
-        <p v-if="type !== 'select' && typeof event !== 'undefined'">
+        <p v-if="type !== 'select' && typeof p.event !== 'undefined'">
             <label for="detailQuestion">Doplňující otázka</label>&ensp;
             <input
                 id="detailQuestion" v-model="detailQuestion" type="text" name="detailQuestion"

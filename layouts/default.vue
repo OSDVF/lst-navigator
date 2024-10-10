@@ -8,15 +8,15 @@
             :style="{
                 'background': globalBackground ? `linear-gradient(0deg, transparent, ${globalBackground})` : undefined,
                 'overflow-x': trainsitioning ? 'hidden' : undefined,
-            }"
-        >
+            }">
             <slot />
         </main>
         <div class="navigation">
             <div class="flex-full">
                 <ProgressBar v-if="cloudStore.feedback.fetching" />
                 <nav v-if="cloudStore.feedback.fetchFailed" class="p-1">
-                    {{ cloudStore.feedback.error || 'Nepodařilo se odeslat tvou odpověď. Ale žádný strach, je uložená offline ve tvém zařízení.' }}
+                    {{ cloudStore.feedback.error ||
+                        'Nepodařilo se odeslat tvou odpověď. Ale žádný strach, je uložená offline ve tvém zařízení.' }}
                 </nav>
             </div>
             <div id="additionalNav" class="flex-full" />
@@ -44,23 +44,8 @@
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
 
-        <template #error="{ error, clearError }">
-            <main>
-                <article>
-                    <h1>Chyba</h1>
-                    <p>
-                        <code>{{ error }}</code>
-                    </p>
-                    <button @click="clearError">
-                        Zkusit znovu
-                    </button>
-                    <p>
-                        Pokud chyba přetrvává, zkuste
-                        <AppManageBtns />
-                    </p>
-                </article>
-            </main>
-
+        <template #error="props">
+            <ErrorSolver v-bind="props" />
         </template>
     </NuxtErrorBoundary>
 </template>
@@ -90,7 +75,7 @@ onMounted(() => {
     if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
         router.push('/install/' + safeStep)
     }
-    const redirectRoute : RouteLocationRaw = {
+    const redirectRoute: RouteLocationRaw = {
         path: '/update',
         query: {
             redirect: (route.path === '/update' ? route.query.redirect : null) ?? route.fullPath,
