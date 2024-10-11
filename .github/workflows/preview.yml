@@ -81,3 +81,19 @@ jobs:
           service_account_key_json: ${{ secrets.DEPLOYMENT_ACCOUNT }}
           domain: ${{ steps.domain.outputs.DOMAIN }}
           action: add 
+
+      - name: Update Recaptcha Authorized Domains
+        run: | 
+          curl -X PATCH \ 
+            -H "Authorization: Bearer ${{ secrets.CLOUD_TOKEN }}" \
+            "https://recaptchaenterprise.googleapis.com/v1/projects/${{ secrets.FIREBASE_PROJECT }}/keys/${{ secrets.RECAPTCHA_SITE_KEY }}" \
+            -H "Content-Type: application/json" \
+            --data '{
+              "webSettings" : {
+                "allowedDomains": [
+                  ${{ secrets.RECAPTCHA_DOMAINS }},
+                  "${{ steps.domain.outputs.DOMAIN }}",
+                ]
+              }
+            }'
+
