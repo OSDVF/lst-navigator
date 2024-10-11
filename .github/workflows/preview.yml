@@ -81,3 +81,31 @@ jobs:
           service_account_key_json: ${{ secrets.DEPLOYMENT_ACCOUNT }}
           domain: ${{ steps.domain.outputs.DOMAIN }}
           action: add 
+
+      - uses: 'google-github-actions/auth@v2'
+        name: Get Cloud Auth Token
+        id: auth
+        with: 
+          token_format: 'access_token'
+          project_id: ${{ secrets.FIREBASE_PROJECT }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LST_NAVIGATOR }}
+
+      - name: Update Recaptcha Authorized Domains
+        uses: indiesdev/curl@v1.1
+        with: 
+          url: "https://recaptchaenterprise.googleapis.com/v1/projects/${{ secrets.FIREBASE_PROJECT }}/keys/${{ secrets.RECAPTCHA_SITE_KEY }}"
+          params: '{ "updateMask": "webSettings.allowedDomains"}'
+          method: PATCH
+          accept: 200, 204, 201, 400, 401
+          bearer-token: "${{ steps.auth.outputs.access_token }}"
+          headers: '{ "content-type": "application/json" }'
+          log-response: true
+          body: |
+            {
+              "webSettings" : {
+                "allowedDomains": [
+                  ${{ secrets.RECAPTCHA_DOMAINS }},
+                  "${{ steps.domain.outputs.DOMAIN }}",
+                ]
+              }
+            }
