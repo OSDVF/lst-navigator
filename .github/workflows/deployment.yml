@@ -6,12 +6,14 @@ name: Deploy live to Firebase Hosting
   deployment:
   workflow_dispatch:
 jobs:
-  build_and_deploy:
+  deploy:
+    if: github.event.deployment.payload == 'firebase'
     permissions:
       id-token: write
       contents: read
       pull-requests: write
       actions: read
+      deployments: write
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -19,6 +21,14 @@ jobs:
         node-version: [16.x]
     steps:
       - uses: actions/checkout@v4
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub deployment
+        if: github.event_name != 'deployment'
+        id: deployment
+        with:
+          token: '${{ github.token }}'
+          environment: live
 
       - run: mkdir -p .output/public
 
@@ -30,9 +40,33 @@ jobs:
           name: dist
           path: .output/public
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        id: hosting
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LST_NAVIGATOR }}'
           projectId: lst-navigator
           channelId: ${{ github.event.deployment.environment || 'live' }}
+          
+      - name: Set deployment status
+        uses: avakar/set-deployment-status@v1
+        if: success()
+        with:
+          state: success
+          deployment_id: ${{ github.event_name == 'deployment' && github.event.deployment.id || steps.deployment.outputs.deployment_id }}
+          environment_url: ${{ steps.hosting.outputs.details_url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set deployment fail
+        uses: avakar/set-deployment-status@v1
+        if: failure()
+        with:
+          state: failure
+          deployment_id: ${{ github.event_name == 'deployment' && github.event.deployment.id || steps.deployment.outputs.deployment_id }}
+          environment_url: ${{ steps.hosting.outputs.details_url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

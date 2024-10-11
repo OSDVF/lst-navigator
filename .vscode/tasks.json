@@ -21,7 +21,7 @@
                 "-f",
                 "\"environment=live\"",
                 "-f",
-                "payload='{ \"deploy\": \"migrate\" }'",
+                "payload='firebase'",
                 "-f",
                 "description='Deploy request from dev machine'"
             ],

@@ -10,16 +10,24 @@ name: preview
       - completed
   workflow_dispatch:
 jobs:
-  build_and_preview:
+  preview:
     permissions:
       id-token: write
       contents: read
       pull-requests: write
       actions: read
+      deployments: write
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: '${{ github.token }}'
+          environment: preview
 
       - run: mkdir -p .output/public
 
@@ -34,9 +42,31 @@ jobs:
       - name: Inject source maps
         run: node inject-sourcemaps.mjs
           
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        id: hosting
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_LST_NAVIGATOR }}'
           projectId: lst-navigator
           channelId: preview
+
+      - name: Set deployment status
+        uses: avakar/set-deployment-status@v1
+        if: success()
+        with:
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          environment_url: ${{ steps.hosting.outputs.details_url }}
+          state: success
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set deployment fail
+        uses: avakar/set-deployment-status@v1
+        if: failure()
+        with:
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          environment_url: ${{ steps.hosting.outputs.details_url }}
+          state: failure
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
