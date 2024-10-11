@@ -70,3 +70,14 @@ jobs:
           state: failure
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: URL to domain
+        id: domain
+        run: INPUT=${{ steps.hosting.outputs.details_url }}; echo "DOMAIN=${INPUT:8}">>${GITHUB_OUTPUT}
+
+      - name: Update Firebase Authorized Domains
+        uses: wavezync/firebase-authorized-domains@v1.0.0
+        with:
+          service_account_key_json: ${{ secrets.DEPLOYMENT_ACCOUNT }}
+          domain: ${{ steps.domain.outputs.DOMAIN }}
+          action: add 

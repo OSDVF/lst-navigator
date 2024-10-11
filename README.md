@@ -1,15 +1,17 @@
 # LST Navigátor
 ## From Nuxt 3 Minimal Starter template
 [![build](https://github.com/OSDVF/lst-navigator/actions/workflows/build.yml/badge.svg)](https://github.com/OSDVF/lst-navigator/actions/workflows/build.yml)
+[![preview](https://github.com/OSDVF/lst-navigator/actions/workflows/preview.yml/badge.svg)](https://github.com/OSDVF/lst-navigator/actions/workflows/preview.yml)
+[![live](https://github.com/OSDVF/lst-navigator/actions/workflows/deployment.yml/badge.svg)](https://github.com/OSDVF/lst-navigator/actions/workflows/deployment.yml)
 
 Použito pro akce [Moravskoslezské mládeže Českobratrské Církve Evangelické](https://msmladez.cz/)  
-Used for [Moravian-Silesian Yout of Evangelical Church of Czech Brethren](https://msmladez.cz/) events  
+Used for [Moravian-Silesian Youth of Evangelical Church of Czech Brethren](https://msmladez.cz/) events  
 
 # User features
 - Program schedule
 - Generic or configurable feedback for each schedule item and with custom questions
 - Basic user permission system
-- Administration page for schedule and feedback managent
+- Administration page for schedule, user and feedback form managent
 - Multiple events support
 
 ## Technical features
@@ -22,7 +24,6 @@ Used for [Moravian-Silesian Yout of Evangelical Church of Czech Brethren](https:
 
 ## WIP
 - Notifications
-- Schedule and feedback management
 
 ## Setup
 Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
@@ -73,7 +74,7 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 In `tasks.json` there can be found "Create a deployment" task that triggers `deployment.yml` workflow and deploys a new live version.
 
 ## Development Tools
-### VSCode Extensions
+### Recommended VSCode Extensions
 - [Volar](https://marketplace.visualstudio.com/items?itemName=johnsoncodehk.volar)
 - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 - [Bun for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=oven.bun-vscode)
