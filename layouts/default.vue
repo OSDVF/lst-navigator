@@ -1,16 +1,18 @@
 <template>
-    <NuxtErrorBoundary @error="captureError">
+    <div>
 
         <Head>
             <Title>{{ title }}</Title>
         </Head>
-        <main
-            :style="{
-                'background': globalBackground ? `linear-gradient(0deg, transparent, ${globalBackground})` : undefined,
-                'overflow-x': trainsitioning ? 'hidden' : undefined,
-            }">
-            <slot />
-        </main>
+        <ErrorSolver>
+            <main
+                :style="{
+                    'background': globalBackground ? `linear-gradient(0deg, transparent, ${globalBackground})` : undefined,
+                    'overflow-x': trainsitioning ? 'hidden' : undefined,
+                }">
+                <slot />
+            </main>
+        </ErrorSolver>
         <div class="navigation">
             <div class="flex-full">
                 <ProgressBar v-if="cloudStore.feedback.fetching" />
@@ -35,7 +37,7 @@
                 </NuxtLink>
                 <SettingsLink />
             </nav>
-            <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
+            <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }" :title="cloudStore.networkError?.message">
                 <Icon name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
@@ -43,11 +45,7 @@
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
-
-        <template #error="props">
-            <ErrorSolver v-bind="props" />
-        </template>
-    </NuxtErrorBoundary>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -101,12 +99,4 @@ const trainsitioning = ref(false)
 provide('trainsitioning', trainsitioning)
 const globalBackground = ref('')
 provide('globalBackground', globalBackground)
-
-function captureError(error: unknown) {
-    try {
-        console.error(error, error instanceof TypeError ? error.stack : null)
-        app.$Sentry.captureException(error)
-    } catch (e) { console.error(e) }
-}
-
 </script>

@@ -1,28 +1,9 @@
 <template>
-    <NuxtErrorBoundary @error="captureError">
-
+    <ErrorSolver>
         <Head>
             <Title>Chyba · {{ config.public.title }}</Title>
         </Head>
-        <template #error="{ error, clearError }">
-            <main>
-                <article>
-                    <h1>Chyba při zobrazování chyby</h1>
-                    <p>
-                        <code class="error">{{ error }}</code>
-                    </p>
-                    <button @click="clearError">
-                        Zkusit znovu
-                    </button>
-                    <p>
-                        Pokud chyba přetrvává, zkuste
-                        <AppManageBtns />
-                    </p>
-                </article>
-            </main>
-
-        </template>
-        <main class="flex-center flex-col">
+        <main class="flex-center flex-col" >
             <div>
                 <h1 class="text-4xl">Hodně jseš někde</h1>
                 <div class="p">
@@ -39,7 +20,7 @@
                             <!-- eslint-disable vue/no-v-html -->
                         </code>
                         <div
-                            v-if="'stack' in props.error" style="overflow: auto;" class="mw-100"
+                            v-if="'stack' in props.error" style="overflow: auto; max-width: calc(100vw - 2rem);"
                             v-html="props.error.stack" />
                         <template v-else>
                             {{ props.error.toJSON() }}
@@ -59,7 +40,7 @@
                 <br>
             </div>
         </main>
-    </NuxtErrorBoundary>
+    </ErrorSolver>
 </template>
 
 <script lang="ts" setup>
@@ -72,13 +53,6 @@ const props = defineProps<{
 }>()
 
 const handleError = () => clearError()
-
-function captureError(error: unknown) {
-    try {
-        console.error(error, error instanceof TypeError ? error.stack : null)
-        app.$Sentry.captureException(error)
-    } catch (e) { console.error(e) }
-}
 
 const code = ref(props.error.statusCode)
 

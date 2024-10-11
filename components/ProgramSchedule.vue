@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FeedbackType, ScheduleEvent } from '@/types/cloud'
+import type { FeedbackType, ScheduleItem } from '@/types/cloud'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime } from '@/utils/types'
@@ -158,7 +158,7 @@ async function deleteProgram(index: number) {
     }, { merge: true })
 }
 
-async function moveUp(program: ScheduleEvent, index: number) {
+async function moveUp(program: ScheduleItem, index: number) {
     const newProgram = selectedProgram.value
     newProgram.splice(index, 1)
     newProgram.splice(index - 1, 0, program)
@@ -167,7 +167,7 @@ async function moveUp(program: ScheduleEvent, index: number) {
     }, { merge: true })
 }
 
-async function moveDown(program: ScheduleEvent, index: number) {
+async function moveDown(program: ScheduleItem, index: number) {
     const newProgram = selectedProgram.value
     newProgram.splice(index, 1)
     newProgram.splice(index + 1, 0, program)

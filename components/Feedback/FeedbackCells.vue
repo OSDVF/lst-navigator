@@ -29,7 +29,7 @@
 </template>
 <script setup lang="ts">
 
-import type { Feedback, FeedbackConfig, ScheduleEvent, TabulatedFeedback } from '@/types/cloud'
+import type { Feedback, FeedbackConfig, ScheduleItem, TabulatedFeedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 import { getAverage } from '@/utils/types'
 import { stripHtml } from '@/utils/sanitize'
@@ -38,7 +38,7 @@ defineProps<{
     replies: { [user: string]: Feedback },
     tabulated: TabulatedFeedback['replies'][0],
     respondents: string[],
-    event?: ScheduleEvent,
+    event?: ScheduleItem,
     config?: FeedbackConfig['individual'][0],
     link?: string,
     onSetData?:(data: Feedback | null, userIdentifier: string) => void

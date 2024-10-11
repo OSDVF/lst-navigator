@@ -1,7 +1,7 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { Firestore, type CollectionReference, type DocumentData, type DocumentReference, type FieldValue } from 'firebase/firestore'
-import { arrayUnion, collection, deleteField, doc, getDoc } from 'firebase/firestore'
+import { Firestore, type CollectionReference, type DocumentData, type FieldValue } from 'firebase/firestore'
+import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc } from '~/utils/trace'
 import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
@@ -12,9 +12,8 @@ import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleEvent } from '@/types/cloud'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
-import type { ShallowRefMarker } from '@vue/reactivity'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -87,16 +86,13 @@ export const useCloudStore = defineStore('cloud', () => {
     }
     const app = useNuxtApp()
 
-    const ed = firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null
-    const eventDocuments = useDocument<EventDescription<void>>(ed, {
+    const eventDocuments = useDocument<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
         maxRefDepth: 5,
         once: !!import.meta.server,
         wait: true,
     })
 
-    const eventData = useAsyncData('defaultEventData', () => eventDocuments.promise.value ?? {}, {//TODO useAsyncData should not return undefined?
-        watch: [eventDocuments],
-    }).data
+    const eventData = eventDocuments.data
 
     function currentEventCollection(docName: EventSubcollection) {
         return computed(() => {
@@ -110,11 +106,6 @@ export const useCloudStore = defineStore('cloud', () => {
     const eventImage = computed(() => eventData.value?.image.type == 'cloud' && firebaseStorage
         ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.image.data)).url.value
         : eventData.value?.image.data)
-    const eventTitle = computed(() => eventData.value?.title)
-    const eventSubtitle = computed(() => eventData.value?.subtitle)
-    const eventDescription = computed(() => eventData.value?.description)
-    const eventWeb = computed(() => eventData.value?.web)
-    const groupNames = computed(() => eventData.value?.groups ?? [])
     const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
     const feedbackRepliesRaw = skipHydrate(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
@@ -129,7 +120,6 @@ export const useCloudStore = defineStore('cloud', () => {
         watchFetching(cb: WatchCallback<boolean, boolean>) {
             watch(feedback.fetching, cb)
         },
-        infoText: computed(() => eventData.value?.feedbackInfo),
         online: computed(() => {
             const result: FeedbackSections = {}
             const replies = feedbackRepliesRaw.value as any
@@ -224,6 +214,8 @@ export const useCloudStore = defineStore('cloud', () => {
     const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : null
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
+    const uPending = ref(false)
+    const uInfo = useDocument<UserInfo>(ud)
 
     const user = {
         auth: skipHydrate(userAuth),
@@ -246,19 +238,24 @@ export const useCloudStore = defineStore('cloud', () => {
             },
             email: debugUser.email ?? undefined,
             photoURL: debugUser.photoURL ?? undefined,
-        }) : useDocument<UserInfo>(ud),
+        }) : uInfo,
         error: ref(),
         pendingPopup: ref(false),
+        pendingAction: computed(() => uPending.value && uInfo.value),
         async signOut() {
+            uPending.value = true
             await signOut(auth!)
             isAuthenticated.value = false
+            uPending.value = false
         },
         async signIn(useRedirect = false, secondAttempt = false): Promise<boolean> {
             if (!useRedirect) { user.pendingPopup.value = true }
+            uPending.value = true
             try {
                 // With emulators the popup version would throw cross-origin error
                 await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver)
                 user.pendingPopup.value = false
+                uPending.value = false
                 return true
             } catch (reason: any) {
                 let reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
@@ -277,6 +274,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 } else if (useRedirect !== true && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
                     nextResult = await user.signIn(true, true)
                 }
+                uPending.value = false
                 user.pendingPopup.value = false
                 return nextResult
             }
@@ -375,7 +373,7 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const permissionNames = computed(() => ({
         ...(resolvedPermissions.value.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
-        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + eventTitle.value } : {}),
+        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + (eventData.value?.title ?? '') } : {}),
         [UserLevel.ScheduleAdmin]: 'Editor programu',
         [UserLevel.Nothing]: 'Nic',
     }))
@@ -385,7 +383,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const days = skipHydrate(scheduleCollection)
 
     const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
-    const suggestions = computed<ScheduleEvent[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last'))
+    const suggestions = computed<ScheduleItem[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last'))
     const lastSuggestion = computed(() => {
         let last = suggestionsAndLast.value.find((s) => s.id === 'last')?.last
         if (isNaN(last)) {
@@ -490,16 +488,12 @@ export const useCloudStore = defineStore('cloud', () => {
         selectedEvent,
         currentEventCollection,
         eventDoc,
+        eventData,
         eventImage,
-        eventTitle,
-        eventSubtitle,
-        eventDescription,
-        eventWeb,
         networkError: skipHydrate(eventDocuments.error),
         eventLoading: skipHydrate(eventDocuments.pending),
         days,
         scheduleLoading: skipHydrate(scheduleCollection.pending),
-        groupNames,
         notesCollection: skipHydrate(notesCollection),
         feedback: skipHydrate(feedback),
         feedbackConfig: feedbackConfig,

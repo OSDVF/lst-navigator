@@ -33,12 +33,13 @@ const props = defineProps<{
 
 const cloudStore = useCloudStore()
 
-const document = useDocument(props.document ? cloudStore.eventDoc(props.document) : cloudStore.eventDoc())
-const valueOrValue = computed(() => props.value ?? document.value?.[props.property])
+const currentDoc = computed(() => props.document ? cloudStore.eventDoc(props.document) : cloudStore.eventDoc())
+const docData = useDocument(currentDoc)
+const valueOrValue = computed(() => props.value ?? docData.value?.[props.property])
 
 async function sendValue(event: Event) {
     const target = event.target as HTMLInputElement
-    await setDoc(props.document ? cloudStore.eventDoc(props.document) : cloudStore.eventDoc(), { [props.property]: target.value }, { merge: true })
+    await setDoc(currentDoc.value, { [props.property]: target.value }, { merge: true })
 }
 
 const permitSwipe = inject('permitSwipe', ref(false))

@@ -6,21 +6,21 @@
                 @click="ui.showLightBox(eventImage)"
                 @load="saveCacheImage('eventImage-' + cloudStore.selectedEvent, $event)">
         </div>
-        <h1>{{ cloudStore.eventTitle }}</h1>
-        <h2>{{ cloudStore.eventSubtitle }}</h2>
+        <h1>{{ cloudStore.eventData?.title }}</h1>
+        <NuxtLink to="/feedback">
+            <button style="float:right" class="large">
+                <Icon name="mdi:rss" /> Feedbackový dotazník
+            </button>
+        </NuxtLink>
+        <h2>{{ cloudStore.eventData?.subtitle }}</h2>
         <h6>
-            <a :href="cloudStore.eventWeb" target="_blank">
-                <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{ cloudStore.eventWeb }}
+            <a :href="cloudStore.eventData?.web" target="_blank">
+                <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{ cloudStore.eventData?.web }}
             </a>
             &ensp;
-            <NuxtLink to="/feedback">
-                <button style="float:right">
-                    <Icon name="mdi:rss" /> Feedbackový dotazník
-                </button>
-            </NuxtLink>
         </h6>
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="text-invert" v-html="cloudStore.eventDescription ?? 'Žádný popis'" />
+        <div class="text-invert" v-html="cloudStore.eventData?.description ?? 'Žádný popis'" />
     </article>
 </template>
 

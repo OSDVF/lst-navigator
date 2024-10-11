@@ -6,13 +6,17 @@
             <option value="basic">⭐⭐⭐⭐⭐</option>
             <option value="complicated">Několik ⭐⭐⭐⭐⭐</option>
             <option value="text">Textová otázka</option>
+            <option v-if="!p.scheduleItem" value="select">Výběr z možností</option>
             <option value="parallel">Paralelní programy</option>
         </select>
 
-        <div v-if="type == 'complicated'">
-            <h4>Položky k hodnocení</h4>
+        <div v-if="['complicated', 'select'].includes(type)">
+            <h4 v-if="p.scheduleItem">Položky k hodnocení</h4>
             <div v-for="(_question, index) in questionsOrBlank" :key="`q${index}`">
-                <label :for="`question${index}`">Položka {{ index + 1 }}</label>&ensp;
+                <label :for="`question${index}`" class="muted">
+                    <Icon :name="type == 'complicated' ? 'mdi:chat-question-outline' : 'mdi:arrow-right'" />
+                    {{ index + 1 }}
+                </label>&ensp;
                 <input :id="`question${index}`" v-model="questions![index]" type="text" name="questions[]">
                 <button type="button" title="Odebrat" @click="questions!.splice(index, 1)">
                     <Icon name="mdi:trash-can" />
@@ -20,17 +24,20 @@
             </div>
             <button
                 v-show="questionsOrBlank[questionsOrBlank.length - 1]" type="button"
-                @click="questions = [...(questions ?? []), '']">+</button>
+                @click="questions = [...(questions ?? []), '']">
+                <Icon :name="type == 'complicated' ? 'mdi:chat-question-outline' : 'mdi:arrow-right'" />
+                +
+            </button>
         </div>
         <p v-else-if="type === 'parallel'">
-            <template v-if="typeof p.event !== 'undefined'">
+            <template v-if="typeof p.scheduleItem !== 'undefined'">
                 <small>Paralelní programy: {{ parallel.join(', ') }}</small>
                 <small v-if="parallel.length < 2" class="text-danger"><br>
                     <Icon name="mdi:exclamation-thick" />&ensp;Varování: Zadáno méně než 2 názvů paralelních programů
                 </small>
             </template>
         </p>
-        <p v-if="type !== 'select' && typeof p.event !== 'undefined'">
+        <p v-if="type !== 'select' && typeof p.scheduleItem !== 'undefined'">
             <label for="detailQuestion">Doplňující otázka</label>&ensp;
             <input
                 id="detailQuestion" v-model="detailQuestion" type="text" name="detailQuestion"
@@ -40,14 +47,14 @@
 </template>
 
 <script setup lang="ts">
-import type { FeedbackType, ScheduleEvent } from '~/types/cloud'
+import type { FeedbackType, ScheduleItem } from '~/types/cloud'
 import { getParallelEvents } from '@/utils/types'
 
 const p = defineProps<{
     type: FeedbackType | '',
     permitEmpty?: boolean,
     questions?: string[],
-    event?: ScheduleEvent,
+    scheduleItem?: ScheduleItem,
     detailQuestion?: string,
 }>()
 
@@ -69,7 +76,7 @@ const questions = computed({
 })
 
 const questionsOrBlank = computed(() => questions.value?.length ? questions.value : [''])
-const parallel = computed(() => p.event ? getParallelEvents(p.event) : [])
+const parallel = computed(() => p.scheduleItem ? getParallelEvents(p.scheduleItem) : [])
 
 const type = computed({
     get() {

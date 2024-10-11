@@ -11,7 +11,7 @@ export type FeedbackConfig = {
         description?: string
     }[],
 }
-export type ScheduleEvent = {
+export type ScheduleItem = {
     color?: string
     notify?: string[]
     subtitle?: string
@@ -30,7 +30,7 @@ export type ScheduleDay = {
     dishes: string | null,
     manager: string | null,
     name: string,
-    program: ScheduleEvent[],
+    program: ScheduleItem[],
 };
 
 export type EventSubcollection = 'notes' | 'feedback' | 'feedbackConfig' | 'subscriptions' | 'schedule' | 'users'

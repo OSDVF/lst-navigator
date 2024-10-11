@@ -1,22 +1,24 @@
 <template>
-    <NuxtErrorBoundary @error="captureError">
+    <div>
 
         <Head>
             <Title>{{ title }}</Title>
         </Head>
-        <nav class="flex justify-content-center flex-grow">
-            <label class="m-auto p-1 text-right">
-                <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
-                <select v-model="cloudStore.selectedEvent">
-                    <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{
-                        event.title }}</option>
-                </select>
-            </label>
-            <div id="topNav" class="flex" />
-        </nav>
-        <main>
-            <slot />
-        </main>
+        <ErrorSolver>
+            <nav class="flex justify-content-center flex-grow">
+                <label class="m-auto p-1 text-right">
+                    <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
+                    <select v-model="cloudStore.selectedEvent">
+                        <option v-for="event in cloudStore.eventsCollection" :key="event.id" :value="event.id">{{
+                            event.title }}</option>
+                    </select>
+                </label>
+                <div id="topNav" class="flex" />
+            </nav>
+            <main>
+                <slot />
+            </main>
+        </ErrorSolver>
         <div class="navigation">
             <div class="flex-full">
                 <ProgressBar v-if="cloudStore.feedback.fetching" />
@@ -44,7 +46,7 @@
                 </NuxtLink>
                 <SettingsLink />
             </nav>
-            <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }">
+            <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }" :title="cloudStore.networkError?.message" tabindex="0">
                 <Icon name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
@@ -52,11 +54,7 @@
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
-
-        <template #error="props">
-            <ErrorSolver v-bind="props" />
-        </template>
-    </NuxtErrorBoundary>
+    </div>
 </template>
 
 <script setup lang="ts">

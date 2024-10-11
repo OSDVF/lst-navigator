@@ -28,7 +28,7 @@
         </NameChangeDialog>
         <br>
 
-        Každá tvá změna je hned uložena. {{ cloudStore.feedback.infoText }}
+        Každá tvá změna je hned uložena. {{ cloudStore.eventData?.feedbackInfo }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`">
             <h3>{{ subPart.title }}</h3>
@@ -108,7 +108,7 @@
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
 import { getParallelEvents } from '@/utils/types'
-import type { FeedbackConfig, ScheduleEvent, Feedback } from '@/types/cloud'
+import type { FeedbackConfig, ScheduleItem, Feedback } from '@/types/cloud'
 const router = useRouter()
 const cloudStore = useCloudStore()
 const settings = useSettings()
@@ -127,7 +127,7 @@ definePageMeta({
 
 const currentPart = computed(() => {
     const config: FeedbackConfig | undefined = cloudStore.feedbackConfig?.[feedbackPartIndex]
-    const subparts: { title: string, primaryIndex: number | string, entries: (Partial<ScheduleEvent> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })[] }[] = []
+    const subparts: { title: string, primaryIndex: number | string, entries: (Partial<ScheduleItem> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })[] }[] = []
 
     if (config?.group) {
         for (const scheduleIndex in cloudStore.days) {

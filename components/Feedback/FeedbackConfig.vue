@@ -2,12 +2,15 @@
     <fieldset :class="loading && 'loading'">
         <legend class="flex-center">
             <input
-                v-autowidth class="h3 editable" :value="p.isDummy ? '' : editedCategory.title"
+                v-autowidth title="Název sekce" class="h3 editable" :value="p.isDummy ? '' : editedCategory.title"
                 :placeholder="editedCategory.title || 'Nová sekce'" type="text"
                 @change="(e) => editedCategory.title = (e.target as HTMLInputElement).value">
 
             &ensp;<span class="muted"># {{ p.index + 1 }}&ensp;</span>
             <div class="fieldset-edit">
+                <NuxtLink :to="`/feedback/${p.index}`" class="button" title="Náhled sekce">
+                    <Icon name="mdi:eye" />
+                </NuxtLink>
                 <span v-if="p.index > 0" class="button" title="Posunout sekci nahoru" @click="moveUp">
                     <Icon name="mdi:arrow-up" />
                 </span>

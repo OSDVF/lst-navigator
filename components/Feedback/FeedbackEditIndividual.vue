@@ -1,13 +1,17 @@
 <template>
     <fieldset>
         <legend>
+            <span class="muted">
+                <Icon name="mdi:form-dropdown" /> {{  p.index + 1 }}
+            </span>
+            &nbsp;
             <input
                 v-autowidth class="editable" :value="p.modelValue.name" type="text"
                 :placeholder="`Otázka ${p.index}`"
                 @change="(ev) => e('update:modelValue', { ...p.modelValue, name: (ev.target as HTMLInputElement).value })">
-            <button type="button" title="Odebrat" @click="e('delete')">
+            <span class="button" title="Odebrat otázku" @click="e('delete')">
                 <Icon name="mdi:trash-can" />
-            </button>
+            </span>
         </legend>
 
         <FeedbackTypeSelect

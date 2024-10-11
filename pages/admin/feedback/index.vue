@@ -81,7 +81,7 @@
                 }, { merge: true }).catch(e => error = e)">+
                 <Icon name="mdi:selection" />
             </button>
-            <ClientOnly>
+            <LazyClientOnly>
                 <template v-if="admin.feedbackConfigClipboard">
                     <button
                         type="button"
@@ -92,7 +92,7 @@
                         <Icon name="mdi:clipboard-remove" /> Smazat schránku
                     </button>
                 </template>
-            </ClientOnly>
+            </LazyClientOnly>
         </template>
         <p v-else>
             Nemáte práva na úpravu zpětné vazby.

@@ -1,4 +1,4 @@
-import type { Feedback, FeedbackType, ScheduleEvent } from '@/types/cloud'
+import type { Feedback, FeedbackType, ScheduleItem } from '@/types/cloud'
 
 export type NotificationPayload = {
     title: string,
@@ -45,7 +45,7 @@ export function toFirebaseMonthDay(date: Date) {
     return `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`
 }
 
-export function getParallelEvents(eventItem: ScheduleEvent) {
+export function getParallelEvents(eventItem: ScheduleItem) {
     return eventItem.subtitle?.split(',')?.map(x => x.trim()) ?? []
 }
 

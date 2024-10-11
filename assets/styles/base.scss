@@ -10,7 +10,14 @@
         filter: invert(100%);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        background: white;
+        background: black;
+
+        
+        &>body>div>div {
+            min-height: 100%;
+            min-height: 100vh;
+            background: white;
+        }
 
         .vel-modal,
         .noinvert,

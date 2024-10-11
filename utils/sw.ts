@@ -1,4 +1,4 @@
-import { cleanupOutdatedCaches, PrecacheController, PrecacheRoute, createHandlerBoundToURL } from 'workbox-precaching'
+import { cleanupOutdatedCaches, PrecacheController, PrecacheRoute, createHandlerBoundToURL, getCacheKeyForURL } from 'workbox-precaching'
 import { registerRoute, Route, NavigationRoute, Router } from 'workbox-routing'
 import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
@@ -28,11 +28,17 @@ router.registerRoute(new PrecacheRoute(precacheController, {
     ignoreURLParametersMatching: [/.*/],
 }))
 
-router.registerRoute(new NavigationRoute(createHandlerBoundToURL('/'), {
-    denylist: [
-        /\/__\/*/, //  ignore firebase auth routes  
-    ],
-}))
+function registerHome() {
+    router.registerRoute(new NavigationRoute(createHandlerBoundToURL('/'), {
+        denylist: [
+            /\/__\/.*/, //  ignore firebase auth routes,
+            /\/api\/.*/, // ignore server side api routes
+        ],
+    }))
+}
+if (getCacheKeyForURL('/')) {
+    registerHome()
+}
 
 const comChannel = new BroadcastChannel('SWCom')
 self.addEventListener('fetch', async(event) => {
@@ -56,9 +62,14 @@ comChannel.addEventListener('message', (ev) => {
         onUpdate()
     }
 })
-self.addEventListener('install', event => {
+self.addEventListener('install', async event => {
     comChannel.postMessage('install')
-    precacheController.install(event)
+    await precacheController.install(event)
+    registerHome()
+})
+self.addEventListener('activate', event => {
+    comChannel.postMessage('activate')
+    precacheController.activate(event)
 })
 
 async function onUpdate() {

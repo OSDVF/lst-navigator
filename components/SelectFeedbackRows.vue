@@ -40,14 +40,14 @@
 
 <script setup lang="ts">
 import randomColor from 'randomcolor'
-import type { FeedbackConfig, Feedback, ScheduleEvent, TabulatedFeedback } from '~/types/cloud'
+import type { FeedbackConfig, Feedback, ScheduleItem, TabulatedFeedback } from '~/types/cloud'
 import { getAverage } from '@/utils/types'
 import { useAdmin } from '~/stores/admin'
 import { stripHtml } from '~/utils/sanitize'
 
 const p = defineProps<{
     config?: FeedbackConfig['individual'][0],
-    event?: ScheduleEvent,
+    event?: ScheduleItem,
     replies: { [user: string]: Feedback },
     tabulated: TabulatedFeedback['replies'][''],
     respondents: string[],
@@ -106,12 +106,12 @@ const maxCount = computed(() => {
     return Math.max(...Object.values(bySelected))
 })
 
-function getParallelOrSelectEvents(event: ScheduleEvent | typeof p.config) {
-    switch ((event as ScheduleEvent).feedbackType ?? (event as typeof p.config)?.type) {
+function getParallelOrSelectEvents(event: ScheduleItem | typeof p.config) {
+    switch ((event as ScheduleItem).feedbackType ?? (event as typeof p.config)?.type) {
     case 'select':
         return event!.questions
     case 'parallel':
-        return (event as ScheduleEvent)?.subtitle ? getParallelEvents(event!) : undefined
+        return (event as ScheduleItem)?.subtitle ? getParallelEvents(event!) : undefined
     }
     return []
 }

@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ScheduleEvent, ScheduleDay } from '@/types/cloud'
+import type { ScheduleItem, ScheduleDay } from '@/types/cloud'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
 import { toHumanFeedback, toHumanTime, parseIntOrNull } from '@/utils/types'
 import { setDoc } from '~/utils/trace'
@@ -87,7 +87,7 @@ const editing = computed(() => typeof selectedEditIndex.value !== 'undefined')
 const autoOrder = usePersistentRef('autoOrder', false)
 
 const cloud = useCloudStore()
-const editedEvent = ref<ScheduleEvent>({
+const editedEvent = ref<ScheduleItem>({
     color: '',
     description: '',
     questions: [],
@@ -132,7 +132,7 @@ onBeforeRouteLeave(() => {
 const fs = useFirestore()
 const union = ref(false)
 
-function useSuggested(event: ScheduleEvent) {
+function useSuggested(event: ScheduleItem) {
     confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.') && (Object.assign(editedEvent.value, event))
 }
 async function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>) {
@@ -159,7 +159,7 @@ async function editProgram(event: Event) {
         subtitle: data.get('subtitle'),
         time: parseIntOrNull(data.get('time')?.toString()),
         title: data.get('title'),
-    } as ScheduleEvent
+    } as ScheduleItem
 
     let autoOrderIndex = 0
     for (const event of program.value) {

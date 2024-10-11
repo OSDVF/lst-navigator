@@ -4,7 +4,7 @@
             <Icon name="mdi:timeline-alert" />&ensp; Titulek*
         </label>&ensp;
         <input
-            id="title" v-model="editedEvent.title" type="text" name="title" placeholder="např. Večerní program"
+            id="title" v-model="editingItem.title" type="text" name="title" placeholder="např. Večerní program"
             required>
 
         <p>
@@ -12,7 +12,7 @@
                 <Icon name="mdi:timeline-text-outline" />&ensp; Podtitulek
             </label>&ensp;
             <input
-                id="subtitle" v-model="editedEvent.subtitle" type="text" name="subtitle"
+                id="subtitle" v-model="editingItem.subtitle" type="text" name="subtitle"
                 placeholder="např. Hra v týmech">
             <br>
             <small>Názvy paralelních programů oddělte v <strong>podtitulku</strong> čárkou: <em>Frisbee (Tom), Relax
@@ -24,10 +24,10 @@
             <Icon name="mdi:timeline-clock-outline" />&ensp; Čas*
         </label>&ensp;
         <input
-            id="time" :value="isNaN(editedEvent.time ?? NaN) ? '' : editedEvent.time" type="text" name="time"
+            id="time" :value="isNaN(editingItem.time ?? NaN) ? '' : editingItem.time" type="text" name="time"
             placeholder="HMM" required
-            @input="(e) => editedEvent.time = parseInt((e.target as HTMLInputElement).value.replace(/[^0-9]/g, ''))">
-        <br><small>{{ editedEvent.time ? `Bude zobrazeno ${toHumanTime(editedEvent.time)}` : "Např. 730 = 7:30"
+            @input="(e) => editingItem.time = parseInt((e.target as HTMLInputElement).value.replace(/[^0-9]/g, ''))">
+        <br><small>{{ editingItem.time ? `Bude zobrazeno ${toHumanTime(editingItem.time)}` : "Např. 730 = 7:30"
         }}</small>
 
         <br>
@@ -35,28 +35,28 @@
             <label for="color">
                 <Icon name="mdi:palette" />&ensp; Barva
             </label>&ensp;
-            <input id="color" v-model="editedEvent.color" type="text" name="color">&ensp;
+            <input id="color" v-model="editingItem.color" type="text" name="color">&ensp;
             <input v-model="colorHex" type="color">&ensp;<span
-                :style="`background: ${editedEvent.color}`"
-                tabindex="0"
+                :style="`background: ${editingItem.color}`" tabindex="0"
                 title="Test barvy" class="inline-block p-1">{{ dayNight[windowDark ? 1 : 0] }}</span>
-            <span :style="`background: ${colorOrWhite};filter:invert(1)`" class="inline-block p-1">{{ dayNight[windowDark ? 0 : 1] }}</span>
-            &ensp;<button type="button" @click="editedEvent.color = ''">Vymazat</button>
+            <span :style="`background: ${colorOrWhite};filter:invert(1)`" class="inline-block p-1">{{
+                dayNight[windowDark ? 0 : 1] }}</span>
+            &ensp;<button type="button" @click="editingItem.color = ''">Vymazat</button>
         </p>
         <div class="flex-center">
             <label class="nowrap" for="icon">
                 <Icon name="mdi:shape" />&ensp; Ikona
             </label>&ensp;
-            <input v-model="editedEvent.icon" type="hidden" name="icon">
-            <IconSelect id="icon" v-model="editedEvent.icon" />
+            <input v-model="editingItem.icon" type="hidden" name="icon">
+            <IconSelect id="icon" v-model="editingItem.icon" />
         </div>
         <br>
 
         <label for="description">
             <Icon name="mdi:text" />&ensp; Dlouhý popis
         </label>&ensp;
-        <ClassicCKEditor id="description" v-model.lazy="editedEvent.description" />
-        <input v-model.lazy="editedEvent.description" type="hidden" name="description">
+        <ClassicCKEditor id="description" v-model.lazy="editingItem.description" />
+        <input v-model.lazy="editingItem.description" type="hidden" name="description">
 
         <br>
         <fieldset>
@@ -65,23 +65,24 @@
             </legend>
 
             <FeedbackTypeSelect
-                id="feedbackType" :type="feedbackOrDefault" :permit-empty="true" :event="editedEvent"
-                :detail-question="editedEvent.detailQuestion" :questions="editedEvent.questions"
-                @update:type="t => feedbackOrDefault = t" @update:detail-question="q => editedEvent.detailQuestion = q"
-                @update:questions="q => editedEvent.questions = q" />
+                id="feedbackType" :type="feedbackOrDefault" :permit-empty="true"
+                :schedule-item="editingItem" :detail-question="editingItem.detailQuestion"
+                :questions="editingItem.questions" @update:type="t => feedbackOrDefault = t"
+                @update:detail-question="q => editingItem.detailQuestion = q"
+                @update:questions="q => editingItem.questions = q" />
         </fieldset>
     </div>
 </template>
 
 <script setup lang="ts">
-import type { FeedbackType, ScheduleEvent } from '@/types/cloud'
+import type { FeedbackType, ScheduleItem } from '@/types/cloud'
 import { colorToHex, windowIsDark } from '@/utils/colors'
 import { toHumanTime } from '@/utils/types'
 const dayNight = ['DAY', 'NIGHT']
 const windowDark = windowIsDark()
 
 const props = defineProps<{
-    value: ScheduleEvent,
+    value: ScheduleItem,
 }>()
 
 const permitSwipe = inject('permitSwipe', ref(false))
@@ -90,24 +91,24 @@ onBeforeRouteLeave(() => {
     permitSwipe.value = true
 })
 
-const editedEvent = reactive(props.value)
+const editingItem = reactive(props.value)
 watch(props.value, (newValue) => {
-    Object.assign(editedEvent, newValue)
+    Object.assign(editingItem, newValue)
 })
 
 const colorHex = computed({
-    get: () => editedEvent.color ? colorToHex(editedEvent.color) : undefined,
-    set: (value) => editedEvent.color = value,
+    get: () => editingItem.color ? colorToHex(editingItem.color) : undefined,
+    set: (value) => editingItem.color = value,
 })
-const colorOrWhite = computed(() => editedEvent.color ? editedEvent.color : 'white')
+const colorOrWhite = computed(() => editingItem.color ? editingItem.color : 'white')
 const feedbackOrDefault = computed<FeedbackType | ''>({
     get() {
-        if (editedEvent.feedbackType?.length === 0 && canBeParallel(editedEvent.subtitle ?? '')) {
+        if (editingItem.feedbackType?.length === 0 && canBeParallel(editingItem.subtitle ?? '')) {
             return 'parallel'
         }
-        return editedEvent.feedbackType ?? ''
+        return editingItem.feedbackType ?? ''
     },
-    set: (val) => editedEvent.feedbackType = val == '' ? undefined : val,
+    set: (val) => editingItem.feedbackType = val == '' ? undefined : val,
 })
 
 function canBeParallel(s: string) {
