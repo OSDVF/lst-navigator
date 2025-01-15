@@ -92,7 +92,7 @@ onBeforeRouteLeave(() => {
 })
 
 const editingItem = reactive(props.value)
-watch(props.value, (newValue) => {
+watch(() => props.value, (newValue) => {
     Object.assign(editingItem, newValue)
 })
 

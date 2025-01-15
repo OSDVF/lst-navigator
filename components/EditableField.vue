@@ -4,7 +4,7 @@
             &ensp;
             <strong>{{ props.description }}</strong>
             &nbsp;
-            <Icon v-if="valueOrValue" name="mdi:pencil" />
+            <Icon v-if="valueOrValue" name="mdi:pencil" />&nbsp;
             <input
                 v-autowidth :value="valueOrValue" type="text" :class="valueOrValue ? 'editable' : ''"
                 :placeholder="props.placeholder ?? 'Prázdné'" @change="sendValue" @focus="permitSwipe = false"

@@ -18,6 +18,8 @@
             }">
             <div>
                 <NuxtPage
+                    :day="!isNaN(parseInt(dayIndex)) ? parseInt(dayIndex) : 0"
+                    :schedule-item="scheduleItem && !isNaN(parseInt(scheduleItem)) ? parseInt(scheduleItem) : undefined"
                     :transition="settings.animations ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTrainsitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTrainsitionBeforeLeave } : undefined"
                 />
             </div>
@@ -36,6 +38,7 @@ const router = useRouter()
 const settings = useSettings()
 const lastDay = usePersistentRef('lastDay', '0')// workaround for nuxt not remembering nested page on reload
 const dayIndex = computed(() => router.currentRoute.value.params.day as string ?? lastDay.value)
+const scheduleItem = computed(() => router.currentRoute.value.params.event as string | undefined)
 const now = new Date()
 function isToday(scheduleDay: ScheduleDay) {
     const [year, month, day] = scheduleDay?.date?.split('-') ?? [0, 0, 0]

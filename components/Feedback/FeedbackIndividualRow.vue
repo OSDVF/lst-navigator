@@ -6,11 +6,12 @@
                     :reply="reply"
                     :questions="questions"
                     :respondent="respondents[rIndex]"
-                    @set-data="$props.onSetData"
+                    @set-data="props.onSetData"
                 />
                 <button
                     v-show="admin.editingFeedback"
-                    @click="$props.onSetData!(null, respondents[rIndex])"
+                    @click.exact="confirm('Opravdu chcete smazat tuto odpověď?\n(Zmáčkněte při kliknutí Ctrl pro přeskočení tohoto dialogu)') && del(rIndex)"
+                    @click.ctrl="del(rIndex)"
                 >
                     <Icon name="mdi:trash" />
                 </button>
@@ -23,12 +24,20 @@
 import type { Feedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 
-defineProps<{
+const props = defineProps<{
     onSetData?:(data: Feedback | null, userIdentifier: string) => void,
     replies: (Feedback | null)[],
     respondents: string[]
     questions?: string[],
 }>()
+
+function confirm(message: string) {
+    return window.confirm(message)
+}
+
+function del(index: number) {
+    props.onSetData!(null, props.respondents[index])
+}
 
 const admin = useAdmin()
 

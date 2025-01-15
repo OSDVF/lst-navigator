@@ -212,6 +212,18 @@ export const useCloudStore = defineStore('cloud', () => {
         },
     }
     const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : null
+    if (userAuth) {
+        watch(userAuth, (newUser) => {
+            if (newUser) {
+                if (!wasAuthenticated.value) {
+                    wasAuthenticated.value = true
+                    onSignIn(newUser)
+                }
+            } else {
+                wasAuthenticated.value = false
+            }
+        })
+    }
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
     const uPending = ref(false)
@@ -245,7 +257,7 @@ export const useCloudStore = defineStore('cloud', () => {
         async signOut() {
             uPending.value = true
             await signOut(auth!)
-            isAuthenticated.value = false
+            wasAuthenticated.value = false
             uPending.value = false
         },
         async signIn(useRedirect = false, secondAttempt = false): Promise<boolean> {
@@ -282,7 +294,8 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     async function onSignIn(newUser: User) {
-        if (user.doc.value) {
+        if (user.doc.value && !localStorage.getItem('userIdentifierQuestion')) {// do not ask if the user is already being asked
+            localStorage.setItem('userIdentifierQuestion', '1')
             if (user.info.value) {
                 const signatureId = user.info.value.signatureId?.[selectedEvent.value]
                 if (signatureId) {
@@ -292,6 +305,7 @@ export const useCloudStore = defineStore('cloud', () => {
                     }
                 }
             }
+            localStorage.removeItem('userIdentifierQuestion')
 
             const now = new Date()
             const payload: Partial<UpdatePayload<UserInfo>> = {
@@ -395,7 +409,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const notesCollection = currentEventCollection('notes')
     const offlineFeedback = usePersistentRef<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } } }>('lastNewFeedback', {})
     const messagingToken = usePersistentRef('messagingToken', '')
-    const isAuthenticated = usePersistentRef('isAuthenticated', false)
+    const wasAuthenticated = usePersistentRef('isAuthenticated', false)
 
     watch(messagingToken, async (newToken) => {
         if (user.doc.value && userAuth?.value?.uid && import.meta.client) {
@@ -440,34 +454,18 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     hydrateOfflineFeedback(feedback.online.value)
 
-    // Hydrate user
-    if (import.meta.client) {
-        setTimeout(async () => {
-            await getRedirectResult(auth!).catch((reason) => {
+    if (import.meta.browser) {
+        // Hydrate user
+        setTimeout(() => {
+            getRedirectResult(auth!).catch((reason) => {
                 console.error('Failed redirect result', reason)
                 app.$Sentry.captureEvent(reason, {
                     data: reason,
                 })
                 user.error.value = reason
             })
-            auth!.onAuthStateChanged({
-                next: (user) => {
-                    if (user) {
-                        if (!isAuthenticated.value) {
-                            onSignIn(user)
-                            isAuthenticated.value = true
-                        }
-                    } else {
-                        isAuthenticated.value = false
-                    }
-                },
-                error: console.error,
-                complete: () => { console.log('completed') },
-            })
         }, 1)
-    }
 
-    if (import.meta.client) {
         navigator.serviceWorker?.getRegistration().then(async (registration) => {
             if (registration?.active && firebaseApp) {
                 const messaging = getMessaging(firebaseApp)

@@ -1,8 +1,9 @@
 <template>
     <Multiselect
-        :model-value="p.modelValue" v-bind="$attrs" :select-label="p.selectLabel ?? ''"
-        :deselect-label="p.deselectLabel ?? ''" :selected-label="p.selectedLabel ?? ''" :preselect-first="p.preselectFirst ?? true"
-        :allow-empty="p.allowEmpty ?? false" :options="Object.keys(p.labels)" :searchable="p.searchable ?? false"
+        :disabled="p.disabled" :model-value="p.modelValue" v-bind="$attrs" :select-label="p.selectLabel ?? ''"
+        :deselect-label="p.deselectLabel ?? ''" :selected-label="p.selectedLabel ?? ''"
+        :preselect-first="p.preselectFirst ?? true" :allow-empty="p.allowEmpty ?? false"
+        :options="Object.keys(p.labels)" :searchable="p.searchable ?? false"
         @update:model-value="(e: keyof Opts) => emit('update:modelValue', e)">
         <template #singleLabel="props">
             <Icon :name="p.labels[props.option as keyof Opts].icon" />
@@ -38,6 +39,7 @@ const p = defineProps<{
     deselectLabel?: string,
     selectLabel?: string,
     selectedLabel?: string,
+    disabled?: boolean,
 }>()
 
 const emit = defineEmits<{

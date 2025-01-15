@@ -94,12 +94,10 @@ jobs:
         uses: indiesdev/curl@v1.1
         with: 
           url: "https://recaptchaenterprise.googleapis.com/v1/projects/${{ secrets.FIREBASE_PROJECT }}/keys/${{ secrets.RECAPTCHA_SITE_KEY }}"
-          params: '{ "updateMask": "webSettings.allowedDomains"}'
+          params: '{ "updateMask": "webSettings.allowedDomains" }'
           method: PATCH
-          accept: 200, 204, 201, 400, 401
           bearer-token: "${{ steps.auth.outputs.access_token }}"
           headers: '{ "content-type": "application/json" }'
-          log-response: true
           body: |
             {
               "webSettings" : {

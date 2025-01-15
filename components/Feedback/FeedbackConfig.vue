@@ -1,5 +1,5 @@
 <template>
-    <fieldset :class="loading && 'loading'">
+    <fieldset :class="loading && 'loading'" :disabled="p.disabled">
         <legend class="flex-center">
             <input
                 v-autowidth title="Název sekce" class="h3 editable" :value="p.isDummy ? '' : editedCategory.title"
@@ -7,7 +7,7 @@
                 @change="(e) => editedCategory.title = (e.target as HTMLInputElement).value">
 
             &ensp;<span class="muted"># {{ p.index + 1 }}&ensp;</span>
-            <div class="fieldset-edit">
+            <div v-show="!p.disabled" class="fieldset-edit">
                 <NuxtLink :to="`/feedback/${p.index}`" class="button" title="Náhled sekce">
                     <Icon name="mdi:eye" />
                 </NuxtLink>
@@ -27,7 +27,9 @@
                     @click="() => admin.feedbackConfigClipboard && (editedCategory = admin.feedbackConfigClipboard)">
                     <Icon name="mdi:clipboard-text" />
                 </span>
-                <span class="button" title="Odebrat sekci" @click="deleteDocAndShift">
+                <span
+                    class="button" title="Odebrat sekci" @click.exact="deleteDocAndShift"
+                    @click.ctrl="deleteDocAndShift(true)">
                     <Icon name="mdi:trash-can" />
                 </span>
             </div>
@@ -56,8 +58,9 @@
         </fieldset>
         <div v-if="type != 'group'" class="mt-2 relative" title="Vlastní otázky" tabindex="0">
             <FeedbackEditIndividual
-                v-for="(q, i) in questionsOrBlank" :key="`i${i}`" :model-value="q" :index="i"
-                @update:model-value="e => updateQuestion(e, i)" @delete="updateQuestion(undefined, i)" />
+                v-for="(q, i) in questionsOrBlank" :key="`i${i}`" :disabled="p.disabled"
+                :model-value="q" :index="i" @update:model-value="e => updateQuestion(e, i)"
+                @delete="updateQuestion(undefined, i)" />
             <br>
             <button
                 type="button" title="Přidat otázku" class="absolute" style="bottom: .5rem; left:.5rem"
@@ -83,9 +86,15 @@ import { storeToRefs } from 'pinia'
 const p = defineProps<{
     index: number;
     isDummy?: boolean;
+    disabled?: boolean;
 }>()
 const error = ref()
 const loading = ref(false)
+
+const e = defineEmits<{
+    beginUpdate: [],
+    endUpdate: [],
+}>()
 
 const admin = useAdmin()
 const cloud = useCloudStore()
@@ -99,6 +108,7 @@ const reloading = ref(false)
 watch(storeToRefs(cloud).feedbackConfig, (newConfig) => {
     reloading.value = true
     editedCategory.value = toRaw(newConfig?.[p.index] ?? dummy)
+    type.value = hydrateType()
     reloading.value = false
 })
 
@@ -124,9 +134,13 @@ const safeType = computed({
 let previousValue = _.cloneDeep(editedCategory.value)
 watch(editedCategory, (value) => {
     if (!reloading.value && !p.isDummy && !_.isEqual(value, previousValue)) {
+        e('beginUpdate')
         error.value = undefined
         loading.value = true
-        setDoc(doc.value, value, { merge: true }).catch(e => error.value = e).finally(() => loading.value = false)
+        setDoc(doc.value, value, { merge: true }).catch(e => error.value = e).finally(() => {
+            loading.value = false
+            e('endUpdate')
+        })
     }
     previousValue = _.cloneDeep(value)
 }, { deep: true })
@@ -145,7 +159,11 @@ const types = {
         icon: 'mdi:ballot-outline',
     },
 }
-const type = ref<keyof typeof types>(editedCategory.value.group ? editedCategory.value.individual?.length ? 'both' : 'group' : 'individual')
+
+function hydrateType() {
+    return editedCategory.value.group ? editedCategory.value.individual?.length ? 'both' : 'group' : 'individual'
+}
+const type = ref<keyof typeof types>(hydrateType())
 const blank: FeedbackConfig['individual'][0] = {
     name: '',
     questions: [],
@@ -191,26 +209,43 @@ const matches = computed(() => {
 })
 
 async function moveUp() {
+    reloading.value = true
     const other = toRaw(cloud.feedbackConfig?.[p.index - 1])
 
     await setDoc(cloud.eventDoc('feedbackConfig', (p.index - 1).toString()), editedCategory.value)
     await setDoc(doc.value, other)
+    nextTick(() => reloading.value = false)
 }
 
 async function moveDown() {
+    reloading.value = true
     const other = toRaw(cloud.feedbackConfig?.[p.index + 1])
 
     await setDoc(cloud.eventDoc('feedbackConfig', (p.index + 1).toString()), editedCategory.value)
     await setDoc(doc.value, other)
+    nextTick(() => reloading.value = false)
 }
 
-async function deleteDocAndShift() {
-    if (p.index !== cloud.feedbackConfig.length - 1) {
-        for (let i = p.index; i < cloud.feedbackConfig.length - 1; i++) {
-            await setDoc(cloud.eventDoc('feedbackConfig', i.toString()), toRaw(cloud.feedbackConfig[i + 1]))
+async function deleteDocAndShift(force = false) {
+    if (force || confirm('Opravdu chcete odstranit tuto sekci?\n(Stiskněte Ctrl pro přeskočení tohoto dialogu)')) {
+        loading.value = true
+        reloading.value = true
+        const promises: Promise<void>[] = []
+        const shapshot = _.cloneDeep(cloud.feedbackConfig)
+        e('beginUpdate')
+        if (p.index !== shapshot.length - 1) {
+            for (let i = p.index; i < shapshot.length - 1; i++) {
+                promises.push(setDoc(cloud.eventDoc('feedbackConfig', i.toString()), shapshot[i + 1]))
+            }
         }
+        await Promise.all(promises)
+        await deleteDoc(cloud.eventDoc('feedbackConfig', (shapshot.length - 1).toString()))
+        nextTick(() => {
+            reloading.value = false
+            loading.value = false
+            e('endUpdate')
+        })
     }
-    await deleteDoc(cloud.eventDoc('feedbackConfig', (cloud.feedbackConfig.length - 1).toString()))
 }
 
 </script>

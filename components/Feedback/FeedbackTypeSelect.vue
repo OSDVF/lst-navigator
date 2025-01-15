@@ -1,7 +1,7 @@
 <template>
     <div>
         <label for="feedbackType">Typ otázky</label>&ensp;
-        <select id="feedbackType" v-model="type">
+        <select id="feedbackType" v-model="type" :disabled="p.disabled">
             <option v-if="p.permitEmpty" value="">Žádný</option>
             <option value="basic">⭐⭐⭐⭐⭐</option>
             <option value="complicated">Několik ⭐⭐⭐⭐⭐</option>
@@ -17,13 +17,13 @@
                     <Icon :name="type == 'complicated' ? 'mdi:chat-question-outline' : 'mdi:arrow-right'" />
                     {{ index + 1 }}
                 </label>&ensp;
-                <input :id="`question${index}`" v-model="questions![index]" type="text" name="questions[]">
-                <button type="button" title="Odebrat" @click="questions!.splice(index, 1)">
+                <input :id="`question${index}`" v-model.lazy="questions![index]" type="text" name="questions[]">
+                <button :disabled="p.disabled" type="button" title="Odebrat" @click="questions!.splice(index, 1)">
                     <Icon name="mdi:trash-can" />
                 </button>
             </div>
             <button
-                v-show="questionsOrBlank[questionsOrBlank.length - 1]" type="button"
+                v-show="questionsOrBlank[questionsOrBlank.length - 1]" :disabled="p.disabled" type="button"
                 @click="questions = [...(questions ?? []), '']">
                 <Icon :name="type == 'complicated' ? 'mdi:chat-question-outline' : 'mdi:arrow-right'" />
                 +
@@ -40,7 +40,7 @@
         <p v-if="type !== 'select' && typeof p.scheduleItem !== 'undefined'">
             <label for="detailQuestion">Doplňující otázka</label>&ensp;
             <input
-                id="detailQuestion" v-model="detailQuestion" type="text" name="detailQuestion"
+                id="detailQuestion" v-model.lazy="detailQuestion" :disabled="p.disabled" type="text" name="detailQuestion"
                 placeholder="Tipy a připomínky">
         </p>
     </div>
@@ -56,6 +56,7 @@ const p = defineProps<{
     questions?: string[],
     scheduleItem?: ScheduleItem,
     detailQuestion?: string,
+    disabled?: boolean,
 }>()
 
 const e = defineEmits<{

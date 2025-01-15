@@ -32,7 +32,8 @@
                     {{ respondent }}
                     <button
                         title="Smazat respondentovy odpovědi v této kategorii"
-                        @click="deleteRespondentSection(respondent)">
+                        @click.exact="deleteRespondentSection(respondent)"
+                        @click.ctrl="deleteRespondentSection(respondent, true)">
                         <Icon name="mdi:trash-can" />
                     </button>
                 </div>
@@ -162,9 +163,9 @@ function doSyncHeaders() {
     }
 }
 
-function deleteRespondentSection(respondent: string) {
+function deleteRespondentSection(respondent: string, force = false) {
     if (props.onSetData) {
-        if (confirm('Opravdu chcete smazat odpovědi respondenta v této sekci?')) {
+        if (force || confirm('Opravdu chcete smazat odpovědi respondenta v této sekci?')) {
             for (const feedbackPartI in props.feedbackSection) {
                 props.onSetData(null, feedbackPartI as string, respondent)
             }

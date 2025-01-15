@@ -154,13 +154,43 @@ details.border {
 
 .fieldset-edit {
     display: none;
+    position: absolute;
+    right: 0;
+    background: white;
+    border: 1px solid #cecece;
+    border-radius: 4px;
+
+    @media screen and (min-width: 768px) {
+        right: 2rem;
+        
+    }
+
+    @media screen and (min-width: 1024px) {
+        right: 3rem;
+        position: static;
+        
+    }
+
+    &:before {
+        content: "";
+        position: absolute;
+        left: -1rem;
+        bottom: 50%;
+        transform: translateY(50%);
+        border-top: .5rem solid #00000000;
+        border-bottom: .5rem solid #00000000;
+        border-right: 1rem solid #cecece;
+    }
 }
 
 fieldset {
     &:hover, &:focus, &:focus-within {
         .fieldset-edit {
-            display: block
+            display: block;
         }
+    }
+    &>legend>input:focus~.fieldset-edit {
+        display: none;
     }
 }
 
