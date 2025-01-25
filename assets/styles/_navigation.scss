@@ -1,9 +1,10 @@
+@use 'constants' as c;
 //
 // Navigation bars
 //
 nav {
     display: flex;
-    backdrop-filter: $blurred-background;
+    backdrop-filter: c.$blurred-background;
     background: #0000000d;
     justify-content: stretch;
 
@@ -23,7 +24,7 @@ nav {
 }
 
 .navigation {
-    border-top: 1px solid rgba($link-background, 0.1);
+    border-top: 1px solid rgba(c.$link-background, 0.1);
 
     &>nav>a {
 

@@ -26,7 +26,9 @@
 </template>
 
 <script setup lang="ts">
-const { $pwa, $Sentry } = useNuxtApp()
+import * as Sentry from '@sentry/nuxt'
+
+const { $pwa } = useNuxtApp()
 const prevRoute = ref<string | null>(null)
 const router = useRouter()
 
@@ -49,7 +51,7 @@ async function repairWorkerState() {
             currentState?.postMessage({ type: 'SKIP_WAITING' })
         } catch (e) {
             console.error(e)
-            $Sentry.captureException(e)
+            Sentry.captureException(e)
         }
     }
 }

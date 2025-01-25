@@ -1,7 +1,133 @@
 diff --git a/node_modules/@vueuse/integrations/index.cjs b/node_modules/@vueuse/integrations/index.cjs
-index 836e628..b5f7107 100644
+index 52f5c0b..68545e5 100644
 --- a/node_modules/@vueuse/integrations/index.cjs
 +++ b/node_modules/@vueuse/integrations/index.cjs
+@@ -534,7 +534,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -558,6 +558,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
+   return {
+     set: setData,
++    isRead,
+     isFinished,
+     data
+   };
+diff --git a/node_modules/@vueuse/integrations/index.d.cts b/node_modules/@vueuse/integrations/index.d.cts
+index ee0887d..d39d049 100644
+--- a/node_modules/@vueuse/integrations/index.d.cts
++++ b/node_modules/@vueuse/integrations/index.d.cts
+@@ -31,6 +31,7 @@ interface UseAsyncValidatorExecuteReturn {
+ interface UseAsyncValidatorReturn {
+     pass: Ref<boolean>;
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     errors: Ref<AsyncValidatorError['errors'] | undefined>;
+     errorInfo: Ref<AsyncValidatorError | null>;
+     errorFields: Ref<AsyncValidatorError['fields'] | undefined>;
+@@ -74,6 +75,7 @@ interface UseAxiosReturn<T, R = AxiosResponse<T>, _D = any, O extends UseAxiosOp
+      * Indicates if the request has finished
+      */
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     /**
+      * Indicates if the request is currently loading
+      */
+@@ -352,6 +354,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     set: (value: T) => Promise<void>;
+ }
+ /**
+diff --git a/node_modules/@vueuse/integrations/index.d.mts b/node_modules/@vueuse/integrations/index.d.mts
+index ee0887d..d39d049 100644
+--- a/node_modules/@vueuse/integrations/index.d.mts
++++ b/node_modules/@vueuse/integrations/index.d.mts
+@@ -31,6 +31,7 @@ interface UseAsyncValidatorExecuteReturn {
+ interface UseAsyncValidatorReturn {
+     pass: Ref<boolean>;
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     errors: Ref<AsyncValidatorError['errors'] | undefined>;
+     errorInfo: Ref<AsyncValidatorError | null>;
+     errorFields: Ref<AsyncValidatorError['fields'] | undefined>;
+@@ -74,6 +75,7 @@ interface UseAxiosReturn<T, R = AxiosResponse<T>, _D = any, O extends UseAxiosOp
+      * Indicates if the request has finished
+      */
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     /**
+      * Indicates if the request is currently loading
+      */
+@@ -352,6 +354,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     set: (value: T) => Promise<void>;
+ }
+ /**
+diff --git a/node_modules/@vueuse/integrations/index.d.ts b/node_modules/@vueuse/integrations/index.d.ts
+index ee0887d..d39d049 100644
+--- a/node_modules/@vueuse/integrations/index.d.ts
++++ b/node_modules/@vueuse/integrations/index.d.ts
+@@ -31,6 +31,7 @@ interface UseAsyncValidatorExecuteReturn {
+ interface UseAsyncValidatorReturn {
+     pass: Ref<boolean>;
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     errors: Ref<AsyncValidatorError['errors'] | undefined>;
+     errorInfo: Ref<AsyncValidatorError | null>;
+     errorFields: Ref<AsyncValidatorError['fields'] | undefined>;
+@@ -74,6 +75,7 @@ interface UseAxiosReturn<T, R = AxiosResponse<T>, _D = any, O extends UseAxiosOp
+      * Indicates if the request has finished
+      */
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     /**
+      * Indicates if the request is currently loading
+      */
+@@ -352,6 +354,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
++    isRead: Promise<void>;
+     set: (value: T) => Promise<void>;
+ }
+ /**
+diff --git a/node_modules/@vueuse/integrations/index.iife.js b/node_modules/@vueuse/integrations/index.iife.js
+index 234a41c..bb72018 100644
+--- a/node_modules/@vueuse/integrations/index.iife.js
++++ b/node_modules/@vueuse/integrations/index.iife.js
+@@ -519,7 +519,7 @@
+       }
+       isFinished.value = true;
+     }
+-    read();
++    const isRead = read();
+     async function write() {
+       try {
+         if (data.value == null) {
+@@ -543,6 +543,7 @@
+     }
+     return {
+       set: setData,
++      isRead,
+       isFinished,
+       data
+     };
+diff --git a/node_modules/@vueuse/integrations/index.mjs b/node_modules/@vueuse/integrations/index.mjs
+index af11f6f..1c5a424 100644
+--- a/node_modules/@vueuse/integrations/index.mjs
++++ b/node_modules/@vueuse/integrations/index.mjs
 @@ -513,7 +513,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
      }
      isFinished.value = true;
@@ -11,223 +137,19 @@ index 836e628..b5f7107 100644
    async function write() {
      try {
        if (data.value == null) {
-@@ -538,6 +538,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+@@ -537,6 +537,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
    return {
      set: setData,
-     isFinished,
 +    isRead,
+     isFinished,
      data
    };
- }
-diff --git a/node_modules/@vueuse/integrations/index.d.cts b/node_modules/@vueuse/integrations/index.d.cts
-index 88d5687..47a7227 100644
---- a/node_modules/@vueuse/integrations/index.d.cts
-+++ b/node_modules/@vueuse/integrations/index.d.cts
-@@ -29,6 +29,7 @@ interface UseAsyncValidatorExecuteReturn {
- interface UseAsyncValidatorReturn {
-     pass: Ref<boolean>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     errors: Ref<AsyncValidatorError['errors'] | undefined>;
-     errorInfo: Ref<AsyncValidatorError | null>;
-     errorFields: Ref<AsyncValidatorError['fields'] | undefined>;
-@@ -72,6 +73,7 @@ interface UseAxiosReturn<T, R = AxiosResponse<T>, _D = any> {
-      * Indicates if the request has finished
-      */
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     /**
-      * Indicates if the request is currently loading
-      */
-@@ -347,6 +349,7 @@ interface UseIDBOptions extends ConfigurableFlush {
- interface UseIDBKeyvalReturn<T> {
-     data: RemovableRef<T>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     set: (value: T) => Promise<void>;
- }
- /**
-diff --git a/node_modules/@vueuse/integrations/index.d.mts b/node_modules/@vueuse/integrations/index.d.mts
-index 88d5687..47a7227 100644
---- a/node_modules/@vueuse/integrations/index.d.mts
-+++ b/node_modules/@vueuse/integrations/index.d.mts
-@@ -29,6 +29,7 @@ interface UseAsyncValidatorExecuteReturn {
- interface UseAsyncValidatorReturn {
-     pass: Ref<boolean>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     errors: Ref<AsyncValidatorError['errors'] | undefined>;
-     errorInfo: Ref<AsyncValidatorError | null>;
-     errorFields: Ref<AsyncValidatorError['fields'] | undefined>;
-@@ -72,6 +73,7 @@ interface UseAxiosReturn<T, R = AxiosResponse<T>, _D = any> {
-      * Indicates if the request has finished
-      */
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     /**
-      * Indicates if the request is currently loading
-      */
-@@ -347,6 +349,7 @@ interface UseIDBOptions extends ConfigurableFlush {
- interface UseIDBKeyvalReturn<T> {
-     data: RemovableRef<T>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     set: (value: T) => Promise<void>;
- }
- /**
-diff --git a/node_modules/@vueuse/integrations/index.d.ts b/node_modules/@vueuse/integrations/index.d.ts
-index 88d5687..47a7227 100644
---- a/node_modules/@vueuse/integrations/index.d.ts
-+++ b/node_modules/@vueuse/integrations/index.d.ts
-@@ -29,6 +29,7 @@ interface UseAsyncValidatorExecuteReturn {
- interface UseAsyncValidatorReturn {
-     pass: Ref<boolean>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     errors: Ref<AsyncValidatorError['errors'] | undefined>;
-     errorInfo: Ref<AsyncValidatorError | null>;
-     errorFields: Ref<AsyncValidatorError['fields'] | undefined>;
-@@ -72,6 +73,7 @@ interface UseAxiosReturn<T, R = AxiosResponse<T>, _D = any> {
-      * Indicates if the request has finished
-      */
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     /**
-      * Indicates if the request is currently loading
-      */
-@@ -347,6 +349,7 @@ interface UseIDBOptions extends ConfigurableFlush {
- interface UseIDBKeyvalReturn<T> {
-     data: RemovableRef<T>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     set: (value: T) => Promise<void>;
- }
- /**
-diff --git a/node_modules/@vueuse/integrations/index.iife.js b/node_modules/@vueuse/integrations/index.iife.js
-index 12edb9e..f139167 100644
---- a/node_modules/@vueuse/integrations/index.iife.js
-+++ b/node_modules/@vueuse/integrations/index.iife.js
-@@ -618,7 +618,7 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
-       }
-       isFinished.value = true;
-     }
--    read();
-+    const isRead = read();
-     async function write() {
-       try {
-         if (data.value == null) {
-@@ -643,6 +643,7 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
-     return {
-       set: setData,
-       isFinished,
-+      isRead,
-       data
-     };
-   }
-diff --git a/node_modules/@vueuse/integrations/index.mjs b/node_modules/@vueuse/integrations/index.mjs
-index a8816ec..891f79d 100644
---- a/node_modules/@vueuse/integrations/index.mjs
-+++ b/node_modules/@vueuse/integrations/index.mjs
-@@ -511,7 +511,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
-     }
-     isFinished.value = true;
-   }
--  read();
-+  const isRead = read();
-   async function write() {
-     try {
-       if (data.value == null) {
-@@ -536,6 +536,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
-   return {
-     set: setData,
-     isFinished,
-+    isRead,
-     data
-   };
- }
 diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.cjs b/node_modules/@vueuse/integrations/useIDBKeyval.cjs
-index 38ec3f5..56191fb 100644
+index b2c304f..ff891a7 100644
 --- a/node_modules/@vueuse/integrations/useIDBKeyval.cjs
 +++ b/node_modules/@vueuse/integrations/useIDBKeyval.cjs
-@@ -32,7 +32,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
-     }
-     isFinished.value = true;
-   }
--  read();
-+  const isRead = read();
-   async function write() {
-     try {
-       if (data.value == null) {
-@@ -57,6 +57,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
-   return {
-     set: setData,
-     isFinished,
-+    isRead,
-     data
-   };
- }
-diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.cts b/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
-index 256cdd5..2282388 100644
---- a/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
-+++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
-@@ -30,6 +30,7 @@ interface UseIDBOptions extends ConfigurableFlush {
- interface UseIDBKeyvalReturn<T> {
-     data: RemovableRef<T>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     set: (value: T) => Promise<void>;
- }
- /**
-diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.mts b/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
-index 256cdd5..2282388 100644
---- a/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
-+++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
-@@ -30,6 +30,7 @@ interface UseIDBOptions extends ConfigurableFlush {
- interface UseIDBKeyvalReturn<T> {
-     data: RemovableRef<T>;
-     isFinished: Ref<boolean>;
-+    isRead: Promise<void>;
-     set: (value: T) => Promise<void>;
- }
- /**
-diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.ts b/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
-index 256cdd5..4e113ef 100644
---- a/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
-+++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
-@@ -29,6 +29,7 @@ interface UseIDBOptions extends ConfigurableFlush {
- }
- interface UseIDBKeyvalReturn<T> {
-     data: RemovableRef<T>;
-+    isRead: Promise<void>;
-     isFinished: Ref<boolean>;
-     set: (value: T) => Promise<void>;
- }
-diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.iife.js b/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
-index a0fdde1..735530d 100644
---- a/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
-+++ b/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
-@@ -148,7 +148,7 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
-       }
-       isFinished.value = true;
-     }
--    read();
-+    const isRead = read();
-     async function write() {
-       try {
-         if (data.value == null) {
-@@ -173,6 +173,7 @@ var VueDemi = (function (VueDemi, Vue, VueCompositionAPI) {
-     return {
-       set: setData,
-       isFinished,
-+      isRead,
-       data
-     };
-   }
-diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.mjs b/node_modules/@vueuse/integrations/useIDBKeyval.mjs
-index 47594f9..87804cc 100644
---- a/node_modules/@vueuse/integrations/useIDBKeyval.mjs
-+++ b/node_modules/@vueuse/integrations/useIDBKeyval.mjs
-@@ -30,7 +30,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+@@ -31,7 +31,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
      }
      isFinished.value = true;
    }
@@ -237,10 +159,88 @@ index 47594f9..87804cc 100644
      try {
        if (data.value == null) {
 @@ -55,6 +55,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
    return {
      set: setData,
-     isFinished,
 +    isRead,
+     isFinished,
      data
    };
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.cts b/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
+index 2105003..b55b73c 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.cts
+@@ -30,6 +30,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
++    isRead: Ref<boolean>;
+     set: (value: T) => Promise<void>;
  }
+ /**
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.mts b/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
+index 2105003..b55b73c 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.mts
+@@ -30,6 +30,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
++    isRead: Ref<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+ /**
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.d.ts b/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
+index 2105003..b55b73c 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.d.ts
+@@ -30,6 +30,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
+     isFinished: Ref<boolean>;
++    isRead: Ref<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+ /**
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.iife.js b/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
+index c749884..8e484b7 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.iife.js
+@@ -28,7 +28,7 @@
+       }
+       isFinished.value = true;
+     }
+-    read();
++    const isRead = read();
+     async function write() {
+       try {
+         if (data.value == null) {
+@@ -52,6 +52,7 @@
+     }
+     return {
+       set: setData,
++      isRead,
+       isFinished,
+       data
+     };
+diff --git a/node_modules/@vueuse/integrations/useIDBKeyval.mjs b/node_modules/@vueuse/integrations/useIDBKeyval.mjs
+index 3a1cd0d..c6d846c 100644
+--- a/node_modules/@vueuse/integrations/useIDBKeyval.mjs
++++ b/node_modules/@vueuse/integrations/useIDBKeyval.mjs
+@@ -29,7 +29,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -53,6 +53,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
+   return {
+     set: setData,
++    isRead,
+     isFinished,
+     data
+   };

@@ -14,6 +14,7 @@
 
 <script setup lang="ts" generic="T">
 import type { Api } from 'datatables.net'
+import * as Sentry from '@sentry/nuxt'
 
 const table = ref<{ dt: Api<T> }>()
 const dt = computed(() => table.value?.dt)
@@ -22,11 +23,10 @@ defineExpose({
     dt,
 })
 
-const app = useNuxtApp()
 const dtErrors = ref('')
 function dtError(e: any, settings: any, techNote: string, message: string) {
     console.error(e, settings, techNote, message)
-    app.$Sentry.captureException(message, {
+    Sentry.captureException(message, {
         extra: {
             e,
             techNote,

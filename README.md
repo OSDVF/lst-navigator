@@ -1,26 +1,26 @@
 # LST Navigátor
-## From Nuxt 3 Minimal Starter template
 [![build](https://github.com/OSDVF/lst-navigator/actions/workflows/build.yml/badge.svg)](https://github.com/OSDVF/lst-navigator/actions/workflows/build.yml)
 [![preview](https://github.com/OSDVF/lst-navigator/actions/workflows/preview.yml/badge.svg)](https://github.com/OSDVF/lst-navigator/actions/workflows/preview.yml)
 [![live](https://github.com/OSDVF/lst-navigator/actions/workflows/deployment.yml/badge.svg)](https://github.com/OSDVF/lst-navigator/actions/workflows/deployment.yml)
 
 Použito pro akce [Moravskoslezské mládeže Českobratrské Církve Evangelické](https://msmladez.cz/)  
-Used for [Moravian-Silesian Youth of Evangelical Church of Czech Brethren](https://msmladez.cz/) events  
+Used for [Moravian-Silesian Youth of Evangelic Church of Czech Brethren](https://msmladez.cz/) events  
 
 # User features
 - Program schedule
-- Generic or configurable feedback for each schedule item and with custom questions
+- Configurable feedback questions for each schedule item
+- Completely custom feedback questions
 - Basic user permission system
 - Administration page for schedule, user and feedback form managent
 - Multiple events support
 
 ## Technical features
 - is a PWA
-- Serverless architecture (Firebase used for auth, firestore, storage and hosting)
+- Serverless architecture (Firebase auth, firestore, storage and hosting)
 - Maintenance tasks on each build
     - Checking database references (`modules/db-check.ts`)
     - Mirroring google account login page for precaching and CSR compliance (`modules/mirror-auth.ts`)
-- SSR generating static schedule pages
+- SSR generated static schedule pages
 
 ## WIP
 - Notifications

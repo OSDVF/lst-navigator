@@ -46,7 +46,7 @@ function addFileToTree(file: StorageReference, isDir: boolean) { // Register a f
     }
 }
 
-function getFromTree(path?: string) : FileTree | undefined {
+function getFromTree(path?: string): FileTree | undefined {
     if (!path) {
         return fileTree.value
     }
@@ -71,10 +71,14 @@ function getFromTree(path?: string) : FileTree | undefined {
     }
 }
 
-export default function useFileTree(file: MaybeRefOrGetter<string|undefined>) : Ref<FileTree | undefined> {
+export default function useFileTree(file: MaybeRefOrGetter<string | undefined>): Ref<FileTree | undefined> {
+    const config = useRuntimeConfig()
+    if (!config.public.storageEnabled) {
+        return ref(undefined)
+    }
     const storage = useFirebaseStorage()
     const fileV = toValue(file)
-    let f : StorageReference | null = storageRef(storage, fileV)
+    let f: StorageReference | null = storageRef(storage, fileV)
     const update = async () => {
         if (fileV && f && storage) {
             do {
@@ -84,10 +88,10 @@ export default function useFileTree(file: MaybeRefOrGetter<string|undefined>) : 
                 }
                 const items = (await listAll(f))
                 console.log(items)
-                for(const item of items.items) {
+                for (const item of items.items) {
                     addFileToTree(item, false)
                 }
-                for(const item of items.prefixes) {
+                for (const item of items.prefixes) {
                     addFileToTree(item, true)
                 }
                 f = f.parent

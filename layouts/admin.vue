@@ -61,7 +61,6 @@
 import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
 
-const app = useNuxtApp()
 const ui = useUI()
 const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
@@ -73,11 +72,5 @@ const title = computed(() => {
     }
     return config.public.title
 })
-
-function captureError(error: unknown) {
-
-    console.error(error, error instanceof TypeError ? error.stack : null)
-    app.$Sentry.captureException(error)
-}
 
 </script>

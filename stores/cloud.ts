@@ -14,9 +14,11 @@ import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
+import * as Sentry from '@sentry/nuxt'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
+ * @__NO_SIDE_EFFECTS__
  */
 export function knownCollection(firestore: Firestore, name: KnownCollectionName) {
     return collection(firestore, name)
@@ -84,7 +86,6 @@ export const useCloudStore = defineStore('cloud', () => {
     if (import.meta.client) {
         auth?.setPersistence(browserLocalPersistence)
     }
-    const app = useNuxtApp()
 
     const eventDocuments = useDocument<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
         maxRefDepth: 5,
@@ -132,7 +133,7 @@ export const useCloudStore = defineStore('cloud', () => {
                             if (typeof replies[k] === 'object' && isNaN(parseInt(innerKey))) {
                                 val[k as keyof typeof val] = Lodash.merge(val[k as keyof typeof val], replies[k][0])
                                 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                                delete replies[k], delete result[innerKey]
+                                delete replies[k]; delete result[innerKey]
                             }
                         }
                     }
@@ -274,7 +275,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 if (reasonPretty.length < 3) {
                     reasonPretty = reason
                 }
-                app.$Sentry.captureEvent(reason, {
+                Sentry.captureEvent(reason, {
                     data: reasonPretty,
                 })
 
@@ -459,7 +460,7 @@ export const useCloudStore = defineStore('cloud', () => {
         setTimeout(() => {
             getRedirectResult(auth!).catch((reason) => {
                 console.error('Failed redirect result', reason)
-                app.$Sentry.captureEvent(reason, {
+                Sentry.captureEvent(reason, {
                     data: reason,
                 })
                 user.error.value = reason
@@ -467,20 +468,22 @@ export const useCloudStore = defineStore('cloud', () => {
         }, 1)
 
         navigator.serviceWorker?.getRegistration().then(async (registration) => {
-            if (registration?.active && firebaseApp) {
-                const messaging = getMessaging(firebaseApp)
-                await getToken(messaging, { vapidKey: config.public.messagingConfig.vapidKey, serviceWorkerRegistration: registration }).then(async (newToken) => {
-                    if (newToken) {
-                        messagingToken.value = newToken
-                        if (subscriptionsCollection.value) {
-                            await setDoc(doc(subscriptionsCollection.value, newToken), {
-                                subscribed: true,
-                            } as UpdateRecordPayload<Subscriptions>, { merge: true })
+            if (typeof config.public.notifications_vapidKey === 'string') {
+                if (registration?.active && firebaseApp) {
+                    const messaging = getMessaging(firebaseApp)
+                    await getToken(messaging, { vapidKey: config.public.notifications_vapidKey, serviceWorkerRegistration: registration }).then(async (newToken) => {
+                        if (newToken) {
+                            messagingToken.value = newToken
+                            if (subscriptionsCollection.value) {
+                                await setDoc(doc(subscriptionsCollection.value, newToken), {
+                                    subscribed: true,
+                                } as UpdateRecordPayload<Subscriptions>, { merge: true })
+                            }
                         }
-                    }
-                })
+                    })
+                }
             }
-        }).catch(e => { console.error(e), app.$Sentry.captureException(e) })
+        }).catch(e => { console.error(e); Sentry.captureException(e) })
     }
     return {
         selectedEvent,

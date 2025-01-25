@@ -18,13 +18,29 @@
             </span>
         </fieldset>
         <fieldset>
-            <label for="animations">Animace</label>
+            <label for="animations">
+                <Icon name="mdi:animation" /> Animace
+            </label>
             <span>
                 <input id="animations" v-model="settings.animations" type="checkbox">
             </span>
         </fieldset>
         <fieldset>
-            <label for="selectedAudioName">Zvuk upozornění</label>
+            <label for="expandable">
+                <Icon name="mdi:file-tree" /> Rozbalovací položky harmonogramu
+                <br>
+                <small class="ml-3">
+                    Zobrazí detailní info a váš feedback u každé položky
+                </small>
+            </label>
+            <span>
+                <input id="expandable" v-model="settings.expandableItems" type="checkbox">
+            </span>
+        </fieldset>
+        <fieldset v-if="config.public.notifications_title">
+            <label for="selectedAudioName">
+                <Icon name="mdi:music" /> Zvuk upozornění
+            </label>
             <span>
                 <select id="selectedAudioName" v-model="settings.selectedAudioName">
                     <option v-for="audioItem in settings.audioList" :key="audioItem.name" :value="audioItem.name">
@@ -97,7 +113,7 @@
             <p>
                 <LazyClientOnly>
                     {{ new Date(parseInt(config.public.compileTime)).toLocaleString(lang) }}
-                    {{ leadingPlus(parseInt(config.public.compileTimeZone) / 60) }}
+                    {{ leadingPlus(-parseInt(config.public.compileTimeZone) / 60) }}
                 </LazyClientOnly>
             </p>
         </fieldset>
@@ -105,6 +121,14 @@
             <span>Poslední aktualizace</span>
             <small>{{ config.public.commitMessageTime }}
                 <AppManageBtns />
+            </small>
+        </fieldset>
+        <fieldset>
+            <span>Hlášení chyb</span>
+            <small>
+                <LazyClientOnly>
+                    <a :href="`mailto:${config.public.supportEmail}`">{{ config.public.supportEmail }}</a>
+                </LazyClientOnly>
             </small>
         </fieldset>
     </article>
@@ -171,7 +195,7 @@ async function syncNotes() {
 
 <style lang="scss">
 @use "sass:color";
-@import "@/assets/styles/constants.scss";
+@use "@/assets/styles/constants.scss" as c;
 
 .settings fieldset {
     display: flex;
@@ -179,7 +203,7 @@ async function syncNotes() {
     align-items: center;
     padding: 1rem;
     border: 0;
-    border-bottom: 1px solid rgba(color.adjust($link-background, $lightness: -50%), .2);
+    border-bottom: 1px solid rgba(color.adjust(c.$link-background, $lightness: -50%), .2);
 
     &>* {
         flex-grow: 1;

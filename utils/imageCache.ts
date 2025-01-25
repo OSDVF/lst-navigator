@@ -33,6 +33,9 @@ function getBlobFromImage(img: HTMLImageElement): Promise<Blob | null> {
 
         const ctx = canvas.getContext('2d')
         ctx?.drawImage(img, 0, 0)
+        if (img.crossOrigin == null && img.src.startsWith('http') && !img.src.startsWith(location.origin)) {
+            return Promise.resolve(null)// Otherwise, the canvas will be tainted
+        }
 
         return new Promise(resolve => canvas.toBlob((blob) => {
             resolve(blob)

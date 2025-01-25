@@ -45,8 +45,8 @@
 
 <script lang="ts" setup>
 import type { H3Error } from 'h3'
+import * as Sentry from '@sentry/nuxt'
 
-const app = useNuxtApp()
 const config = useRuntimeConfig()
 const props = defineProps<{
     error: H3Error,
@@ -61,7 +61,7 @@ if (import.meta.browser) {
     comChannel.addEventListener('message', (ev) => {
         if (typeof ev.data === 'number') {
             code.value = ev.data
-            app.$Sentry.captureMessage(`HTTP ${ev.data}`, 'warning')
+            Sentry.captureMessage(`HTTP ${ev.data}`, 'warning')
         }
     })
 }

@@ -1,7 +1,7 @@
 <template>
     <div>
         <label for="feedbackType">Typ otázky</label>&ensp;
-        <select id="feedbackType" v-model="type" :disabled="p.disabled">
+        <select id="feedbackType" v-model="type" :disabled="p.disabled" name="feedbackType">
             <option v-if="p.permitEmpty" value="">Žádný</option>
             <option value="basic">⭐⭐⭐⭐⭐</option>
             <option value="complicated">Několik ⭐⭐⭐⭐⭐</option>
@@ -9,6 +9,10 @@
             <option v-if="!p.scheduleItem" value="select">Výběr z možností</option>
             <option value="parallel">Paralelní programy</option>
         </select>
+
+        <small v-if="type && type !== 'parallel' && p.scheduleItem?.subtitle?.includes(',')">
+            <br>Podtitulek obsahuje čárku. Pokud jde o paralelní programy, nastavte typ otázky na "Paralelní programy".
+        </small>
 
         <div v-if="['complicated', 'select'].includes(type)">
             <h4 v-if="p.scheduleItem">Položky k hodnocení</h4>
@@ -31,17 +35,29 @@
         </div>
         <p v-else-if="type === 'parallel'">
             <template v-if="typeof p.scheduleItem !== 'undefined'">
-                <small>Paralelní programy: {{ parallel.join(', ') }}</small>
+                <small>Paralelní programy:
+                    <template v-for="(par, index) in parallel" :key="`p-${index}`">
+                        <span
+                            :style="`color: ${randomColor({
+                                seed: index * 1000,
+                                luminosity: 'bright',
+                            })}`">
+                            {{ par }}
+                        </span>
+                        {{ index < parallel.length - 1 ? ', ' : '' }} </template>
+                </small>
                 <small v-if="parallel.length < 2" class="text-danger"><br>
                     <Icon name="mdi:exclamation-thick" />&ensp;Varování: Zadáno méně než 2 názvů paralelních programů
+                    (oddělujte čárkou
+                    v podtitulku)
                 </small>
             </template>
         </p>
-        <p v-if="type !== 'select' && typeof p.scheduleItem !== 'undefined'">
+        <p v-if="!!p.type && type !== 'select' && typeof p.scheduleItem !== 'undefined'">
             <label for="detailQuestion">Doplňující otázka</label>&ensp;
             <input
-                id="detailQuestion" v-model.lazy="detailQuestion" :disabled="p.disabled" type="text" name="detailQuestion"
-                placeholder="Tipy a připomínky">
+                id="detailQuestion" v-model.lazy="detailQuestion" :disabled="p.disabled" type="text"
+                name="detailQuestion" placeholder="Tipy a připomínky">
         </p>
     </div>
 </template>
@@ -49,6 +65,7 @@
 <script setup lang="ts">
 import type { FeedbackType, ScheduleItem } from '~/types/cloud'
 import { getParallelEvents } from '@/utils/types'
+import randomColor from 'randomcolor'
 
 const p = defineProps<{
     type: FeedbackType | '',

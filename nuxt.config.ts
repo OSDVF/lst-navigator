@@ -1,16 +1,16 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
-import childProcess from 'child_process'
-import { sentryVitePlugin } from '@sentry/vite-plugin'
 import topLevelAwait from 'vite-plugin-top-level-await'
 import { icons } from './icons.json'
 import firebaseConfig from './firebase.json'
+import {
+    installStepCount,
+    commitMessageTime,
+    commitHash,
+    compileTime,
+    compileTimeZone,
+} from './utils/constants'
 
-const installStepCount = fs.readdirSync('./pages/install').length
-const commitMessageTime = childProcess.execSync('git log -1 --pretty="%B %cI"').toString().trim()
-const commitHash = childProcess.execSync('git rev-parse HEAD').toString().trim()
-const compileTime = new Date().getTime().toString()
-const compileTimeZone = new Date().getTimezoneOffset().toString()
 const isDevMode = process.env.NODE_ENV !== 'production'
 const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
 
@@ -40,7 +40,7 @@ const config = defineNuxtConfig({
     },
     compatibilityDate: '2024-08-24',
     css: [
-        '~/assets/styles/base.scss',
+        '~/assets/styles/_index.scss',
         '~/assets/styles/components.scss',
     ],
     devServerHandlers: [
@@ -91,6 +91,7 @@ const config = defineNuxtConfig({
         'maintenance/**',
     ],
     modules: [
+        '@sentry/nuxt/module',
         '@vite-pwa/nuxt',
         '@nuxt/icon',
         '@pinia/nuxt',
@@ -154,6 +155,13 @@ const config = defineNuxtConfig({
     sourcemap: {
         client: true,
     },
+    sentry: {
+        sourceMapsUploadOptions: process.env.SENTRY_DISABLE == 'true' ? undefined : {
+            org: process.env.SENTRY_ORG,
+            project: process.env.SENTRY_PROJECT,
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+        },
+    },
     routeRules: {
         '/clear': {
             headers: {
@@ -209,15 +217,6 @@ const config = defineNuxtConfig({
                 // The function to generate import names of top-level await promise in each chunk module
                 promiseImportName: (i: any) => `__tla_${i}`,
             }),
-            sentryVitePlugin({
-                authToken: process.env.SENTRY_AUTH_TOKEN,
-                org: process.env.SENTRY_ORG,
-                project: process.env.SENTRY_PROJECT,
-                disable: isDevMode || process.env.SENTRY_DISABLE === 'true' || process.env.SENTRY_PUBLISH_RELEASE === 'false',
-                release: {
-                    name: commitHash,
-                },
-            }),
         ],
         // revert chunk name
         $client: {
@@ -271,23 +270,24 @@ const config = defineNuxtConfig({
             compileTimeZone,
             commitMessageTime,
             commitHash,
-            messagingConfig: {
-                title: process.env.VITE_APP_SHORT_NAME,
-                body: process.env.VITE_APP_DEFAULT_NOTIFICATION_BODY,
-                image: process.env.VITE_APP_DEFAULT_NOTIFICATION_IMAGE,
-                icon: process.env.VITE_APP_DEFAULT_NOTIFICATION_ICON,
-                vapidKey: process.env.VAPID_PUBLIC,
-            },
             ENV: process.env.NODE_ENV ?? 'production',
             SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
             SENTRY_DSN: process.env.VITE_APP_DSN,
             SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET,
             debugUser: process.env.VITE_APP_DEBUG_USER,
             ssrAuthEnabled: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+            storageEnabled: !!process.env.VITE_APP_STORAGEBUCKET,
             supportEmail: process.env.SUPPORT_EMAIL,
             iconifyCollection: process.env.ICONIFY_COLLECTION,
             maxSuggestions: process.env.MAX_SUGGESTIONS,
             logWrites: process.env.LOG_WRITES === 'true',
+            ...(process.env.NOTIFICATIONS === 'true' ? {
+                notifications_title: process.env.VITE_APP_SHORT_NAME,
+                notifications_body: process.env.VITE_APP_DEFAULT_NOTIFICATION_BODY,
+                notifications_image: process.env.VITE_APP_DEFAULT_NOTIFICATION_IMAGE,
+                notifications_icon: process.env.VITE_APP_DEFAULT_NOTIFICATION_ICON,
+                notifications_vapidKey: process.env.VAPID_PUBLIC,
+            } : {}),
         },
     },
     ssr: true,

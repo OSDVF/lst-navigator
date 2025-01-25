@@ -1,5 +1,5 @@
 <template>
-    <ProgramSchedule :day="p.day" />
+    <LazyProgramSchedule :day="p.day" />
 </template>
 
 <script setup lang="ts">

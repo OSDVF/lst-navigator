@@ -1,3 +1,5 @@
+@use 'sass:string';
+
 .inline {
   display: inline;
 }
@@ -54,14 +56,18 @@ $sides: (top, bottom, left, right); // Leave this variable alone
     padding: #{$value}rem !important;
   }
   @each $side in $sides {
-    .m#{str-slice($side, 0, 1)}-#{$i} {
+    .m#{string.slice($side, 0, 1)}-#{$i} {
       margin-#{$side}: #{$value}rem !important;
     }
   
-    .p#{str-slice($side, 0, 1)}-#{$i} {
+    .p#{string.slice($side, 0, 1)}-#{$i} {
       padding-#{$side}: #{$value}rem !important;
     }
   }
+}
+
+.mr-0\.5 {
+  margin-right: .1rem;
 }
 
 @media screen and (max-width: 640px) {

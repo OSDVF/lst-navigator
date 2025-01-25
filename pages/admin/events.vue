@@ -1,12 +1,17 @@
 <template>
-    <article v-if='cloud.eventsCollection.length > 0'>
+    <ProgressBar v-if='cloud.eventLoading' />
+    <article v-else>
         <button v-if='action == Actions.Nothing && cloud.resolvedPermissions.superAdmin' @click='action = Actions.New'>
             <Icon name='mdi:plus' /> Nová
         </button>
-        <button v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.editEvent' @click='startEditingSelected'>
+        <button
+            v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.editEvent'
+            @click='startEditingSelected'>
             <Icon name='mdi:pencil' /> Upravit
         </button>
-        <button v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.superAdmin' @click='deleteSelected'>
+        <button
+            v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.superAdmin'
+            @click='deleteSelected'>
             <Icon name='mdi:trash-can' /> Smazat
         </button>
         <form v-if='action == Actions.New || action == Actions.Edit' @submit.prevent='editEvent(action == Actions.New)'>
@@ -25,26 +30,32 @@
                 required></label><br>
             <label>Začátek <input
                 v-model.lazy='editedEvent.start' type='date' required
-                :disabled='action == Actions.Edit'></label> <DateFormat /><br>
+                :disabled='action == Actions.Edit'></label>
+            <DateFormat /><br>
             <label>Konec <input
                 v-model.lazy='editedEvent.end' :min='editedEvent.start!' type='date' required
-                :disabled='action == Actions.Edit'></label> <DateFormat /><br>
+                :disabled='action == Actions.Edit'></label>
+            <DateFormat /><br>
             <ClassicCKEditor v-model.lazy='editedEvent.description' />
             <fieldset :disabled='!!remoteImage.uploadTask.value'>
                 <legend>Obrázek</legend>
                 <div class="p">
-                    <button type='button' @click='openFD({ accept: "image/*", multiple: false })'>
+                    <button
+                        type='button' :disabled="!storage" :title="storage ? 'Nahrát do Firebase Storage' : 'Cloudové úložiště není dostupné'"
+                        @click='openFD({ accept: "image/*", multiple: false })'>
                         <Icon name='mdi:upload' /> Nahrát
                     </button>
+                    <template v-if="storage">
+                        <input
+                            id="image-select" v-model="editedEvent.imageIdentifier.type" type='radio'
+                            name="imageSourceType" value="cloud" :disabled="!storage">
+                        <label for="image-select">
+                            <Icon name='mdi:folder-multiple-image' />
+                        </label>
+                    </template>
                     <input
-                        id="image-select" v-model="editedEvent.imageIdentifier.type" type='radio'
-                        name="imageSourceType" value="cloud">
-                    <label for="image-select">
-                        <Icon name='mdi:folder-multiple-image' /> Vybrat
-                    </label>
-                    <input
-                        id="image-url" v-model="editedEvent.imageIdentifier.type" type='radio'
-                        name="imageSourceType" value="url">
+                        id="image-url" v-model="editedEvent.imageIdentifier.type" type='radio' name="imageSourceType"
+                        value="external">
                     <label for="image-url">
                         <Icon name='mdi:link' /> z existující URL
                     </label>
@@ -59,7 +70,9 @@
                             placeholder="Existující URL nebo data:image/...">
                         <p>
                             <ProgressBar v-if="loadingImage" />
-                            <img v-else-if="_imageExternalUrl" :src="_imageExternalUrl" alt="Náhled" style="max-width: 100%">
+                            <img
+                                v-else-if="editedEvent.imageIdentifier.data" :src="editedEvent.imageIdentifier.data"
+                                alt="Náhled" style="max-width: 100%">
                         </p>
                     </fieldset>
                 </div>
@@ -91,7 +104,6 @@
             </thead>
         </LazyDataTable>
     </article>
-    <ProgressBar v-else />
 </template>
 
 <script setup lang='ts'>
@@ -150,16 +162,15 @@ const sanitizeTitleAndId = computed({
     },
 })
 
-const _imageExternalUrl = ref('')
 const loadingImage = ref(false)
 const permittedTypes = ['png', 'jpg', 'jpe', 'web']
 const imageExternalUrl = computed({
     get() {
-        return _imageExternalUrl.value
+        return editedEvent.value.imageIdentifier.data
     },
     set(changedValue: string) {
         if (!changedValue) {
-            _imageExternalUrl.value = ''
+            editedEvent.value.imageIdentifier.data = ''
             return
         }
         if (changedValue.length > 50000) {
@@ -173,7 +184,7 @@ const imageExternalUrl = computed({
                 if (response.ok) {
                     const contentType = response.headers.get('content-type')
                     if (contentType && permittedTypes.includes(contentType.substring(6, 9))) {
-                        _imageExternalUrl.value = changedValue
+                        editedEvent.value.imageIdentifier.data = changedValue
                         return
                     }
                 }
@@ -182,11 +193,10 @@ const imageExternalUrl = computed({
                 loadingImage.value = false
             })
         } else if (lower.startsWith('data:image/') && permittedTypes.includes(lower.substring(11, 14))) {
-            _imageExternalUrl.value = changedValue
+            editedEvent.value.imageIdentifier.data = changedValue
         } else {
             alert('Odkaz na obrázek je neplatný')
         }
-        _imageExternalUrl.value = changedValue
         editedEvent.value.imageIdentifier = {
             type: 'external',
             data: changedValue,
@@ -194,7 +204,8 @@ const imageExternalUrl = computed({
     },
 })
 
-const storage = cloud.probe && useFirebaseStorage()
+const config = useRuntimeConfig()
+const storage = cloud.probe && config.public.storageEnabled && useFirebaseStorage()
 const fs = cloud.probe && useFirestore()
 
 const { files, open: openFD } = useFileDialog()

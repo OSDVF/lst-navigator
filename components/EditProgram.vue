@@ -65,7 +65,7 @@
             </legend>
 
             <FeedbackTypeSelect
-                id="feedbackType" :type="feedbackOrDefault" :permit-empty="true"
+                :type="feedbackOrDefault" :permit-empty="true"
                 :schedule-item="editingItem" :detail-question="editingItem.detailQuestion"
                 :questions="editingItem.questions" @update:type="t => feedbackOrDefault = t"
                 @update:detail-question="q => editingItem.detailQuestion = q"

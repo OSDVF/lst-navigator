@@ -16,11 +16,12 @@
 definePageMeta({
     layout: 'install',
 })
+const config = useRuntimeConfig()
 const supportsNotifications = import.meta.client ? 'Notification' in window : false
 
 const onNextButtonClick = inject<(listener: () => void) => void>('onNextButtonClick')
 onNextButtonClick?.(() => supportsNotifications ? Notification.requestPermission() : null)
 
 const skipToNextIf = inject<(ref: Ref) => void>('skipToNextIf')
-skipToNextIf?.(computed(() => supportsNotifications ? Notification.permission === 'granted' : null))
+skipToNextIf?.(computed(() => !config.public.notifications_title || supportsNotifications ? Notification.permission === 'granted' : null))
 </script>

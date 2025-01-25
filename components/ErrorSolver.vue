@@ -22,13 +22,13 @@
 </template>
 
 <script setup lang="ts">
-const app = useNuxtApp()
+import * as Sentry from '@sentry/nuxt'
 
 
 function captureError(error: unknown) {
     try {
-        console.error(error, error instanceof TypeError ? error.stack : null)
-        app.$Sentry.captureException(error)
+        console.error(error, (error instanceof TypeError || error instanceof DOMException) ? error.stack : null)
+        Sentry.captureException(error)
     } catch (e) { console.error(e) }
 }
 </script>

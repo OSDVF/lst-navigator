@@ -23,6 +23,7 @@ onMounted(() => {
     import('ckeditor5').then(async (c) => {
         ClassicEditor.value = c.ClassicEditor
         config.value = {
+            licenseKey: 'GPL',
             toolbar: {
                 items: [
                     'undo',

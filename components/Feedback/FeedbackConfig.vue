@@ -133,7 +133,7 @@ const safeType = computed({
 
 let previousValue = _.cloneDeep(editedCategory.value)
 watch(editedCategory, (value) => {
-    if (!reloading.value && !p.isDummy && !_.isEqual(value, previousValue)) {
+    if (!reloading.value && !_.isEqual(value, previousValue)) {
         e('beginUpdate')
         error.value = undefined
         loading.value = true

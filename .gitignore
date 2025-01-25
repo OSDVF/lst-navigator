@@ -25,6 +25,9 @@ logs
 
 #LST-Navigator specific
 service-account.json
+service-account.*.json
 utils/swenv.js
 # google auth proxy 
 public/__
+# Sentry Config File
+.env.sentry-build-plugin

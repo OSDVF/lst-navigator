@@ -1,4 +1,4 @@
-@import "constants.scss";
+@use "constants" as c;
 
 ul.tree {
     list-style: none;
@@ -10,5 +10,5 @@ ul.tree {
 
 ul.tree em:hover {
     cursor: pointer;
-    background: $link-background;
+    background: c.$link-background;
 }

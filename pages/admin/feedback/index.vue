@@ -109,7 +109,7 @@
                         </template>
                     </LazyClientOnly>
                 </main>
-                <aside class="sticky top-0" style="max-height:100vh;overflow-y:auto">
+                <aside v-if="split" class="sticky top-0" style="max-height:100vh;overflow-y:auto">
                     <nav role="navigation" class="mb-1">
                         <a
                             v-for="(day, index) in cloud.days" :key="`day${index}`" :href="`#${index}`" :style="{
@@ -118,7 +118,7 @@
                             {{ day?.name ?? index }}
                         </a>
                     </nav>
-                    <LazyProgramSchedule v-if="split" :day="previewDay" />
+                    <LazyProgramSchedule :day="previewDay" />
                 </aside>
             </div>
         </template>

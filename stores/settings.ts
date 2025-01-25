@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nuxt'
 import { defineStore, skipHydrate } from 'pinia'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { usePersistentRef } from '@/utils/persistence'
@@ -11,7 +12,7 @@ try {
     } else {
         uniqueIdentifier = prevIdentifier
     }
-} catch (e) { /* empty */ }
+} catch { /* empty */ }
 
 export const useSettings = defineStore('settings', () => {
     const uploadedAudioList = useIDBKeyval<string[]>('uploadedAudioList', [])
@@ -152,13 +153,14 @@ export const useSettings = defineStore('settings', () => {
         if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
     })
 
-    if (import.meta.client) { useNuxtApp().$Sentry.setUser({ username: userNickname.value, id: userIdentifier.value }) }
+    Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
     const animations = usePersistentRef('animations', true)
 
     return {
         animations,
+        expandableItems: usePersistentRef('expandableItems', false),
         installStep: usePersistentRef<number>('installStep', 0),
         selectedAudioName: skipHydrate(selectedAudioName),
         selectedAudioUrl,

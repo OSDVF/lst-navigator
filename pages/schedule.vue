@@ -158,7 +158,7 @@ const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[]
 </script>
 
 <style lang="scss">
-@import "@/assets/styles/constants.scss";
+@use "@/assets/styles/constants" as c;
 
 nav.days {
     position: fixed;
@@ -166,7 +166,7 @@ nav.days {
     left: 0;
     z-index: 1;
 
-    border-bottom: 1px solid rgba($link-background, 0.1);
+    border-bottom: 1px solid rgba(c.$link-background, 0.1);
     overflow-x: auto;
     width: 100vw;
 }

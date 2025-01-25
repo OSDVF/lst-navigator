@@ -49,8 +49,8 @@ export type EventDescription<T = string> = {
     description: string,
     subtitle: string,
     image: {
-        type: 'cloud' | 'url',
-        data: string, // url
+        type: 'cloud' | 'external',
+        data: string, // storage / external url
     },
     feedbackConfig: FeedbackConfig[],// subcollection
     feedbackInfo: string,

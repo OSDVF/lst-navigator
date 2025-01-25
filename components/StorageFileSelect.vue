@@ -15,10 +15,10 @@ const tree = computed(() => useFileTree(currentPath.value || '/').value)
 </script>
 
 <style lang="scss">
-@import '@/assets/styles/constants.scss';
+@use '@/assets/styles/constants' as c;
 
 .selected {
-    background: rgba($color: $link-background, $alpha: 0.3)
+    background: rgba($color: c.$link-background, $alpha: 0.3)
 }
 
 .fileTree {

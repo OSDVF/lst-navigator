@@ -51,21 +51,21 @@ provide('onNextButtonClick', (listener: () => void) => {
     onNextButtonClickListeners.value.push(listener)
 })
 
-const skipToNextCondition = ref<boolean>(false)
 
 provide('skipToNextIf', (predicate: Ref<boolean>) => {
-    skipToNextCondition.value = predicate.value
-})
+    const stopWatching = watch(predicate, (value) => {
+        if (value) {
+            onNextButtonClick()
+            if (canGoNext.value) {
+                router.replace(`/install/${partIndex.value + 1}`)
+            } else {
+                router.replace('/schedule')
+            }
+            stopWatching()
+        }
+    })
 
-watch(skipToNextCondition, (value) => {
-    onNextButtonClick()
-    if (value && canGoNext.value) {
-        router.replace(`/install/${partIndex.value + 1}`)
-    } else {
-        router.replace('/schedule')
-    }
 })
-
 
 
 </script>

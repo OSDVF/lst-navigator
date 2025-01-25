@@ -1,5 +1,4 @@
 import type { PwaInjection } from '@vite-pwa/nuxt'
-import type * as Sentry from '@sentry/vue'
 import { idb } from '@composi/idb/types'
 
 // define environment variables here
@@ -58,7 +57,6 @@ declare module '#app' {
     $installPromptSupport: () => boolean,
     $onUpdateCallback: (callback: (reg?: ServiceWorkerRegistration) => void) => void,
     $pwa: PwaInjection,
-    $Sentry: typeof Sentry,
     $location: string,
   }
 }

@@ -2,11 +2,18 @@
     <article role="article">
         <div class="eventBanner">
             <img
-                v-if="eventImage" crossorigin="anonymous" class="eventImage" :src="eventImage"
+                v-if="eventImage" :crossorigin="cross ? 'anonymous' : undefined" class="eventImage" :src="eventImage"
                 @click="ui.showLightBox(eventImage)"
-                @load="saveCacheImage('eventImage-' + cloudStore.selectedEvent, $event)">
+                @load="saveCacheImage('eventImage-' + cloudStore.selectedEvent, $event)" @error="cross = false">
         </div>
-        <h1>{{ cloudStore.eventData?.title }}</h1>
+        <h1>{{ cloudStore.eventData?.title }}<NuxtLink
+            v-if="cloudStore.resolvedPermissions.editEvent" class="ml-2"
+            to="/admin/events" title="Nastavení událostí">
+            <button type="button" class="large">
+                <Icon name="mdi:pencil" class="baseline" /> Upravit
+            </button>
+        </NuxtLink>
+        </h1>
         <NuxtLink to="/feedback">
             <button style="float:right" class="large">
                 <Icon name="mdi:rss" /> Feedbackový dotazník
@@ -15,7 +22,8 @@
         <h2>{{ cloudStore.eventData?.subtitle }}</h2>
         <h6>
             <a :href="cloudStore.eventData?.web" target="_blank">
-                <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{ cloudStore.eventData?.web }}
+                <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Web: {{
+                    cloudStore.eventData?.web }}
             </a>
             &ensp;
         </h6>
@@ -37,6 +45,7 @@ const cloudStore = useCloudStore()
 const evaluating = ref(false)
 
 const eventImage = computedAsync(async () => await getCacheImage('eventImage-' + cloudStore.selectedEvent, cloudStore.eventImage), null, { lazy: true, evaluating })
+const cross = ref(true)
 
 definePageMeta({
     title: 'Informace',

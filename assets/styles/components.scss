@@ -1,7 +1,7 @@
 @use "sass:math";
-@import "constants.scss";
-@import "navigation.scss";
-@import "tree.scss";
+@use "constants" as c;
+@use "navigation";
+@use "tree";
 
 ///
 /// Rating stars
@@ -39,8 +39,8 @@ main .average-rating {
 .networkError {
     flex-basis: 100%;
     flex-grow: 1;
-    backdrop-filter: $blurred-background;
-    background: rgba($link-background, 0.2);
+    backdrop-filter: c.$blurred-background;
+    background: rgba(c.$link-background, 0.2);
     text-align: center;
     transition: transform .2s ease, margin-top .2s ease;
     $errorBannerHeight: 2.5rem;

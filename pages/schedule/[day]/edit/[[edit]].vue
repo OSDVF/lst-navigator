@@ -11,12 +11,13 @@
                 <button
                     v-for="(event, index) in cloud.suggestions" :key="`e${index}`" type="button"
                     :style="`background:${event.color};max-width:33%;overflow:hidden`" @click="useSuggested(event)">
-                    <h3>{{ event.title }}</h3>
-                    {{ event.subtitle }}
+                    <h4>{{ event.title }}</h4>
+                    {{ event.subtitle?.substring(0, 20) }} {{ (event.subtitle?.length ?? 0) > 20 ? '...' : '' }}
                     {{ toHumanTime(event.time) }}
                     <br>
                     <Icon v-if="event.feedbackType" name="mdi:rss" /> {{ toHumanFeedback(event.feedbackType) }}
-                    {{ event.description?.substring(0, 20) }} {{ (event.description?.length ?? 0) > 20 ? '...' : '' }}
+                    <br>
+                    {{ stripHtml(event.description?.substring(0, 20)) }} {{ (event.description?.length ?? 0) > 20 ? '...' : '' }}
                 </button>
             </div>
         </details>
@@ -52,9 +53,9 @@
                 </button>
                 <template v-if="!editing">
                     <input id="autoOrder" v-model="autoOrder" type="checkbox"> <label
-                        title="Jinak se program přidá na konec" for="autoOrder">Automaticky
-                        vpasovat do harmonogramu</label>
+                        title="Jinak se program přidá na konec harmonogramu" for="autoOrder">Zařadit podle času</label>
                 </template>
+                <ProgressBar v-show="loading" />
             </form>
         </fieldset>
     </div>
@@ -68,6 +69,7 @@ import { setDoc } from '~/utils/trace'
 import { doc, arrayUnion } from 'firebase/firestore'
 import type { VueFirestoreDocumentData } from 'vuefire'
 import { useAdmin } from '~/stores/admin'
+import { stripHtml } from '~/utils/sanitize'
 
 const router = useRouter()
 const route = router.currentRoute
@@ -85,6 +87,7 @@ const selectedEditIndex = computed(() => {
 const program = computed(() => cloud.days[selectedDayIndex.value].program)
 const editing = computed(() => typeof selectedEditIndex.value !== 'undefined')
 const autoOrder = usePersistentRef('autoOrder', false)
+const loading = ref(false)
 
 const cloud = useCloudStore()
 const editedEvent = ref<ScheduleItem>({
@@ -133,7 +136,9 @@ const fs = useFirestore()
 const union = ref(false)
 
 function useSuggested(event: ScheduleItem) {
-    confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.') && (Object.assign(editedEvent.value, event))
+    if(confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.')) {
+        Object.assign(editedEvent.value, event)
+    }
 }
 async function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>) {
     if (confirm('Opravdu chcete načíst tento den? ' + (union.value ? 'Existující program dne bude zachován.' : 'Úplně celý program dne bude přepsán.'))) {
@@ -148,6 +153,7 @@ async function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>)
 
 const config = useRuntimeConfig()
 async function editProgram(event: Event) {
+    loading.value = true
     const data = new FormData(event.target as HTMLFormElement)
     const parsedData = {
         color: emptyToNull(data.get('color')),
@@ -195,6 +201,7 @@ async function editProgram(event: Event) {
     await setDoc(
         doc(knownCollection(fs, 'suggestions'), 'last'), { last }, { merge: true },
     )
+    loading.value = false
 }
 
 function emptyToNull(value?: any) {
@@ -204,3 +211,9 @@ function emptyToNull(value?: any) {
     return value
 }
 </script>
+
+<style>
+button h4 {
+    margin: .4rem 0
+}
+</style>

@@ -1,4 +1,5 @@
 import { useSettings } from '~/stores/settings'
+import * as Sentry from '@sentry/nuxt'
 
 // This variable will save the event for later use.
 let deferredPrompt: BeforeInstallPromptEvent | null = null
@@ -43,12 +44,18 @@ export default defineNuxtPlugin({
                         type: 'INITIALIZE_APP',
                         config: {
                             ...firebaseApp.options,
-                            defaultNotification: { ...app.$nuxt.$config.public.messagingConfig },
+                            defaultNotification: app.$nuxt.$config.public.notifications_title ? {
+                                title: app.$nuxt.$config.public.notifications_title,
+                                body: app.$nuxt.$config.public.notifications_body,
+                                image: app.$nuxt.$config.public.notifications_image,
+                                icon: app.$nuxt.$config.public.notifications_icon,
+                                vapidKey: app.$nuxt.$config.public.notifications_vapidKey,
+                            } : undefined,
                         },
                     })
                 } catch (e) {
                     console.error(e)
-                    app.$nuxt.$Sentry.captureException(e)
+                    Sentry.captureException(e)
                 }
             }
         },
