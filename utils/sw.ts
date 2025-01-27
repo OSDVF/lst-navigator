@@ -1,4 +1,4 @@
-import { cleanupOutdatedCaches, PrecacheController, PrecacheRoute, createHandlerBoundToURL, getCacheKeyForURL } from 'workbox-precaching'
+import { cleanupOutdatedCaches, PrecacheController, PrecacheRoute } from 'workbox-precaching'
 import { registerRoute, Route, NavigationRoute, Router } from 'workbox-routing'
 import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
@@ -29,7 +29,7 @@ router.registerRoute(new PrecacheRoute(precacheController, {
 }))
 
 function registerHome() {
-    router.registerRoute(new NavigationRoute(createHandlerBoundToURL('/'), {
+    router.registerRoute(new NavigationRoute(precacheController.createHandlerBoundToURL('/'), {
         denylist: [
             /\/__\/.*/, //  ignore firebase auth routes,
             /\/api\/.*/, // ignore server side api routes
@@ -37,7 +37,7 @@ function registerHome() {
     }))
     console.log('Registered catch-all route')
 }
-if (getCacheKeyForURL('/')) {
+if (precacheController.getCacheKeyForURL('/')) {
     registerHome()
 }
 
@@ -66,12 +66,11 @@ comChannel.addEventListener('message', (ev) => {
 self.addEventListener('install', async event => {
     comChannel.postMessage('install')
     await precacheController.install(event)
-    registerHome()
     console.log('Installed')
 })
-self.addEventListener('activate', event => {
+self.addEventListener('activate',async event => {
     comChannel.postMessage('activate')
-    precacheController.activate(event)
+    await precacheController.activate(event)
     registerHome()
     console.log('Activated')
 })
@@ -102,7 +101,7 @@ async function onUpdate() {
 
 const app = firebase.initializeApp(swConfig.firebase)
 isSupported().then((supported) => {
-    if (!supported) {
+    if (!supported || !('messagingSenderId' in swConfig.firebase)) {
         return
     }
     const messagingInstance = getMessaging(app)
