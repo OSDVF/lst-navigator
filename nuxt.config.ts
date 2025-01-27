@@ -2,6 +2,7 @@
 import fs from 'fs'
 import { icons } from './icons.json'
 import firebaseConfig from './firebase.json'
+
 import {
     installStepCount,
     commitMessageTime,
@@ -31,11 +32,19 @@ const config = defineNuxtConfig({
                 { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
                 { rel: 'manifest', href: '/site.webmanifest' },
                 { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#5bbad5' },
+                { rel: 'stylesheet', href: 'https://cdn.ckeditor.com/ckeditor5/44.1.0/ckeditor5.css', crossorigin: 'anonymous' },
             ],
             meta: [
                 { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no' },
                 { name: 'msapplication-TileColor', content: '#da532c' },
                 { name: 'theme-color', content: '#ffffff' },
+            ],
+            script: [
+                {
+                    id: 'ckeditor5-script',
+                    async: true,
+                    src: 'https://unpkg.com/ckeditor5@44.1.0/dist/browser/ckeditor5.umd.js',
+                },
             ],
         },
     },
@@ -158,7 +167,7 @@ const config = defineNuxtConfig({
             short_name: process.env.VITE_APP_SHORT_NAME,
             icons,
             start_url: './',
-            id: 'cz.msmladez.lst24',
+            id: process.env.APP_ID,
             theme_color: '#ffffff',
         },
         srcDir: 'utils',

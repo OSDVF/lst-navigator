@@ -44,6 +44,7 @@ jobs:
         
       - name: Run postinstall scripts
         run: bun pm trust --all
+        continue-on-error: true
 
       - name: SSG Generate
         run: bun generate ci

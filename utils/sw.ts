@@ -1,5 +1,5 @@
 import { cleanupOutdatedCaches, PrecacheController, PrecacheRoute } from 'workbox-precaching'
-import { registerRoute, Route, NavigationRoute, Router } from 'workbox-routing'
+import { Route, NavigationRoute, Router } from 'workbox-routing'
 import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'
 import { clientsClaim } from 'workbox-core'
 import * as firebase from 'firebase/app'
@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/browser'
 import * as idb from 'idb-keyval'
 import type { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
+import { url } from 'inspector'
 
 declare let self: ServiceWorkerGlobalScope
 try {
@@ -212,12 +213,17 @@ self.addEventListener(
 // Runtime caching
 //
 const FALLBACK_STRATEGY = new CacheFirst()
-// Icons
-const iconsRoute = new Route(({ request }) => {
-    return request.url.startsWith('https://api.iconify.design/')
+// External dependencies
+const external = [
+    'https://api.iconify.design/',
+    'https://cdn.ckeditor.com',
+    'https://unpkg.com',
+]
+const dependencies = new Route(({ request }) => {
+    return external.some(url => request.url.startsWith(url))
 }, FALLBACK_STRATEGY)
 
-registerRoute(iconsRoute)
+router.registerRoute(dependencies)
 
 const fallbackRoute = new Route(
     (options) => (swConfig.hostnames.includes(options.url.hostname) || location.hostname == options.url.hostname)
@@ -225,4 +231,4 @@ const fallbackRoute = new Route(
     new StaleWhileRevalidate(),
 )
 
-registerRoute(fallbackRoute)
+router.registerRoute(fallbackRoute)

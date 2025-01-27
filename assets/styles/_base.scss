@@ -12,11 +12,15 @@
         -moz-osx-font-smoothing: grayscale;
         background: black;
 
-        
-        &>body>div#__nuxt>div {
-            min-height: 100%;
-            min-height: 100vh;
-            background: white;
+
+        &>body>div#__nuxt {
+
+            &>div,
+            &>main {
+                min-height: 100%;
+                min-height: 100vh;
+                background: white;
+            }
         }
 
         .vel-modal,
@@ -29,6 +33,7 @@
             filter: invert(100%);
             background: black;
             color: white;
+
             &:not(.editable) {
                 border: 1px solid white;
             }
@@ -107,7 +112,8 @@ a {
     }
 }
 
-article,.article {
+article,
+.article {
     padding: 1rem;
     max-width: 800px;
     margin: auto;
@@ -120,6 +126,7 @@ article,.article {
 .muted {
     opacity: .5
 }
+
 .muted-2 {
     opacity: .25
 }

@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import { useSettings } from '@/stores/settings'
+import type { WatchHandle } from 'vue'
 
 const settings = useSettings()
 const router = useRouter()
@@ -55,7 +56,10 @@ provide('onNextButtonClick', (listener: () => void) => {
 })
 
 provide('nextText', next)
-
+const stopWatching = ref<WatchHandle>()
+watch(stopWatching, (_, prevVal) => {
+    prevVal?.()//stop watching the previous one
+})
 
 provide('skipToNextIf', (predicate: Ref<boolean>) => {
     function skip() {
@@ -74,10 +78,10 @@ provide('skipToNextIf', (predicate: Ref<boolean>) => {
     if (predicate.value) {
         skip()
     } else {
-        const stopWatching = watch(predicate, (value) => {
+        stopWatching.value = watch(predicate, (value) => {
             if (value) {
                 skip()
-                stopWatching()
+                stopWatching.value?.()
             }
         })
     }

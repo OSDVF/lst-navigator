@@ -2,7 +2,7 @@ import childProcess from 'child_process'
 import { stderr, stdin, stdout, argv, env, exit } from 'process'
 import { chunksToLinesAsync } from '@rauschma/stringio'
 
-const p = childProcess.spawn('./node_modules/.bin/nuxt', ['generate', ...process.argv.slice(2)], { shell: true, env: { ...env, FORCE_COLOR: 'true', CI: env.CI || argv.includes('ci') } })
+const p = childProcess.spawn('./node_modules/.bin/nuxt', ['generate', ...process.argv.slice(2).filter(p => p != 'ci')], { shell: true, env: { ...env, FORCE_COLOR: 'true', CI: env.CI || argv.includes('ci') } })
 
 checkReadable(p.stdout)
 stdin.pipe(p.stdin)
