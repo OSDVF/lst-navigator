@@ -110,8 +110,6 @@ async function moveDown(program: ScheduleItem, index: number) {
 </script>
 
 <style lang="scss">
-@import "@/assets/styles/constants.scss";
-
 .schedule {
     &>div {
 

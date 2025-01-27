@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { doc } from 'firebase/firestore'
-import { setDoc } from '~/utils/trace'
+import { setDoc, useCollection as useCollectionT } from '~/utils/trace'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
 import { type UpdatePayload, type UserInfo, UserLevel, userLevelToIcon } from '@/types/cloud'
 import type { Api } from '@/types/datatables'
@@ -79,7 +79,7 @@ definePageMeta({
 const permissionError = ref()
 const cloudStore = useCloudStore()
 const firestore = cloudStore.probe && useFirestore()
-const users = useCollection<UserInfo>(firestore ? knownCollection(firestore, 'users') : null,
+const users = useCollectionT<UserInfo>(firestore ? knownCollection(firestore, 'users') : null,
     {
         maxRefDepth: 0,
         wait: true,

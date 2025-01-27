@@ -2,7 +2,6 @@ import * as Sentry from '@sentry/nuxt'
 import { defineStore, skipHydrate } from 'pinia'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { usePersistentRef } from '@/utils/persistence'
-import { useCloudStore } from '@/stores/cloud'
 
 let uniqueIdentifier = new Date().getTime().toString(36)
 try {
@@ -146,7 +145,7 @@ export const useSettings = defineStore('settings', () => {
             cloud.feedback.dirtyTime = 0// force refresh from remote
             cloud.feedback.hydrate(cloud.feedback.online)
         } else {// clear feedback if user is not logged in
-            cloud.offlineFeedback.value = {}
+            cloud.clearOfflineFeedback()
         }
     })
     const userIdentifier = computed(() => {

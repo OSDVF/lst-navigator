@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { setDoc } from '~/utils/trace'
+import { setDoc, useDocument as useDocumentT } from '~/utils/trace'
 import { doc } from 'firebase/firestore'
 import { colorToHex, darkenColor } from '@/utils/colors'
 import { useCloudStore } from '@/stores/cloud'
@@ -110,7 +110,7 @@ const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[dayInde
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocument(computed(() => cloudStore.notesCollection ? doc(cloudStore.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
+const notesDocument = useDocumentT(computed(() => cloudStore.notesCollection ? doc(cloudStore.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
 const offlineNote = usePersistentRef(`note.${dayIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 

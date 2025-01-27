@@ -22,7 +22,7 @@ export default defineNuxtModule({
             try {
                 // if the internet is not accessible, do not even try to check the db
                 await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })
-            } catch (e) {
+            } catch {
                 return
             }
             console.log('Checking database schema...')

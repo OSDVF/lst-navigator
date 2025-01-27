@@ -2,7 +2,7 @@
 import { defineStore, skipHydrate } from 'pinia'
 import { Firestore, type CollectionReference, type DocumentData, type FieldValue } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
-import { setDoc } from '~/utils/trace'
+import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
 import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
@@ -21,6 +21,9 @@ import * as Sentry from '@sentry/nuxt'
  * @__NO_SIDE_EFFECTS__
  */
 export function knownCollection(firestore: Firestore, name: KnownCollectionName) {
+    if (process.env.LOG_WRITES == 'true') {
+        console.log('Getting known collection ' + name)
+    }
     return collection(firestore, name)
 }
 
@@ -34,7 +37,8 @@ export const googleAuthProvider = new GoogleAuthProvider()
 
 
 let probe = true
-if (import.meta.server) {
+if (!import.meta.browser) {
+    // For the use case of SSR without internet access
     // probe the firestore firstly because otherwise we get infinite loading
     try {
         await fetch('https://firestore.googleapis.com/', { signal: AbortSignal.timeout(5000) })
@@ -46,6 +50,9 @@ if (import.meta.server) {
 }
 
 export function eventSubCollection(fs: Firestore, event: string, document: EventSubcollection, ...segments: string[]): CollectionReference {
+    if (process.env.LOG_WRITES == 'true') {
+        console.log('Getting event sub-collection ' + event + ' ' + document, segments)
+    }
     // typecheck:
     if (!(fs instanceof Firestore && typeof document === 'string' && typeof event === 'string' && segments.every((s) => typeof s === 'string'))) {
         throw new Error(`Invalid arguments ${fs} ${event}, ${document}, ${segments.join(', ')}`)
@@ -87,7 +94,7 @@ export const useCloudStore = defineStore('cloud', () => {
         auth?.setPersistence(browserLocalPersistence)
     }
 
-    const eventDocuments = useDocument<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
+    const eventDocuments = useDocumentT<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
         maxRefDepth: 5,
         once: !!import.meta.server,
         wait: true,
@@ -109,8 +116,8 @@ export const useCloudStore = defineStore('cloud', () => {
         : eventData.value?.image.data)
     const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
-    const feedbackRepliesRaw = skipHydrate(useCollection(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
-    const feedbackConfig = useSorted(useCollection<FeedbackConfig>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)), (a, b) => parseInt(a.id) - parseInt(b.id))
+    const feedbackRepliesRaw = skipHydrate(useCollectionT(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
+    const feedbackConfig = useSorted(useCollectionT<FeedbackConfig>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)), (a, b) => parseInt(a.id) - parseInt(b.id))
     const feedback = {
         col: fc,
         dirtyTime: feedbackDirtyTime,
@@ -228,7 +235,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
     const uPending = ref(false)
-    const uInfo = useDocument<UserInfo>(ud)
+    const uInfo = useDocumentT<UserInfo>(ud)
 
     const user = {
         auth: skipHydrate(userAuth),
@@ -392,19 +399,19 @@ export const useCloudStore = defineStore('cloud', () => {
         [UserLevel.ScheduleAdmin]: 'Editor programu',
         [UserLevel.Nothing]: 'Nic',
     }))
-    const scheduleCollection = useCollection<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null), {
+    const scheduleCollection = useCollectionT<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null), {
         maxRefDepth: 1,
     })
     const days = skipHydrate(scheduleCollection)
 
-    const suggestionsAndLast = useCollection(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
-    const suggestions = computed<ScheduleItem[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last'))
+    const suggestionsAndLast = useCollectionT<ScheduleItem & {last: number}>(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const suggestions = computed<ScheduleItem[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last') as ScheduleItem[])
     const lastSuggestion = computed(() => {
-        let last = suggestionsAndLast.value.find((s) => s.id === 'last')?.last
+        let last = suggestionsAndLast.value.find((s) => s.id === 'last')?.last ?? -1
         if (isNaN(last)) {
             last = 0
         }
-        return (last ?? -1) as number
+        return last
     })
 
     const notesCollection = currentEventCollection('notes')
@@ -486,26 +493,29 @@ export const useCloudStore = defineStore('cloud', () => {
         }).catch(e => { console.error(e); Sentry.captureException(e) })
     }
     return {
-        selectedEvent,
+        clearOfflineFeedback() {
+            offlineFeedback.value = {}
+        },
         currentEventCollection,
-        eventDoc,
-        eventData,
-        eventImage,
-        networkError: skipHydrate(eventDocuments.error),
-        eventLoading: skipHydrate(eventDocuments.pending),
         days,
-        scheduleLoading: skipHydrate(scheduleCollection.pending),
-        notesCollection: skipHydrate(notesCollection),
+        eventData,
+        eventDoc,
+        eventImage,
+        eventLoading: skipHydrate(eventDocuments.pending),
+        eventsCollection: useCollectionT<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
         feedback: skipHydrate(feedback),
         feedbackConfig: feedbackConfig,
+        networkError: skipHydrate(eventDocuments.error),
+        notesCollection: skipHydrate(notesCollection),
         offlineFeedback: skipHydrate(computed(() => offlineFeedback.value[selectedEvent.value])),
         permissionNames,
+        probe,
         resolvedPermissions,
+        scheduleLoading: skipHydrate(scheduleCollection.pending),
+        selectedEvent,
         suggestions,
         lastSuggestion,
         user,
-        eventsCollection: useCollection<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
-        probe,
     }
 })
 

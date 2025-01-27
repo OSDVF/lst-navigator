@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { setDoc } from '~/utils/trace'
+import { setDoc, useDocument as useDocumentT } from '~/utils/trace'
 import { useCloudStore } from '~/stores/cloud'
 
 const props = defineProps<{
@@ -33,11 +33,12 @@ const props = defineProps<{
 
 const cloudStore = useCloudStore()
 
-const currentDoc = computed(() => props.document ? cloudStore.eventDoc(props.document) : cloudStore.eventDoc())
-const docData = useDocument(currentDoc)
+const currentDoc = computed(() => cloudStore.probe ? props.document ? cloudStore.eventDoc(props.document) : cloudStore.eventDoc() : null)
+const docData = useDocumentT<any>(currentDoc)
 const valueOrValue = computed(() => props.value ?? docData.value?.[props.property])
 
 async function sendValue(event: Event) {
+    if (!currentDoc.value) { return }
     const target = event.target as HTMLInputElement
     await setDoc(currentDoc.value, { [props.property]: target.value }, { merge: true })
 }

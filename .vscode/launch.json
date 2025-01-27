@@ -16,6 +16,19 @@
         },
         {
             "type": "bun",
+            "request": "launch",
+            "name": "Debug Build Porada",
+            "program": "${workspaceFolder}/node_modules/.bin/nuxt",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "generate",
+                "--dotenv",
+                ".env.porada"
+            ],
+            "stopOnEntry": false,
+        },
+        {
+            "type": "bun",
             "internalConsoleOptions": "neverOpen",
             "request": "launch",
             "name": "Debug File",

@@ -35,13 +35,14 @@ function registerHome() {
             /\/api\/.*/, // ignore server side api routes
         ],
     }))
+    console.log('Registered catch-all route')
 }
 if (getCacheKeyForURL('/')) {
     registerHome()
 }
 
 const comChannel = new BroadcastChannel('SWCom')
-self.addEventListener('fetch', async(event) => {
+self.addEventListener('fetch', async (event) => {
     const { request } = event
     const responsePromise = router.handleRequest({
         event,
@@ -49,7 +50,7 @@ self.addEventListener('fetch', async(event) => {
     }) ?? fetch(request)
     event.respondWith(responsePromise)
     const resp = await responsePromise
-    
+
     comChannel.postMessage(resp.status)
 })
 
@@ -66,10 +67,13 @@ self.addEventListener('install', async event => {
     comChannel.postMessage('install')
     await precacheController.install(event)
     registerHome()
+    console.log('Installed')
 })
 self.addEventListener('activate', event => {
     comChannel.postMessage('activate')
     precacheController.activate(event)
+    registerHome()
+    console.log('Activated')
 })
 
 async function onUpdate() {
@@ -120,9 +124,12 @@ isSupported().then((supported) => {
             if (new Date().getTime() - eventTime.getTime() > 1000 * 60 * 10) { // 10 minutes timeout
                 return// discard old messages
             }
-            self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.title ?? 'Notification',
+            self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.notifications_title ?? 'Notification',
                 {
-                    ...swConfig.messaging,
+                    title: swConfig.messaging.notifications_title,
+                    body: swConfig.messaging.notifications_body,
+                    image: swConfig.messaging.notifications_image,
+                    icon: swConfig.messaging.notifications_icon,
                     ...payload.notification,
                 })
 

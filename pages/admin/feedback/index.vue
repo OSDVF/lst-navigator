@@ -132,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { setDoc } from '~/utils/trace'
+import { setDoc, useCollection as useCollectionT } from '~/utils/trace'
 import { knownCollection, useCloudStore } from '~/stores/cloud'
 import { collection, doc } from 'firebase/firestore'
 import { csvExport } from '~/utils/csvExport'
@@ -215,7 +215,7 @@ onChange(async (files) => {
 async function copyFrom(target: HTMLSelectElement) {
     if (!target.value) { return }
 
-    const other = useCollection<FeedbackConfig>(collection(knownCollection(useFirestore(), 'events'), target.value, 'feedbackConfig' as EventSubcollection), {
+    const other = useCollectionT<FeedbackConfig>(collection(knownCollection(useFirestore(), 'events'), target.value, 'feedbackConfig' as EventSubcollection), {
         wait: true,
         once: true,
     })

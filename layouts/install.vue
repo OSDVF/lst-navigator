@@ -7,12 +7,12 @@
         <slot />
         <nav class="installNav">
             <LazyClientOnly>
-                <NuxtLink v-if="partIndex > 0" :to="`/install/${partIndex - 1}`">
+                <NuxtLink v-if="partIndex > 0" :to="`/install/${partIndex - 1}?from=${partIndex}`">
                     <Icon name="material-symbols:arrow-circle-left-outline" size="2rem" /> Předchozí
                 </NuxtLink>
                 <NuxtLink v-if="canGoNext" :to="`/install/${partIndex + 1}`" @click="onNextButtonClick">
                     <Icon name="material-symbols:arrow-circle-right-outline" size="2rem" />
-                    Další
+                    {{ next }}
                 </NuxtLink>
                 <NuxtLink v-else to="/schedule" @click="settings.installStep = partIndex + 1">
                     <Icon name="material-symbols:trending-up" size="2rem" />
@@ -35,6 +35,8 @@ const settings = useSettings()
 const router = useRouter()
 const route = router.currentRoute
 const config = useRuntimeConfig()
+const defaultNext = 'Další'
+const next = ref(defaultNext)
 const pathParts = computed(() => route.value.path.split('/'))
 const lastPart = computed(() => pathParts.value[pathParts.value.length - 1])
 const partIndex = computed(() => parseInt(lastPart.value))
@@ -45,25 +47,40 @@ function onNextButtonClick() {
     onNextButtonClickListeners.value.forEach(listener => listener())
     onNextButtonClickListeners.value = []// clear after changing the page
     settings.installStep = partIndex.value + 1
+    next.value = defaultNext
 }
 
 provide('onNextButtonClick', (listener: () => void) => {
     onNextButtonClickListeners.value.push(listener)
 })
 
+provide('nextText', next)
+
 
 provide('skipToNextIf', (predicate: Ref<boolean>) => {
-    const stopWatching = watch(predicate, (value) => {
-        if (value) {
+    function skip() {
+        const from = parseInt(route.value.query.from as string)
+        if (!isNaN(from)) {
+            router.replace(`/install/${Math.max(partIndex.value - 1, 0)}?from=${partIndex.value}`)
+        } else {
             onNextButtonClick()
             if (canGoNext.value) {
                 router.replace(`/install/${partIndex.value + 1}`)
             } else {
                 router.replace('/schedule')
             }
-            stopWatching()
         }
-    })
+    }
+    if (predicate.value) {
+        skip()
+    } else {
+        const stopWatching = watch(predicate, (value) => {
+            if (value) {
+                skip()
+                stopWatching()
+            }
+        })
+    }
 
 })
 

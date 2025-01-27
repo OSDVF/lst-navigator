@@ -29,6 +29,11 @@
 .large {
   font-size: large
 }
+form.large {
+  input, button {
+    font-size: large;
+  }
+}
 
 .m-auto {
   margin: auto
@@ -68,6 +73,9 @@ $sides: (top, bottom, left, right); // Leave this variable alone
 
 .mr-0\.5 {
   margin-right: .1rem;
+}
+.mb-0\.5e {
+  margin-bottom: .2em;
 }
 
 @media screen and (max-width: 640px) {

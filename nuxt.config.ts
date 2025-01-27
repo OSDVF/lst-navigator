@@ -1,6 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
-import topLevelAwait from 'vite-plugin-top-level-await'
 import { icons } from './icons.json'
 import firebaseConfig from './firebase.json'
 import {
@@ -13,6 +12,14 @@ import {
 
 const isDevMode = process.env.NODE_ENV !== 'production'
 const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
+
+const messagingConfig = {
+    notifications_title: process.env.VITE_APP_SHORT_NAME,
+    notifications_body: process.env.VITE_APP_DEFAULT_NOTIFICATION_BODY,
+    notifications_image: process.env.VITE_APP_DEFAULT_NOTIFICATION_IMAGE,
+    notifications_icon: process.env.VITE_APP_DEFAULT_NOTIFICATION_ICON,
+    notifications_vapidKey: process.env.VAPID_PUBLIC,
+}
 
 const config = defineNuxtConfig({
     app: {
@@ -118,6 +125,11 @@ const config = defineNuxtConfig({
                 ...[...Array(prerenderDays).keys()].map((i) => `/schedule/${i}`),
             ],
         },
+        esbuild: {
+            options: {
+                target: 'esnext',
+            },
+        },
     },
     pwa: {
         devOptions: isDevMode
@@ -156,7 +168,8 @@ const config = defineNuxtConfig({
         client: true,
     },
     sentry: {
-        sourceMapsUploadOptions: process.env.SENTRY_DISABLE == 'true' ? undefined : {
+        sourceMapsUploadOptions: {
+            enabled: process.env.SENTRY_DISABLE !== 'true',
             org: process.env.SENTRY_ORG,
             project: process.env.SENTRY_PROJECT,
             authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -185,6 +198,7 @@ const config = defineNuxtConfig({
     },
     vite: {
         build: {
+            target: 'esnext',
             modulePreload: false,
             minify: 'esbuild',
             rollupOptions: {
@@ -210,14 +224,6 @@ const config = defineNuxtConfig({
                 },
             ],
         },
-        plugins: [
-            topLevelAwait({
-                // The export name of top-level await promise for each chunk module
-                promiseExportName: '__tla',
-                // The function to generate import names of top-level await promise in each chunk module
-                promiseImportName: (i: any) => `__tla_${i}`,
-            }),
-        ],
         // revert chunk name
         $client: {
             build: {
@@ -270,6 +276,8 @@ const config = defineNuxtConfig({
             compileTimeZone,
             commitMessageTime,
             commitHash,
+            welcome: process.env.WELCOME,
+            signatureInfo: process.env.SIGNATURE_INFO,
             ENV: process.env.NODE_ENV ?? 'production',
             SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
             SENTRY_DSN: process.env.VITE_APP_DSN,
@@ -281,13 +289,7 @@ const config = defineNuxtConfig({
             iconifyCollection: process.env.ICONIFY_COLLECTION,
             maxSuggestions: process.env.MAX_SUGGESTIONS,
             logWrites: process.env.LOG_WRITES === 'true',
-            ...(process.env.NOTIFICATIONS === 'true' ? {
-                notifications_title: process.env.VITE_APP_SHORT_NAME,
-                notifications_body: process.env.VITE_APP_DEFAULT_NOTIFICATION_BODY,
-                notifications_image: process.env.VITE_APP_DEFAULT_NOTIFICATION_IMAGE,
-                notifications_icon: process.env.VITE_APP_DEFAULT_NOTIFICATION_ICON,
-                notifications_vapidKey: process.env.VAPID_PUBLIC,
-            } : {}),
+            ...(process.env.NOTIFICATIONS === 'true' ? messagingConfig : {}),
         },
     },
     ssr: true,
@@ -295,7 +297,7 @@ const config = defineNuxtConfig({
 
 fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
     firebase: config.vuefire?.config,
-    messaging: config.runtimeConfig!.public!.messagingConfig,
+    messaging: messagingConfig,
     commitHash,
     sentry: {
         enabled: config.runtimeConfig!.public!.SENTRY_ENABLED,

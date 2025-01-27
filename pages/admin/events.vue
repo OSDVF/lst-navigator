@@ -41,7 +41,8 @@
                 <legend>Obrázek</legend>
                 <div class="p">
                     <button
-                        type='button' :disabled="!storage" :title="storage ? 'Nahrát do Firebase Storage' : 'Cloudové úložiště není dostupné'"
+                        type='button' :disabled="!storage"
+                        :title="storage ? 'Nahrát do Firebase Storage' : 'Cloudové úložiště není dostupné'"
                         @click='openFD({ accept: "image/*", multiple: false })'>
                         <Icon name='mdi:upload' /> Nahrát
                     </button>
@@ -368,6 +369,9 @@ function deleteSelected() {
 
 async function deleteCollection(collectionPath: string, batchSize: number) {
     if (!fs) { return }
+    if (config.public.logWrites) {
+        console.log('Deleting collection ' + collectionPath)
+    }
     const collectionRef = collection(fs, collectionPath)
     const q = query(collectionRef, orderBy('__name__'), limit(batchSize))
 

@@ -17,6 +17,7 @@ logs
 .fleet
 .idea
 .firebase
+firebase.json
 
 # Local env files
 .env

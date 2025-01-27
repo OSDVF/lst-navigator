@@ -53,7 +53,7 @@ declare global {
 
 declare module '#app' {
   interface NuxtApp {
-    $deferredPrompt: () => BeforeInstallPromptEvent | null
+    $deferredPrompt: Ref<BeforeInstallPromptEvent | null>
     $installPromptSupport: () => boolean,
     $onUpdateCallback: (callback: (reg?: ServiceWorkerRegistration) => void) => void,
     $pwa: PwaInjection,

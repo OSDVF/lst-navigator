@@ -16,6 +16,10 @@
 import type { Api } from 'datatables.net'
 import * as Sentry from '@sentry/nuxt'
 
+import 'datatables.net-dt/css/dataTables.dataTables.min.css' //CSS
+import 'datatables.net-select-dt/css/select.dataTables.min.css' //CSS
+import 'datatables.net-responsive-dt/css/responsive.dataTables.min.css' //CSS
+
 const table = ref<{ dt: Api<T> }>()
 const dt = computed(() => table.value?.dt)
 
@@ -65,10 +69,6 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
-@import 'datatables.net-dt';
-@import 'datatables.net-select-dt';
-@import 'datatables.net-responsive-dt';
-
 .dataTable {
     .icon {
         background: black;
