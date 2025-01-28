@@ -41,6 +41,9 @@ jobs:
 
       - name: Inject source maps
         run: node inject-sourcemaps.mjs
+
+      - name: Inject firebase.json
+        run: echo '${{ secrets.FIREBASE_CONFIG }}' > firebase.json
           
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0

@@ -29,6 +29,9 @@ jobs:
 
       - run: mkdir -p .output/public
 
+      - name: Inject firebase.json
+        run: echo '${{ secrets.FIREBASE_CONFIG }}' > firebase.json
+
       - name: Download distribution artifact
         uses: dawidd6/action-download-artifact@v2
         with:

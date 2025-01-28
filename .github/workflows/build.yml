@@ -17,6 +17,9 @@ jobs:
       - name: Inject SSR service account
         run: echo '${{ secrets.SSR_SERVICE_ACCOUNT }}' > service-account.json
 
+      - name: Inject firebase.json
+        run: echo '${{ secrets.FIREBASE_CONFIG }}' > firebase.json
+
       - uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
