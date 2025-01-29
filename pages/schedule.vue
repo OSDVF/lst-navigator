@@ -58,16 +58,12 @@ function findToday(newCloud: typeof cloud) {
 //
 // Automatic redirect when no day is selected
 //
-watch(cloud, (newCloud) => {
-    if (typeof router.currentRoute.value.params.day === 'undefined' && newCloud.scheduleLoading === false) {
-        findToday(newCloud)
-    }
-})
-
 if (import.meta.browser) {
-    if (typeof router.currentRoute.value.params.day === 'undefined' && cloud?.scheduleLoading === false) {
-        findToday(cloud)
-    }
+    watch(cloud, (newCloud) => {
+        if (typeof router.currentRoute.value.params.day === 'undefined' && newCloud.scheduleLoading === false) {
+            findToday(newCloud)
+        }
+    }, { immediate: true })
 }
 
 const currentTransition = ref('slide-left')
@@ -200,7 +196,7 @@ if (settings.gestures) {
                 }
             }
         } else if (!dragging) {
-            if(Math.abs(x) > 5){
+            if (Math.abs(x) > 5) {
                 reset()
             }
             return

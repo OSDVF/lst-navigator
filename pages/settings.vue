@@ -130,7 +130,7 @@
                 </button>
             </span>
         </fieldset>
-        <LoginField />
+        <LazyLoginField />
         <h4>O aplikaci</h4>
         <fieldset>
             <p>Verze</p>

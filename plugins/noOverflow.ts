@@ -18,9 +18,7 @@ export default defineNuxtPlugin({
                             const ch = entry.target.children[i] as HTMLElement
                             if (maxWidth.has(ch)) {
                                 maxWidth.set(ch, el.clientWidth)
-                                if (ch.clientWidth > el.clientWidth) {
-                                    ch.style.maxWidth = el.clientWidth + 'px'
-                                }
+                                ch.style.maxWidth = el.clientWidth + 'px'
                             }
                         }
                     }
@@ -42,6 +40,7 @@ export default defineNuxtPlugin({
                 if (el.parentElement) {
                     observer.unobserve(el.parentElement!)
                     observer.unobserve(el)
+                    maxWidth.delete(el)
                 }
             },
         })

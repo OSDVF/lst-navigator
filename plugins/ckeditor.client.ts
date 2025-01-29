@@ -15,13 +15,10 @@ export default defineNuxtPlugin({
     parallel: true,
     setup(nuxtApp) {
         const settings = useSettings()
-        if (settings.richNoteEditor) {
-            nuxtApp.hook('app:mounted', append)
-        }
         watch(() => settings.richNoteEditor, (value) => {
             if (value) {
                 append(nuxtApp.vueApp)
             }
-        })
+        }, { immediate: true })
     },
 })

@@ -1,8 +1,12 @@
 <template>
-    <article>
-        <h1>Přihlaste se</h1>
-        <p>Pomocí účtu Google</p>
-        <LoginField />
+    <article class="login">
+        <h1>{{ typeof $route.query.register !== 'undefined' ? 'Registrujte se' : user?.uid ? 'Přihlášeno' :
+            'Přihlaste se' }}</h1>
+        <LazyLoginField
+            class="large" :email="!user && typeof $route.query.email !== 'undefined'"
+            :register="!user && typeof $route.query.register !== 'undefined'"
+            :change="!!user && typeof $route.query.change !== 'undefined'"
+            :lost="!user && typeof $route.query.lost !== 'undefined'" />
     </article>
 </template>
 
@@ -17,6 +21,30 @@ function tryRedirect(newUser?: User | null) {
         router.push(redir as string)
     }
 }
-watch(user, tryRedirect)
-onMounted(() => tryRedirect(user.value))
+watch(user, tryRedirect, { immediate: true })
+
 </script>
+
+<style lang="scss">
+.login fieldset {
+    border: 0;
+
+    * {
+        vertical-align: middle;
+    }
+}
+
+.large {
+    input {
+        font-size: 1rem;
+    }
+
+    button {
+        font-size: 1rem;
+    }
+
+    small {
+        margin: .4rem 0;
+    }
+}
+</style>

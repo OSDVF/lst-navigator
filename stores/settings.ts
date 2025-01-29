@@ -139,18 +139,7 @@ export const useSettings = defineStore('settings', () => {
 
     const selectedGroup = usePersistentRef<number>('selectedGroup', 0)
     const userNickname = usePersistentRef<string>('userNickname', '')
-    const cloud = useCloudStore()
-    watch(userNickname, (newNickname) => {
-        if (newNickname) {
-            cloud.feedback.dirtyTime = 0// force refresh from remote
-            cloud.feedback.hydrate(cloud.feedback.online)
-        } else {// clear feedback if user is not logged in
-            cloud.clearOfflineFeedback()
-        }
-    })
-    const userIdentifier = computed(() => {
-        if (userNickname.value) { return userNickname.value } else { return uniqueIdentifier }
-    })
+    const userIdentifier = usePersistentRef('userIdentifier', uniqueIdentifier)
 
     Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())

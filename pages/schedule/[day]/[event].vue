@@ -10,8 +10,8 @@
             <span class="muted" style="float:right">
                 {{ toHumanTime(eventData?.time) }}
                 <NuxtLink
-                    v-if="cloud.resolvedPermissions.editSchedule" :to="`/schedule/${dayIndex}/edit/${eventItemIndex}`"
-                    title="Upravit program">
+                    v-if="cloud.resolvedPermissions.editSchedule"
+                    :to="`/schedule/${dayIndex}/edit/${eventItemIndex}`" title="Upravit program">
                     <Icon name="mdi:pencil" />
                 </NuxtLink>
             </span>
@@ -67,7 +67,7 @@
                             'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        :title="nextEventLink == route.fullPath ? 'Jste již na posledním bodu programu': undefined"
+                        :title="nextEventLink == route.fullPath ? 'Jste již na posledním bodu programu' : undefined"
                         :to="nextEventLink">
                         <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
                             nextEventData?.title ?? nextEventData?.subtitle }}
@@ -99,17 +99,19 @@ const eventData = computed(() => {
     const program = cloud.days ? cloud.days[dayIndex]?.program : []
     if (program) {
         const eventData = program[eventItemIndex]
-        const hexColor = colorToHex(eventData?.color || 'gray')
-        const darkened = darkenColor(hexColor, -0.2)
-        globalBackground.value = darkened === '#ffffff' ? hexColor : darkened
         return eventData
     }
     return undefined
 })
+watch(eventData, (eventData) => {
+    const hexColor = colorToHex(eventData?.color || 'gray')
+    const darkened = darkenColor(hexColor, -0.2)
+    globalBackground.value = darkened === '#ffffff' ? hexColor : darkened
+}, { immediate: true })
 
 const previousEventData = computed(() => cloud.days?.[dayIndex]?.program?.[eventItemIndex - 1])
 const nextEventData = computed(() => cloud.days?.[dayIndex]?.program?.[eventItemIndex + 1])
-const nextEventLink = computed(()=>eventItemIndex < (cloud.days?.[dayIndex]?.program?.length ?? 0) - 1 ? `/schedule/${dayIndex}/${eventItemIndex + 1}` : (dayIndex < (cloud.days?.length ?? 0) - 1 ? `/schedule/${dayIndex + 1}/0` : route.fullPath))
+const nextEventLink = computed(() => eventItemIndex < (cloud.days?.[dayIndex]?.program?.length ?? 0) - 1 ? `/schedule/${dayIndex}/${eventItemIndex + 1}` : (dayIndex < (cloud.days?.length ?? 0) - 1 ? `/schedule/${dayIndex + 1}/0` : route.fullPath))
 const noteError = ref()
 const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
@@ -118,7 +120,7 @@ const currentFeedbackValue = computed(() => cloud.offlineFeedback?.[dayIndex]?.[
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocumentT(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
+const notesDocument = useDocumentT<any>(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
 const offlineNote = usePersistentRef(`note.${dayIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 

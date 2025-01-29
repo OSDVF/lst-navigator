@@ -3,16 +3,16 @@ import { defineStore, skipHydrate } from 'pinia'
 import { Firestore, type CollectionReference, type DocumentData, type FieldValue } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
-import { useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
+import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver } from 'firebase/auth'
+import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, sendEmailVerification } from 'firebase/auth'
 import Lodash from 'lodash'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, UpdatePayload, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
 
@@ -33,8 +33,7 @@ export const defaultQuestions = [
     'Srozumitelnost',
 ]
 
-export const googleAuthProvider = new GoogleAuthProvider()
-
+const googleAuthProvider = new GoogleAuthProvider()
 
 let probe = true
 if (!import.meta.browser) {
@@ -90,6 +89,8 @@ export const useCloudStore = defineStore('cloud', () => {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
     }
     const auth = probe && (config.public.ssrAuthEnabled || import.meta.client) ? useFirebaseAuth() : null
+    auth?.useDeviceLanguage()
+    
     if (import.meta.client) {
         auth?.setPersistence(browserLocalPersistence)
     }
@@ -114,6 +115,10 @@ export const useCloudStore = defineStore('cloud', () => {
     const eventImage = computed(() => eventData.value?.image.type == 'cloud' && firebaseStorage
         ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.image.data)).url.value
         : eventData.value?.image.data)
+
+    //
+    // Feedback
+    //
     const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
     const feedbackRepliesRaw = skipHydrate(useCollectionT(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
@@ -219,6 +224,19 @@ export const useCloudStore = defineStore('cloud', () => {
             return result
         },
     }
+
+    watch(() => settings.userIdentifier, (newId) => {
+        if (newId) {
+            feedback.dirtyTime.value = 0// force refresh from remote
+            feedback.hydrate(feedback.online.value)
+        } else {// clear feedback if user is not logged in
+            offlineFeedback.value = {}
+        }
+    })
+
+    //
+    // User auth
+    //
     const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : null
     if (userAuth) {
         watch(userAuth, (newUser) => {
@@ -236,6 +254,19 @@ export const useCloudStore = defineStore('cloud', () => {
     const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
     const uPending = ref(false)
     const uInfo = useDocumentT<UserInfo>(ud)
+
+    function displayUserError(reason: any) {
+        let reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
+        if (reasonPretty.length < 3) {
+            reasonPretty = reason
+        }
+        Sentry.captureEvent(reason, {
+            data: reasonPretty,
+        })
+
+        console.error('Failed signin', reasonPretty)
+        user.error.value = reason
+    }
 
     const user = {
         auth: skipHydrate(userAuth),
@@ -261,38 +292,73 @@ export const useCloudStore = defineStore('cloud', () => {
         }) : uInfo,
         error: ref(),
         pendingPopup: ref(false),
-        pendingAction: computed(() => uPending.value && uInfo.value),
+        pendingAction: computed(() => uPending.value),
+        async changePassword(newPassword: string) {
+            uPending.value = true
+            try {
+                await updatePassword(auth!.currentUser!, newPassword)
+                user.error.value = null
+                uPending.value = false
+            } catch (reason: any) {
+                displayUserError(reason)
+                uPending.value = false
+                throw reason
+            }
+        },
+        async sendPasswordResetEmail(email: string) {
+            uPending.value = true
+            try {
+                await sendPasswordResetEmail(auth!, email)
+                user.error.value = null
+                uPending.value = false
+            } catch (reason: any) {
+                uPending.value = false
+                displayUserError(reason)
+                throw reason
+            }
+        },
         async signOut() {
             uPending.value = true
             await signOut(auth!)
             wasAuthenticated.value = false
             uPending.value = false
         },
-        async signIn(useRedirect = false, secondAttempt = false): Promise<boolean> {
+        async register(email: string, password: string) {
+            uPending.value = true
+            try {
+                await createUserWithEmailAndPassword(auth!, email, password)
+                sendEmailVerification(auth!.currentUser!)
+                user.error.value = null
+                uPending.value = false
+            } catch (reason: any) {
+                displayUserError(reason)
+                uPending.value = false
+                throw reason
+            }
+        },
+        async signIn(useRedirect = false, secondAttempt = false, email?: string, password?: string): Promise<boolean> {
             if (!useRedirect) { user.pendingPopup.value = true }
             uPending.value = true
             try {
-                // With emulators the popup version would throw cross-origin error
-                await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver)
+                user.error.value = null
+                if (email && password) {
+                    await signInWithEmailAndPassword(auth!, email, password)
+                } else {
+                    // With emulators the popup version would throw cross-origin error
+                    await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver)
+                }
                 user.pendingPopup.value = false
                 uPending.value = false
                 return true
             } catch (reason: any) {
-                let reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
-                if (reasonPretty.length < 3) {
-                    reasonPretty = reason
-                }
-                Sentry.captureEvent(reason, {
-                    data: reasonPretty,
-                })
-
-                console.error('Failed signin', reasonPretty)
-                user.error.value = reason
+                displayUserError(reason)
                 let nextResult = false
-                if (secondAttempt === true) {
-                    alert('Přihlášení se nepodařilo provést')
-                } else if (useRedirect !== true && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
-                    nextResult = await user.signIn(true, true)
+                if (!email || !password) {
+                    if (secondAttempt === true) {
+                        alert('Přihlášení se nepodařilo provést')
+                    } else if (useRedirect !== true && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
+                        nextResult = await user.signIn(true, true, email, password)
+                    }
                 }
                 uPending.value = false
                 user.pendingPopup.value = false
@@ -307,25 +373,31 @@ export const useCloudStore = defineStore('cloud', () => {
             if (user.info.value) {
                 const signatureId = user.info.value.signatureId?.[selectedEvent.value]
                 if (signatureId) {
-                    if (confirm('Tento účet již byl použit pro zpětnou vazbu. Chcete do tohoto zařízení načíst vaši předchozí zpětnou vazbu? Bude přepsán aktuálně offline uložený stav.')) {
+                    if (confirm('Chcete do tohoto zařízení načíst data z předchozího používání této aplikace? Bude přepsán dosavadně offline uložený stav.')) {
                         settings.setUserIdentifier(signatureId)
-                        settings.userNickname = user.info.value!.signature[selectedEvent.value]
+                        settings.userNickname = user.info.value!.signature[selectedEvent.value] || settings.userNickname
                     }
                 }
             }
             localStorage.removeItem('userIdentifierQuestion')
 
+            if(newUser.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
+                updateCurrentUserProfile({
+                    displayName: settings.userNickname,
+                })
+            }
+
             const now = new Date()
-            const payload: Partial<UpdatePayload<UserInfo>> = {
+            const payload: Partial<UserInfo> = {
                 name: newUser.displayName || user.info.value?.name,
                 signature: {
                     [selectedEvent.value]: settings.userNickname,
                 },
                 signatureId: {
-                    [selectedEvent.value]: arrayUnion(localStorage.getItem('uniqueIdentifier')),
+                    [selectedEvent.value]: settings.userIdentifier,
                 },
                 subscriptions: {
-                    [selectedEvent.value]: arrayUnion(messagingToken.value),
+                    [selectedEvent.value]: messagingToken.value,
                 },
                 email: newUser.email || user.info.value?.email,
                 photoURL: newUser.photoURL || user.info.value?.photoURL,
@@ -354,11 +426,17 @@ export const useCloudStore = defineStore('cloud', () => {
                     [selectedEvent.value]: newSettings.userNickname,
                 },
                 signatureId: {
-                    [selectedEvent.value]: localStorage.getItem('uniqueIdentifier'),
+                    [selectedEvent.value]: newSettings.userIdentifier,
                 },
             }, {
                 merge: true,
             })
+
+            if(userAuth.value.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
+                updateCurrentUserProfile({
+                    displayName: newSettings.userNickname,
+                })
+            }
         }
     })
 
@@ -404,7 +482,7 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const days = skipHydrate(scheduleCollection)
 
-    const suggestionsAndLast = useCollectionT<ScheduleItem & {last: number}>(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const suggestionsAndLast = useCollectionT<ScheduleItem & { last: number }>(firestore ? knownCollection(firestore, 'suggestions') : null, { maxRefDepth: 0, once: !!import.meta.server })
     const suggestions = computed<ScheduleItem[]>(() => suggestionsAndLast.value.filter((s) => s.id !== 'last') as ScheduleItem[])
     const lastSuggestion = computed(() => {
         let last = suggestionsAndLast.value.find((s) => s.id === 'last')?.last ?? -1
@@ -459,8 +537,7 @@ export const useCloudStore = defineStore('cloud', () => {
         if (hydrationDebounce === null) {
             hydrationDebounce = setTimeout(hydrateOfflineFeedback, 800)
         }
-    })
-    hydrateOfflineFeedback(feedback.online.value)
+    }, { immediate: true })
 
     if (import.meta.browser) {
         // Hydrate user
@@ -493,9 +570,6 @@ export const useCloudStore = defineStore('cloud', () => {
         }).catch(e => { console.error(e); Sentry.captureException(e) })
     }
     return {
-        clearOfflineFeedback() {
-            offlineFeedback.value = {}
-        },
         currentEventCollection,
         days,
         eventData,

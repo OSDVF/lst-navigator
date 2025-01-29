@@ -5,6 +5,10 @@
             {{ $config.public.signatureInfo }}
         </p>
         <NameChangeDialog class="large" />
+        <p>
+            Pokud chcete vaše data (poznámky, zpětná vazba) zálohovat online, přihlaste se nebo si vytvořte účet.
+        </p>
+        <LazyLoginField />
     </article>
 </template>
 
