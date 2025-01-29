@@ -7,8 +7,11 @@
         <ErrorSolver>
             <main
                 :style="{
-                    'background': globalBackground ? `linear-gradient(0deg, transparent, ${globalBackground})` : undefined,
-                    'overflow-x': trainsitioning ? 'hidden' : undefined,
+                    'background': `linear-gradient(0deg, transparent, var(--background, ${globalBackground ?? 'transparent'}))`,
+                    '--background': globalBackground || 'transparent',
+                    'transition': '--background .3s',
+                    'min-height': '75vh',
+                    'overflow-x': transitioning ? 'hidden' : undefined,
                 }">
                 <slot />
             </main>
@@ -37,7 +40,11 @@
                 </NuxtLink>
                 <SettingsLink />
             </nav>
-            <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }" :title="cloudStore.networkError?.message">
+            <div
+                role="dialog" :class="{
+                    networkError: true, visible: !!cloudStore.networkError,
+                //TODO offline alert?
+                }" :title="cloudStore.networkError?.message">
                 <Icon name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
@@ -95,8 +102,16 @@ const title = computed(() => {
     return config.public.title
 })
 
-const trainsitioning = ref(false)
-provide('trainsitioning', trainsitioning)
+const transitioning = ref(false)
+provide('transitioning', transitioning)
 const globalBackground = ref('')
 provide('globalBackground', globalBackground)
 </script>
+
+<style>
+@property --background {
+  syntax: '<color>';
+  initial-value: transparent;
+  inherits: false;
+}
+</style>

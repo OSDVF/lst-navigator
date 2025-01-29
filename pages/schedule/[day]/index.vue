@@ -1,7 +1,8 @@
 <template>
-    <LazyProgramSchedule :day="p.day" />
+    <LazyProgramSchedule :day="!isNaN(parseInt(dayIndex)) ? parseInt(dayIndex) : 0" />
 </template>
 
 <script setup lang="ts">
-const p = defineProps<{ day: number }>()
+const router = useRouter()
+const dayIndex = computed(() => router.currentRoute.value.params.day as string)
 </script>

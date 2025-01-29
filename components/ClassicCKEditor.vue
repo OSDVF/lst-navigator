@@ -1,32 +1,60 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
-    <div ref="editor" style="max-width: 99vw;" />
+    <LazyClientOnly>
+        <div
+            ref="area" v-no-overflow contenteditable class="rich-editor" @focus="emit('focus')"
+            @mousedown="emit('focus')"
+            @blur="e => { emit('update:modelValue', stripBadElements((e.target as HTMLDivElement).innerHTML)); emit('blur') }"
+            v-html="stripBadElements(modelValue)" />
+    </LazyClientOnly>
 </template>
 <script setup lang="ts">
+
 const props = defineProps<{
     modelValue: string | null | undefined,
+    plain: boolean | undefined | null,
 }>()
 const emit = defineEmits<{
-    'update:modelValue': [value: string]
+    'update:modelValue': [value: string],
+    focus: [],
+    blur: [],
 }>()
 
-const editor = useTemplateRef('editor')
-const ClassicEditor = ref()
+const area = useTemplateRef('area')
 const allowedAttributes = [
     'href', 'name', 'target', 'src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'type', 'data-type',
 ]
+let editor: any | null = null
 declare const CKEDITOR: any
 
+onBeforeUnmount(() => {
+    editor?.destroy?.()
+    emit('blur')
+})
+
 onMounted(async () => {
-    if(typeof CKEDITOR === 'undefined') {
+    if (props.plain) {
+        return
+    }
+    if (typeof CKEDITOR === 'undefined') {
         await new Promise((resolve) => {
-            const script = document.getElementById('ckeditor5-script') 
-            if(script) {
+            const script = document.getElementById('ckeditor5-script')
+            if (script) {
                 script.addEventListener('load', resolve)
             }
         })
     }
-    ClassicEditor.value = CKEDITOR.ClassicEditor
-    ClassicEditor.value.create(editor.value, {
+    if (!area.value) {
+        await new Promise<void>((resolve) => {
+            const stop = watch(() => area.value, (value) => {
+                if (value) {
+                    resolve()
+                    stop()
+                }
+            })
+        })
+    }
+    editor = await CKEDITOR.ClassicEditor.create(area.value, {
         licenseKey: 'GPL',
         toolbar: {
             items: [
@@ -210,14 +238,23 @@ onMounted(async () => {
         table: {
             contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties'],
         },
-    }).then((editor: any) => {
-        // set initial data
-        editor.setData(props.modelValue || '')
-
-        editor.model.document.on('change:data', () => {
-            emit('update:modelValue', editor.getData())
-        })
     })
+
+    // set initial data
+    editor.setData(props.modelValue || '')
+
+    editor.model.document.on('change:data', () => {
+        emit('update:modelValue', editor.getData())
+    })
+
+    editor.ui.focusTracker.on('change:isFocused', (_evt: any, _name: string, isFocused: boolean) => {
+        if (isFocused) {
+            emit('focus')
+        } else {
+            emit('blur')
+        }
+    })
+
 })
 
 </script>
@@ -235,5 +272,17 @@ onMounted(async () => {
 .ck-editor {
     max-width: 97vw;
     width: 100%;
+}
+
+.rich-editor {
+    width: 100%;
+    background-color: white;
+    border: 1px inset black;
+    border-radius: 2px;
+    padding: 4px;
+    margin-block: 1px;
+    font-size: 1rem;
+    overflow-x: auto;
+    resize: both
 }
 </style>

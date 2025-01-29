@@ -39,13 +39,6 @@ const config = defineNuxtConfig({
                 { name: 'msapplication-TileColor', content: '#da532c' },
                 { name: 'theme-color', content: '#ffffff' },
             ],
-            script: [
-                {
-                    id: 'ckeditor5-script',
-                    async: true,
-                    src: 'https://unpkg.com/ckeditor5@44.1.0/dist/browser/ckeditor5.umd.js',
-                },
-            ],
         },
     },
     build: {

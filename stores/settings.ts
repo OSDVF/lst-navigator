@@ -160,6 +160,7 @@ export const useSettings = defineStore('settings', () => {
     return {
         animations,
         expandableItems: usePersistentRef('expandableItems', false),
+        gestures: usePersistentRef('gestures', true),
         installStep: usePersistentRef<number>('installStep', 0),
         selectedAudioName: skipHydrate(selectedAudioName),
         selectedAudioUrl,
@@ -172,6 +173,7 @@ export const useSettings = defineStore('settings', () => {
         isPlaying,
         audio: ref(audioElem!),
         selectedGroup,
+        richNoteEditor: usePersistentRef('richNoteEditor', false),
         userNickname,
         userIdentifier,
         doNotifications: skipHydrate(useIDBKeyval('doNotifications', true)),

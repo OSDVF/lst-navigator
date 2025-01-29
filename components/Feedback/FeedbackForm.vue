@@ -6,7 +6,9 @@
                     Účastnil*a jsem se
                 </td>
                 <td>
-                    <select v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
+                    <select
+                        v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
+                        @pointerleave="permitSwipe = true">
                         <option v-for="parallelEvent in selectOptions" :key="parallelEvent" :value="parallelEvent">
                             {{ parallelEvent }}
                         </option>
@@ -14,9 +16,8 @@
                 </td>
                 <td>
                     <button
-                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="controls.syncSelect.value = undefined"
-                    >
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false"
+                        @pointerleave="permitSwipe = true" @click="controls.syncSelect.value = undefined">
                         <Icon name="mdi:trash" />
                     </button>
                 </td>
@@ -24,7 +25,9 @@
             <tr v-if="type === 'select'">
                 <td>Vyberte odpověd</td>
                 <td>
-                    <select v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
+                    <select
+                        v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
+                        @pointerleave="permitSwipe = true">
                         <option v-for="selectOption in selectOptions" :key="selectOption" :value="selectOption">
                             {{ selectOption }}
                         </option>
@@ -32,9 +35,8 @@
                 </td>
                 <td>
                     <button
-                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="controls.syncSelect.value = undefined"
-                    >
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false"
+                        @pointerleave="permitSwipe = true" @click="controls.syncSelect.value = undefined">
                         <Icon name="mdi:trash" />
                     </button>
                 </td>
@@ -43,17 +45,15 @@
                 <td>Celkový dojem</td>
                 <td @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                     <NuxtRating
-                        v-if="updatedRating.basic/* a hack to re-render on props update */" inactive-color="#aaa"
-                        :read-only="false" :rating-value="normalizedData.basic ?? 0"
+                        v-if="updatedRating.basic/* a hack to re-render on props update */"
+                        inactive-color="#aaa" :read-only="false" :rating-value="normalizedData.basic ?? 0"
                         :class="{ 'null': normalizedData.basic === null || typeof normalizedData.basic === 'undefined' }"
-                        @rating-selected="controls.syncBasic"
-                    />
+                        @rating-selected="controls.syncBasic" />
                 </td>
                 <td>
                     <button
-                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="controls.syncBasic(undefined)"
-                    >
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false"
+                        @pointerleave="permitSwipe = true" @click="controls.syncBasic(undefined)">
                         <Icon name="mdi:trash" />
                     </button>
                 </td>
@@ -66,14 +66,12 @@
                             v-if="updatedRating.complicated" inactive-color="#aaa" :read-only="false"
                             :class="{ 'null': normalizedData.complicated?.[index] === null || typeof normalizedData.complicated?.[index] === 'undefined' }"
                             :rating-value="normalizedData.complicated?.[index] ?? 0"
-                            @rating-selected="(value: number) => controls.syncComplicated(index, value)"
-                        />
+                            @rating-selected="(value: number) => controls.syncComplicated(index, value)" />
                     </td>
                     <td>
                         <button
                             title="Odstranit odpověd" @pointerenter="permitSwipe = false"
-                            @pointerleave="permitSwipe = true" @click="controls.syncComplicated(index, undefined)"
-                        >
+                            @pointerleave="permitSwipe = true" @click="controls.syncComplicated(index, undefined)">
                             <Icon name="mdi:trash" />
                         </button>
                     </td>
@@ -82,15 +80,14 @@
             <tr v-if="type !== 'select'">
                 <td colspan="2">
                     <textarea
-                        v-model.lazy="controls.syncDetail.value" v-paste-model :placeholder="props.detailQuestion ?? 'Tipy a připomínky'"
-                        @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                    />
+                        v-model.lazy="controls.syncDetail.value" v-no-overflow v-paste-model
+                        :placeholder="props.detailQuestion ?? 'Tipy a připomínky'" @pointerenter="permitSwipe = false"
+                        @pointerleave="permitSwipe = true" />
                 </td>
                 <td>
                     <button
-                        title="Odstranit odpověd" @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true"
-                        @click="controls.syncDetail.value = undefined"
-                    >
+                        title="Odstranit odpověd" @pointerenter="permitSwipe = false"
+                        @pointerleave="permitSwipe = true" @click="controls.syncDetail.value = undefined">
                         <Icon name="mdi:trash" />
                     </button>
                 </td>

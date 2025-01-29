@@ -202,3 +202,7 @@ textarea.autosize {
         display: none;
     }
 }
+
+textarea, .rich-editor {
+    max-width: 99vw;
+}

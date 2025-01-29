@@ -1,6 +1,6 @@
 <template>
     <details @click="click" @toggle="toggle">
-        <summary class="flex" :title="entry.feedbackType ? 'Feedback dostupný' : empty ? 'Žádné detaily' : undefined">
+        <summary class="flex">
             <span class="align-top mr-1">
                 {{ toHumanTime(entry.time) }}
             </span>
@@ -117,12 +117,14 @@ const feedback = computed(() => {
     return undefined
 })
 
+const inMotion = inject<Ref<boolean>>('inMotion')
+
 function click(e: Event) {
-    if (empty.value && !p.entry.feedbackType) {
+    if (!settings.expandableItems) {
         e.preventDefault()
-    } else if (!settings.expandableItems) {
-        e.preventDefault()
-        router.push(`/schedule/${p.day}/${p.index}`)
+        if(!(inMotion?.value ?? false)) {
+            router.push(`/schedule/${p.day}/${p.index}`)
+        }
     }
 }
 

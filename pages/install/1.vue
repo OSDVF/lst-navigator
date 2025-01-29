@@ -4,25 +4,33 @@
             <Icon name="carbon:package" />&ensp;Instalace
         </h1>
         <LazyClientOnly>
-            <p v-if="$deferredPrompt?.value">
-                Jsem hybridní webová aplikace, kterou nainstalujete kliknutím na tlačítko <code>Instalovat</code>
-            </p>
-            <p v-else-if="$installPromptSupport()">
-                Jsem hybridní webová aplikace, kterou nainstalujete kliknutím na vyskakovací spodní lištu/okno.
-            </p>
-            <p v-else>
-                Jsem hybridní webová aplikace, kterou nainstalujete podle toho, jak se to zrovna ve vašem prohlížeči
-                dělá.<br>
-                Návody: <a
-                    href="https://web.dev/learn/pwa/installation/#ios-and-ipados-installation"
-                    target="_blank" class="dotted-underline">iOS</a>,
-                <a href="https://web.dev/learn/pwa/installation/#android-installation" target="_blank" class="dotted-underline">Android</a>
-                <br><br>
-                Nebo někoho zavolejte a on vám pomůže.
-            </p>
             <p v-if="$pwa?.registrationError">
-                <Icon name="mdi:alert" /> Nepodařilo se zaregistrovat aplikaci do systému
+                <Icon name="mdi:alert" /> Chyba při registraci aplikace do systému
+                <br>
+                <br>
+                Aplikace bude fungovat pouze online.
             </p>
+            <template v-else>
+                <p v-if="$deferredPrompt?.value">
+                    Jsem hybridní webová aplikace, kterou nainstalujete kliknutím na tlačítko <code>Instalovat</code>
+                </p>
+                <p v-else-if="$installPromptSupport()">
+                    Jsem hybridní webová aplikace, kterou nainstalujete kliknutím na vyskakovací spodní lištu/okno.
+                </p>
+                <p v-else>
+                    Jsem hybridní webová aplikace, kterou nainstalujete podle toho, jak se to zrovna ve vašem prohlížeči
+                    dělá.<br>
+                    Návody: <a
+                        href="https://web.dev/learn/pwa/installation/#ios-and-ipados-installation"
+                        target="_blank" class="dotted-underline">iOS</a>,
+                    <a
+                        href="https://web.dev/learn/pwa/installation/#android-installation" target="_blank"
+                        class="dotted-underline">Android</a>
+                    <br><br>
+                    Případné chyby hlaste na <LazyClientOnly><a :href="`mailto:${$config.public.supportEmail}`">{{
+                        $config.public.supportEmail }}</a></LazyClientOnly>
+                </p>
+            </template>
             <p v-if="$pwa?.getSWRegistration()">
                 <Icon name="mdi:check" /> Aplikace zaregistrována
             </p>

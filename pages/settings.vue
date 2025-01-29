@@ -26,15 +26,39 @@
             </span>
         </fieldset>
         <fieldset>
+            <label for="gestures">
+                <Icon name="mdi:gesture-tap" /> Povolit gesta
+                <br>
+                <small class="ml-3">
+                    Přesuny prstem pro navigaci
+                </small>
+            </label>
+            <span>
+                <input id="gestures" v-model="settings.gestures" type="checkbox">
+            </span>
+        </fieldset>
+        <fieldset>
             <label for="expandable">
                 <Icon name="mdi:file-tree" /> Rozbalovací položky harmonogramu
                 <br>
-                <small class="ml-3">
+                <small class="ml-3 mt-1 inline-block">
                     Zobrazí detailní info a váš feedback u každé položky
                 </small>
             </label>
             <span>
                 <input id="expandable" v-model="settings.expandableItems" type="checkbox">
+            </span>
+        </fieldset>
+        <fieldset>
+            <label for="richNoteEditor">
+                <Icon name="mdi:format-text" /> Rozšířený editor poznámek
+                <br>
+                <small class="ml-3 mt-1 inline-block">
+                    Formátovat text, vkládat obrázky a odkazy
+                </small>
+            </label>
+            <span>
+                <input id="richNoteEditor" v-model="settings.richNoteEditor" type="checkbox">
             </span>
         </fieldset>
         <fieldset v-if="config.public.notifications_title">

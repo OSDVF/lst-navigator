@@ -2,56 +2,39 @@
     <div style="padding: 4rem 0 3rem 0;">
         <nav role="navigation" class="days">
             <NuxtLink
-                v-for="(day, index) in cloudStore.days" :key="`day${index}`" :style="{
+                v-for="(day, index) in cloud.days" :key="`day${index}`" :style="{
                     'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
                     'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
-                }" :to="`/schedule/${index}`"
-                @click="currentTransition = index > parseInt(dayIndex) ? 'slide-left' : 'slide-right'">
+                }" :to="`/schedule/${index}`">
                 {{ day?.name ?? index }}
             </NuxtLink>
         </nav>
-        <ProgressBar :class="{ daysLoading: true, visible: cloudStore.scheduleLoading }" />
+        <ProgressBar :class="{ daysLoading: true, visible: cloud.scheduleLoading }" />
         <div
-            v-drag="dragHandler" :style="{
-                transition: transitioning || moving ? 'none' : 'transform .2s ease',
-                transform: `translateX(${translateX}px)`
+            ref="drag" :style="{
+                transition: gestureTransPending || moving ? 'none' : 'transform .2s ease',
+                transform: `translateX(${translateX}px)`,
+                position: 'relative',
+                'min-height': '75vh',
             }">
-            <div>
+            <div style="width:100vw">
                 <NuxtPage
-                    :day="!isNaN(parseInt(dayIndex)) ? parseInt(dayIndex) : 0"
-                    :schedule-item="scheduleItem && !isNaN(parseInt(scheduleItem)) ? parseInt(scheduleItem) : undefined"
-                    :transition="settings.animations ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTrainsitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTrainsitionBeforeLeave } : undefined"
-                />
+                    :transition="!gestureTransPending && settings.animations ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTransitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTransitionBeforeLeave } : undefined" />
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import type { Vector2 } from '@vueuse/gesture'
-import type { ScheduleDay } from '@/types/cloud'
+import { useDrag, type Vector2 } from '@vueuse/gesture'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '~/stores/settings'
 
-const cloudStore = useCloudStore()
+const cloud = useCloudStore()
 const router = useRouter()
 const settings = useSettings()
 const lastDay = usePersistentRef('lastDay', '0')// workaround for nuxt not remembering nested page on reload
 const dayIndex = computed(() => router.currentRoute.value.params.day as string ?? lastDay.value)
-const scheduleItem = computed(() => router.currentRoute.value.params.event as string | undefined)
-const now = new Date()
-function isToday(scheduleDay: ScheduleDay) {
-    const [year, month, day] = scheduleDay?.date?.split('-') ?? [0, 0, 0]
-    return (now.getFullYear() === parseInt(year) && now.getMonth() + 1 === parseInt(month) && now.getDate() === parseInt(day))
-}
-//
-// Automatic redirect when no day is selected
-//
-watch(cloudStore, (newCloud) => {
-    if (typeof router.currentRoute.value.params.day === 'undefined' && newCloud.scheduleLoading === false) {
-        findToday(newCloud)
-    }
-})
 
 watch(dayIndex, (value) => {
     if (typeof value !== 'undefined') {
@@ -59,23 +42,7 @@ watch(dayIndex, (value) => {
     }
 })
 
-if (import.meta.browser) {
-    if (typeof router.currentRoute.value.params.day === 'undefined' && cloudStore?.scheduleLoading === false) {
-        findToday(cloudStore)
-    }
-}
-
-const eventIndex = computed(() => parseInt(router.currentRoute.value.params.event as string) || 0)
-
-const currentTransition = ref('slide-left')
-const movingOrTrainsitioning = inject('trainsitioning', ref(false))
-const permitSwipe = ref(true)
-provide('permitSwipe', permitSwipe)
-const transitioning = ref(false)
-const moving = ref(false)
-const translateX = ref(0)
-
-function findToday(newCloud: typeof cloudStore) {
+function findToday(newCloud: typeof cloud) {
     let index: number | string = dayIndex.value ?? 0
     if (newCloud.days?.length) {
         for (const i in newCloud.days) {
@@ -88,71 +55,187 @@ function findToday(newCloud: typeof cloudStore) {
     }
     router.replace(`/schedule/${index}`)
 }
+//
+// Automatic redirect when no day is selected
+//
+watch(cloud, (newCloud) => {
+    if (typeof router.currentRoute.value.params.day === 'undefined' && newCloud.scheduleLoading === false) {
+        findToday(newCloud)
+    }
+})
 
+if (import.meta.browser) {
+    if (typeof router.currentRoute.value.params.day === 'undefined' && cloud?.scheduleLoading === false) {
+        findToday(cloud)
+    }
+}
 
-function onTrainsitionAfterLeave() {
-    transitioning.value = false
+const currentTransition = ref('slide-left')
+onBeforeRouteUpdate((to, from) => {// guard slide direction and go to today when no day is selected
+    const toDay = parseInt(to.params.day as string)
+    const fromDay = parseInt(from.params.day as string)
+    if (isNaN(toDay)) {
+        findToday(cloud)
+        return
+    }
+    else if (!isNaN(fromDay)) {
+        if (toDay < fromDay) {
+            currentTransition.value = 'slide-right'
+            return
+        }
+        const toEvent = parseInt(to.params.event as string)
+        const fromEvent = parseInt(from.params.event as string)
+        if (isNaN(toEvent)) {
+            drag.value!.addEventListener('transitionend', transEnd)
+        }
+        else {
+            drag.value!.removeEventListener('transitionend', transEnd)
+            returning.value = false
+            if (!isNaN(fromEvent) && toEvent < fromEvent) {
+                currentTransition.value = 'slide-right'
+                return
+            }
+        }
+    }
+
+    returning.value = false
+    currentTransition.value = 'slide-left'
+})
+const movingOrTransitioning = inject('transitioning', ref(false))
+const permitSwipe = ref(true)
+provide('permitSwipe', permitSwipe)
+const gestureTransPending = ref(false)
+const moving = ref(false)
+const translateX = ref(0)
+
+function onTransitionAfterLeave() {
+    gestureTransPending.value = false
     translateX.value = 0
 }
 
 function onTransitionAfterEnter() {
-    movingOrTrainsitioning.value = false
+    movingOrTransitioning.value = false
 }
 
-function onTrainsitionBeforeLeave() {
-    movingOrTrainsitioning.value = true
+function onTransitionBeforeLeave() {
+    movingOrTransitioning.value = true
 }
-
-let lastVerticalScroll = new Date().getTime()
 //
 // Swipe Navigation
 //
-const dragHandler = ({ movement: [x, y], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
-    if (transitioning.value || !permitSwipe.value || !settings.animations) {
-        return
+const drag = useTemplateRef('drag')
+const returning = ref(false)
+function transEnd(e: TransitionEvent) {
+    if ((drag.value!.contains(e.target as HTMLElement) || e.target == drag.value) && e.propertyName === 'transform') {
+        setTimeout(() => returning.value = false, 100)
     }
-    const intDay = parseInt(dayIndex.value)
-    if (Math.abs(y) > 50 && (Math.abs(y) > 5 && Math.abs(y) > Math.abs(x))) {
-        lastVerticalScroll = new Date().getTime()
-    }
-    const wasNearScrol = (new Date().getTime() - lastVerticalScroll) < 1000 * 0.500
-    if (swipe[0] !== 0 && !wasNearScrol) {
-        currentTransition.value = swipe[0] > 0 ? 'slide-right' : 'slide-left'
-        transitioning.value = true
+}
+onMounted(() => {
+    drag.value?.addEventListener('transitionend', transEnd)
+})
+provide<ComputedRef<boolean>>('inMotion', computed(() => moving.value || returning.value))
 
-        if (typeof router.currentRoute.value.params.event === 'undefined') { // on event item detail page
-            // move to the next event item
-            if (x > 0 && eventIndex.value === 0) {
-                router.push(`/schedule/${intDay - 1}/${(cloudStore.days![intDay - 1].program.length - 1 || 0)}`)// last event on the previous schedule part
-            } else if (x < 0 && eventIndex.value === cloudStore.days![intDay].program.length - 1) {
-                router.push(`/schedule/${intDay + 1}/0`)// first event item on next schedule part (e.g. day)
-            } else {
-                router.push(`/schedule/${intDay}/${eventIndex.value - swipe[0]}`)
-            }
-        } else {
-            // move to the next schedule part
-            router.push(`/schedule/${intDay - swipe[0]}`)
-        }
-        return
-    } else if (!dragging || wasNearScrol) {
+if (settings.gestures) {
+    function reset(noClick = true) {
         moving.value = false
         translateX.value = 0
-        return
+        controller.reset()
+        if (noClick) {
+            returning.value = true
+            setTimeout(() => {
+                returning.value = false
+            }, 1000)
+        }
     }
-    const lastPartIndex = cloudStore.days!.length - 1
-    if (isNaN(eventIndex.value)) {
-        if ((x > 0 && intDay === 0) || (x < 0 && intDay === lastPartIndex)) {
+    async function go(dir: number, url: string) {
+        translateX.value = dir * window.innerWidth
+        const p = router.push(url)// first event item on next schedule part (e.g. day)
+        translateX.value = -translateX.value
+        await p
+        gestureTransPending.value = false
+        reset(false)
+    }
+    const controller = useDrag(async ({ movement: [x], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
+        // x positive when to left
+        if (gestureTransPending.value || !permitSwipe.value) {
             return
         }
-    } else if ((x > 0 && eventIndex.value === 0 && intDay === 0) || (x < 0 && intDay === lastPartIndex && eventIndex.value === cloudStore.days![lastPartIndex].program.length - 1)) {
-        // on event item detail page
-        return
-    }
-    if (Math.abs(x) > 3) {
-        moving.value = true
-        movingOrTrainsitioning.value = true
-        translateX.value = x
-    }
+        const intDay = parseInt(dayIndex.value)
+        const lastDayIndex = cloud.days!.length - 1
+        const cantGoLeftDay = (x > 30 && intDay === 0)
+        const cantGoRightDay = (x < -30 && intDay === lastDayIndex)
+        const eventIndex = parseInt(router.currentRoute.value.params.event as string)
+        const lastEventIndex = cloud.days![intDay].program.length - 1
+
+        if (swipe[0] !== 0) {
+            gestureTransPending.value = true
+
+            if (isNaN(eventIndex)) {
+                if (!cantGoLeftDay && !cantGoRightDay) {
+                    // move to the next schedule part
+                    await go(swipe[0], `/schedule/${intDay - swipe[0]}`)
+                    return
+                } else {
+                    gestureTransPending.value = false
+                    reset(false)
+                    return
+                }
+            } else {
+                // on event item detail page
+                // move to the next or prev event item
+                if (x > 0 && eventIndex === 0 && !cantGoLeftDay) {
+                    await go(swipe[0], `/schedule/${intDay - 1}/${(cloud.days![intDay - 1].program.length - 1 || 0)}`)// last event on the previous schedule par)
+                    return
+                } else if (x < 0 && eventIndex === lastEventIndex && !cantGoRightDay) {
+                    await go(swipe[0], `/schedule/${intDay + 1}/0`)
+                    return
+                } else if ((swipe[0] > 0 && eventIndex > 0) || swipe[0] < 0 && eventIndex < lastEventIndex) {
+                    // move to next or prev day
+                    await go(swipe[0], `/schedule/${intDay}/${eventIndex - swipe[0]}`)
+                    return
+                } else {
+                    gestureTransPending.value = false
+                    reset(false)
+                    return
+                }
+            }
+        } else if (!dragging) {
+            if(Math.abs(x) > 5){
+                reset()
+            }
+            return
+        } else {
+            if (isNaN(eventIndex)) {
+                if (cantGoLeftDay || cantGoRightDay) {
+                    return
+                }
+            } else if ((x > 30 && eventIndex === 0 && intDay === 0) || (x < -30 && intDay === lastDayIndex && eventIndex === lastEventIndex)) {
+                // on event item detail page
+                return
+            }
+        }
+
+        if (Math.abs(x) > 3) {
+            moving.value = true
+            movingOrTransitioning.value = true
+            translateX.value = x
+        }
+    }, {
+        domTarget: drag,
+        filterTaps: true,
+        eventOptions: { passive: true },
+        axis: 'x',
+        swipeVelocity: 0.2,
+        swipeDuration: 400,
+        threshold: 10,
+    })
+    watch(permitSwipe, (permit, was) => {
+        if (permit && !was) {
+            controller.bind()
+        } else {
+            controller.clean()
+        }
+    })
 }
 
 </script>
@@ -185,30 +268,44 @@ nav.days {
     }
 }
 
-.slide-left-enter-active,
-.slide-left-leave-active,
-.slide-right-enter-active,
-.slide-right-leave-active {
-    transition: all 0.2s;
+
+@function transitions($a) {
+    @return "#{$a}.slide-left-enter-active, #{$a}.slide-left-leave-active, #{$a}.slide-right-enter-active, #{$a}.slide-right-leave-active";
+}
+
+#{transitions('')} {
+    position: absolute;
+    top: 0;
+    transition: opacity .2s, transform .2s;
+
+    width: 100vw;
+}
+
+#{transitions('article')} {
+    width: auto;
+
+    @media (width > 880px) {
+        left: calc((100vw - 880px) / 2 + 2.5rem);
+    }
 }
 
 .slide-left-enter-from {
-    opacity: .1;
+    opacity: .0;
     transform: translate(50px, 0);
 }
 
 .slide-left-leave-to {
-    opacity: .1;
-    //transform: translate(-50px, 0);
+    opacity: .0;
+    transform: translate(-50px, 0);
 }
 
 .slide-right-enter-from {
-    opacity: .1;
+    opacity: .0;
     transform: translate(-50px, 0);
 }
 
 .slide-right-leave-to {
-    opacity: .1;
-    //transform: translate(50px, 0);
+    opacity: .0;
+    transform: translate(50px, 0);
 }
 </style>

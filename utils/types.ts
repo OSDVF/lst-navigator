@@ -1,4 +1,4 @@
-import type { Feedback, FeedbackType, ScheduleItem } from '@/types/cloud'
+import type { Feedback, FeedbackType, ScheduleDay, ScheduleItem } from '@/types/cloud'
 
 export type NotificationPayload = {
     title: string,
@@ -26,6 +26,12 @@ export function toHumanFeedback(feedback?: FeedbackType) {
         parallel: 'Paralelní programy',
         select: 'Výběr z možností',
     }[feedback]
+}
+
+export function isToday(scheduleDay: ScheduleDay) {
+    const [year, month, day] = scheduleDay?.date?.split('-') ?? [0, 0, 0]
+    const now = new Date()
+    return (now.getFullYear() === parseInt(year) && now.getMonth() + 1 === parseInt(month) && now.getDate() === parseInt(day))
 }
 
 export function toJSDate(date: undefined): null;

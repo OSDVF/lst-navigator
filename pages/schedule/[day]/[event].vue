@@ -7,9 +7,11 @@
                 <Icon :name="eventData.icon" />
             </template>
             {{ eventData?.title }}&ensp;
-            <span class="muted">
+            <span class="muted" style="float:right">
                 {{ toHumanTime(eventData?.time) }}
-                <NuxtLink :to="`/schedule/${dayIndex}/edit/${eventItemIndex}`" title="Upravit program">
+                <NuxtLink
+                    v-if="cloud.resolvedPermissions.editSchedule" :to="`/schedule/${dayIndex}/edit/${eventItemIndex}`"
+                    title="Upravit program">
                     <Icon name="mdi:pencil" />
                 </NuxtLink>
             </span>
@@ -31,13 +33,13 @@
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
                 :complicated-questions="eventData?.questions" :select-options="getParallelEvents(eventData)"
                 :detail-question="eventData?.detailQuestion"
-                @set-data="(data: Feedback) => cloudStore.feedback.set(dayIndex, eventItemIndex, data)" />
-            <p v-if="cloudStore.feedback.fetchFailed">
+                @set-data="(data: Feedback) => cloud.feedback.set(dayIndex, eventItemIndex, data)" />
+            <p v-if="cloud.feedback.fetchFailed">
                 Nepodařilo se uložit tvou odpověď
                 <br>
-                {{ cloudStore.feedback.error }}
+                {{ cloud.feedback.error }}
                 <br>
-                <button @click="cloudStore.feedback.saveAgain">
+                <button @click="cloud.feedback.saveAgain">
                     <Icon name="material-symbols:save" /> Zkusit uložit znovu
                 </button>
             </p>
@@ -46,10 +48,14 @@
             Není k dispozici
         </p>
         <h1>Tvé poznámky&ensp;
-            <Icon tabindex="0" title="Experimentální funkce" name="mdi:alert" style="color: rgb(97, 63, 0);opacity: .5;" />
+            <Icon
+                tabindex="0" title="Experimentální funkce" name="mdi:alert"
+                style="color: rgb(97, 63, 0);opacity: .5;" />
         </h1>
         <div class="p">
-            <ClassicCKEditor v-model="noteModel" @focus="permitSwipe = false" @blur="permitSwipe = true" />
+            <ClassicCKEditor
+                v-model="noteModel" :plain="!settings.richNoteEditor" @focus="permitSwipe = false"
+                @blur="permitSwipe = true" />
             <ProgressBar v-if="fetchingNote" />
         </div>
         <br>
@@ -61,7 +67,8 @@
                             'Předchozí den' }}</span> {{ previousEventData?.title ?? previousEventData?.subtitle }}
                     </NuxtLink>
                     <NuxtLink
-                        :to="eventItemIndex < (cloudStore.days?.[dayIndex]?.program?.length ?? 0) - 1 ? `/schedule/${dayIndex}/${eventItemIndex + 1}` : (dayIndex < (cloudStore.days?.length ?? 0) - 1 ? `/schedule/${dayIndex + 1}/0` : route.fullPath)">
+                        :title="nextEventLink == route.fullPath ? 'Jste již na posledním bodu programu': undefined"
+                        :to="nextEventLink">
                         <span class="muted">{{ toHumanTime(nextEventData?.time) || 'Další den' }}</span> {{
                             nextEventData?.title ?? nextEventData?.subtitle }}
                         <Icon name="mdi:chevron-right" />
@@ -86,10 +93,10 @@ const route = useRoute()
 const settings = useSettings()
 const dayIndex = parseInt(route.params.day as string ?? 0)
 const eventItemIndex = parseInt(route.params.event as string) || 0
-const cloudStore = useCloudStore()
+const cloud = useCloudStore()
 const globalBackground = inject('globalBackground', ref(''))
 const eventData = computed(() => {
-    const program = cloudStore.days ? cloudStore.days[dayIndex]?.program : []
+    const program = cloud.days ? cloud.days[dayIndex]?.program : []
     if (program) {
         const eventData = program[eventItemIndex]
         const hexColor = colorToHex(eventData?.color || 'gray')
@@ -100,21 +107,22 @@ const eventData = computed(() => {
     return undefined
 })
 
-const previousEventData = computed(() => cloudStore.days?.[dayIndex]?.program?.[eventItemIndex - 1])
-const nextEventData = computed(() => cloudStore.days?.[dayIndex]?.program?.[eventItemIndex + 1])
+const previousEventData = computed(() => cloud.days?.[dayIndex]?.program?.[eventItemIndex - 1])
+const nextEventData = computed(() => cloud.days?.[dayIndex]?.program?.[eventItemIndex + 1])
+const nextEventLink = computed(()=>eventItemIndex < (cloud.days?.[dayIndex]?.program?.length ?? 0) - 1 ? `/schedule/${dayIndex}/${eventItemIndex + 1}` : (dayIndex < (cloud.days?.length ?? 0) - 1 ? `/schedule/${dayIndex + 1}/0` : route.fullPath))
 const noteError = ref()
 const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
 
-const currentFeedbackValue = computed(() => cloudStore.offlineFeedback?.[dayIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
+const currentFeedbackValue = computed(() => cloud.offlineFeedback?.[dayIndex]?.[eventItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocumentT(computed(() => cloudStore.notesCollection ? doc(cloudStore.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
+const notesDocument = useDocumentT(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
 const offlineNote = usePersistentRef(`note.${dayIndex}.${eventItemIndex}`, { time: new Date().getTime(), note: '' })
 let noteSaving: NodeJS.Timeout | null
 
-const noteModel = computed({
+const noteModel = computed<string>({
     get() {
         const onlineVal = notesDocument.value?.[dayIndex]?.[eventItemIndex]
         const onlineDate = new Date(onlineVal?.time ?? 0).getTime()
@@ -131,9 +139,9 @@ const noteModel = computed({
         offlineNote.value = newValue
         if (!noteSaving) {
             noteSaving = setTimeout(() => {
-                if (cloudStore.notesCollection) {
+                if (cloud.notesCollection) {
                     fetchingNote.value = true
-                    setDoc(doc(cloudStore.notesCollection, settings.userIdentifier), {
+                    setDoc(doc(cloud.notesCollection, settings.userIdentifier), {
                         [dayIndex]: {
                             [eventItemIndex]: newValue,
                         },
