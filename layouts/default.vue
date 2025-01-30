@@ -26,11 +26,9 @@
             </div>
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
-                <ServerPlaceholder>
-                    <MainMenu />
-                </ServerPlaceholder>
                 <ClientOnly>
-                    <MainMenu v-if="installStep >= config.public.installStepCount" />
+                    <MainMenu
+                        v-if="route.name?.toString().includes('install') || installStep >= config.public.installStepCount" />
                     <NuxtLink v-else :to="`/install/${installStep}`">
                         <Icon name="mdi:arrow-right-bold-circle-outline" size="1.8rem" />
                         Pokračovat v instalaci
@@ -41,7 +39,7 @@
                 role="dialog" :class="{
                     networkError: true, visible: !!cloudStore.networkError,
                 //TODO offline alert?
-                }" :title="cloudStore.networkError?.message">
+                }" @click="alert(cloudStore.networkError?.message)">
                 <Icon name="mdi:cloud-off" /> Problém s připojením
             </div>
         </div>
@@ -68,12 +66,18 @@ const settings = useSettings()
 const installStep = settings.installStep
 const isServer = ref(import.meta.server)
 
+function alert(message?: string) {
+    if (message) {
+        window.alert(message)
+    }
+}
+
 onMounted(() => {
     isServer.value = false
     watch(router.currentRoute, (route) => {
         const safeStep = toRaw(installStep)
         if (!(route.name as string)?.includes('feedback') && !(route.path as string)?.includes('login') && safeStep < config.public.installStepCount) {
-            router.push('/install/' + safeStep)
+            router.replace('/install/' + safeStep)
         }
     }, { immediate: true })
     ///

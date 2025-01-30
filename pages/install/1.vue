@@ -51,6 +51,10 @@
             <p v-if="$pwa?.offlineReady">
                 <Icon name="mdi:check" /> Stažení
             </p>
+            <p v-else-if="!$pwa?.registrationError">
+                <Icon name="mdi:progress-download" /> Probíhá stahování aplikace
+                <ProgressBar class="mt-1"/>
+            </p>
             Případné chyby hlaste na <LazyClientOnly>
                 <a class="dotted-underline" :href="`mailto:${$config.public.supportEmail}`">{{
                     $config.public.supportEmail }}</a>
