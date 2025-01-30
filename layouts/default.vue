@@ -77,7 +77,7 @@ onMounted(() => {
     /// Redirection guards
     ///
     const safeStep = toRaw(installStep)
-    if (!(route.name as string)?.includes('feedback') && safeStep < config.public.installStepCount) {
+    if (!(route.name as string)?.includes('feedback') && !(route.name as string)?.includes('login') && safeStep < config.public.installStepCount) {
         router.push('/install/' + safeStep)
     }
     const redirectRoute: RouteLocationRaw = {

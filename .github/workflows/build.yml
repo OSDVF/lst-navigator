@@ -49,6 +49,9 @@ jobs:
         run: bun pm trust --all
         continue-on-error: true
 
+      - name: Compile Sharp
+        run: npm rebuild --verbose sharp
+
       - name: SSG Generate
         run: bun generate ci
 

@@ -1,6 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
-import { icons } from './icons.json'
 import firebaseConfig from './firebase.json'
 
 import {
@@ -22,22 +21,29 @@ const messagingConfig = {
     notifications_vapidKey: process.env.VAPID_PUBLIC,
 }
 
+const defaultMaskColor = '#fbce70ff'
+const defaultThemeColor = '#ffffff'
+
 const config = defineNuxtConfig({
     app: {
         head: {
             title: process.env.APP_SHORT_NAME,
             link: [
+                { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96x96.png' },
                 { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
                 { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
-                { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
-                { rel: 'manifest', href: '/site.webmanifest' },
-                { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: '#5bbad5' },
-                { rel: 'stylesheet', href: 'https://cdn.ckeditor.com/ckeditor5/44.1.0/ckeditor5.css', crossorigin: 'anonymous' },
+                { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: process.env.MASK_COLOR ?? defaultMaskColor },
             ],
             meta: [
                 { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no' },
-                { name: 'msapplication-TileColor', content: '#da532c' },
-                { name: 'theme-color', content: '#ffffff' },
+                { name: 'msapplication-TileColor', content: process.env.MASK_COLOR ?? defaultMaskColor },
+                { name: 'apple-mobile-web-app-capable', content: 'yes' },
+                { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+                { name: 'apple-mobile-web-app-title', content: process.env.APP_SHORT_NAME },
+                { name: 'application-name', content: process.env.APP_SHORT_NAME },
+                { name: 'description', content: process.env.APP_DESCRIPTION },
+                { name: 'format-detection', content: 'telephone=no' },
+                { name: 'mobile-web-app-capable', content: 'yes' },
             ],
         },
     },
@@ -47,7 +53,7 @@ const config = defineNuxtConfig({
         ],
         analyze: true,
     },
-    compatibilityDate: '2024-08-24',
+    compatibilityDate: '2025-01-30',
     css: [
         '~/assets/styles/_index.scss',
         '~/assets/styles/components.scss',
@@ -141,6 +147,10 @@ const config = defineNuxtConfig({
             }
             : undefined,
         filename: 'sw.ts',
+        pwaAssets: {
+            injectThemeColor: true,
+            config: true,
+        },
         injectManifest: {
             globIgnores: [
                 '**/__/**',
@@ -158,10 +168,31 @@ const config = defineNuxtConfig({
         manifest: {
             name: process.env.VITE_APP_NAME,
             short_name: process.env.VITE_APP_SHORT_NAME,
-            icons,
             start_url: './',
             id: process.env.APP_ID,
-            theme_color: '#ffffff',
+            theme_color: process.env.THEME_COLOR ?? defaultThemeColor,
+            description: process.env.APP_DESCRIPTION,
+            background_color: process.env.BACKGROUND_COLOR ?? defaultThemeColor,
+            icons: [
+                {
+                    src: 'pwa-64x64.png',
+                    sizes: '64x64',
+                    type: 'image/png',
+                    purpose: 'any',
+                },
+                {
+                    src: 'pwa-192x192.png',
+                    sizes: '192x192',
+                    type: 'image/png',
+                    purpose: 'any',
+                },
+                {
+                    src: 'pwa-512x512.png',
+                    sizes: '512x512',
+                    type: 'image/png',
+                    purpose: 'any',
+                },
+            ],
         },
         srcDir: 'utils',
         strategies: 'injectManifest',

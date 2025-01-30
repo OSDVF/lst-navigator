@@ -48,6 +48,9 @@ jobs:
       - name: Run postinstall scripts
         run: bun pm trust --all
 
+      - name: Compile Sharp
+        run: npm rebuild --verbose sharp
+
       - name: Build
         run: bun run build ci
 
