@@ -21,10 +21,10 @@
                     Jsem hybridní webová aplikace, kterou nainstalujete podle toho, jak se to zrovna ve vašem prohlížeči
                     dělá.<br>
                     Návody: <a
-                        href="https://web.dev/learn/pwa/installation/#ios-and-ipados-installation"
+                        href="https://web.dev/static/learn/pwa/installation/video/RK2djpBgopg9kzCyJbUSjhEGmnw1/UhWxRAtIB6KQpbMYnDSe.mp4"
                         target="_blank" class="dotted-underline">iOS</a>,
                     <a
-                        href="https://web.dev/learn/pwa/installation/#android-installation" target="_blank"
+                        href="https://web.dev/static/learn/pwa/installation/image/chrome-edge-menu-items-27db25e4de818_960.png" target="_blank"
                         class="dotted-underline">Android</a>
                     <br><br>
                     <template v-if="browser?.os == 'iOS'">

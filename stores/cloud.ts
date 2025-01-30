@@ -21,9 +21,6 @@ import * as Sentry from '@sentry/nuxt'
  * @__NO_SIDE_EFFECTS__
  */
 export function knownCollection(firestore: Firestore, name: KnownCollectionName) {
-    if (process.env.LOG_WRITES == 'true') {
-        console.log('Getting known collection ' + name)
-    }
     return collection(firestore, name)
 }
 
@@ -49,9 +46,6 @@ if (!import.meta.browser) {
 }
 
 export function eventSubCollection(fs: Firestore, event: string, document: EventSubcollection, ...segments: string[]): CollectionReference {
-    if (process.env.LOG_WRITES == 'true') {
-        console.log('Getting event sub-collection ' + event + ' ' + document, segments)
-    }
     // typecheck:
     if (!(fs instanceof Firestore && typeof document === 'string' && typeof event === 'string' && segments.every((s) => typeof s === 'string'))) {
         throw new Error(`Invalid arguments ${fs} ${event}, ${document}, ${segments.join(', ')}`)

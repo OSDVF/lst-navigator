@@ -68,15 +68,14 @@ const settings = useSettings()
 const installStep = settings.installStep
 const isServer = ref(import.meta.server)
 
-watch(router.currentRoute, (route) => {
-    const safeStep = toRaw(installStep)
-    if (!(route.name as string)?.includes('feedback') && !(route.path as string)?.includes('login') && safeStep < config.public.installStepCount) {
-        router.push('/install/' + safeStep)
-    }
-}, { immediate: true })
-
 onMounted(() => {
     isServer.value = false
+    watch(router.currentRoute, (route) => {
+        const safeStep = toRaw(installStep)
+        if (!(route.name as string)?.includes('feedback') && !(route.path as string)?.includes('login') && safeStep < config.public.installStepCount) {
+            router.push('/install/' + safeStep)
+        }
+    }, { immediate: true })
     ///
     /// Redirection guards
     ///

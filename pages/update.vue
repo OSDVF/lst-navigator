@@ -1,15 +1,20 @@
 <template>
     <article>
-
         <Head>
             <meta http-equiv="Cache-control" content="no-cache">
             <meta http-equiv="Expires" content="-1">
         </Head>
         <h1>
-            <Icon name="mdi:update" />&ensp;Dostupná aktualizace
+            <Icon name="mdi:update" />&ensp;Aktualizace
         </h1>
+        <p v-if="$pwa?.offlineReady">
+            <Icon name="mdi:check" />&ensp;Staženo
+        </p>
+        <p v-else>
+            <Icon name="mdi:alert" />&ensp;Soubory aplikace ještě nejsou staženy
+        </p>
         <button @click="download">
-            <Icon name="mdi:download" />&ensp;Stáhnout
+            <Icon name="mdi:download" />&ensp;Aktualizovat
         </button>
         <br>
         <LazyClientOnly>
@@ -68,7 +73,9 @@ async function download() {
                 installed: 'true',
             },
         })
-        updatePromise?.finally(() => { confirm('Aktualizováno - přenačíst aplikaci?') && location.reload(true) })
+        updatePromise?.finally(() => { if(confirm('Aktualizováno - přenačíst aplikaci?'))  {
+            location.reload(true)
+        } })
     }
 }
 

@@ -31,7 +31,13 @@ onMounted(async () => {
     // Clear indexedDB
     for (const db of await indexedDB.databases?.() || ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'keyval-store', `firestore/[DEFAULT]/${config.public.vuefire.config.appId}/main`]) {
         try {
-            if (db.name) { await new Promise(resolve => indexedDB.deleteDatabase(db.name!).addEventListener('success', resolve)) }
+            if (db.name) { await new Promise((resolve, reject) => {
+                const del = indexedDB.deleteDatabase(db.name!)
+                del.addEventListener('success', resolve)
+                del.addEventListener('blocked', reject)
+                del.addEventListener('error', reject)
+                del.addEventListener('upgradeneeded', resolve)
+            }) }
         } catch (e) {
             Sentry.captureException(e)
         }
