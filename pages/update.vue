@@ -12,6 +12,7 @@
         </p>
         <p v-else>
             <Icon name="mdi:alert" />&ensp;Soubory aplikace ještě nejsou staženy
+            <ProgressBar class="mt-1" />
         </p>
         <button @click="download">
             <Icon name="mdi:download" />&ensp;Aktualizovat

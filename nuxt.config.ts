@@ -148,7 +148,7 @@ const config = defineNuxtConfig({
             : undefined,
         filename: 'sw.ts',
         pwaAssets: {
-            injectThemeColor: true,
+            injectThemeColor: false,
             config: true,
         },
         injectManifest: {
@@ -309,6 +309,7 @@ const config = defineNuxtConfig({
             compileTimeZone,
             commitMessageTime,
             commitHash,
+            themeColor: process.env.THEME_COLOR ?? defaultThemeColor,
             welcome: process.env.WELCOME,
             signatureInfo: process.env.SIGNATURE_INFO,
             ENV: process.env.NODE_ENV ?? 'production',

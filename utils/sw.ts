@@ -8,7 +8,6 @@ import * as Sentry from '@sentry/browser'
 import * as idb from 'idb-keyval'
 import type { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
-import { url } from 'inspector'
 
 declare let self: ServiceWorkerGlobalScope
 try {
@@ -100,11 +99,11 @@ async function onUpdate() {
     }
 }
 
-const app = firebase.initializeApp(swConfig.firebase)
 isSupported().then((supported) => {
     if (!supported || !('messagingSenderId' in swConfig.firebase)) {
         return
     }
+    const app = firebase.initializeApp(swConfig.firebase as firebase.FirebaseOptions)
     const messagingInstance = getMessaging(app)
     onBackgroundMessage(messagingInstance, async (payload: MessagePayload) => {
         if (await idb.get('doNotifications') !== 'false') {
