@@ -4,7 +4,7 @@
         <noscript>
             Pokud se stránka neobnoví automaticky, klikni na tlačítko.
         </noscript>
-        <a href="/">
+        <a href="/install/0">
             <button>
                 <Icon name="mdi:home" />
                 Zpátky do aplikace
@@ -14,17 +14,27 @@
 </template>
 
 <script setup lang="ts">
+import * as Sentry from '@sentry/nuxt'
+
 const config = useRuntimeConfig()
 const router = useRouter()
+
+watch(router.currentRoute, (value) => {
+    if (value.query.cleared) { router.replace('/install/0') }
+}, { immediate: true })
+
 onMounted(async () => {
     if (router.currentRoute.value.query.cleared) {
-        router.replace('/')
+        router.replace('/install/0')
         return
     }
-
     // Clear indexedDB
     for (const db of await indexedDB.databases?.() || ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'keyval-store', `firestore/[DEFAULT]/${config.public.vuefire.config.appId}/main`]) {
-        if (db.name) { await new Promise(resolve => indexedDB.deleteDatabase(db.name!).addEventListener('success', resolve)) }
+        try {
+            if (db.name) { await new Promise(resolve => indexedDB.deleteDatabase(db.name!).addEventListener('success', resolve)) }
+        } catch (e) {
+            Sentry.captureException(e)
+        }
     }
 
     // Clear localStorage

@@ -26,19 +26,16 @@
             </div>
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
-                <NuxtLink to="/info">
-                    <Icon name="mdi:information" size="1.8rem" />
-                    {{ config.public.title }}
-                </NuxtLink>
-                <NuxtLink to="/schedule">
-                    <Icon name="mdi:calendar-text" size="1.8rem" />
-                    Program
-                </NuxtLink>
-                <NuxtLink v-if="cloudStore.resolvedPermissions.editSchedule" to="/admin">
-                    <Icon name="mdi:account-cog" size="1.8rem" />
-                    Administrace
-                </NuxtLink>
-                <SettingsLink />
+                <ServerPlaceholder>
+                    <MainMenu />
+                </ServerPlaceholder>
+                <ClientOnly>
+                    <MainMenu v-if="installStep >= config.public.installStepCount" />
+                    <NuxtLink v-else :to="`/install/${installStep}`">
+                        <Icon name="mdi:arrow-right-bold-circle-outline" size="1.8rem" />
+                        Pokračovat v instalaci
+                    </NuxtLink>
+                </ClientOnly>
             </nav>
             <div
                 role="dialog" :class="{
@@ -71,15 +68,18 @@ const settings = useSettings()
 const installStep = settings.installStep
 const isServer = ref(import.meta.server)
 
+watch(router.currentRoute, (route) => {
+    const safeStep = toRaw(installStep)
+    if (!(route.name as string)?.includes('feedback') && !(route.path as string)?.includes('login') && safeStep < config.public.installStepCount) {
+        router.push('/install/' + safeStep)
+    }
+}, { immediate: true })
+
 onMounted(() => {
     isServer.value = false
     ///
     /// Redirection guards
     ///
-    const safeStep = toRaw(installStep)
-    if (!(route.name as string)?.includes('feedback') && !(route.name as string)?.includes('login') && safeStep < config.public.installStepCount) {
-        router.push('/install/' + safeStep)
-    }
     const redirectRoute: RouteLocationRaw = {
         path: '/update',
         query: {
@@ -110,8 +110,8 @@ provide('globalBackground', globalBackground)
 
 <style>
 @property --background {
-  syntax: '<color>';
-  initial-value: transparent;
-  inherits: false;
+    syntax: '<color>';
+    initial-value: transparent;
+    inherits: false;
 }
 </style>

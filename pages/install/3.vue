@@ -5,7 +5,7 @@
             {{ $config.public.signatureInfo }}
         </p>
         <NameChangeDialog class="large" />
-        <p>
+        <p v-if="!$firebaseAuth.currentUser">
             Pokud chcete vaše data (poznámky, zpětná vazba) zálohovat online, přihlaste se nebo si vytvořte účet.
         </p>
         <LazyLoginField />

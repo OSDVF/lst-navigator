@@ -28,7 +28,7 @@ const config = useRuntimeConfig()
 const supportsNotifications = ref(false)
 const dialog = ref(false)
 const skip = computed(() => {
-    return !config.public.notifications_title || (granted.value || supportsNotifications.value ? Notification.permission === 'granted' : true)
+    return !config.public.notifications_title || (granted.value || supportsNotifications.value ? (import.meta.browser && Notification.permission) === 'granted' : true)
 })
 
 if (import.meta.browser) {
@@ -39,7 +39,6 @@ if (import.meta.browser) {
 }
 
 const granted = ref(false)
-
 onMounted(() => {
     supportsNotifications.value = 'Notification' in window
     if (!skip.value) {

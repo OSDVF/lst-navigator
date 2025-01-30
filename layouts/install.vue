@@ -4,13 +4,17 @@
         <Head>
             <Title>{{ config.public.title }}</Title>
         </Head>
-        <slot />
+        <NuxtPage :transition="{ name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true }" />
         <nav class="installNav">
             <LazyClientOnly>
-                <NuxtLink v-if="partIndex > 0" :to="`/install/${partIndex - 1}?from=${partIndex}`">
+                <NuxtLink
+                    v-if="partIndex > 0" :to="`/install/${partIndex - 1}?from=${partIndex}`"
+                    @click="currentTransition = 'slide-right'">
                     <Icon name="material-symbols:arrow-circle-left-outline" size="2rem" /> Předchozí
                 </NuxtLink>
-                <NuxtLink v-if="canGoNext" :to="`/install/${partIndex + 1}`" @click="onNextButtonClick">
+                <NuxtLink
+                    v-if="canGoNext" :to="`/install/${partIndex + 1}`"
+                    @click="currentTransition = 'slide-left'; onNextButtonClick()">
                     <Icon name="material-symbols:arrow-circle-right-outline" size="2rem" />
                     {{ next }}
                 </NuxtLink>
@@ -42,6 +46,7 @@ const pathParts = computed(() => route.value.path.split('/'))
 const lastPart = computed(() => pathParts.value[pathParts.value.length - 1])
 const partIndex = computed(() => parseInt(lastPart.value))
 const canGoNext = computed(() => partIndex.value < config.public.installStepCount - 1)
+const currentTransition = ref('slide-left')
 
 const onNextButtonClickListeners = ref<(() => void)[]>([])
 function onNextButtonClick() {
@@ -65,6 +70,11 @@ provide('skipToNextIf', (predicate: Ref<boolean>) => {
     function skip() {
         const from = parseInt(route.value.query.from as string)
         if (!isNaN(from)) {
+            if(from < partIndex.value) {
+                onNextButtonClick()
+            } else {
+                next.value = defaultNext
+            }
             router.replace(`/install/${Math.max(partIndex.value - 1, 0)}?from=${partIndex.value}`)
         } else {
             onNextButtonClick()

@@ -263,45 +263,4 @@ nav.days {
         transform: translateY(0);
     }
 }
-
-
-@function transitions($a) {
-    @return "#{$a}.slide-left-enter-active, #{$a}.slide-left-leave-active, #{$a}.slide-right-enter-active, #{$a}.slide-right-leave-active";
-}
-
-#{transitions('')} {
-    position: absolute;
-    top: 0;
-    transition: opacity .2s, transform .2s;
-
-    width: 100vw;
-}
-
-#{transitions('article')} {
-    width: auto;
-
-    @media (width > 880px) {
-        left: calc((100vw - 880px) / 2 + 2.5rem);
-    }
-}
-
-.slide-left-enter-from {
-    opacity: .0;
-    transform: translate(50px, 0);
-}
-
-.slide-left-leave-to {
-    opacity: .0;
-    transform: translate(-50px, 0);
-}
-
-.slide-right-enter-from {
-    opacity: .0;
-    transform: translate(-50px, 0);
-}
-
-.slide-right-leave-to {
-    opacity: .0;
-    transform: translate(50px, 0);
-}
 </style>

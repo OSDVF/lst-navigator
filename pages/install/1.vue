@@ -27,8 +27,19 @@
                         href="https://web.dev/learn/pwa/installation/#android-installation" target="_blank"
                         class="dotted-underline">Android</a>
                     <br><br>
-                    Případné chyby hlaste na <LazyClientOnly><a :href="`mailto:${$config.public.supportEmail}`">{{
-                        $config.public.supportEmail }}</a></LazyClientOnly>
+                    <template v-if="browser?.os == 'iOS'">
+                        <strong v-if="browser.name !== 'ios'">
+                            <Icon name="mdi:compass-outline" /> Na iOS je třeba použít prohlížeč Safari
+                        </strong>
+                        <template v-else>
+                            1. Kliknetě na tlačítlo sdílení
+                            <Icon name="mdi:logout-variant" style="rotate: -90deg;" /> v liště
+                            <br>
+                            2. <Icon name="mdi:plus-box-outline" /> Přidat na plochu
+                            <img src="/install.png" width="100%" alt="Instalace aplikace" style="max-width: 500px; border-radius: 2px;margin-top: .5rem;">
+                        </template>
+                        <br>
+                    </template>
                 </p>
             </template>
             <p v-if="$pwa?.getSWRegistration()">
@@ -40,11 +51,17 @@
             <p v-if="$pwa?.offlineReady">
                 <Icon name="mdi:check" /> Stažení
             </p>
+            Případné chyby hlaste na <LazyClientOnly>
+                <a class="dotted-underline" :href="`mailto:${$config.public.supportEmail}`">{{
+                    $config.public.supportEmail }}</a>
+            </LazyClientOnly>
         </LazyClientOnly>
     </article>
 </template>
 <script setup lang="ts">
+import { detect } from 'detect-browser'
 const { $deferredPrompt, $installPromptSupport, $pwa } = useNuxtApp()
+const browser = detect()
 
 definePageMeta({
     layout: 'install',
