@@ -10,11 +10,13 @@ import type { NotificationPayload } from '@/utils/types'
 import swConfig from '~/utils/swenv'
 
 declare let self: ServiceWorkerGlobalScope
-try {
-    Sentry.init(swConfig.sentry)
-    Sentry.setTag('commitHash', swConfig.commitHash)
-} catch (e) {
-    console.error('Sentry init failed', e)
+if (process.env.SENTRY_DISABLE !== 'true') {
+    try {
+        Sentry.init(swConfig.sentry)
+        Sentry.setTag('commitHash', swConfig.commitHash)
+    } catch (e) {
+        console.error('Sentry init failed', e)
+    }
 }
 
 cleanupOutdatedCaches()
@@ -68,7 +70,7 @@ self.addEventListener('install', async event => {
     await precacheController.install(event)
     console.log('Installed')
 })
-self.addEventListener('activate',async event => {
+self.addEventListener('activate', async event => {
     comChannel.postMessage('activate')
     await precacheController.activate(event)
     registerHome()
@@ -100,7 +102,7 @@ async function onUpdate() {
 }
 
 isSupported().then((supported) => {
-    if (!supported || !('messagingSenderId' in swConfig.firebase)) {
+    if (!supported || !('messagingSenderId' in swConfig.firebase) || !('notifications_title' in swConfig.messaging)) {
         return
     }
     const app = firebase.initializeApp(swConfig.firebase as firebase.FirebaseOptions)
@@ -164,32 +166,38 @@ addEventListener('message', async (event: MessageEvent) => {
         }
     }
 
-    Sentry.addBreadcrumb({
-        category: 'message',
-        data: event.data,
-        timestamp: Date.now(),
-        level: 'debug',
-    })
+    if (process.env.SENTRY_DISABLE !== 'true') {
+        Sentry.addBreadcrumb({
+            category: 'message',
+            data: event.data,
+            timestamp: Date.now(),
+            level: 'debug',
+        })
+    }
 })
 
 self.addEventListener('notificationclick', async (event: NotificationEvent) => {
     event.notification.close()
     console.log('[SW] Notification click Received.', event.notification)
-    Sentry.addBreadcrumb({
-        category: 'notification',
-        data: event.notification,
-        timestamp: Date.now(),
-        level: 'debug',
-    })
+    if (process.env.SENTRY_DISABLE !== 'true') {
+        Sentry.addBreadcrumb({
+            category: 'notification',
+            data: event.notification,
+            timestamp: Date.now(),
+            level: 'debug',
+        })
+    }
 })
 
 self.addEventListener(
     'pushsubscriptionchange',
     async (event: any) => {
-        Sentry.captureMessage('Push subscription change', {
-            level: 'debug',
-            extra: event,
-        })
+        if (process.env.SENTRY_DISABLE !== 'true') {
+            Sentry.captureMessage('Push subscription change', {
+                level: 'debug',
+                extra: event,
+            })
+        }
         const subscription = self.registration.pushManager
             .subscribe(event.oldSubscription.options)
             .then(subscription =>

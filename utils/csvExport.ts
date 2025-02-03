@@ -1,4 +1,4 @@
-import Lodash from 'lodash'
+import merge from 'lodash.merge'
 import { useCloudStore } from '~/stores/cloud'
 import type * as ExportToCsv from 'export-to-csv'
 import type { FieldValue } from 'firebase/firestore'
@@ -46,7 +46,7 @@ export async function csvExport(name: string, error: Ref<string|unknown>, sectio
                         }
                         const potentialInner = `${eventIndex}-0`
                         if (compoundIndexes.includes(potentialInner)) {
-                            byUserData[user][compoundIndex] = Lodash.merge(byUserData[user][compoundIndex], byUserData[user][potentialInner])
+                            byUserData[user][compoundIndex] = merge(byUserData[user][compoundIndex], byUserData[user][potentialInner])
                         }
                     }
                 }

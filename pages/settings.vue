@@ -219,7 +219,7 @@ async function syncNotes() {
 
 <style lang="scss">
 @use "sass:color";
-@use "@/assets/styles/constants.scss" as c;
+@use "@/assets/styles/constants" as c;
 
 .settings fieldset {
     display: flex;

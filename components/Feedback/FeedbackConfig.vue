@@ -47,11 +47,11 @@
                 v-model.lazy="editedCategory.group" type="text" name="group" placeholder="Titulek programů (RegExp)"
                 title="Titulek programů (RegExp)" class="w-full mb-1">
             <span class="muted">Odpovídající programy:</span>
-            <div :class="_.isEmpty(matches) && 'inline muted' || undefined">
+            <div :class="isEmpty(matches) && 'inline muted' || undefined">
                 <span v-for="(title, when) in matches" :key="when">
                     {{ title }} <span class="muted">{{ when }}{{ when == '...' && ' ' || ', ' }}</span>
                 </span>
-                <template v-if="_.isEmpty(matches)">
+                <template v-if="isEmpty(matches)">
                     Žádné
                 </template>
             </div>
@@ -76,7 +76,9 @@
 </template>
 
 <script lang="ts" setup>
-import _ from 'lodash'
+import cloneDeep from 'lodash.clonedeep'
+import isEqual from 'lodash.isequal'
+import isEmpty from 'lodash.isempty'
 import { setDoc, deleteDoc } from '~/utils/trace'
 import { useCloudStore } from '~/stores/cloud'
 import type { FeedbackConfig } from '~/types/cloud'
@@ -131,9 +133,9 @@ const safeType = computed({
     },
 })
 
-let previousValue = _.cloneDeep(editedCategory.value)
+let previousValue = cloneDeep(editedCategory.value)
 watch(editedCategory, (value) => {
-    if (!reloading.value && !_.isEqual(value, previousValue)) {
+    if (!reloading.value && !isEqual(value, previousValue)) {
         e('beginUpdate')
         error.value = undefined
         loading.value = true
@@ -142,7 +144,7 @@ watch(editedCategory, (value) => {
             e('endUpdate')
         })
     }
-    previousValue = _.cloneDeep(value)
+    previousValue = cloneDeep(value)
 }, { deep: true })
 
 const types = {
@@ -231,7 +233,7 @@ async function deleteDocAndShift(force = false) {
         loading.value = true
         reloading.value = true
         const promises: Promise<void>[] = []
-        const shapshot = _.cloneDeep(cloud.feedbackConfig)
+        const shapshot = cloneDeep(cloud.feedbackConfig)
         e('beginUpdate')
         if (p.index !== shapshot.length - 1) {
             for (let i = p.index; i < shapshot.length - 1; i++) {

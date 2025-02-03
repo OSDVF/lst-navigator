@@ -14,7 +14,7 @@ const isDevMode = process.env.NODE_ENV !== 'production'
 const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
 
 const messagingConfig = {
-    notifications_title: process.env.VITE_APP_SHORT_NAME,
+    notifications_title: process.env.VITE_APP_SHORT_NAME ?? 'Upomínka z aplikace',
     notifications_body: process.env.VITE_APP_DEFAULT_NOTIFICATION_BODY,
     notifications_image: process.env.VITE_APP_DEFAULT_NOTIFICATION_IMAGE,
     notifications_icon: process.env.VITE_APP_DEFAULT_NOTIFICATION_ICON,
@@ -23,6 +23,11 @@ const messagingConfig = {
 
 const defaultMaskColor = '#fbce70ff'
 const defaultThemeColor = '#ffffff'
+
+if (typeof process.env.VITE_APP_SELECTED_EVENT_COLLECTION === 'undefined') {
+    console.error('VITE_APP_SELECTED_EVENT_COLLECTION is not set')
+    process.exit(1)
+}
 
 const config = defineNuxtConfig({
     app: {
@@ -51,7 +56,6 @@ const config = defineNuxtConfig({
         transpile: [
             'lru-cache',
         ],
-        analyze: true,
     },
     compatibilityDate: '2025-01-30',
     css: [
@@ -280,9 +284,9 @@ const config = defineNuxtConfig({
             authDomain: process.env.VITE_APP_AUTHDOMAIN,
             projectId: process.env.VITE_APP_PROJECTID,
             storageBucket: process.env.VITE_APP_STORAGEBUCKET,
-            messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID,
             appId: process.env.VITE_APP_APPID,
             measurementId: process.env.VITE_APP_MEASUREMENTID,
+            ...(process.env.NOTIFICATIONS === 'true' ? {messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID} : {}),
         },
         auth: {
             enabled: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,

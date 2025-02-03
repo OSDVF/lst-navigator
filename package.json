@@ -7,6 +7,7 @@
     "node": "22.0.0<=22.6.0"
   },
   "scripts": {
+    "analyze": "nuxt analyze",
     "build": "nuxt build",
     "dev": "nuxt dev --https --ssl-key keys/server.key --ssl-cert keys/server.crt",
     "emulator": "firebase emulators:start --import .output/emulator --export-on-exit .output/emulator",
@@ -18,14 +19,6 @@
     "typecheck": "nuxt typecheck",
     "postinstall": "patch-package"
   },
-  "resolutions": {
-    "sharp": "^0.33.5",
-    "sharp-ico": "^0.1.5"
-  },
-  "overrides": {
-    "sharp": "^0.33.5",
-    "sharp-ico": "^0.1.5"
-  },
   "devDependencies": {
     "@diffx/debug-ref": "^0.0.6",
     "@dvcol/import-map-plugin": "^1.1.0",
@@ -36,7 +29,10 @@
     "@nuxt/kit": "^3.15.2",
     "@rauschma/stringio": "^1.4.0",
     "@types/jquery": "^3.5.32",
-    "@types/lodash": "^4.17.14",
+    "@types/lodash.isempty": "^4.4.9",
+    "@types/lodash.clonedeep": "^4.5.9",
+    "@types/lodash.isequal": "^4.5.8",
+    "@types/lodash.merge": "^4.6.9",
     "@types/node": "^18.19.74",
     "@types/randomcolor": "^0.5.9",
     "@vite-pwa/assets-generator": "^0.2.6",
@@ -51,7 +47,6 @@
     "eslint": "^9.19.0",
     "export-to-csv": "^1.4.j0",
     "fake-indexeddb": "^4.0.2",
-    "file-extension-icon-js": "^1.1.6",
     "firebase-admin": "^11.11.1",
     "nuxi": "^3.20.0",
     "nuxt": "^3.15.2",
@@ -83,6 +78,10 @@
     "firebase": "^11.2.0",
     "firebase-messaging": "^1.0.6",
     "idb-keyval": "^6.2.1",
+    "lodash.clonedeep": "^4.5.0",
+    "lodash.isequal": "^4.5.0",
+    "lodash.isempty": "^4.4.0",
+    "lodash.merge": "^4.6.2",
     "metaphone": "^2.0.1",
     "nuxt-rating": "^0.0.15",
     "path-browserify": "^1.0.1",

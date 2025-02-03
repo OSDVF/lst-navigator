@@ -7,7 +7,6 @@ import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth, useFirebaseS
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
 import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, sendEmailVerification } from 'firebase/auth'
-import Lodash from 'lodash'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
@@ -15,6 +14,7 @@ import type { KnownCollectionName } from '@/utils/db'
 import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
+import merge from 'lodash.merge'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -137,7 +137,7 @@ export const useCloudStore = defineStore('cloud', () => {
                         for (const innerKey in val) {
                             const k = innerKey as keyof typeof replies
                             if (typeof replies[k] === 'object' && isNaN(parseInt(innerKey))) {
-                                val[k as keyof typeof val] = Lodash.merge(val[k as keyof typeof val], replies[k][0])
+                                val[k as keyof typeof val] = merge(val[k as keyof typeof val], replies[k][0])
                                 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
                                 delete replies[k]; delete result[innerKey]
                             }
@@ -231,7 +231,7 @@ export const useCloudStore = defineStore('cloud', () => {
     //
     // User auth
     //
-    const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : null
+    const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : ref()
     if (userAuth) {
         watch(userAuth, (newUser) => {
             if (newUser) {

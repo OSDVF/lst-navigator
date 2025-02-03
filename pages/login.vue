@@ -12,8 +12,9 @@
 
 <script setup lang="ts">
 import type { User } from 'firebase/auth'
+import { useCurrentUser } from 'vuefire'
 
-const user = useCurrentUser()
+const user = import.meta.browser ? useCurrentUser() : ref()
 const router = useRouter()
 function tryRedirect(newUser?: User | null) {
     const redir = router.currentRoute.value.query.redirect

@@ -26,14 +26,14 @@
             </div>
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
-                <ClientOnly>
+                <LazyClientOnly>
                     <MainMenu
                         v-if="route.name?.toString().includes('install') || installStep >= config.public.installStepCount" />
                     <NuxtLink v-else :to="`/install/${installStep}`">
                         <Icon name="mdi:arrow-right-bold-circle-outline" size="1.8rem" />
                         Pokračovat v instalaci
                     </NuxtLink>
-                </ClientOnly>
+                </LazyClientOnly>
             </nav>
             <div
                 role="dialog" :class="{
