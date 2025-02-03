@@ -6,7 +6,7 @@
         </Head>
         <NuxtPage :transition="{ name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true }" />
         <nav class="installNav">
-            <LazyClientOnly>
+            <ClientOnly>
                 <NuxtLink
                     :to="{
                         path: partIndex > 0 ? `/install/${partIndex - 1}` : route.query.to?.toString() || '/schedule',
@@ -35,12 +35,7 @@
                     <Icon name="mdi:trending-up" size="2rem" />
                     Začít
                 </NuxtLink>
-                <template #fallback>
-                    Počkejte na načtení aplikace...
-                    <br>
-                    <ProgressBar />
-                </template>
-            </LazyClientOnly>
+            </ClientOnly>
         </nav>
     </main>
 </template>

@@ -13,11 +13,12 @@
 </template>
 
 <script setup lang="ts">
-const config = useRuntimeConfig()
-
 definePageMeta({
     layout: 'install',
 })
+
+const config = useRuntimeConfig()
+
 const next = inject<Ref<string>>('nextText')
 if (next) {
     next.value = 'Instalovat'
