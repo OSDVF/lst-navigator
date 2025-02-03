@@ -29,7 +29,7 @@
                 <LazyClientOnly>
                     <NuxtLink
                         v-if="$route.query.install == 'true' || $route.name?.toString().includes('install')"
-                        :to="onFeedbackPage ? '/schedule' : `/install/0?to=/schedule`">
+                        :to="onFeedbackPage ? '/schedule' : `/install/0?to=/schedule/`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
                             size="1.8rem" />
@@ -67,7 +67,7 @@ const isServer = ref(import.meta.server)
 
 const onFeedbackPage = computed(() => route.name?.toString().includes('feedback') ?? false)
 watchEffect(() => {
-    if (import.meta.browser && (route.query.install == 'true' || settings.installStep == 0) && settings.installStep < config.public.installStepCount && !route.name?.toString().includes('update') && !route.name?.toString().includes('install')) {
+    if (import.meta.browser && (route.query.install == 'true' || settings.installStep == 0) && settings.installStep < config.public.installStepCount && !route.name?.toString().includes('update') && !route.path?.toString().includes('install')) {
         router.replace({
             path: '/install/' + settings.installStep,
             query: {

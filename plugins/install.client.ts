@@ -33,11 +33,6 @@ export default defineNuxtPlugin({
                 registration?.addEventListener('updatefound', () => {
                     downloadingUpdate.value = true
                     console.log('Update found')
-                    app.$nuxt.$pwa?.updateServiceWorker().then(()=>{
-                        console.log('Update done')
-                        downloadingUpdate.value = false
-                        needRefresh.value = true
-                    })
                     registration.installing?.addEventListener('statechange', async (ev) => {
                         if ((ev.target as ServiceWorker).state !== 'redundant' && (settings.installStep ?? 0) >= config.public.installStepCount) {
                             console.log('updated is activated')
@@ -45,6 +40,7 @@ export default defineNuxtPlugin({
                             needRefresh.value = true
                         }
                     })
+                    app.$nuxt.$pwa?.updateServiceWorker()
                 })
                 if (registration.waiting) {
                     console.log('Waiting found')
