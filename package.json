@@ -45,7 +45,7 @@
     "array.prototype.tosorted": "^1.1.4",
     "cssnano": "^5.1.15",
     "eslint": "^9.19.0",
-    "export-to-csv": "^1.4.j0",
+    "export-to-csv": "^1.4.0",
     "fake-indexeddb": "^4.0.2",
     "firebase-admin": "^11.11.1",
     "nuxi": "^3.20.0",

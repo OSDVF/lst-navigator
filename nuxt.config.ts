@@ -261,6 +261,9 @@ const config = defineNuxtConfig({
                 {
                     find: '@composi/idb/types', replacement: '@composi/idb/src/index.js',
                 },
+                ...(process.env.SENTRY_DISABLE === 'true' ? [{
+                    find: '@sentry/nuxt', replacement: './dummy.ts',
+                }] : []),
             ],
         },
         // revert chunk name

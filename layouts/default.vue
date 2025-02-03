@@ -29,7 +29,7 @@
                 <LazyClientOnly>
                     <NuxtLink
                         v-if="$route.query.install == 'true' || $route.name?.toString().includes('install')"
-                        :to="onFeedbackPage ? '/schedule' : `/install/${settings.installStep}?to=/schedule`">
+                        :to="onFeedbackPage ? '/schedule' : `/install/0?to=/schedule`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
                             size="1.8rem" />

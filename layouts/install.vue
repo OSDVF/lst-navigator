@@ -9,7 +9,7 @@
             <ClientOnly>
                 <NuxtLink
                     :to="{
-                        path: partIndex > 0 ? `/install/${partIndex - 1}` : route.query.to?.toString() || '/schedule',
+                        path: partIndex > 0 ? `/install/${partIndex - 1}` : route.query.to?.toString() || '/schedule/',
                         query: {
                             ...$route.query,
                             from: partIndex.toString(),
