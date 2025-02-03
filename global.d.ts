@@ -55,10 +55,10 @@ declare module '#app' {
   interface NuxtApp {
     $deferredPrompt: Ref<BeforeInstallPromptEvent | null>
     $installPromptSupport: () => boolean,
-    $onUpdateCallback: (callback: (reg?: ServiceWorkerRegistration) => void) => void,
     $pwa: PwaInjection,
     $location: string,
-    $updateFound?: Ref<boolean>,
+    $downloadingUpdate?: Ref<boolean>,
+    $needRefresh?: Ref<boolean>,
     $alert: (message?: string) => void,
   }
 }

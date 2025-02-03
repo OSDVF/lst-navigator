@@ -61,7 +61,9 @@ if (import.meta.browser) {
     comChannel.addEventListener('message', (ev) => {
         if (typeof ev.data === 'number') {
             code.value = ev.data
-            Sentry.captureMessage(`HTTP ${ev.data}`, 'warning')
+            if(process.env.SENTRY_DISABLED !== 'true') {
+                Sentry.captureMessage(`HTTP ${ev.data}`, 'warning')
+            }
         }
     })
 }

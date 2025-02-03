@@ -110,7 +110,7 @@ const config = defineNuxtConfig({
         'maintenance/**',
     ],
     modules: [
-        '@sentry/nuxt/module',
+        ...(process.env.SENTRY_DISABLE !== 'true' ? ['@sentry/nuxt/module'] : []),
         '@vite-pwa/nuxt',
         '@nuxt/icon',
         '@pinia/nuxt',
@@ -204,14 +204,16 @@ const config = defineNuxtConfig({
     sourcemap: {
         client: true,
     },
-    sentry: {
-        sourceMapsUploadOptions: {
-            enabled: process.env.SENTRY_DISABLE !== 'true',
-            org: process.env.SENTRY_ORG,
-            project: process.env.SENTRY_PROJECT,
-            authToken: process.env.SENTRY_AUTH_TOKEN,
+    ...(process.env.SENTRY_DISABLE !== 'true' ? {
+        sentry: {
+            sourceMapsUploadOptions: {
+                enabled: process.env.SENTRY_DISABLE !== 'true',
+                org: process.env.SENTRY_ORG,
+                project: process.env.SENTRY_PROJECT,
+                authToken: process.env.SENTRY_AUTH_TOKEN,
+            },
         },
-    },
+    } : {}),
     routeRules: {
         '/clear': {
             headers: {
@@ -286,7 +288,7 @@ const config = defineNuxtConfig({
             storageBucket: process.env.VITE_APP_STORAGEBUCKET,
             appId: process.env.VITE_APP_APPID,
             measurementId: process.env.VITE_APP_MEASUREMENTID,
-            ...(process.env.NOTIFICATIONS === 'true' ? {messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID} : {}),
+            ...(process.env.NOTIFICATIONS === 'true' ? { messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID } : {}),
         },
         auth: {
             enabled: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,

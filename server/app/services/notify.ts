@@ -1,5 +1,5 @@
- 
-import type { DocumentReference} from 'firebase/firestore'
+
+import type { DocumentReference } from 'firebase/firestore'
 import { doc, getDoc, terminate } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
@@ -20,7 +20,7 @@ export default async function () {
     const accessToken = await auth.getAccessToken()
 
     async function eventDocument(event: string) {
-        return (await getDoc(doc(firestore, `${'events' as KnownCollectionName}/${event}`))).data() as {[key in keyof EventDescription]: DocumentReference}
+        return (await getDoc(doc(firestore, `${'events' as KnownCollectionName}/${event}`))).data() as { [key in keyof EventDescription]: DocumentReference }
     }
 
     async function currentEventDocument(docName: keyof EventDescription, ...pathSegments: string[]) {
@@ -54,7 +54,7 @@ export default async function () {
         if (typeof partData === 'undefined') {
             continue
         }
-        const [year, month, day] = partData.date.split('-').map((x:string) => parseInt(x, 10))
+        const [year, month, day] = partData.date.split('-').map((x: string) => parseInt(x, 10))
         const date = new Date(year, month - 1, day)
         // check for today
         if (date.getDate() !== now.getDate() || date.getMonth() !== now.getMonth() || date.getFullYear() !== now.getFullYear()) {
@@ -110,7 +110,7 @@ export default async function () {
                     return response
                 }).catch((e) => {
                     console.error(e)
-                    Sentry.captureException(e)
+                    if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) }
                 }))
             }
         }

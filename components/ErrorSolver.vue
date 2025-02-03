@@ -28,7 +28,9 @@ import * as Sentry from '@sentry/nuxt'
 function captureError(error: unknown) {
     try {
         console.error(error, (error instanceof TypeError || error instanceof DOMException) ? error.stack : null)
-        Sentry.captureException(error)
+        if (process.env.SENTRY_DISABLED !== 'true') {
+            Sentry.captureException(error)
+        }
     } catch (e) { console.error(e) }
 }
 </script>

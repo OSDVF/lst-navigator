@@ -7,7 +7,7 @@
         <h1>
             <Icon name="mdi:update" />&ensp;Aktualizace
         </h1>
-        <p v-if="$pwa?.offlineReady || $pwa?.needRefresh">
+        <p v-if="$pwa?.offlineReady || $pwa?.needRefresh || $pwa?.getSWRegistration()?.active">
             <Icon name="mdi:check" />&ensp;Staženo
         </p>
         <p v-else>
@@ -57,7 +57,9 @@ async function repairWorkerState() {
             currentState?.postMessage({ type: 'SKIP_WAITING' })
         } catch (e) {
             console.error(e)
-            Sentry.captureException(e)
+            if(process.env.SENTRY_DISABLED !== 'true') {
+                Sentry.captureException(e)
+            }
         }
     }
 }

@@ -13,8 +13,8 @@ window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => 
     // can have buttons in different locations, or wait to prompt
     // as part of a critical journey
 })
-const onUpdateCallback = ref((_reg?: ServiceWorkerRegistration) => { })
-const updateFound = ref(false)
+const downloadingUpdate = ref(false)
+const needRefresh = ref(false)
 
 export default defineNuxtPlugin({
     parallel: true,
@@ -23,21 +23,27 @@ export default defineNuxtPlugin({
             const firebaseApp = useFirebaseApp()
             const settings = useSettings()
             const config = useRuntimeConfig()
+            watch(() => app.$nuxt.$pwa?.offlineReady, (value) => {
+                if (value) {
+                    downloadingUpdate.value = false
+                }
+            })
             const swRegistraions = import.meta.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {
-                    updateFound.value = true
+                    downloadingUpdate.value = true
+                    console.log('Update found')
                     registration.installing?.addEventListener('statechange', async (ev) => {
                         if ((ev.target as ServiceWorker).state === 'activated' && (settings.installStep ?? 0) >= config.public.installStepCount) {
-                            console.log('Update found')
-                            onUpdateCallback.value(registration)
+                            console.log('updated is activated')
+                            downloadingUpdate.value = false
+                            needRefresh.value = true
                         }
                     })
                 })
                 if (registration.waiting) {
                     console.log('Waiting found')
-                    updateFound.value = true
-                    onUpdateCallback.value(registration)
+                    downloadingUpdate.value = true
                 }
                 try {
                     registration.active?.postMessage({
@@ -55,7 +61,7 @@ export default defineNuxtPlugin({
                     })
                 } catch (e) {
                     console.error(e)
-                    Sentry.captureException(e)
+                    if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) }
                 }
             }
         },
@@ -65,13 +71,8 @@ export default defineNuxtPlugin({
             provide: {
                 deferredPrompt,
                 installPromptSupport() { return 'BeforeInstallPromptEvent' in window },
-                onUpdateCallback(callback: () => void) {
-                    onUpdateCallback.value = callback
-                    if (updateFound.value) {
-                        callback()
-                    }
-                },
-                updateFound,
+                downloadingUpdate,
+                needRefresh,
             },
         }
     },

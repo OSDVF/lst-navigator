@@ -48,7 +48,7 @@
             <p v-if="$pwa?.swActivated">
                 <Icon name="mdi:check" /> Aktivováno
             </p>
-            <p v-if="$pwa?.offlineReady">
+            <p v-if="$pwa?.offlineReady || $pwa?.needRefresh || $pwa?.getSWRegistration()?.active">
                 <Icon name="mdi:check" /> Stažení
             </p>
             <p v-else-if="!$pwa?.registrationError">
@@ -64,7 +64,7 @@
 </template>
 <script setup lang="ts">
 import { detect } from 'detect-browser'
-const { $deferredPrompt, $installPromptSupport, $pwa } = useNuxtApp()
+const { $deferredPrompt, $installPromptSupport } = useNuxtApp()
 const browser = detect()
 
 definePageMeta({

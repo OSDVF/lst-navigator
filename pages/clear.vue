@@ -30,7 +30,11 @@ onMounted(async () => {
     }
     const f = useFirestore()
     terminate(f).then(() => {
-        clearIndexedDbPersistence(f).catch(Sentry.captureException)
+        clearIndexedDbPersistence(f).catch((e) => {
+            if (process.env.SENTRY_DISABLED !== 'true') {
+                Sentry.captureException(e)
+            }
+        })
     })
 
     // Clear localStorage

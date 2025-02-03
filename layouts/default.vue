@@ -28,7 +28,7 @@
             <nav role="navigation">
                 <LazyClientOnly>
                     <NuxtLink
-                        v-if="route.query.install == 'true'"
+                        v-if="route.query.install == 'true' || route.name?.toString().includes('install')"
                         :to="onFeedbackPage ? '/schedule' : `/install/${settings.installStep}`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
@@ -44,7 +44,7 @@
             </nav>
             <ToastArea />
         </div>
-        <ProgressBar v-show="isServer || cloudStore.eventLoading || $updateFound?.value" class="backgroundLoading" />
+        <ProgressBar v-show="isServer || cloudStore.eventLoading || $downloadingUpdate?.value" class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
@@ -55,7 +55,6 @@
 import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
 import { useSettings } from '@/stores/settings'
-import type { RouteLocationRaw } from '#vue-router'
 
 const app = useNuxtApp()
 const ui = useUI()
@@ -81,23 +80,17 @@ watchEffect(() => {
 
 onMounted(() => {
     isServer.value = false
-    ///
-    /// Redirection guards
-    ///
-    const redirectRoute: RouteLocationRaw = {
-        path: '/update',
-        query: {
-            ...route.query,
-            redirect: (route.path === '/update' ? route.query.redirect : null) ?? route.fullPath,
-        },
+})
+watchEffect(() => {
+    if (app.$needRefresh?.value) {
+        router.push({
+            path: '/update',
+            query: {
+                ...route.query,
+                redirect: (route.path === '/update' ? route.query.redirect : null) ?? route.fullPath,
+            },
+        })
     }
-    if (app.$pwa?.needRefresh) {
-        router.replace(redirectRoute)
-    }
-
-    app.$onUpdateCallback(() => {
-        router.replace(redirectRoute)
-    })
 })
 
 const title = computed(() => {

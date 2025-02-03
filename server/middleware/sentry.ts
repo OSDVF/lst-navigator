@@ -1,5 +1,7 @@
 import * as Sentry from '@sentry/nuxt'
 
 export default defineEventHandler(async (event) => {
-    Sentry.setExtra('event', event)
+    if(process.env.SENTRY_DISABLED !== 'true') {
+        Sentry.setExtra('event', event)
+    }
 })

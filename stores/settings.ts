@@ -141,7 +141,9 @@ export const useSettings = defineStore('settings', () => {
     const userNickname = usePersistentRef<string>('userNickname', '')
     const userIdentifier = usePersistentRef('userIdentifier', uniqueIdentifier)
 
-    Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
+    if(process.env.SENTRY_DISABLED !== 'true') {
+        Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
+    }
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
     const transitions = usePersistentRef('transitions', true)

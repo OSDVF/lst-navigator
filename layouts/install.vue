@@ -102,7 +102,7 @@ provide('skipToNextIf', (predicate: Ref<boolean>) => {
                     path: `/install/${partIndex.value + 1}`,
                     query: {
                         ...route.value.query,
-                        from: partIndex.value,
+                        from: undefined,
                     },
                 })
             } else {

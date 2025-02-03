@@ -256,9 +256,11 @@ export const useCloudStore = defineStore('cloud', () => {
         if (reasonPretty.length < 3) {
             reasonPretty = reason
         }
-        Sentry.captureEvent(reason, {
-            data: reasonPretty,
-        })
+        if (process.env.SENTRY_DISABLED !== 'true') {
+            Sentry.captureEvent(reason, {
+                data: reasonPretty,
+            })
+        }
 
         console.error('Failed signin', reasonPretty)
         user.error.value = reason
@@ -540,9 +542,11 @@ export const useCloudStore = defineStore('cloud', () => {
         setTimeout(() => {
             getRedirectResult(auth!).catch((reason) => {
                 console.error('Failed redirect result', reason)
-                Sentry.captureEvent(reason, {
-                    data: reason,
-                })
+                if (process.env.SENTRY_DISABLED !== 'true') {
+                    Sentry.captureEvent(reason, {
+                        data: reason,
+                    })
+                }
                 user.error.value = reason
             })
         }, 1)
@@ -563,7 +567,7 @@ export const useCloudStore = defineStore('cloud', () => {
                     })
                 }
             }
-        }).catch(e => { console.error(e); Sentry.captureException(e) })
+        }).catch(e => { console.error(e); if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) } })
     }
     return {
         currentEventCollection,

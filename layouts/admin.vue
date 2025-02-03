@@ -48,7 +48,7 @@
             </nav>
             <ToastArea />
         </div>
-        <ProgressBar v-show="cloudStore.eventLoading || $updateFound?.value" class="backgroundLoading" />
+        <ProgressBar v-show="cloudStore.eventLoading || $downloadingUpdate?.value" class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>

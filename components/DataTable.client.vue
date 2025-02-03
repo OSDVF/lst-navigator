@@ -30,13 +30,15 @@ defineExpose({
 const dtErrors = ref('')
 function dtError(e: any, settings: any, techNote: string, message: string) {
     console.error(e, settings, techNote, message)
-    Sentry.captureException(message, {
-        extra: {
-            e,
-            techNote,
-            message,
-        },
-    })
+    if (process.env.SENTRY_DISABLED !== 'true') {
+        Sentry.captureException(message, {
+            extra: {
+                e,
+                techNote,
+                message,
+            },
+        })
+    }
     dtErrors.value += '\n' + message
 }
 

@@ -7,8 +7,8 @@
         <Icon name="mdi:cloud-off" /> Problém s připojením
     </div>
     <LazyClientOnly>
-        <div role="dialog" :class="{ toast: true, visible: $updateFound?.value }" tabindex="0">
-            <Icon name="mdi:download-multiple" /> Stahování aktualizace...
+        <div role="dialog" :class="{ toast: true, visible: $downloadingUpdate?.value }" tabindex="0">
+            <Icon name="mdi:download-multiple" /> Stahování souborů aplikace...
         </div>
     </LazyClientOnly>
 </template>
