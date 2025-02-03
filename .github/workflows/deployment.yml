@@ -33,7 +33,7 @@ jobs:
         run: echo '${{ secrets.FIREBASE_CONFIG }}' > firebase.json
 
       - name: Download distribution artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v8
         with:
           workflow: build.yml
           workflow_conclusion: success

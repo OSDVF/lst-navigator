@@ -32,7 +32,7 @@ jobs:
       - run: mkdir -p .output/public
 
       - name: Download distribution artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v8
         with:
           workflow: build.yml
           workflow_conclusion: success
