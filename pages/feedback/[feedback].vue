@@ -62,19 +62,33 @@
             </fieldset>
         </div>
         <br>
-        <button
-            v-if="feedbackPartIndex < (cloudStore.feedbackConfig?.length ?? 0) - 1"
-            class="large d-block m-left-auto"
-            @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))">
-            Pokračovat na další část
-            <Icon name="mdi:chevron-right" />
-        </button>
-        <button
-            v-else class="large d-block m-left-auto"
-            @click="cloudStore.feedback.saveAgain().then(() => router.push('/feedback/thanks'))">
-            <Icon name="mdi:check" />
-            Dokončit
-        </button>
+        <div class="flex justify-content-between">
+            <button
+                v-if="feedbackPartIndex > 0" class="large"
+                @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex - 1}`))">
+                <Icon name="mdi:chevron-left" />
+                Předchozí část
+            </button>
+            <button
+                v-else class="large"
+                @click="cloudStore.feedback.saveAgain().then(() => router.push('/schedule?install=false'))">
+                <Icon name="mdi:chevron-left" />
+                <Icon name="mdi:calendar-month" />
+                Zpátky k harmonogramu a informacím
+            </button>
+            <button
+                v-if="feedbackPartIndex < (cloudStore.feedbackConfig?.length ?? 0) - 1" class="large"
+                @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))">
+                Pokračovat na další část
+                <Icon name="mdi:chevron-right" />
+            </button>
+            <button
+                v-else class="large d-block m-left-auto"
+                @click="cloudStore.feedback.saveAgain().then(() => router.push('/feedback/thanks'))">
+                <Icon name="mdi:check" />
+                Dokončit
+            </button>
+        </div>
         <p v-if="cloudStore.feedback.fetchFailed" style="color:red">
             {{ cloudStore.feedback.error || 'Nepodařilo se uložit tvou odpověď' }}
             <button @click="cloudStore.feedback.saveAgain">

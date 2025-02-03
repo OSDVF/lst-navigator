@@ -52,7 +52,15 @@
                 <Icon v-if="entry.icon" :name="entry.icon" />
             </div>
         </summary>
-        <NuxtLink :to="`/schedule/${p.day}/${index}`" style="position: relative">
+        <NuxtLink
+            :to="{
+                name: 'schedule-day-event',
+                params: {
+                    day: p.day.toString(),
+                    event: p.index.toString(),
+                },
+                query: $route.query,
+            }" style="position: relative">
             <!-- eslint-disable-next-line vue/no-v-html -->
             <div class="content" v-html="entry.description?.trim() || '<p>Žádné detaily</p>'" />
             <span class="more">
@@ -74,6 +82,7 @@
 // TODO: detailní feedback
 import type { FeedbackType, ScheduleItem } from '@/types/cloud'
 import { toHumanTime } from '@/utils/types'
+import type { q } from '@vite-pwa/assets-generator/dist/shared/assets-generator.5e51fd40.mjs'
 
 const e = defineEmits<{
     moveUp: [entry: ScheduleItem, index: number],
@@ -122,8 +131,15 @@ const inMotion = inject<Ref<boolean>>('inMotion')
 function click(e: Event) {
     if (!settings.expandableItems) {
         e.preventDefault()
-        if(!(inMotion?.value ?? false)) {
-            router.push(`/schedule/${p.day}/${p.index}`)
+        if (!(inMotion?.value ?? false)) {
+            router.push({
+                name: 'schedule-day-event',
+                params: {
+                    day: p.day.toString(),
+                    event: p.index.toString(),
+                },
+                query: router.currentRoute.value.query,
+            })
         }
     }
 }

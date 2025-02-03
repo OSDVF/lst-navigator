@@ -172,7 +172,7 @@ const config = defineNuxtConfig({
         manifest: {
             name: process.env.VITE_APP_NAME,
             short_name: process.env.VITE_APP_SHORT_NAME,
-            start_url: './schedule',
+            start_url: './schedule?pwa=true',
             id: process.env.APP_ID,
             theme_color: process.env.THEME_COLOR ?? defaultThemeColor,
             description: process.env.APP_DESCRIPTION,

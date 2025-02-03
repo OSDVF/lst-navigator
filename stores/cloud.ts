@@ -209,6 +209,11 @@ export const useCloudStore = defineStore('cloud', () => {
                     merge: true,
                 }))
             }
+            feedbackDirtyTime.value = new Date().getTime()
+            promises.push(setDoc(doc(feedback.col.value!, settings.userIdentifier), {
+                updated: feedbackDirtyTime.value,
+            }, { merge: true }))
+
 
             const result = Promise.all(promises).then(() => { feedback.fetching.value = feedback.fetchFailed.value = false }).catch((e) => { feedback.error.value = e })
             setTimeout(() => {

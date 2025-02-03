@@ -5,7 +5,11 @@
                 v-for="(day, index) in cloud.days" :key="`day${index}`" :style="{
                     'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
                     'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
-                }" :to="`/schedule/${index}`">
+                }" :to="{
+                    name: 'schedule-day',
+                    params: { day: index.toString() },
+                    query: $route.query,
+                }">
                 {{ day?.name ?? index }}
             </NuxtLink>
         </nav>
@@ -53,7 +57,10 @@ function findToday(newCloud: typeof cloud) {
             }
         }
     }
-    router.replace(`/schedule/${index}`)
+    router.replace({
+        path: `/schedule/${index}`,
+        query: router.currentRoute.value.query,
+    })
 }
 //
 // Automatic redirect when no day is selected

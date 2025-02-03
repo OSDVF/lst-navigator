@@ -28,10 +28,13 @@
             <nav role="navigation">
                 <LazyClientOnly>
                     <MainMenu
-                        v-if="route.name?.toString().includes('install') || installStep >= config.public.installStepCount" />
-                    <NuxtLink v-else :to="`/install/${installStep}`">
-                        <Icon name="mdi:arrow-right-bold-circle-outline" size="1.8rem" />
-                        Pokračovat v instalaci
+                        v-if="route.name?.toString().includes('install') || settings.installStep >= config.public.installStepCount" />
+                    <NuxtLink v-else :to="onFeedbackPage ? '/schedule?install=false' : `/install/${settings.installStep}`" >
+                        <Icon
+                            :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
+                            size="1.8rem" />
+                        {{ onFeedbackPage ? 'Zobrazit harmonogram a informace...' :
+                            'K instalaci aplikace...' }}
                     </NuxtLink>
                 </LazyClientOnly>
             </nav>
@@ -63,7 +66,6 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
 const settings = useSettings()
-const installStep = settings.installStep
 const isServer = ref(import.meta.server)
 
 function alert(message?: string) {
@@ -72,14 +74,16 @@ function alert(message?: string) {
     }
 }
 
+const onFeedbackPage = computed(() => route.name?.toString().includes('feedback') ?? false)
+const safeRoute = computed<boolean>(() => route.query.pwa == 'true' || route.query.install == 'false' || onFeedbackPage.value || (route.name as string)?.includes('install') || (route.path as string)?.includes('login'))
+watchEffect(() => {
+    if (!safeRoute.value && settings.installStep < config.public.installStepCount) {
+        router.replace('/install/' + settings.installStep)
+    }
+})
+
 onMounted(() => {
     isServer.value = false
-    watch(router.currentRoute, (route) => {
-        const safeStep = toRaw(installStep)
-        if (!(route.name as string)?.includes('feedback') && !(route.path as string)?.includes('login') && safeStep < config.public.installStepCount) {
-            router.replace('/install/' + safeStep)
-        }
-    }, { immediate: true })
     ///
     /// Redirection guards
     ///
