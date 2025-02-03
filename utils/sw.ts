@@ -91,8 +91,10 @@ async function onUpdate() {
             const updateUrl = new URL('/update', self.location.origin)
             console.log('Updating to ', clients[0]?.url)
             if (clients.length === 1) {
+                console.log('Navigating to ', updateUrl)
                 await clients[0].navigate(updateUrl + `?redirect=${encodeURIComponent(clients[0].url)}`)
             } else {
+                console.log('Opening new window to ', updateUrl)
                 await self.clients.openWindow(updateUrl)
             }
         }

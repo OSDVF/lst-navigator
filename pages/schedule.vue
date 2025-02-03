@@ -23,7 +23,7 @@
             }">
             <div style="width:100vw">
                 <NuxtPage
-                    :transition="!gestureTransPending && settings.animations ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTransitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTransitionBeforeLeave } : undefined" />
+                    :transition="!gestureTransPending && settings.transitions ? { name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true, onAfterLeave: onTransitionAfterLeave, onAfterEnter: onTransitionAfterEnter, onBeforeLeave: onTransitionBeforeLeave } : undefined" />
             </div>
         </div>
     </div>

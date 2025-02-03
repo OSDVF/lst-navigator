@@ -1,3 +1,5 @@
+import { getCurrentUser } from 'vuefire'
+
 // middleware/auth.ts
 export default defineNuxtRouteMiddleware(async (to) => {
     const config = useRuntimeConfig()

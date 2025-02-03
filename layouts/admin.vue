@@ -46,11 +46,9 @@
                 </NuxtLink>
                 <SettingsLink />
             </nav>
-            <div role="dialog" :class="{ networkError: true, visible: !!cloudStore.networkError }" :title="cloudStore.networkError?.message" tabindex="0">
-                <Icon name="mdi:cloud-off" /> Problém s připojením
-            </div>
+            <ToastArea />
         </div>
-        <ProgressBar v-show="cloudStore.eventLoading" class="backgroundLoading" />
+        <ProgressBar v-show="cloudStore.eventLoading || $updateFound?.value" class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>

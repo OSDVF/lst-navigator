@@ -77,25 +77,22 @@ export const useCloudStore = defineStore('cloud', () => {
         console.error(e)
     }
 
-    const firebaseStorage = probe && useFirebaseStorage()
+    const firebaseStorage = probe && config.public.storageEnabled && useFirebaseStorage()
     const selectedEvent = usePersistentRef('selectedEvent-' + config.public.defaultEvent, config.public.defaultEvent)// invalidate the selected event when the default settings change
     function eventDoc(...path: (string | EventSubcollection)[]) {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
     }
     const auth = probe && (config.public.ssrAuthEnabled || import.meta.client) ? useFirebaseAuth() : null
     auth?.useDeviceLanguage()
-    
+
     if (import.meta.client) {
         auth?.setPersistence(browserLocalPersistence)
     }
 
     const eventDocuments = useDocumentT<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
         maxRefDepth: 5,
-        once: !!import.meta.server,
         wait: true,
     })
-
-    const eventData = eventDocuments.data
 
     function currentEventCollection(docName: EventSubcollection) {
         return computed(() => {
@@ -106,9 +103,9 @@ export const useCloudStore = defineStore('cloud', () => {
 
     const subscriptionsCollection = currentEventCollection('subscriptions')
 
-    const eventImage = computed(() => eventData.value?.image.type == 'cloud' && firebaseStorage
-        ? useStorageFileUrl(storageRef(firebaseStorage, eventData.value?.image.data)).url.value
-        : eventData.value?.image.data)
+    const eventImage = computed(() => eventDocuments.value?.image.type == 'cloud' && firebaseStorage
+        ? useStorageFileUrl(storageRef(firebaseStorage, eventDocuments.value?.image.data)).url.value
+        : eventDocuments.value?.image.data)
 
     //
     // Feedback
@@ -380,7 +377,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }
             localStorage.removeItem('userIdentifierQuestion')
 
-            if(newUser.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
+            if (newUser.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
                 updateCurrentUserProfile({
                     displayName: settings.userNickname,
                 })
@@ -431,7 +428,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 merge: true,
             })
 
-            if(userAuth.value.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
+            if (userAuth.value.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
                 updateCurrentUserProfile({
                     displayName: newSettings.userNickname,
                 })
@@ -472,7 +469,7 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const permissionNames = computed(() => ({
         ...(resolvedPermissions.value.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
-        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + (eventData.value?.title ?? '') } : {}),
+        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + (eventDocuments.value?.title ?? '') } : {}),
         [UserLevel.ScheduleAdmin]: 'Editor programu',
         [UserLevel.Nothing]: 'Nic',
     }))
@@ -571,7 +568,7 @@ export const useCloudStore = defineStore('cloud', () => {
     return {
         currentEventCollection,
         days,
-        eventData,
+        eventData: eventDocuments,
         eventDoc,
         eventImage,
         eventLoading: skipHydrate(eventDocuments.pending),

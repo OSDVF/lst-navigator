@@ -7,7 +7,7 @@
         <h1>
             <Icon name="mdi:update" />&ensp;Aktualizace
         </h1>
-        <p v-if="$pwa?.offlineReady">
+        <p v-if="$pwa?.offlineReady || $pwa?.needRefresh">
             <Icon name="mdi:check" />&ensp;Staženo
         </p>
         <p v-else>
@@ -74,9 +74,7 @@ async function download() {
                 installed: 'true',
             },
         })
-        updatePromise?.finally(() => { if(confirm('Aktualizováno - přenačíst aplikaci?'))  {
-            location.reload(true)
-        } })
+        updatePromise?.finally(() => { location.reload(true) })
     }
 }
 

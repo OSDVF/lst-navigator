@@ -82,7 +82,6 @@
 // TODO: detailní feedback
 import type { FeedbackType, ScheduleItem } from '@/types/cloud'
 import { toHumanTime } from '@/utils/types'
-import type { q } from '@vite-pwa/assets-generator/dist/shared/assets-generator.5e51fd40.mjs'
 
 const e = defineEmits<{
     moveUp: [entry: ScheduleItem, index: number],

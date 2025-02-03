@@ -8,25 +8,38 @@
         <nav class="installNav">
             <LazyClientOnly>
                 <NuxtLink
-                    v-if="partIndex > 0" :to="`/install/${partIndex - 1}?from=${partIndex}`"
-                    @click="currentTransition = 'slide-right'">
-                    <Icon name="material-symbols:arrow-circle-left-outline" size="2rem" /> Předchozí
+                    :to="{
+                        path: partIndex > 0 ? `/install/${partIndex - 1}` : route.query.to?.toString() || '/schedule',
+                        query: {
+                            ...$route.query,
+                            from: partIndex.toString(),
+                            install: partIndex > 0 ? $route.query.install : undefined,
+                        }
+                    }" @click="currentTransition = 'slide-right'; partIndex == 0 ? settings.installStep = 1 : null">
+                    <Icon :name="partIndex > 0 ? 'material-symbols:arrow-circle-left-outline' : 'mdi:trending-up'" size="2rem" />
+                    {{ partIndex > 0 ? 'Předchozí' :
+                        'Přeskočit instalaci' }}
                 </NuxtLink>
                 <NuxtLink
-                    v-if="canGoNext" :to="`/install/${partIndex + 1}`"
-                    @click="currentTransition = 'slide-left'; onNextButtonClick()">
+                    v-if="canGoNext" :to="{
+                        path: `/install/${partIndex + 1}`,
+                        query: {
+                            ...$route.query,
+                            from: undefined,
+                        }
+                    }" @click="currentTransition = 'slide-left'; onNextButtonClick()">
                     <Icon name="material-symbols:arrow-circle-right-outline" size="2rem" />
                     {{ next }}
                 </NuxtLink>
-                <NuxtLink v-else to="/schedule" @click="settings.installStep = partIndex + 1">
-                    <Icon name="material-symbols:trending-up" size="2rem" />
+                <NuxtLink v-else :to="route.query.to?.toString() || '/schedule'" @click="settings.installStep = partIndex + 1">
+                    <Icon name="mdi:trending-up" size="2rem" />
                     Začít
                 </NuxtLink>
-                <ServerPlaceholder>
+                <template #fallback>
                     Počkejte na načtení aplikace...
                     <br>
                     <ProgressBar />
-                </ServerPlaceholder>
+                </template>
             </LazyClientOnly>
         </nav>
     </main>
@@ -40,12 +53,12 @@ const settings = useSettings()
 const router = useRouter()
 const route = router.currentRoute
 const config = useRuntimeConfig()
-const defaultNext = 'Další'
-const next = ref(defaultNext)
-const pathParts = computed(() => route.value.path.split('/'))
+const pathParts = computed(() => router.currentRoute.value.path.split('/'))
 const lastPart = computed(() => pathParts.value[pathParts.value.length - 1])
 const partIndex = computed(() => parseInt(lastPart.value))
 const canGoNext = computed(() => partIndex.value < config.public.installStepCount - 1)
+const defaultNext = 'Další'
+const next = ref(defaultNext)
 const currentTransition = ref('slide-left')
 
 const onNextButtonClickListeners = ref<(() => void)[]>([])
@@ -70,18 +83,30 @@ provide('skipToNextIf', (predicate: Ref<boolean>) => {
     function skip() {
         const from = parseInt(route.value.query.from as string)
         if (!isNaN(from)) {
-            if(from < partIndex.value) {
+            if (from < partIndex.value) {
                 onNextButtonClick()
             } else {
                 next.value = defaultNext
             }
-            router.replace(`/install/${Math.max(partIndex.value - 1, 0)}?from=${partIndex.value}`)
+            router.replace({
+                path: `/install/${Math.max(partIndex.value - 1, 0)}`,
+                query: {
+                    ...route.value.query,
+                    from: partIndex.value,
+                },
+            })
         } else {
             onNextButtonClick()
             if (canGoNext.value) {
-                router.replace(`/install/${partIndex.value + 1}`)
+                router.replace({
+                    path: `/install/${partIndex.value + 1}`,
+                    query: {
+                        ...route.value.query,
+                        from: partIndex.value,
+                    },
+                })
             } else {
-                router.replace('/schedule')
+                router.replace(route.value.query.to?.toString() || '/schedule')
             }
         }
     }

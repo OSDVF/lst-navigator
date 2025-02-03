@@ -36,7 +36,7 @@ main .average-rating {
     z-index: 2; // to also show above image fade overlay on /info
 }
 
-.networkError {
+.toast {
     flex-basis: 100%;
     flex-grow: 1;
     backdrop-filter: c.$blurred-background;
@@ -162,13 +162,13 @@ details.border {
 
     @media screen and (min-width: 768px) {
         right: 2rem;
-        
+
     }
 
     @media screen and (min-width: 1024px) {
         right: 3rem;
         position: static;
-        
+
     }
 
     &:before {
@@ -184,11 +184,15 @@ details.border {
 }
 
 fieldset {
-    &:hover, &:focus, &:focus-within {
+
+    &:hover,
+    &:focus,
+    &:focus-within {
         .fieldset-edit {
             display: block;
         }
     }
+
     &>legend>input:focus~.fieldset-edit {
         display: none;
     }
@@ -203,7 +207,8 @@ textarea.autosize {
     }
 }
 
-textarea, .rich-editor {
+textarea,
+.rich-editor {
     max-width: 99vw;
 }
 

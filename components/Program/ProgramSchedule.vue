@@ -32,6 +32,12 @@
                 </template>
             </template>
         </div>
+
+        <strong>
+            <NuxtLink v-if="p.day == cloud.days.length - 1" to="/feedback" class="p-2 mt-2 d-block">
+                <Icon name="mdi:rss" size="1.8rem" /> Vyplnit feedbackový dotazník
+            </NuxtLink>
+        </strong>
     </div>
 </template>
 

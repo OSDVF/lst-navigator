@@ -27,26 +27,24 @@
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
                 <LazyClientOnly>
-                    <MainMenu
-                        v-if="route.name?.toString().includes('install') || settings.installStep >= config.public.installStepCount" />
-                    <NuxtLink v-else :to="onFeedbackPage ? '/schedule?install=false' : `/install/${settings.installStep}`" >
+                    <NuxtLink
+                        v-if="route.query.install == 'true'"
+                        :to="onFeedbackPage ? '/schedule' : `/install/${settings.installStep}`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
                             size="1.8rem" />
                         {{ onFeedbackPage ? 'Zobrazit harmonogram a informace...' :
                             'K instalaci aplikace...' }}
                     </NuxtLink>
+                    <MainMenu v-else />
+                    <template #fallback>
+                        <p class="m-auto p-3">Počkejte na načtení aplikace...</p>
+                    </template>
                 </LazyClientOnly>
             </nav>
-            <div
-                role="dialog" :class="{
-                    networkError: true, visible: !!cloudStore.networkError,
-                //TODO offline alert?
-                }" @click="alert(cloudStore.networkError?.message)">
-                <Icon name="mdi:cloud-off" /> Problém s připojením
-            </div>
+            <ToastArea />
         </div>
-        <ProgressBar v-show="isServer || cloudStore.eventLoading" class="backgroundLoading" />
+        <ProgressBar v-show="isServer || cloudStore.eventLoading || $updateFound?.value" class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
@@ -68,17 +66,16 @@ const router = useRouter()
 const settings = useSettings()
 const isServer = ref(import.meta.server)
 
-function alert(message?: string) {
-    if (message) {
-        window.alert(message)
-    }
-}
-
 const onFeedbackPage = computed(() => route.name?.toString().includes('feedback') ?? false)
-const safeRoute = computed<boolean>(() => route.query.pwa == 'true' || route.query.install == 'false' || onFeedbackPage.value || (route.name as string)?.includes('install') || (route.path as string)?.includes('login'))
 watchEffect(() => {
-    if (!safeRoute.value && settings.installStep < config.public.installStepCount) {
-        router.replace('/install/' + settings.installStep)
+    if (import.meta.browser && (route.query.install == 'true' || settings.installStep == 0) && settings.installStep < config.public.installStepCount && !route.name?.toString().includes('update') && !route.name?.toString().includes('install')) {
+        router.replace({
+            path: '/install/' + settings.installStep,
+            query: {
+                ...route.query,
+                to: route.fullPath,
+            },
+        })
     }
 })
 
@@ -90,6 +87,7 @@ onMounted(() => {
     const redirectRoute: RouteLocationRaw = {
         path: '/update',
         query: {
+            ...route.query,
             redirect: (route.path === '/update' ? route.query.redirect : null) ?? route.fullPath,
         },
     }

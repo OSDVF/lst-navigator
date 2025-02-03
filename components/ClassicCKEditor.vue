@@ -11,8 +11,8 @@
 <script setup lang="ts">
 
 const props = defineProps<{
-    modelValue: string | null | undefined,
-    plain: boolean | undefined | null,
+    modelValue?: string | null,
+    plain?: boolean  | null,
 }>()
 const emit = defineEmits<{
     'update:modelValue': [value: string],

@@ -18,11 +18,11 @@
             </span>
         </fieldset>
         <fieldset>
-            <label for="animations">
+            <label for="transitions">
                 <Icon name="mdi:animation" /> Animace
             </label>
             <span>
-                <input id="animations" v-model="settings.animations" type="checkbox">
+                <input id="transitions" v-model="settings.transitions" type="checkbox">
             </span>
         </fieldset>
         <fieldset>
@@ -80,20 +80,10 @@
                     Smazat
                 </button>
                 <button @click="settings.toggleSelectedAudio">
-                    <Icon :name="settings.isPlaying ? 'mdi:stop' : 'mdi:play'" />
+                    <Icon :name="/* TODO: notification permission */settings.isPlaying ? 'mdi:stop' : 'mdi:play'" />
                 </button>
             </span>
         </fieldset>
-        <!--<fieldset>
-            <label for="group">Skupina</label>
-            <span>
-                <select id="group" v-model="settings.selectedGroup">
-                    <option v-for="(groupName, index) in cloud.groupNames" :key="groupName" :value="index - 1">
-                        {{ groupName }}
-                    </option>
-                </select>
-            </span>
-        </fieldset>-->
         <h4>Individuální nastavení</h4>
         <fieldset>
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
@@ -131,21 +121,33 @@
             </span>
         </fieldset>
         <LazyLoginField />
-        <h4>O aplikaci</h4>
+        <h4>Aplikace</h4>
+        <fieldset v-if="!$pwa?.isPWAInstalled && $deferredPrompt?.value">
+            <label for="install">Instalace</label>
+            <span>
+                <button id="install" @click="$router.push('/install/0')">
+                    <Icon name="mdi:download" /> Instalovat
+                </button>
+            </span>
+        </fieldset>
         <fieldset>
             <p>Verze</p>
-            <p>
-                <LazyClientOnly>
-                    {{ new Date(parseInt(config.public.compileTime)).toLocaleString(lang) }}
-                    {{ leadingPlus(-parseInt(config.public.compileTimeZone) / 60) }}
-                </LazyClientOnly>
-            </p>
+            <small :title="config.public.commitHash" @click="$alert(config.public.commitHash)">
+                {{ config.public.version }}
+                {{ config.public.commitMessageTime }}
+            </small>
+
         </fieldset>
         <fieldset>
             <span>Poslední aktualizace</span>
-            <small>{{ config.public.commitMessageTime }}
+            <p>
+                <LazyClientOnly>
+                    {{ new Date(parseInt(config.public.compileTime)).toLocaleString(lang) }}{{
+                        leadingPlus(-parseInt(config.public.compileTimeZone) / 60) }}
+                </LazyClientOnly>
+                &nbsp;
                 <AppManageBtns />
-            </small>
+            </p>
         </fieldset>
         <fieldset>
             <span>Hlášení chyb</span>

@@ -58,6 +58,8 @@ declare module '#app' {
     $onUpdateCallback: (callback: (reg?: ServiceWorkerRegistration) => void) => void,
     $pwa: PwaInjection,
     $location: string,
+    $updateFound?: Ref<boolean>,
+    $alert: (message?: string) => void,
   }
 }
 

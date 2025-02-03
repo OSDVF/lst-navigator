@@ -14,7 +14,7 @@ window.addEventListener('beforeinstallprompt', (e: BeforeInstallPromptEvent) => 
     // as part of a critical journey
 })
 const onUpdateCallback = ref((_reg?: ServiceWorkerRegistration) => { })
-let updateFound = false
+const updateFound = ref(false)
 
 export default defineNuxtPlugin({
     parallel: true,
@@ -26,18 +26,18 @@ export default defineNuxtPlugin({
             const swRegistraions = import.meta.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {
+                    updateFound.value = true
                     registration.installing?.addEventListener('statechange', async (ev) => {
                         if ((ev.target as ServiceWorker).state === 'activated' && (settings.installStep ?? 0) >= config.public.installStepCount) {
                             console.log('Update found')
                             onUpdateCallback.value(registration)
-                            updateFound = true
                         }
                     })
                 })
                 if (registration.waiting) {
                     console.log('Waiting found')
+                    updateFound.value = true
                     onUpdateCallback.value(registration)
-                    updateFound = true
                 }
                 try {
                     registration.active?.postMessage({
@@ -67,10 +67,11 @@ export default defineNuxtPlugin({
                 installPromptSupport() { return 'BeforeInstallPromptEvent' in window },
                 onUpdateCallback(callback: () => void) {
                     onUpdateCallback.value = callback
-                    if (updateFound) {
+                    if (updateFound.value) {
                         callback()
                     }
                 },
+                updateFound,
             },
         }
     },

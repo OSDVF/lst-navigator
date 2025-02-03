@@ -144,10 +144,10 @@ export const useSettings = defineStore('settings', () => {
     Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
-    const animations = usePersistentRef('animations', true)
+    const transitions = usePersistentRef('transitions', true)
 
     return {
-        animations,
+        transitions,
         expandableItems: usePersistentRef('expandableItems', false),
         gestures: usePersistentRef('gestures', true),
         installStep: usePersistentRef<number>('installStep', 0),

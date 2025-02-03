@@ -69,12 +69,10 @@
                 <Icon name="mdi:chevron-left" />
                 Předchozí část
             </button>
-            <button
-                v-else class="large"
-                @click="cloudStore.feedback.saveAgain().then(() => router.push('/schedule?install=false'))">
+            <button v-else class="large" @click="cloudStore.feedback.saveAgain().then(() => router.push('/schedule'))">
                 <Icon name="mdi:chevron-left" />
                 <Icon name="mdi:calendar-month" />
-                Zpátky k harmonogramu a informacím
+                Harmonogram a informace
             </button>
             <button
                 v-if="feedbackPartIndex < (cloudStore.feedbackConfig?.length ?? 0) - 1" class="large"
@@ -129,11 +127,15 @@ const settings = useSettings()
 const feedbackPartIndex = parseInt(router.currentRoute.value.params.feedback as string) || 0
 
 definePageMeta({
-    middleware(to, _from) {
+    middleware(to, from) {
         if (isNaN(parseInt(to.params.feedback as string))) {
             if (import.meta.client) { alert(`Neplatná část feedbackového dotazníku ${to.params.feedback}`) }
             return {
                 path: '/feedback',
+            }
+        } else if (import.meta.browser && localStorage.getItem('transitions') == 'true') {// TODO: use settings.transitions
+            to.meta.pageTransition = {
+                name: +from.params.feedback > +to.params.feedback ? 'slide-right' : 'slide-left',
             }
         }
     },
@@ -210,6 +212,9 @@ const currentPart = computed(() => {
 
 fieldset {
     border-radius: .5rem;
+    h4 {
+        margin-top: 0
+    }
 }
 
 .eventItemNav {
