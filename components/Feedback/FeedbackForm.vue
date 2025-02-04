@@ -3,11 +3,11 @@
         <tbody>
             <tr v-if="type === 'parallel'">
                 <td>
-                    <label :for="`${randomId}S`">Účastnil*a jsem se</label>
+                    <label :for="`${uid}S`">Účastnil*a jsem se</label>
                 </td>
                 <td>
                     <select
-                        :id="`${randomId}S`"
+                        :id="`${uid}S`"
                         v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
                         @pointerleave="permitSwipe = true">
                         <option v-for="parallelEvent in selectOptions" :key="parallelEvent" :value="parallelEvent">
@@ -24,10 +24,10 @@
                 </td>
             </tr>
             <tr v-if="type === 'select'">
-                <td><label :for="randomId">Vyberte odpověd</label></td>
+                <td><label :for="uid">Vyberte odpověd</label></td>
                 <td>
                     <select
-                        :id="randomId"
+                        :id="uid"
                         v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
                         @pointerleave="permitSwipe = true">
                         <option v-for="selectOption in selectOptions" :key="selectOption" :value="selectOption">
@@ -101,7 +101,6 @@
 import { defaultQuestions } from '@/stores/cloud'
 import type { Feedback, FeedbackType } from '@/types/cloud'
 import useFeedbackControls from '@/utils/feedbackControls'
-const randomId = Math.random().toString(36).substring(2)
 
 const props = defineProps({
     data: {
@@ -138,6 +137,8 @@ const props = defineProps({
         required: true,
     },
 })
+
+const uid = useId()
 
 const normalizedData = computed(() => {
     const result: Feedback = {}

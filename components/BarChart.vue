@@ -110,11 +110,13 @@ const labels = computed(() => {
     return Object.keys(props.values)
 })
 
+const id = useId()
+
 const colors = computed(() => {
     if (typeof props.colors !== 'undefined') {
         return props.colors
     }
-    return randomcolor({ count: filteredValues.value.v.length }).map(c => setColorTransparency(c, 0.8))
+    return randomcolor({ count: filteredValues.value.v.length, seed: id}).map(c => setColorTransparency(c, 0.8))
 })
 
 </script>

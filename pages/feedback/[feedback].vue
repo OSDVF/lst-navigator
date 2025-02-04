@@ -28,7 +28,7 @@
         </NameChangeDialog>
         <br>
 
-        Každá tvá změna je hned uložena. {{ cloudStore.eventData?.feedbackInfo }}
+        Každá tvá změna je hned uložena. Rozpracovaný formulář bude navždy zachován. {{ cloudStore.eventData?.feedbackInfo }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`">
             <h3>{{ subPart.title }}</h3>
@@ -46,12 +46,12 @@
                             </h4>
                         </summary>
                         <!-- eslint-disable-next-line vue/no-v-html -->
-                        <p v-html="entry.description ?? 'Žádné detaily'" />
+                        <div class="p" v-html="entry.description ?? 'Žádné detaily'" />
                     </details>
                     <template v-else>
                         <h4>{{ entry.subtitle }}</h4>
                         <!-- eslint-disable-next-line vue/no-v-html -->
-                        <p v-html="entry.description" />
+                        <div class="p" v-html="entry.description" />
                     </template>
                 </template>
                 <FeedbackForm
@@ -69,11 +69,10 @@
                 <Icon name="mdi:chevron-left" />
                 Předchozí část
             </button>
-            <button v-else class="large" @click="cloudStore.feedback.saveAgain().then(() => router.push('/schedule'))">
-                <Icon name="mdi:chevron-left" />
+            <NuxtLink v-else class="large" to="/schedule">
                 <Icon name="mdi:calendar-month" />
-                Harmonogram a informace
-            </button>
+                Program a informace
+            </NuxtLink>
             <button
                 v-if="feedbackPartIndex < (cloudStore.feedbackConfig?.length ?? 0) - 1" class="large"
                 @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))">

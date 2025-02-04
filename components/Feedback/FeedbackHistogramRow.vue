@@ -56,7 +56,8 @@ import { useAdmin } from '~/stores/admin'
 const HISTOGRAM_BUCKETS = [1, 2, 3, 4, 5]
 const basicColors = randomcolor({ count: 5, hue: 'blue' }).map(c => setColorTransparency(c, 0.8))
 const hues = ['yellow', 'orange', 'red']
-const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue })).map(colors => colors.map(c => setColorTransparency(c, 0.8)))
+const id = useId()
+const complicatedColors = hues.map(hue => randomcolor({ count: 5, hue, seed: id })).map(colors => colors.map(c => setColorTransparency(c, 0.8)))
 
 const props = defineProps<{
     replies: { [respondent: string]: Feedback },

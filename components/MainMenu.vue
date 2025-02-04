@@ -1,15 +1,19 @@
 <template>
     <NuxtLink to="/info">
         <Icon name="mdi:information" size="1.8rem" />
-        {{ $config.public.title }}
+        <span class="text">{{ $config.public.title }}</span>
+    </NuxtLink>
+    <NuxtLink to="/feedback">
+        <Icon name="mdi:rss" size="1.8rem" />
+        <span class="text">Feedback</span>
     </NuxtLink>
     <NuxtLink to="/schedule">
         <Icon name="mdi:calendar-text" size="1.8rem" />
-        Program
+        <span class="text">Program</span>
     </NuxtLink>
     <NuxtLink v-if="cloudStore.resolvedPermissions.editSchedule" to="/admin">
         <Icon name="mdi:account-cog" size="1.8rem" />
-        Administrace
+        <span class="text">Administrace</span>
     </NuxtLink>
     <SettingsLink />
 </template>

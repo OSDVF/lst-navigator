@@ -7,7 +7,7 @@
             <button @click="dtErrors = ''">
                 x
             </button>
-            <pre class="m-0">{{ dtErrors }}</pre>
+            <code>{{ dtErrors }}</code>
         </p>
     </div>
 </template>

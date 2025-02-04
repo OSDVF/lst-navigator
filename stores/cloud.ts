@@ -189,7 +189,7 @@ export const useCloudStore = defineStore('cloud', () => {
             const promises = []
 
             // Convert null reply to deleteField
-            const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value
+            const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value[selectedEvent.value]
             for (const sIndex in payload) {
                 const section = payload[sIndex]
                 for (const eIndex in section) {
@@ -226,7 +226,7 @@ export const useCloudStore = defineStore('cloud', () => {
             feedback.dirtyTime.value = 0// force refresh from remote
             feedback.hydrate(feedback.online.value)
         } else {// clear feedback if user is not logged in
-            offlineFeedback.value = {}
+            if (offlineFeedback.value[selectedEvent.value]) { offlineFeedback.value[selectedEvent.value] = {} }
         }
     })
 

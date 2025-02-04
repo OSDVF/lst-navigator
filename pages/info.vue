@@ -14,11 +14,6 @@
             </button>
         </NuxtLink>
         </h1>
-        <NuxtLink to="/feedback">
-            <button style="float:right" class="large">
-                <Icon name="mdi:rss" /> Feedbackový dotazník
-            </button>
-        </NuxtLink>
         <h2>{{ cloudStore.eventData?.subtitle }}</h2>
         <h6>
             <a :href="cloudStore.eventData?.web" target="_blank">
