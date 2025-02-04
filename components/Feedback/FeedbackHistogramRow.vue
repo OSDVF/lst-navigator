@@ -49,7 +49,7 @@ import randomcolor from 'randomcolor'
 import { metaphone } from 'metaphone'
 import type { Feedback, FeedbackType } from '@/types/cloud'
 import { defaultQuestions } from '~/stores/cloud'
-import { mapObject } from '~/utils/types'
+import { mapObject } from '~/utils/utils'
 import { setColorTransparency } from '~/utils/colors'
 import { useAdmin } from '~/stores/admin'
 

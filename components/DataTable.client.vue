@@ -59,10 +59,10 @@ onMounted(() => {
         const Core = await dtCore
         const Select = await selectModule
         const Responsive = await responsiveModule
+        module.default.use(Core.default)
+        module.default.use(Select.default)
+        module.default.use(Responsive.default)
         DataTable.value = module.default
-        DataTable.value.use(Core.default)
-        DataTable.value.use(Select.default)
-        DataTable.value.use(Responsive.default)
         if (!import.meta.dev) {
             $.fn.dataTable.ext.errMode = 'none'
         }

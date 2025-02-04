@@ -4,11 +4,18 @@
         <button v-if='action == Actions.Nothing && cloud.resolvedPermissions.superAdmin' @click='action = Actions.New'>
             <Icon name='mdi:plus' /> Nová
         </button>
-        <button
-            v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.editEvent'
-            @click='startEditingSelected'>
-            <Icon name='mdi:pencil' /> Upravit
-        </button>
+        <template v-if="isSelection && cloud.resolvedPermissions.editEvent && action == Actions.Nothing">
+            <button @click='startEditingSelected'>
+                <Icon name='mdi:pencil' /> Upravit
+            </button>
+            <button @click='exportEvent'>
+                <Icon name='mdi:download' /> Export
+            </button>
+        </template>
+        <ImportForm
+            v-if="cloud.resolvedPermissions.superAdmin" @import="importJson"
+            @error="e => error = e" />
+        <p v-if="error"><code>{{ error }}</code></p>
         <button
             v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.superAdmin'
             @click='deleteSelected'>
@@ -109,14 +116,16 @@
 
 <script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, getDoc, getDocs, orderBy, query, limit, collection, writeBatch, type Query, arrayUnion } from 'firebase/firestore'
+import { doc, getDoc, getDocs, orderBy, query, limit, collection, writeBatch, type Query, arrayUnion, type DocumentData } from 'firebase/firestore'
 import { setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
-import { toFirebaseMonthDay, toJSDate, toFirebaseDate } from '@/utils/types'
-import type { EventDescription } from '~/types/cloud'
+import { toFirebaseMonthDay, toJSDate, toFirebaseDate, download } from '@/utils/utils'
+import { EventSubcollectionsList, type EventDescription } from '~/types/cloud'
+import pickBy from 'lodash.pickby'
+
 import type { Api } from '~/types/datatables'
 
 definePageMeta({
@@ -126,6 +135,7 @@ definePageMeta({
 })
 
 const cloud = useCloudStore()
+const error = ref()
 const lang = computed(() => import.meta.client ? navigator.language : 'cs-CZ')
 enum Actions {
     Nothing, New, Edit
@@ -349,18 +359,27 @@ async function startEditingSelected() {
         }
     }
 }
+
+function getSelectedEvent(): EventDescription<DocumentData> & { id: string } | undefined {
+    if (!table.value) {
+        alert('Tabulka nenačtena')
+        return
+    }
+    const selectedData = table.value.dt.rows({ selected: true }).data()
+    if (selectedData.length != 1) {
+        alert('Vyberte jednu akci')
+        return
+    }
+    return cloud.eventsCollection.find(e => e.id === selectedData[0][0])
+}
+
 function deleteSelected() {
     if (table.value && fs) {
-        const selectedData = table.value.dt.rows({ selected: true }).data()
-        if (selectedData.length > 1) {
-            alert('Vyberte jednu akci')
-            return
-        }
-        const selectedEvent = cloud.eventsCollection.find(e => e.id === selectedData[0][0])
+        const selectedEvent = getSelectedEvent()
         if (selectedEvent) {
             if (confirm(`Opravdu chcete smazat akci ${selectedEvent.title}?`)) {
                 deleteDoc(doc(fs, 'events', selectedEvent.id))
-                deleteCollection(selectedEvent.id, 10)
+                deleteCollection(selectedEvent.id, 10)// TODO why is this here?
             }
         }
     }
@@ -403,6 +422,49 @@ async function deleteQueryBatch(query: Query, resolve: () => void) {
     nextTick(() => {
         deleteQueryBatch(query, resolve)
     })
+}
+
+function exportEvent() {
+    if (table.value && fs) {
+        const selectedEvent = getSelectedEvent()
+        if (selectedEvent) {
+            download(`${selectedEvent.id}-event-${new Date().toLocaleString(navigator.language, { timeStyle: 'short', dateStyle: 'short' }).replace(':', '-')}.json`, JSON.stringify({
+                [selectedEvent.id]: {
+                    ...useDocument(doc(fs, 'events', selectedEvent.id), { once: true, wait: true }).value,
+                    ...Object.fromEntries(EventSubcollectionsList.map(sub => [sub, useCollection(collection(fs, 'events', selectedEvent.id, sub), { once: true, wait: true }).value.map(d => ({
+                        id: d.id,// make ID explicit
+                        ...pickBy(d, (_, key) => key != 'metadata'),
+                    }))])),
+                },
+            }))
+        } else {
+            alert('Akce nenalezena')
+        }
+    }
+}
+
+function importJson(source: EventDescription<DocumentData>) {
+    if (fs) {
+        for (const key in source) {
+            const data = source[key as keyof typeof source]
+            if (typeof data !== 'object') {
+                alert('Neplatný formát')
+                return
+            }
+            const docs = eventDocs(fs, key)
+            setDoc(docs.event, pickBy(data, (_, key) => !EventSubcollectionsList.includes(key as any)), { merge: true })
+            for (const sub of EventSubcollectionsList) {
+                if (data[sub as keyof typeof data]) {
+                    for (const subKey in (data as any)[sub]) {
+                        const content = (data as any)[sub][subKey]
+                        const id = content.id
+                        delete content.id
+                        setDoc(doc(docs[sub], id), content, { merge: true })
+                    }
+                }
+            }
+        }
+    }
 }
 
 // https://stackoverflow.com/a/11934819

@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import type { Feedback } from '@/types/cloud'
-import { onlyIntIndexed } from '@/utils/types'
+import { onlyIntIndexed } from '@/utils/utils'
 import { useCloudStore } from '@/stores/cloud'
 
 const cloudStore = useCloudStore()

@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import type { ScheduleItem, ScheduleDay } from '@/types/cloud'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
-import { toHumanFeedback, toHumanTime, parseIntOrNull } from '@/utils/types'
+import { toHumanFeedback, toHumanTime, parseIntOrNull } from '@/utils/utils'
 import { setDoc } from '~/utils/trace'
 import { doc, arrayUnion } from 'firebase/firestore'
 import type { VueFirestoreDocumentData } from 'vuefire'

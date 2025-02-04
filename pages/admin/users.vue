@@ -14,10 +14,10 @@
                 {
                     render: (data: [string, string]) => `<span tabindex='0' title='${data[1]}'>${data[0]}</span>`
                 },
-                null,
-                null,
-                null,
-                null,
+                {},
+                {},
+                {},
+                {},
                 {
                     render: (data: UserLevel) => data ? `<span tabindex='0' title='${cloudStore.permissionNames[data]}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${(userLevelToIcon)[data]}.svg);'></span>` : ''
                 }

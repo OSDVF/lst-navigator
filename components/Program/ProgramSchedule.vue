@@ -36,6 +36,8 @@
         <strong>
             <NuxtLink v-if="p.day == cloud.days.length - 1" to="/feedback" class="p-2 mt-2 d-block">
                 <Icon name="mdi:rss" size="1.8rem" /> Vyplnit feedbackový dotazník
+                <br>
+                <small>{{ cloud.feedback.dirtyTime == 0 ? 'Obsahuje hodnocení programů a' : 'Kromě hodnocení konkrétních programů obsahuje' }} další obecnější otázky</small>
             </NuxtLink>
         </strong>
     </div>

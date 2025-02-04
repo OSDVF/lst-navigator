@@ -86,7 +86,7 @@ import { colorToHex, darkenColor } from '@/utils/colors'
 import { useCloudStore } from '@/stores/cloud'
 import type { Feedback } from '@/types/cloud'
 import { useSettings } from '@/stores/settings'
-import { toHumanTime, getParallelEvents } from '@/utils/types'
+import { toHumanTime, getParallelEvents } from '@/utils/utils'
 import { usePersistentRef } from '@/utils/persistence'
 
 const route = useRoute()

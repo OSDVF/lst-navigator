@@ -31,7 +31,7 @@
 
 import type { Feedback, FeedbackConfig, ScheduleItem, TabulatedFeedback } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
-import { getAverage } from '@/utils/types'
+import { getAverage } from '@/utils/utils'
 import { stripHtml } from '@/utils/sanitize'
 
 defineProps<{

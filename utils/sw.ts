@@ -6,7 +6,7 @@ import * as firebase from 'firebase/app'
 import { getMessaging, isSupported, type MessagePayload, onBackgroundMessage } from 'firebase/messaging/sw'
 import * as Sentry from '@sentry/browser'
 import * as idb from 'idb-keyval'
-import type { NotificationPayload } from '@/utils/types'
+import type { NotificationPayload } from '@/utils/utils'
 import swConfig from '~/utils/swenv'
 
 declare let self: ServiceWorkerGlobalScope

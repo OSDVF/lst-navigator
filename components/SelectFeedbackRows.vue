@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import randomColor from 'randomcolor'
 import type { FeedbackConfig, Feedback, ScheduleItem, TabulatedFeedback } from '~/types/cloud'
-import { getAverage } from '@/utils/types'
+import { getAverage } from '@/utils/utils'
 import { useAdmin } from '~/stores/admin'
 import { stripHtml } from '~/utils/sanitize'
 

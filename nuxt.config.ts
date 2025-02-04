@@ -91,7 +91,12 @@ const config = defineNuxtConfig({
         payloadExtraction: false,
     },
     hooks: {
-        'build:manifest': (manifest) => {
+        'app:resolve'(app) {
+            if(process.env.SENTRY_DISABLE == 'true') {
+                app.plugins = app.plugins.filter((x) => !x.src.includes('sentry'))
+            }
+        },
+        'build:manifest' (manifest) {
             const notWanted = ['sentry']
             // remove preload links
             for (const key in manifest) {

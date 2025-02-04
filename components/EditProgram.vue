@@ -77,7 +77,7 @@
 <script setup lang="ts">
 import type { FeedbackType, ScheduleItem } from '@/types/cloud'
 import { colorToHex, windowIsDark } from '@/utils/colors'
-import { toHumanTime } from '@/utils/types'
+import { toHumanTime } from '@/utils/utils'
 const dayNight = ['DAY', 'NIGHT']
 const windowDark = windowIsDark()
 

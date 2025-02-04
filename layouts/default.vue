@@ -28,7 +28,7 @@
             <nav role="navigation">
                 <LazyClientOnly>
                     <NuxtLink
-                        v-if="$route.query.install == 'true' || $route.name?.toString().includes('install')"
+                        v-if="installNotComplete || $route.name?.toString().includes('install')"
                         :to="onFeedbackPage ? '/schedule' : `/install/0?to=/schedule/`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
@@ -44,7 +44,9 @@
             </nav>
             <ToastArea />
         </div>
-        <ProgressBar v-show="isServer || cloudStore.eventLoading || $downloadingUpdate?.value" class="backgroundLoading" />
+        <ProgressBar
+            v-show="isServer || cloudStore.eventLoading || $downloadingUpdate?.value"
+            class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
@@ -66,8 +68,9 @@ const settings = useSettings()
 const isServer = ref(import.meta.server)
 
 const onFeedbackPage = computed(() => route.name?.toString().includes('feedback') ?? false)
+const installNotComplete = computed(() => (route.query.install == 'true' || settings.installStep == 0) && settings.installStep < config.public.installStepCount)
 watchEffect(() => {
-    if (import.meta.browser && (route.query.install == 'true' || settings.installStep == 0) && settings.installStep < config.public.installStepCount && !route.name?.toString().includes('update') && !route.path?.toString().includes('install')) {
+    if (import.meta.browser && installNotComplete.value && !route.name?.toString().includes('update') && !route.path?.toString().includes('install')) {
         router.replace({
             path: '/install/' + settings.installStep,
             query: {

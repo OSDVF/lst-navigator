@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import type { FeedbackType, ScheduleItem } from '~/types/cloud'
-import { getParallelEvents } from '@/utils/types'
+import { getParallelEvents } from '@/utils/utils'
 import randomColor from 'randomcolor'
 
 const p = defineProps<{

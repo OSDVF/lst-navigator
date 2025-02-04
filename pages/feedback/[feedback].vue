@@ -119,7 +119,7 @@
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '@/stores/settings'
-import { getParallelEvents } from '@/utils/types'
+import { getParallelEvents } from '@/utils/utils'
 import type { FeedbackConfig, ScheduleItem, Feedback } from '@/types/cloud'
 const router = useRouter()
 const cloudStore = useCloudStore()
