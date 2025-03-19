@@ -9,7 +9,7 @@
                     @set-data="props.onSetData"
                 />
                 <button
-                    v-show="admin.editingFeedback"
+                    v-show="admin.editingFeedback.value"
                     @click.exact="confirm('Opravdu chcete smazat tuto odpověď?\n(Zmáčkněte při kliknutí Ctrl pro přeskočení tohoto dialogu)') && del(rIndex)"
                     @click.ctrl="del(rIndex)"
                 >
@@ -39,7 +39,7 @@ function del(index: number) {
     props.onSetData!(null, props.respondents[index])
 }
 
-const admin = useAdmin()
+const admin = storeToRefs(useAdmin())
 
 
 </script>

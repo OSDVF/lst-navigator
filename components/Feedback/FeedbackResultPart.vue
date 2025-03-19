@@ -19,7 +19,7 @@
             <div class="th">
                 <strong>Průměr</strong>
             </div>
-            <template v-if="admin.displayKind === 'histogram'">
+            <template v-if="admin.displayKind.value === 'histogram'">
                 <div class="th">
                     Histogram
                 </div>
@@ -90,7 +90,7 @@ defineExpose({
     syncHeaders: doSyncHeaders,
 })
 
-const admin = useAdmin()
+const admin = storeToRefs(useAdmin())
 const allRespondents = useRespondents()
 
 const error = ref()

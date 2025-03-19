@@ -2,7 +2,7 @@
     <div>
         <template v-if="typeof $props.reply?.basic === 'number' && !isNaN($props.reply.basic)">
             <NuxtRating
-                tabindex="0" :read-only="!admin.editingFeedback" active-color="blue"
+                tabindex="0" :read-only="!admin.editingFeedback.value" active-color="blue"
                 :rating-value="$props.reply.basic" title="Celkový dojem" rating-size="1.2em"
                 @rating-selected="(val: number) => controls?.syncBasic(val)" />
             {{ Math.round(($props.reply.basic + Number.EPSILON) * 10) / 10 }}
@@ -10,7 +10,7 @@
         <template v-if="$props.reply?.complicated?.length">
             <div v-for="(compl, index) in $props.reply.complicated" :key="`c${index}`">
                 <NuxtRating
-                    :read-only="!admin.editingFeedback" :active-color="darkenColor('#ffff00', index / 5)"
+                    :read-only="!admin.editingFeedback.value" :active-color="darkenColor('#ffff00', index / 5)"
                     :rating-value="compl ?? undefined" tabindex="0"
                     :title="questions?.[index] ?? defaultQuestions[index]" rating-size="1.2em"
                     @rating-selected="(val: number) => controls?.syncComplicated(index, val)" /> {{
@@ -18,13 +18,13 @@
             </div>
         </template>
         <template v-else-if="$props.reply?.detail">
-            <textarea v-if="controls && admin.editingFeedback" v-model="controls!.syncDetail.value" />
+            <textarea v-if="controls && admin.editingFeedback.value" v-model="controls!.syncDetail.value" />
             <div v-else class="scroll-y mh-5 focus-expand" tabindex="0">
                 {{ $props.reply.detail }}
             </div>
         </template>
         <template v-if="$props.reply.select">
-            <select v-if="questions && controls && admin.editingFeedback" v-model="controls.syncSelect.value">
+            <select v-if="questions && controls && admin.editingFeedback.value" v-model="controls.syncSelect.value">
                 <option v-for="question in questions" :key="question" :value="question">
                     {{ question }}
                 </option>
@@ -50,7 +50,7 @@ const props = defineProps<{
     onSetData?: (value: Feedback, respondent: string) => void
 }>()
 
-const admin = useAdmin()
+const admin = storeToRefs(useAdmin())
 
 const controls = props.onSetData
     ? useFeedbackControls({
