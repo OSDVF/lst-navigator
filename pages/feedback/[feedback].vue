@@ -28,10 +28,10 @@
         </NameChangeDialog>
         <br>
 
-        Každá tvá změna je hned uložena. Rozpracovaný formulář bude navždy zachován. {{ cloudStore.eventData?.feedbackInfo }}
+        Každá tvá změna je hned uložena. Rozpracovaný formulář bude zachován. {{ cloudStore.eventData?.feedbackInfo }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`">
-            <h3>{{ subPart.title }}</h3>
+            <h3 v-if="subPart.title">{{ subPart.title }}</h3>
             <fieldset v-for="(entry, eIndex) in subPart.entries" :key="`e${sIndex}${eIndex}`">
                 <legend v-if="entry.title">
                     <h3>{{ entry.title }}</h3>
@@ -161,7 +161,7 @@ const currentPart = computed(() => {
             }
             if (entries.length > 0) {
                 subparts.push({
-                    title: day.name,
+                    title: config.dayTitles !== false ? day.name : '',
                     primaryIndex: scheduleIndex,
                     entries,
                 })

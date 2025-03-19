@@ -6,7 +6,10 @@
             &nbsp;
             <Icon v-if="valueOrValue" name="mdi:pencil" />&nbsp;
             <input
-                v-autowidth :value="valueOrValue" type="text" :class="valueOrValue ? 'editable' : ''"
+                v-autowidth="{
+                    parentLevel: 3,
+                    overflowParent: false,
+                }" :value="valueOrValue" type="text" :class="valueOrValue ? 'editable' : ''"
                 :placeholder="props.placeholder ?? 'Prázdné'" @change="sendValue" @focus="permitSwipe = false"
                 @blur="permitSwipe = true">
         </label>

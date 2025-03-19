@@ -7,7 +7,7 @@
         <Icon name="mdi:cloud-off" /> Problém s připojením
     </div>
     <LazyClientOnly>
-        <div role="dialog" :class="{ toast: true, visible: $downloadingUpdate?.value }" tabindex="0">
+        <div role="dialog" :class="{ toast: true, visible: isServer || $downloadingUpdate?.value }" tabindex="0">
             <Icon name="mdi:download-multiple" /> Stahování souborů aplikace...
         </div>
     </LazyClientOnly>
@@ -15,5 +15,5 @@
 
 <script lang="ts" setup>
 const cloudStore = useCloudStore()
-
+const isServer = ref(import.meta.server)
 </script>

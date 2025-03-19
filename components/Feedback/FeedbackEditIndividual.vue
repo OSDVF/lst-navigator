@@ -6,8 +6,9 @@
             </span>
             &nbsp;
             <input
-                v-autowidth class="editable" :value="p.modelValue.name" type="text"
-                :placeholder="`Otázka ${p.index}`"
+                v-autowidth="{
+                    overflowParent: false,
+                }" class="editable" :value="p.modelValue.name" type="text" :placeholder="`Otázka ${p.index}`"
                 @change="(ev) => e('update:modelValue', { ...p.modelValue, name: (ev.target as HTMLInputElement).value })">
             <span v-show="!p.disabled" class="button" title="Odebrat otázku" @click="e('delete')">
                 <Icon name="mdi:trash-can" />

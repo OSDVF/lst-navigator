@@ -2,7 +2,9 @@
     <fieldset :class="loading && 'loading'" :disabled="p.disabled">
         <legend class="flex-center">
             <input
-                v-autowidth title="Název sekce" class="h3 editable" :value="p.isDummy ? '' : editedCategory.title"
+                v-autowidth="{
+                    overflowParent: false,
+                }" title="Název sekce" class="h3 editable" :value="p.isDummy ? '' : editedCategory.title"
                 :placeholder="editedCategory.title || 'Nová sekce'" type="text"
                 @change="(e) => editedCategory.title = (e.target as HTMLInputElement).value">
 
@@ -46,6 +48,11 @@
             <input
                 v-model.lazy="editedCategory.group" type="text" name="group" placeholder="Titulek programů (RegExp)"
                 title="Titulek programů (RegExp)" class="w-full mb-1">
+            <input
+                :id="`dayTitles${p.index}`" :checked="editedCategory.dayTitles ?? true" type="checkbox"
+                name="dayTitles"
+                @change="e => editedCategory.dayTitles = (e.currentTarget as HTMLInputElement).checked">
+            <label :for="`dayTitles${p.index}`">Zobrazit názvy dnů</label><br>
             <span class="muted">Odpovídající programy:</span>
             <div :class="isEmpty(matches) && 'inline muted' || undefined">
                 <span v-for="(title, when) in matches" :key="when">
@@ -101,8 +108,9 @@ const e = defineEmits<{
 const admin = useAdmin()
 const cloud = useCloudStore()
 const doc = computed(() => cloud.eventDoc('feedbackConfig', p.index.toString()))
-const dummy = {
+const dummy: FeedbackConfig = {
     title: 'Nová sekce',
+    dayTitles: true,
     individual: [],
 }
 const editedCategory = ref<FeedbackConfig>(toRaw(cloud.feedbackConfig?.[p.index] ?? dummy))

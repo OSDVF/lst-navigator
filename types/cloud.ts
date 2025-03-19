@@ -4,6 +4,7 @@ export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' | 'te
 export type FeedbackConfig = {
     group?: string | RegExp, // title of parts of schedule to group by
     title: string,
+    dayTitles?: boolean,// falls back to true
     individual: {
         name: string,
         questions: string[]
