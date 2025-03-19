@@ -48,7 +48,7 @@ form.large {
 }
 
 $spaceamount: .45;
-$helpercount: 5;
+$helpercount: 6;
 $sides: (top, bottom, left, right); // Leave this variable alone
 
 @for $i from 0 to $helpercount {

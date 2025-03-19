@@ -30,11 +30,15 @@
 
         Každá tvá změna je hned uložena. Rozpracovaný formulář bude zachován. {{ cloudStore.eventData?.feedbackInfo }}
         <h1>{{ currentPart?.title }}</h1>
-        <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`">
-            <h3 v-if="subPart.title">{{ subPart.title }}</h3>
+        <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`" class="mb-5 mt-2">
+            <h3 v-if="subPart.title" class="mb-1">{{ subPart.title }}</h3>
             <fieldset v-for="(entry, eIndex) in subPart.entries" :key="`e${sIndex}${eIndex}`">
                 <legend v-if="entry.title">
-                    <h3>{{ entry.title }}</h3>
+                    <h3>{{ entry.title }}<NuxtLink
+                        v-if="entry.time"
+                        title="Zobrazit v harmonogramu" :to="`/schedule/${subPart.primaryIndex}/${entry.secondaryIndex}`"
+                        class="muted">&ensp;{{ toHumanTime(entry.time) }}</NuxtLink>
+                    </h3>
                 </legend>
                 <template v-if="entry.subtitle || entry.description">
                     <details
@@ -49,9 +53,9 @@
                         <div class="p" v-html="entry.description ?? 'Žádné detaily'" />
                     </details>
                     <template v-else>
-                        <h4>{{ entry.subtitle }}</h4>
+                        <h4 v-if="entry.subtitle">&nbsp;{{ entry.subtitle }}</h4>
                         <!-- eslint-disable-next-line vue/no-v-html -->
-                        <div class="p" v-html="entry.description" />
+                        <div v-if="stripHtml(entry.description)" class="p" v-html="entry.description" />
                     </template>
                 </template>
                 <FeedbackForm
@@ -211,8 +215,13 @@ const currentPart = computed(() => {
 
 fieldset {
     border-radius: .5rem;
+
     h4 {
         margin-top: 0
+    }
+
+    h3 {
+        margin-bottom: .6em;
     }
 }
 
