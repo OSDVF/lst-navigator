@@ -88,7 +88,7 @@ import isEqual from 'lodash.isequal'
 import isEmpty from 'lodash.isempty'
 import { setDoc, deleteDoc } from '~/utils/trace'
 import { useCloudStore } from '~/stores/cloud'
-import type { FeedbackConfig } from '~/types/cloud'
+import type { FeedbackConfig, ScheduleItem } from '~/types/cloud'
 import { useAdmin } from '~/stores/admin'
 import { storeToRefs } from 'pinia'
 
@@ -203,12 +203,29 @@ const matches = computed(() => {
         let count = 0
         const result: { [when: string]: string } = {}
         for (const day of cloud.days) {
-            for (const program of day.program) {
-                if (program.title?.match(editedCategory.value.group ?? '')) {
-                    result[`${day.name.substring(0, 2)} ${toHumanTime(program.time)}`] = program.title
-                    if (count++ > 5) {
-                        result['...'] = ''
-                        return result
+            function addToResult(program: ScheduleItem) {
+                result[`${day.name.substring(0, 2)} ${toHumanTime(program.time)}`] = program.title!
+            }
+            const exp = (editedCategory.value.group ?? '').toString()
+            if (exp.match(/[a-zA-Z0-9 ]|,/g)?.length == exp.length) {
+                for (const name of exp.split(',')) {
+                    const programIndex = day.program.findIndex(event => event.title?.match(name))
+                    if (programIndex !== -1) {
+                        addToResult(day.program[programIndex])
+                        if (count++ > 5) {
+                            result['...'] = ''
+                            return result
+                        }
+                    }
+                }
+            } else {
+                for (const program of day.program) {
+                    if (program.title?.match(editedCategory.value.group ?? '')) {
+                        addToResult(program)
+                        if (count++ > 5) {
+                            result['...'] = ''
+                            return result
+                        }
                     }
                 }
             }

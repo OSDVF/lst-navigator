@@ -35,9 +35,9 @@
             <fieldset v-for="(entry, eIndex) in subPart.entries" :key="`e${sIndex}${eIndex}`">
                 <legend v-if="entry.title">
                     <h3>{{ entry.title }}<NuxtLink
-                        v-if="entry.time"
-                        title="Zobrazit v harmonogramu" :to="`/schedule/${subPart.primaryIndex}/${entry.secondaryIndex}`"
-                        class="muted">&ensp;{{ toHumanTime(entry.time) }}</NuxtLink>
+                        v-if="entry.time" title="Zobrazit v harmonogramu"
+                        :to="`/schedule/${subPart.primaryIndex}/${entry.secondaryIndex}`" class="muted">&ensp;{{
+                            toHumanTime(entry.time) }}</NuxtLink>
                     </h3>
                 </legend>
                 <template v-if="entry.subtitle || entry.description">
@@ -146,21 +146,37 @@ definePageMeta({
 
 const currentPart = computed(() => {
     const config: FeedbackConfig | undefined = cloudStore.feedbackConfig?.[feedbackPartIndex]
-    const subparts: { title: string, primaryIndex: number | string, entries: (Partial<ScheduleItem> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })[] }[] = []
+    type Entry = (Partial<ScheduleItem> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })
+    const subparts: { title: string, primaryIndex: number | string, entries: Entry[] }[] = []
 
     if (config?.group) {
         for (const scheduleIndex in cloudStore.days) {
             const day = cloudStore.days[scheduleIndex]
-            const entries = []
-            for (const eventIndex in day.program) {
-                const eventEntry = day.program[eventIndex]
-                if (eventEntry.title?.match(config.group)) {
-                    entries.push({
-                        ...eventEntry,
-                        data: cloudStore.offlineFeedback?.[scheduleIndex]?.[eventIndex]?.[settings.userIdentifier],
-                        secondaryIndex: eventIndex,
-                        selectOptions: getParallelEvents(eventEntry),
-                    })
+            const entries: Entry[] = []
+            const exp: string = config.group!.toString()
+            function addScheduleItem(scheduleItem: ScheduleItem, index: number | string) {
+                entries.push({
+                    ...scheduleItem,
+                    data: cloudStore.offlineFeedback?.[scheduleIndex]?.[index]?.[settings.userIdentifier],
+                    secondaryIndex: index,
+                    selectOptions: getParallelEvents(scheduleItem),
+                })
+            }
+            if (exp.match(/[a-zA-Z0-9 ]|,/g)?.length == exp.length) {
+                for (const name of exp.split(',')) {
+                    const eventIndex = day.program.findIndex(event => event.title?.match(name))
+                    if (eventIndex !== -1) {
+                        const eventEntry = day.program[eventIndex]
+                        addScheduleItem(eventEntry, eventIndex)
+                    }
+                }
+            }
+            else {
+                for (const eventIndex in day.program) {
+                    const eventEntry = day.program[eventIndex]
+                    if (eventEntry.title?.match(config.group)) {
+                        addScheduleItem(eventEntry, eventIndex)
+                    }
                 }
             }
             if (entries.length > 0) {
