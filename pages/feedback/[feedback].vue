@@ -22,7 +22,7 @@
             <Icon name="mdi:chevron-right" />
         </NuxtLink>
         <br>
-        <NameChangeDialog v-if="feedbackPartIndex == 0">
+        <NameChangeDialog>
             <br>
             Odpovídáš jako&ensp;
         </NameChangeDialog>
