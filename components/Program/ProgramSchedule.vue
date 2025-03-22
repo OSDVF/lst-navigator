@@ -37,7 +37,8 @@
             <NuxtLink v-if="p.day == cloud.days.length - 1" to="/feedback" class="p-2 mt-2 d-block">
                 <Icon name="mdi:rss" size="1.8rem" /> Vyplnit feedbackový dotazník
                 <br>
-                <small>{{ cloud.feedback.dirtyTime == 0 ? 'Obsahuje hodnocení programů a' : 'Kromě hodnocení konkrétních programů obsahuje' }} další obecnější otázky</small>
+                <small>{{ cloud.feedback.dirtyTime == 0 ? 'Obsahuje hodnocení programů a' :
+                    'Kromě hodnocení konkrétních programů obsahuje' }} další obecnější otázky</small>
             </NuxtLink>
         </strong>
     </div>
@@ -70,7 +71,7 @@ onMounted(() => {
 
     isCurrent.value.find((v, i) => {
         if (v) {
-            rows.value[i].scrollIntoView()
+            if (typeof rows.value[i]?.scrollIntoView === 'function') { rows.value[i]?.scrollIntoView() }
         }
     })
 })
@@ -87,7 +88,7 @@ function pasteNow() {
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())
 
 async function deleteProgram(index: number, force = false) {
-    if (force && confirm('Opravdu chcete odsranit tento bod programu?\n(Stiskněte při kliknutí Ctrl pro přeskočení tohoto dialogu)')) {
+    if (force || confirm('Opravdu chcete odsranit tento bod programu?\n(Stiskněte při kliknutí Ctrl pro přeskočení tohoto dialogu)')) {
         await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
             program: [
                 ...selectedProgram.value.slice(0, index),

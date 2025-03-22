@@ -19,12 +19,12 @@
                 <span v-if="cloud.user.auth?.uid && cloud.resolvedPermissions.editSchedule" class="edit">
                     <button
                         v-if="index > 0" class="edit" title="Posunout nahoru"
-                        @click.prevent="e('moveUp', entry, index)">
+                        @click.stop="e('moveUp', entry, index)">
                         <Icon class="icon" name="mdi:arrow-up" />
                     </button>
                     <button
                         v-if="index < selectedProgram.length - 1" class="edit" title="Posunout dolů"
-                        @click.prevent="e('moveDown', entry, index)">
+                        @click.stop="e('moveDown', entry, index)">
                         <Icon class="icon" name="mdi:arrow-down" />
                     </button>
                     <NuxtLink :to="`/schedule/${p.day}/edit/${index}`">
@@ -34,12 +34,12 @@
                     </NuxtLink>
                     <button
                         class="edit" title="Kopírovat do schránky" type="button"
-                        @click="admin.eventClipboard = { ...entry }">
+                        @click.stop="admin.eventClipboard = { ...entry }">
                         <Icon class="icon" name="mdi:clipboard-text" />
                     </button>
                     <button
-                        class="edit" title="Smazat" @click.prevent.exact="e('deleteProgram', index)"
-                        @click.ctrl="e('deleteProgram', index, true)">
+                        class="edit" title="Smazat" @click.stop.exact="e('deleteProgram', index)"
+                        @click.stop.ctrl="e('deleteProgram', index, true)">
                         <Icon class="icon" name="mdi:trash-can" />
                     </button>
                     &ensp;
@@ -139,6 +139,7 @@ function click(e: Event) {
                 },
                 query: router.currentRoute.value.query,
             })
+
         }
     }
 }

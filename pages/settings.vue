@@ -122,6 +122,12 @@
         </fieldset>
         <LazyLoginField />
         <h4>Aplikace</h4>
+        <fieldset>
+            <label for="qr">Sdílet aplikaci</label>
+            <NuxtLink id="qr" to="/qr">
+                <Icon name="mdi:qrcode" /> QR kód
+            </NuxtLink>
+        </fieldset>
         <fieldset v-if="!$pwa?.isPWAInstalled && $deferredPrompt?.value">
             <label for="install">Instalace</label>
             <span>
@@ -166,6 +172,7 @@ import { doc } from 'firebase/firestore'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
 import { UserLevel, userLevelToIcon } from '~/types/cloud'
+import { NuxtLink } from '#components'
 definePageMeta({
     title: 'Nastavení',
 })
