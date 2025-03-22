@@ -27,7 +27,7 @@
                         @click.stop="e('moveDown', entry, index)">
                         <Icon class="icon" name="mdi:arrow-down" />
                     </button>
-                    <NuxtLink :to="`/schedule/${p.day}/edit/${index}`">
+                    <NuxtLink :to="`/schedule/${p.day}/edit/${index}`" @click.stop>
                         <button class="edit" title="Upravit">
                             <Icon class="icon" name="mdi:pencil" />
                         </button>

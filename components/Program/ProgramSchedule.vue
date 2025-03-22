@@ -59,7 +59,7 @@ const selectedProgram = computed(() => cloud.days?.[p.day]?.program || [])
 const admin = useAdmin()
 const now = ref(new Date())
 const prerendering = import.meta.prerender ?? false
-const isCurrent = computed(() => selectedProgram.value.map((pr, i) => (!prerendering && parseInt((cloud.days[p.day].date ?? '').split('-')?.[2]) == new Date().getDate() && nowFormatted.value > (pr.time ?? 0) && nowFormatted.value < (selectedProgram.value[i + 1]?.time ?? 0))))
+const isCurrent = computed(() => selectedProgram.value.map((pr, i) => (!prerendering && parseInt((cloud.days[p.day].date ?? '').split('-')?.[2]) == new Date().getDate() && nowFormatted.value >= (pr.time ?? 0) && nowFormatted.value < (selectedProgram.value[i + 1]?.time ?? 0))))
 
 const rows = ref<HTMLElement[]>([])
 let interval: NodeJS.Timeout | undefined
