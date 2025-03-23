@@ -12,9 +12,7 @@
                 <Icon name='mdi:download' /> Export
             </button>
         </template>
-        <ImportForm
-            v-if="cloud.resolvedPermissions.superAdmin" @import="importJson"
-            @error="e => error = e" />
+        <ImportForm v-if="cloud.resolvedPermissions.superAdmin" @import="importJson" @error="e => error = e" />
         <p v-if="error"><code>{{ error }}</code></p>
         <button
             v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.superAdmin'
@@ -43,6 +41,10 @@
                 v-model.lazy='editedEvent.end' :min='editedEvent.start!' type='date' required
                 :disabled='action == Actions.Edit'></label>
             <DateFormat /><br>
+            <label for="transfers">
+                <Icon name="mdi:leaks" /> Povolit přenosy uživatelských dat
+            </label>
+            <input id="transfers" v-model="editedEvent.transfers" type="checkbox" name="transfers">
             <ClassicCKEditor v-model.lazy='editedEvent.description' />
             <fieldset :disabled='!!remoteImage.uploadTask.value'>
                 <legend>Obrázek</legend>
@@ -154,6 +156,7 @@ const editedEvent = ref({
     },
     start: now,
     subtitle: '',
+    transfers: false,
     web: '',
 })
 const loading = ref(false)
@@ -277,6 +280,7 @@ async function editEvent(createNew = false) {
         description: editedEvent.value.description,
         image: editedEvent.value.imageIdentifier,
         subtitle: editedEvent.value.subtitle,
+        transfers: editedEvent.value.transfers,
         web: editedEvent.value.web,
     } as EventDescription<void>, { merge: true })
 
@@ -354,6 +358,7 @@ async function startEditingSelected() {
                 },
                 start: selectedEvent.start,
                 subtitle: selectedEvent.subtitle,
+                transfers: selectedEvent.transfers ?? false,
                 web: selectedEvent.web,
             }
         }

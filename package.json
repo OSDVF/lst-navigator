@@ -13,6 +13,7 @@
     "emulator": "firebase emulators:start --import .output/emulator --export-on-exit .output/emulator",
     "generate": "bun -b build-static.mjs",
     "preview": "nuxt preview",
+    "prepare": "nuxt prepare",
     "serve": "bun x serve --ssl-key keys/server.key --ssl-cert keys/server.crt .output/public",
     "lint": "eslint .",
     "lintfix": "eslint . --fix",

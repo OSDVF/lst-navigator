@@ -27,6 +27,9 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false;
     }
+    match /transfers/{transfer} {
+    	allow read, write: if true;
+    }
     match /events/{event} {
       allow read: if true;
       allow update: if isEventAdmin(event);

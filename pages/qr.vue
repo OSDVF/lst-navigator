@@ -24,9 +24,12 @@ watchEffect(() => {
         qrcode.toCanvas(canvas.value, url.value.origin, {
             errorCorrectionLevel: 'H',
             width: 300,
-        },function(e){
-            Sentry.captureException(e)
-            error.value = e
+        }, function (e) {
+            if (e) {
+                Sentry.captureException(e)
+                error.value = e
+                console.error(e)
+            }
         })
     }
 })

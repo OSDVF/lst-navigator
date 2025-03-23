@@ -57,6 +57,7 @@ export type EventDescription<T = string> = {
     feedbackInfo: string,
     groups: string[],
     web: string
+    transfers?: boolean,
 } & {
     [key in EventSubcollection]: T
 }
@@ -119,7 +120,7 @@ export type UpdateRecordPayload<T> = {
 export type Feedback = FeedbackOr<undefined>
 export type FeedbackQuestionsProgram = { [question: number]: { [user: string]: Feedback } }
 export type FeedbackQuestionsCustom = { [question: string]: { [user: string]: Feedback } }
-export type FeedbackSections = { [section: string]: number | FeedbackQuestionsProgram & FeedbackQuestionsCustom }
+export type FeedbackSections = { [section: string]: { updated: number, nickname?: string } | FeedbackQuestionsProgram & FeedbackQuestionsCustom }
 
 export type FeedbackOr<T> = {
     basic?: number | T,
@@ -134,3 +135,11 @@ export type TabulatedFeedback = {
 }
 
 export type Subscriptions = /* array of notification groups */string[] | true /* subscribe to all groups */
+
+export enum TransferStatus {
+    None = 0, Request = 1, Reply = 2, Confirmed = 3, Transfered = 4
+}
+export type Transfer = {
+    remote: string,
+    status: TransferStatus,
+}

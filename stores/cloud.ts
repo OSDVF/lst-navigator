@@ -11,7 +11,7 @@ import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem, Transfer } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
 import merge from 'lodash.merge'
@@ -177,6 +177,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
             setDoc(doc(feedback.col.value!, userIdentifier), {
                 updated: feedbackDirtyTime.value,
+                nickname: settings.userNickname,
             }, { merge: true }).catch((e) => { feedback.error.value = e })
 
             setTimeout(() => {
@@ -209,6 +210,7 @@ export const useCloudStore = defineStore('cloud', () => {
             feedbackDirtyTime.value = new Date().getTime()
             promises.push(setDoc(doc(feedback.col.value!, settings.userIdentifier), {
                 updated: feedbackDirtyTime.value,
+                nickname: settings.userNickname,
             }, { merge: true }))
 
 
@@ -508,7 +510,7 @@ export const useCloudStore = defineStore('cloud', () => {
     })
 
     let hydrationDebounce: null | NodeJS.Timeout = null
-    function hydrateOfflineFeedback(onlineFeedback: any) {
+    function hydrateOfflineFeedback(onlineFeedback?: any) {
         hydrationDebounce = null
         if (new Date(onlineFeedback?.[settings.userIdentifier]?.updated ?? 0).getTime() > feedback.dirtyTime.value) {
             for (const sIndex in onlineFeedback) {
@@ -517,7 +519,7 @@ export const useCloudStore = defineStore('cloud', () => {
                     const ePart = sPart[eIndex]
                     const uPart = ePart[settings.userIdentifier]
                     if (uPart) {
-                        let offSPart = offlineFeedback.value[selectedEvent.value][sIndex]
+                        let offSPart = toRaw(offlineFeedback.value[selectedEvent.value][sIndex])
                         if (!offSPart) { offSPart = {} }
                         let offEPart = offSPart[eIndex]
                         if (!offEPart) { offEPart = {} }
@@ -528,14 +530,16 @@ export const useCloudStore = defineStore('cloud', () => {
                 }
             }
         }
+    }   
+    {
+        let pendingOnlineFeedback: any
+        watch(feedback.online, function (newOnlineFeedback) {
+            pendingOnlineFeedback = newOnlineFeedback
+            if (hydrationDebounce === null) {
+                hydrationDebounce = setTimeout(() => hydrateOfflineFeedback(pendingOnlineFeedback), 800)
+            }
+        }, { immediate: true })
     }
-
-
-    watch(feedback.online, function () {
-        if (hydrationDebounce === null) {
-            hydrationDebounce = setTimeout(hydrateOfflineFeedback, 800)
-        }
-    }, { immediate: true })
 
     if (import.meta.browser) {
         // Hydrate user

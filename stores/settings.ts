@@ -172,6 +172,7 @@ export const useSettings = defineStore('settings', () => {
         setUserIdentifier(value: string) {
             localStorage.setItem('uniqueIdentifier', value)
             uniqueIdentifier = value
+            userIdentifier.value = value
         },
     }
 })

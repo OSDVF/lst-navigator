@@ -89,6 +89,22 @@
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
             <NameChangeDialog />
         </fieldset>
+        <fieldset v-if="cloud.eventData?.transfers">
+            <label for="transfer">
+                <Icon name="mdi:leak" /> Přenos zadaných dat mezi zařízeními
+            </label>
+            <div>
+                <NuxtLink id="transfer" to="/transfer/here" class="nowrap inline-block">
+                    <Icon name="mdi:download" />&nbsp;Přenést sem
+                </NuxtLink>
+                <NuxtLink to="/transfer/away" class="nowrap inline-block ml-1">
+                    <Icon name="mdi:upload" />&nbsp;Odeslat
+                </NuxtLink>
+                <NuxtLink to="/scan" class="nowrap inline-block ml-1">
+                    <Icon name="mdi:qrcode"/>&nbsp;Skenovat
+                </NuxtLink>
+            </div>
+        </fieldset>
         <fieldset>
             <label>Datum synchronizace poznámek</label>
             <span>
@@ -122,12 +138,6 @@
         </fieldset>
         <LazyLoginField />
         <h4>Aplikace</h4>
-        <fieldset>
-            <label for="qr">Sdílet aplikaci</label>
-            <NuxtLink id="qr" to="/qr">
-                <Icon name="mdi:qrcode" /> QR kód
-            </NuxtLink>
-        </fieldset>
         <fieldset v-if="!$pwa?.isPWAInstalled && $deferredPrompt?.value">
             <label for="install">Instalace</label>
             <span>
