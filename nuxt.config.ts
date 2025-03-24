@@ -24,7 +24,7 @@ const messagingConfig = {
 const defaultMaskColor = '#fbce70ff'
 const defaultThemeColor = '#ffffff'
 
-if (typeof process.env.VITE_APP_SELECTED_EVENT_COLLECTION === 'undefined') {
+if (typeof process.env.VITE_APP_SELECTED_EVENT_COLLECTION === 'undefined' && !process.argv.includes('prepare')) {
     console.error('VITE_APP_SELECTED_EVENT_COLLECTION is not set')
     process.exit(1)
 }

@@ -131,7 +131,7 @@
                     </LazyClientOnly>
                 </small>
                 &ensp;
-                <button @click="cloud.feedback.saveAgain">
+                <button @click="cloud.feedback.saveAgain(true)">
                     <Icon name="mdi:reload" /> Odeslat znovu
                 </button>
             </span>

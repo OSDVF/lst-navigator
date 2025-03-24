@@ -4,7 +4,7 @@
             <h1>Chyba při odesílání zpětné vazby</h1>
             <p>{{ cloud.feedback.dirtyTime }}</p>
             <p>Tvé odpovědi jsou každopádně uložené offline, takže to zkus znovu později.</p>
-            <button @click="cloud.feedback.saveAgain">
+            <button @click="cloud.feedback.saveAgain(true)">
                 <Icon name="mdi:save" /> Zkusit znovu
             </button>
         </template>

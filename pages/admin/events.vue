@@ -95,7 +95,7 @@
                         v-model.lazy='editedEvent.imageIdentifier.data' type='text'></label>
                 </p>
             </fieldset>
-            <input type='submit' value='Potvrdit'>
+            <button type='submit'><Icon name="material-symbols:save" /> Uložit</button>
         </form>
         <ProgressBar v-show='loading' />
         <LazyDataTable

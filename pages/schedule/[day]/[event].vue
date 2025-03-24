@@ -39,7 +39,7 @@
                 <br>
                 {{ cloud.feedback.error }}
                 <br>
-                <button @click="cloud.feedback.saveAgain">
+                <button @click="cloud.feedback.saveAgain(true)">
                     <Icon name="material-symbols:save" /> Zkusit uložit znovu
                 </button>
             </p>

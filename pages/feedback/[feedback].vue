@@ -69,7 +69,7 @@
         <div class="flex justify-content-between">
             <button
                 v-if="feedbackPartIndex > 0" class="large"
-                @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex - 1}`))">
+                @click="cloudStore.feedback.saveAgain(false).then(() => router.push(`/feedback/${feedbackPartIndex - 1}`))">
                 <Icon name="mdi:chevron-left" />
                 Předchozí část
             </button>
@@ -79,20 +79,20 @@
             </NuxtLink>
             <button
                 v-if="feedbackPartIndex < (cloudStore.feedbackConfig?.length ?? 0) - 1" class="large"
-                @click="cloudStore.feedback.saveAgain().then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))">
+                @click="cloudStore.feedback.saveAgain(false).then(() => router.push(`/feedback/${feedbackPartIndex + 1}`))">
                 Pokračovat na další část
                 <Icon name="mdi:chevron-right" />
             </button>
             <button
                 v-else class="large d-block m-left-auto"
-                @click="cloudStore.feedback.saveAgain().then(() => router.push('/feedback/thanks'))">
+                @click="cloudStore.feedback.saveAgain(false).then(() => router.push('/feedback/thanks'))">
                 <Icon name="mdi:check" />
                 Dokončit
             </button>
         </div>
         <p v-if="cloudStore.feedback.fetchFailed" style="color:red">
             {{ cloudStore.feedback.error || 'Nepodařilo se uložit tvou odpověď' }}
-            <button @click="cloudStore.feedback.saveAgain">
+            <button @click="cloudStore.feedback.saveAgain(true)">
                 <Icon name="material-symbols:save" /> Zkusit znovu
             </button>
         </p>
@@ -147,12 +147,12 @@ definePageMeta({
 const currentPart = computed(() => {
     const config: FeedbackConfig | undefined = cloudStore.feedbackConfig?.[feedbackPartIndex]
     type Entry = (Partial<ScheduleItem> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })
-    const subparts: { title: string, primaryIndex: number | string, entries: Entry[] }[] = []
+    const subparts: { title: string, primaryIndex: number | string, entries: Entry[] }[] = reactive([])
 
     if (config?.group) {
         for (const scheduleIndex in cloudStore.days) {
             const day = cloudStore.days[scheduleIndex]
-            const entries: Entry[] = []
+            const entries: Entry[] = reactive([])
             const exp: string = config.group!.toString()
             function addScheduleItem(scheduleItem: ScheduleItem, index: number | string) {
                 entries.push({

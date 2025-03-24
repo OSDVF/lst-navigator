@@ -185,7 +185,11 @@ export const useCloudStore = defineStore('cloud', () => {
                 feedback.fetching.value = false
             }, 5000)
         },
-        saveAgain() {
+        saveAgain(force = true) {
+            if(!force && !feedback.error.value && !feedback.fetchFailed.value && feedback.online.value?.[settings.userIdentifier]?.updated === feedbackDirtyTime.value) {
+                return Promise.resolve()
+            }
+
             feedback.fetching.value = true
             const promises = []
 
@@ -512,7 +516,8 @@ export const useCloudStore = defineStore('cloud', () => {
     let hydrationDebounce: null | NodeJS.Timeout = null
     function hydrateOfflineFeedback(onlineFeedback?: any) {
         hydrationDebounce = null
-        if (new Date(onlineFeedback?.[settings.userIdentifier]?.updated ?? 0).getTime() > feedback.dirtyTime.value) {
+        const now = new Date(onlineFeedback?.[settings.userIdentifier]?.updated ?? 0).getTime()
+        if (now > feedback.dirtyTime.value) {
             for (const sIndex in onlineFeedback) {
                 const sPart = onlineFeedback[sIndex]
                 for (const eIndex in sPart) {
@@ -529,6 +534,7 @@ export const useCloudStore = defineStore('cloud', () => {
                     }
                 }
             }
+            feedback.dirtyTime.value = now
         }
     }   
     {

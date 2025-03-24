@@ -89,6 +89,7 @@
     "nuxt-rating": "^0.0.15",
     "path-browserify": "^1.0.1",
     "qrcode": "^1.5.4",
+    "qr-scanner": "^1.4.2",
     "randomcolor": "^0.6.2",
     "vite-plugin-top-level-await": "^1.4.4",
     "vue-easy-lightbox": "^1.19.0",
