@@ -1,20 +1,28 @@
 <template>
     <div>
-        <label v-if="cloudStore.resolvedPermissions.editSchedule">
-            &ensp;
-            <strong>{{ props.description }}</strong>
-            &nbsp;
-            <Icon v-if="valueOrValue" name="mdi:pencil" />&nbsp;
-            <input
-                v-autowidth="{
-                    parentLevel: 3,
-                    overflowParent: false,
-                }" :value="valueOrValue" type="text" :class="valueOrValue ? 'editable' : ''"
-                :placeholder="props.placeholder ?? 'Prázdné'" @change="sendValue" @focus="permitSwipe = false"
-                @blur="permitSwipe = true">
-        </label>
+        <slot
+            v-if="cloudStore.resolvedPermissions.editSchedule" name="editable" :description="props.description"
+            :send-value="sendValue" :value="valueOrValue">
+            <label>
+                &ensp;
+                <strong>{{ props.description }}</strong>
+                &nbsp;
+                <Icon v-if="valueOrValue" name="mdi:pencil" />&nbsp;
+                <input
+                    v-autowidth="{
+                        parentLevel: 3,
+                        overflowParent: false,
+                        comfortZone: '5px'
+                    }" :value="valueOrValue" type="text" :class="(valueOrValue ?? true) ? 'editable' : ''"
+                    :placeholder="props.placeholder ?? 'Prázdné'" @change="sendValue" @focus="permitSwipe = false"
+                    @blur="permitSwipe = true">
+            </label>
+        </slot>
 
-        <strong v-else-if="valueOrValue">&ensp;{{ props.description }} {{ valueOrValue }}</strong>
+        <strong v-else-if="valueOrValue">
+            <slot :description="props.description" :value="valueOrValue">&ensp;{{ props.description }} {{ valueOrValue
+            }}</slot>
+        </strong>
         <template v-else>
             {{ props.empty ?? '' }}
         </template>
@@ -27,7 +35,7 @@ import { useCloudStore } from '~/stores/cloud'
 
 const props = defineProps<{
     document?: string,
-    description: string,
+    description?: string,
     empty?: string | null
     property: string,
     value?: any,
@@ -40,9 +48,9 @@ const currentDoc = computed(() => cloudStore.probe ? props.document ? cloudStore
 const docData = useDocumentT<any>(currentDoc)
 const valueOrValue = computed(() => props.value ?? docData.value?.[props.property])
 
-async function sendValue(event: Event) {
+async function sendValue(event: Event | string) {
     if (!currentDoc.value) { return }
-    const target = event.target as HTMLInputElement
+    const target = typeof event === 'string' ? { value: event } : event.target as HTMLInputElement
     await setDoc(currentDoc.value, { [props.property]: target.value }, { merge: true })
 }
 

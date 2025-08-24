@@ -9,23 +9,23 @@
         <p>
             <NuxtLink to="/admin/feedback/result">
                 <button class="large">
-                    <Icon name="mdi:spreadsheet" />
+                    <Icon name="mdi:spreadsheet" class="mb-0.5e"/>
                     Výsledky
                 </button>
             </NuxtLink>
             <NuxtLink to="/feedback">
                 <button class="large">
-                    <Icon name="mdi:form-select" />
+                    <Icon name="mdi:form-select" class="mb-0.5e"/>
                     Dotazník
                 </button>
             </NuxtLink>
         </p>
         <button @click="csvExportAll">
-            <Icon name="mdi:file-document-arrow-right" />
+            <Icon name="mdi:file-document-arrow-right" class="mb-0.5e"/>
             CSV Export
         </button>
         <button @click="exportJson">
-            <Icon name="mdi:export" />
+            <Icon name="mdi:export" class="mb-0.5e"/>
             Export
         </button>
         <ImportForm
@@ -49,7 +49,7 @@
                     <div v-show="largeScreen" style="float:right">
                         <input id="showPreview" v-model="showPreview" type="checkbox">
                         <label for="showPreview">
-                            <Icon name="mdi:eye" /> Náhled harmonogramu
+                            <Icon name="mdi:eye" class="mb-0.5e" /> Náhled harmonogramu
                         </label>
                     </div>
                     <h3>Sekce dotazníku</h3>

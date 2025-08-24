@@ -9,6 +9,7 @@
     </LazyClientOnly>
 </template>
 <script setup lang="ts">
+// Relies on ckeditor loading procedure in ckeditor.client.ts
 
 const props = defineProps<{
     modelValue?: string | null,

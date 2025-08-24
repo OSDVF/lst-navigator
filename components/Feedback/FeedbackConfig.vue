@@ -55,8 +55,8 @@
             <label :for="`dayTitles${p.index}`">Zobrazit názvy dnů</label><br>
             <span class="muted">Odpovídající programy:</span>
             <div :class="isEmpty(matches) && 'inline muted' || undefined">
-                <span v-for="(title, when) in matches" :key="when">
-                    {{ title }} <span class="muted">{{ when }}{{ when == '...' && ' ' || ', ' }}</span>
+                <span v-for="(item, when) in matches" :key="when" :title="item.subtitle">
+                    {{ item.title }} <span class="muted">{{ when }}{{ when == '...' && ' ' || ', ' }}</span>
                 </span>
                 <template v-if="isEmpty(matches)">
                     Žádné
@@ -201,10 +201,10 @@ function updateQuestion(value: FeedbackConfig['individual'][0] | undefined, i: n
 const matches = computed(() => {
     if (type.value !== 'individual') {
         let count = 0
-        const result: { [when: string]: string } = {}
+        const result: { [when: string]: ScheduleItem } = {}
         for (const day of cloud.days) {
             function addToResult(program: ScheduleItem) {
-                result[`${day.name.substring(0, 2)} ${toHumanTime(program.time)}`] = program.title!
+                result[`${day.name.substring(0, 2)} ${toHumanTime(program.time)}`] = program
             }
             const exp = (editedCategory.value.group ?? '').toString()
             if (exp.match(/[a-zA-Z0-9 ]|,/g)?.length == exp.length) {
@@ -213,7 +213,7 @@ const matches = computed(() => {
                     if (programIndex !== -1) {
                         addToResult(day.program[programIndex])
                         if (count++ > 5) {
-                            result['...'] = ''
+                            result['...'] = { title: '' }
                             return result
                         }
                     }
@@ -223,7 +223,7 @@ const matches = computed(() => {
                     if (program.title?.match(editedCategory.value.group ?? '')) {
                         addToResult(program)
                         if (count++ > 5) {
-                            result['...'] = ''
+                            result['...'] = { title: '' }
                             return result
                         }
                     }

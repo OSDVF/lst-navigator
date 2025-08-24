@@ -18,6 +18,10 @@
                         <Icon name="mdi:pencil" />&nbsp;Přidat program
                     </button>
                 </NuxtLink>
+                <ImportForm :document="cloud.eventDoc('schedule', selectedDayId)" union />
+                <button title="Exportovat den" @click="exportDay">
+                    <Icon name='mdi:download' /> Export
+                </button>
                 <template v-if="admin.eventClipboard">
                     <button
                         type="button"
@@ -96,6 +100,11 @@ async function deleteProgram(index: number, force = false) {
             ],
         }, { merge: true })
     }
+}
+
+function exportDay() {
+    download(`${cloud.selectedEvent}-day-${selectedDayId.value}-${new Date().toLocaleString(navigator.language, { timeStyle: 'short', dateStyle: 'short' }).replace(':', '-')}.json`,
+        JSON.stringify(toRaw(cloud.days[p.day])))
 }
 
 async function moveUp(program: ScheduleItem, index: number) {

@@ -68,6 +68,7 @@
                         <input id="anonymize" v-model="admin.anonymize" type="checkbox" name="anonymize"><label
                             for="anonymize">Plně anonymizovat</label>
                     </div>
+                    <button @click="deleteAll"><Icon name="mdi:delete"/> Smazat odpovědi</button>
                 </div>
                 <div>
                     <span style="color:blue">
@@ -104,6 +105,7 @@
 import { useCloudStore } from '@/stores/cloud'
 import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
+import type { FeedbackQuestionsCustom } from '~/types/cloud'
 
 definePageMeta({
     title: 'Výsledky zpětné vazby',
@@ -137,6 +139,12 @@ const displayKindOptions = {
 
 const showRespondents = ref(false)
 
+function deleteAll() {
+    if(confirm('Chcete smazat všechny odpovědi respondentů u této akce?')) {
+        return cloudStore.feedback.clear()
+    }
+}
+
 function deleteRespondent(respondent: string) {
     if (confirm(`Opravdu chcete smazat odpovědi respondenta ${respondent}?`)) {
         if (cloudStore.feedback.online) {
@@ -144,13 +152,13 @@ function deleteRespondent(respondent: string) {
                 const sectionData = cloudStore.feedback.online[section]
                 if (typeof sectionData !== 'number' && typeof sectionData !== 'string') {
                     for (const question in sectionData) {
-                        if (sectionData[question]?.[respondent]) {
+                        if ((sectionData as FeedbackQuestionsCustom)[question]?.[respondent]) {
                             cloudStore.feedback.set(section, question, null, respondent)
                         }
                     }
                 }
             }
-            respondents.names.delete(respondent)
+            respondents.names.delete(respondent) // the set must mirror the deletion
         }
     }
 }

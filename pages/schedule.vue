@@ -5,12 +5,24 @@
                 v-for="(day, index) in cloud.days" :key="`day${index}`" :style="{
                     'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
                     'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
-                }" :to="{
+                }" :to="dayIndex == index.toString() ? undefined : {
                     name: 'schedule-day',
                     params: { day: index.toString() },
                     query: $route.query,
                 }">
-                {{ day?.name ?? index }}
+                <template v-if="!day.name && !cloud.resolvedPermissions.editSchedule">{{ index }}</template>
+                <EditableField v-if="index == parseInt(dayIndex)" :document="`schedule/${day.id}`" property="name">
+                    <template #default="props">{{ props.value }}</template>
+                    <template #editable="props">
+                        <span
+                            contenteditable class="editable" @focus="permitSwipe = false"
+                            @blur="e => { props.sendValue((e.target as HTMLSpanElement).innerText); permitSwipe = true }"
+                            v-text="props.value" />
+                    </template>
+                </EditableField>
+                <template v-else>
+                    {{ day.name ?? index }}
+                </template>
             </NuxtLink>
         </nav>
         <ProgressBar :class="{ daysLoading: true, visible: cloud.scheduleLoading }" />
@@ -33,6 +45,7 @@
 import { useDrag, type Vector2 } from '@vueuse/gesture'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '~/stores/settings'
+import type { ScheduleDay } from '~/types/cloud'
 
 const cloud = useCloudStore()
 const router = useRouter()
@@ -123,6 +136,7 @@ function onTransitionAfterEnter() {
 function onTransitionBeforeLeave() {
     movingOrTransitioning.value = true
 }
+
 //
 // Swipe Navigation
 //
@@ -137,6 +151,7 @@ onMounted(() => {
     drag.value?.addEventListener('transitionend', transEnd)
 })
 provide<ComputedRef<boolean>>('inMotion', computed(() => moving.value || returning.value))
+onBeforeUnmount(() => moving.value = false)
 
 if (settings.gestures) {
     function reset(noClick = true) {

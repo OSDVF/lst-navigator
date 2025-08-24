@@ -3,7 +3,7 @@
         <form v-bind="$attrs" @submit.prevent>
             <slot />
             <input
-                id="nickname" ref="input" v-model="settings.userNickname" v-paste-model placeholder="Klikněte pro vytvoření "
+                id="nickname" ref="input" v-model="settings.userNickname" v-paste-model placeholder="Vytvořit podpis "
                 :style="{
                     textAlign: settings.userNickname ? 'left' : 'right',
                 }">

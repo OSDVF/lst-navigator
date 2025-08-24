@@ -8,6 +8,7 @@ function append(app: App) {
     appended = true
     const ckeditor = document.createElement('script')
     ckeditor.src = 'https://unpkg.com/ckeditor5@44.1.0/dist/browser/ckeditor5.umd.js'
+    ckeditor.id = 'ckeditor5-script'
     app._container?.appendChild(ckeditor)
 
     const style = document.createElement('link')
@@ -19,12 +20,15 @@ function append(app: App) {
 
 export default defineNuxtPlugin({
     parallel: true,
-    setup(nuxtApp) {
-        const settings = useSettings()
-        watch(() => settings.richNoteEditor, (value) => {
-            if (value) {
-                append(nuxtApp.vueApp)
-            }
-        }, { immediate: true })
+
+    hooks: {
+        'app:mounted'(app) {
+            const settings = useSettings()
+            watch(() => settings.richNoteEditor, (value) => {
+                if (value) {
+                    append(app)
+                }
+            }, { immediate: true })
+        },
     },
 })

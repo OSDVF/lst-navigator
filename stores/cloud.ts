@@ -11,7 +11,7 @@ import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem, Transfer } from '@/types/cloud'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
 import merge from 'lodash.merge'
@@ -53,6 +53,7 @@ export function eventSubCollection(fs: Firestore, event: string, document: Event
     return collection(fs, 'events', event, document, ...segments)
 }
 
+/// Get references of all documents and collections corresponding to a specific event
 export function eventDocs(fs: Firestore, name: string): EventDocs {
     return {
         event: doc(knownCollection(fs, 'events'), name),
@@ -145,6 +146,9 @@ export const useCloudStore = defineStore('cloud', () => {
             }
             return result
         }),
+        async clear(){
+            deleteCollection(firestore!, feedback.col.value!, 10)
+        },
         /**
          * Set both online and offline feedback for a program item
          * @param sIndex Section index

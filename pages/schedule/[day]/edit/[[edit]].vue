@@ -1,8 +1,17 @@
 <template>
     <div class="pl-1 pr-1">
-        <h2>{{
-            editing ? `Upravit program #${selectedDayIndex}#${selectedEditIndex}` : 'Nový program'
-        }}</h2>
+        <div class="more">
+            <ImportForm
+                :truncate-default="false" :truncate-option="false"
+                @import="importJson"
+                @error="e => error = e">
+                Importovat program</ImportForm>
+            <p v-if="error"><code>{{ error }}</code></p>
+            <button title="Exportovat program" @click='exportItem'>
+                <Icon name='mdi:download' /> Export
+            </button>
+        </div>
+        <h2>{{ title }}</h2>
         <details class="border">
             <summary>
                 <Icon name="mdi:ab-testing" />&ensp; Kopírovat z předchozích
@@ -17,7 +26,8 @@
                     <br>
                     <Icon v-if="event.feedbackType" name="mdi:rss" /> {{ toHumanFeedback(event.feedbackType) }}
                     <br>
-                    {{ stripHtml(event.description?.substring(0, 20)) }} {{ (event.description?.length ?? 0) > 20 ? '...' : '' }}
+                    {{ stripHtml(event.description?.substring(0, 20)) }} {{ (event.description?.length ?? 0) > 20 ?
+                        '...' : '' }}
                 </button>
             </div>
         </details>
@@ -43,7 +53,7 @@
         <br>
         <fieldset>
             <legend>
-                <Icon name="mdi:timeline" />&ensp; Nový program
+                <Icon name="mdi:timeline" />&ensp; {{ title }}
             </legend>
             <form ref="form" @submit.prevent="editProgram">
                 <EditProgram :value="editedEvent" />
@@ -70,6 +80,7 @@ import { doc, arrayUnion } from 'firebase/firestore'
 import type { VueFirestoreDocumentData } from 'vuefire'
 import { useAdmin } from '~/stores/admin'
 import { stripHtml } from '~/utils/sanitize'
+import { slugify } from '@vueuse/motion'
 
 const router = useRouter()
 const route = router.currentRoute
@@ -86,8 +97,10 @@ const selectedEditIndex = computed(() => {
 })
 const program = computed(() => cloud.days[selectedDayIndex.value].program)
 const editing = computed(() => typeof selectedEditIndex.value !== 'undefined')
+const title = computed(() => editing.value ? `Upravit program #${selectedDayIndex.value}#${selectedEditIndex.value}` : 'Nový program')
 const autoOrder = usePersistentRef('autoOrder', false)
 const loading = ref(false)
+const error = ref()
 
 const cloud = useCloudStore()
 const editedEvent = ref<ScheduleItem>({
@@ -110,6 +123,12 @@ function beforeunload() {
 const admin = useAdmin()
 const form = ref()
 onMounted(() => {
+    if (!cloud.resolvedPermissions.editSchedule) {
+        alert('Nedostatečná oprávnění')
+        router.replace(`/schedule/${selectedDayIndex.value}/${selectedEditIndex.value}`)
+        return
+    }
+
     if (route.value.params.edit == 'paste') {
         Object.assign(editedEvent.value, toRaw({ ...admin.eventClipboard }))
     } else if (route.value.params.edit == 'pastenow') {
@@ -136,7 +155,7 @@ const fs = useFirestore()
 const union = ref(false)
 
 function useSuggested(event: ScheduleItem) {
-    if(confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.')) {
+    if (confirm('Opravdu chcete použít tento program? Současné údaje budou přepsány.')) {
         Object.assign(editedEvent.value, event)
     }
 }
@@ -149,6 +168,23 @@ async function copyDay(part: NonNullable<VueFirestoreDocumentData<ScheduleDay>>)
         )
         router.push('/schedule/' + selectedDayIndex.value)
     }
+}
+
+// Exports partial ScheduleDay
+function exportItem() {
+    download(`${cloud.selectedEvent}-${selectedDayId.value}-program-${slugify(editedEvent.value.title ?? '') || selectedEditIndex.value}-${new Date().toLocaleString(navigator.language, { timeStyle: 'short', dateStyle: 'short' }).replace(':', '-')}.json`, JSON.stringify({
+        program: [toRaw(editedEvent.value)],
+    }))
+}
+
+function importJson(json: Partial<ScheduleDay>) {
+    if(json.program) {
+        if(json.program[0]) {
+            Object.assign(editedEvent.value, json.program[0])
+            return
+        }
+    }
+    alert('Nepodařilo se vyznat se ve formátu dat')
 }
 
 const config = useRuntimeConfig()

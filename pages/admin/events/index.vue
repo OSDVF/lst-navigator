@@ -1,31 +1,43 @@
 <template>
     <ProgressBar v-if='cloud.eventLoading' />
     <article v-else>
-        <button v-if='action == Actions.Nothing && cloud.resolvedPermissions.superAdmin' @click='action = Actions.New'>
+        <button
+            v-if='action == Actions.Nothing && cloud.resolvedPermissions.superAdmin'
+            @click='() => { action = Actions.New; table?.dt?.rows().deselect() }'>
             <Icon name='mdi:plus' /> Nová
         </button>
         <template v-if="isSelection && cloud.resolvedPermissions.editEvent && action == Actions.Nothing">
             <button @click='startEditingSelected'>
                 <Icon name='mdi:pencil' /> Upravit
             </button>
-            <button @click='exportEvent'>
+            <button @click="$router.push(`/admin/events/${getSelectedEvent()?.id}/export`)">
                 <Icon name='mdi:download' /> Export
             </button>
+
         </template>
-        <ImportForm v-if="cloud.resolvedPermissions.superAdmin" @import="importJson" @error="e => error = e" />
+        <ImportForm
+            v-if="cloud.resolvedPermissions.superAdmin && [Actions.Nothing, Actions.New].includes(action)"
+            ref="form" :truncate-option="importInto" @import="importJson" @error="e => error = e">
+            <template #legend>
+                {{ importText }}
+            </template>
+            {{ importText }}
+        </ImportForm>
         <p v-if="error"><code>{{ error }}</code></p>
         <button
             v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.superAdmin'
             @click='deleteSelected'>
             <Icon name='mdi:trash-can' /> Smazat
         </button>
-        <form v-if='action == Actions.New || action == Actions.Edit' @submit.prevent='editEvent(action == Actions.New)'>
+        <form
+            v-if='[Actions.Edit, Actions.New].includes(action) && !form?.importing'
+            @submit.prevent='editEvent(action == Actions.New)'>
+            <h2>{{ { [Actions.Edit]: 'Upravit', [Actions.New]: 'Nová událost', [Actions.Nothing]: '' }[action] }}</h2>
             <label>Název <input
-                v-model.lazy='sanitizeTitleAndId' type='text' required
-                :disabled='action == Actions.Edit'></label>
+                v-model.lazy='sanitizeTitleAndId' type='text' required></label>
             &ensp;
             <small>
-                <label>Vlastní identifikátor <input
+                <label title="Unikátní identifikátor, pod kterým bude událost uložena v databázi">Identifikátor <input
                     v-model.lazy='editedEvent.identifier' type='text' required
                     :disabled='action == Actions.Edit'></label><br>
             </small>
@@ -36,10 +48,12 @@
             <label>Začátek <input
                 v-model.lazy='editedEvent.start' type='date' required
                 :disabled='action == Actions.Edit'></label>
+            &nbsp;
             <DateFormat /><br>
             <label>Konec <input
                 v-model.lazy='editedEvent.end' :min='editedEvent.start!' type='date' required
                 :disabled='action == Actions.Edit'></label>
+            &nbsp;
             <DateFormat /><br>
             <label for="transfers">
                 <Icon name="mdi:leaks" /> Povolit přenosy uživatelských dat
@@ -91,11 +105,17 @@
                 </p>
 
                 <p>
-                    <label v-if='editedEvent.imageIdentifier.type === "cloud"'>Výsledná lokace<input
+                    <label v-if='editedEvent.imageIdentifier.type === "cloud"'>Výsledná lokace <input
                         v-model.lazy='editedEvent.imageIdentifier.data' type='text'></label>
                 </p>
             </fieldset>
-            <button type='submit'><Icon name="material-symbols:save" /> Uložit</button>
+            <button type='submit' class="large">
+                <Icon name="material-symbols:save" /> Uložit
+            </button>
+            <button type="reset" class="large" @click="action = Actions.Nothing">
+                <Icon name="mdi:cancel" /> Zrušit
+            </button>
+            <hr>
         </form>
         <ProgressBar v-show='loading' />
         <LazyDataTable
@@ -103,7 +123,7 @@
                 responsive: true,
                 select: true,
                 order: [[0, "desc"]]
-            }' @select='selectionChanged' @unselect='selectionChanged'>
+            }' @select='selectionChanged' @deselect='selectionChanged'>
             <thead>
                 <tr>
                     <th>ID</th>
@@ -118,14 +138,15 @@
 
 <script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, getDoc, getDocs, orderBy, query, limit, collection, writeBatch, type Query, arrayUnion, type DocumentData } from 'firebase/firestore'
-import { setDoc, deleteDoc } from '~/utils/trace'
+import { doc, collection,  arrayUnion, type DocumentData } from 'firebase/firestore'
+import { getDocCacheOr, getDocs, setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
-import { toFirebaseMonthDay, toJSDate, toFirebaseDate, download } from '@/utils/utils'
+import { toFirebaseMonthDay, toJSDate, toFirebaseDate } from '@/utils/utils'
 import { EventSubcollectionsList, type EventDescription } from '~/types/cloud'
+import { ImportForm } from '#components'
 import pickBy from 'lodash.pickby'
 
 import type { Api } from '~/types/datatables'
@@ -143,6 +164,7 @@ enum Actions {
     Nothing, New, Edit
 }
 const action = ref<Actions>(Actions.Nothing)
+const form = useTemplateRef<InstanceType<typeof ImportForm>>('form')
 
 const now = toFirebaseDate(new Date())!
 const editedEvent = ref({
@@ -168,7 +190,7 @@ const sanitizeTitleAndId = computed({
     set(changedValue: string) {
         const oldValue = editedEvent.value.title
         if (changedValue !== oldValue) {
-            if (editedEvent.value.identifier === slugify(oldValue)) {
+            if (editedEvent.value.identifier === slugify(oldValue) && action.value == Actions.New) {
                 editedEvent.value.identifier = slugify(changedValue)
             }
         }
@@ -246,7 +268,7 @@ async function editEvent(createNew = false) {
     }
     const docs = eventDocs(fs, editedEvent.value.identifier)
     if (createNew) {
-        if ((await getDoc(docs.event)).exists()) {
+        if ((await getDocCacheOr(docs.event)).exists()) {
             alert('Akce s tímto názvem již existuje')
             return
         }
@@ -328,15 +350,21 @@ const eventsIndexed = computed(() => {
     return result
 })
 
-const table = ref<{ dt: Api<typeof eventsIndexed.value> }>()
+const table = ref<{ dt?: Api<typeof eventsIndexed.value> }>()
 const isSelection = ref(false)
+const importInto = computed(() => isSelection.value && action.value != Actions.New)
+const selectedTitle = ref<string>()
+const importText = computed(() => importInto.value ? 'Importovat do ' + (selectedTitle.value ?? '...') : 'Importovat novou')
 function selectionChanged() {
-    if (table.value) {
-        isSelection.value = table.value.dt.rows({ selected: true }).data().length > 0
+    if (table.value?.dt) {
+        const data = table.value.dt.rows({ selected: true }).data()
+        isSelection.value = data.length > 0
+        selectedTitle.value = isSelection.value ? data[0][1] : undefined
     }
+
 }
 async function startEditingSelected() {
-    if (table.value && fs) {
+    if (table.value?.dt && fs) {
         const selectedData = table.value.dt.rows({ selected: true }).data()
         if (selectedData.length > 1) {
             alert('Vyberte jednu akci')
@@ -365,14 +393,18 @@ async function startEditingSelected() {
     }
 }
 
-function getSelectedEvent(): EventDescription<DocumentData> & { id: string } | undefined {
-    if (!table.value) {
-        alert('Tabulka nenačtena')
+function getSelectedEvent(silent = false): EventDescription<DocumentData> & { id: string } | undefined {
+    if (!table.value?.dt) {
+        if(!silent) {
+            alert('Tabulka nenačtena')
+        }
         return
     }
     const selectedData = table.value.dt.rows({ selected: true }).data()
     if (selectedData.length != 1) {
-        alert('Vyberte jednu akci')
+        if(!silent) {
+            alert('Vyberte jednu akci')
+        }
         return
     }
     return cloud.eventsCollection.find(e => e.id === selectedData[0][0])
@@ -384,87 +416,48 @@ function deleteSelected() {
         if (selectedEvent) {
             if (confirm(`Opravdu chcete smazat akci ${selectedEvent.title}?`)) {
                 deleteDoc(doc(fs, 'events', selectedEvent.id))
-                deleteCollection(selectedEvent.id, 10)// TODO why is this here?
+                deleteCollection(fs, collection(fs, selectedEvent.id), 10)// delete in the legacy doc tree
             }
         }
     }
 }
 
-
-async function deleteCollection(collectionPath: string, batchSize: number) {
-    if (!fs) { return }
-    if (config.public.logWrites) {
-        console.log('Deleting collection ' + collectionPath)
-    }
-    const collectionRef = collection(fs, collectionPath)
-    const q = query(collectionRef, orderBy('__name__'), limit(batchSize))
-
-    return new Promise<void>((resolve, reject) => {
-        deleteQueryBatch(q, resolve).catch(reject)
-    })
-}
-
-async function deleteQueryBatch(query: Query, resolve: () => void) {
-    if (!fs) { return }
-    const snapshot = await getDocs(query)
-
-    const batchSize = snapshot.size
-    if (batchSize === 0) {
-        // When there are no documents left, we are done
-        resolve()
-        return
-    }
-
-    // Delete documents in a batch
-    const batch = writeBatch(fs)
-    snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref)
-    })
-    await batch.commit()
-
-    // Recurse on the next process tick, to avoid
-    // exploding the stack.
-    nextTick(() => {
-        deleteQueryBatch(query, resolve)
-    })
-}
-
-function exportEvent() {
-    if (table.value && fs) {
-        const selectedEvent = getSelectedEvent()
-        if (selectedEvent) {
-            download(`${selectedEvent.id}-event-${new Date().toLocaleString(navigator.language, { timeStyle: 'short', dateStyle: 'short' }).replace(':', '-')}.json`, JSON.stringify({
-                [selectedEvent.id]: {
-                    ...useDocument(doc(fs, 'events', selectedEvent.id), { once: true, wait: true }).value,
-                    ...Object.fromEntries(EventSubcollectionsList.map(sub => [sub, useCollection(collection(fs, 'events', selectedEvent.id, sub), { once: true, wait: true }).value.map(d => ({
-                        id: d.id,// make ID explicit
-                        ...pickBy(d, (_, key) => key != 'metadata'),
-                    }))])),
-                },
-            }))
-        } else {
-            alert('Akce nenalezena')
-        }
-    }
-}
-
-function importJson(source: EventDescription<DocumentData>) {
+async function importJson(source: EventDescription<DocumentData>, merge: boolean) {
     if (fs) {
-        for (const key in source) {
-            const data = source[key as keyof typeof source]
+        for (const importingEventId in source) {// there can be multiple events to import
+            const data = source[importingEventId as keyof typeof source]
+            const selected = getSelectedEvent(true)
             if (typeof data !== 'object') {
                 alert('Neplatný formát')
                 return
             }
-            const docs = eventDocs(fs, key)
-            setDoc(docs.event, pickBy(data, (_, key) => !EventSubcollectionsList.includes(key as any)), { merge: true })
+            if (importInto.value && !selected) {
+                if (!confirm('Nebyla nalezena vybraná událost. Importovat jako novou?')) {
+                    return
+                }
+            }
+            let docs = eventDocs(fs, importInto.value ? (selected?.id ?? importingEventId) : importingEventId)
+            if (!selected) {
+                if ((await getDocCacheOr(docs.event)).exists()) {
+                    const response = prompt('Událost s ID ' + importingEventId + ' již existuje. Chcete data ' + (merge ? 'sloučit' : 'přepsat') + '? Pokud ne, zadejte nové ID importované události.', importingEventId)
+                    if(!response) {
+                        alert('Import zrušen.')
+                        return
+                    }
+                    docs = eventDocs(fs, response)
+                }
+            }
+            // Event props
+            const eventMetaProps = pickBy(data, (_, docKey) => !EventSubcollectionsList.includes(docKey as any))
+            setDoc(docs.event, eventMetaProps, { merge })
+            // Subdocuments
             for (const sub of EventSubcollectionsList) {
                 if (data[sub as keyof typeof data]) {
-                    for (const subKey in (data as any)[sub]) {
+                    for (const subKey in (data as any)[sub]) {// every document in the subcollection
                         const content = (data as any)[sub][subKey]
                         const id = content.id
                         delete content.id
-                        setDoc(doc(docs[sub], id), content, { merge: true })
+                        setDoc(doc(docs[sub], id), content, { merge })
                     }
                 }
             }

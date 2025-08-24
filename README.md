@@ -24,6 +24,7 @@ Used for [Moravian-Silesian Youth of Evangelic Church of Czech Brethren](https:/
 
 ## WIP
 - Notifications
+- Firestore request caching (cache-first)
 
 ## Setup
 Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.

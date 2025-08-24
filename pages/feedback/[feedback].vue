@@ -4,13 +4,24 @@
             <NuxtLink :to="router.currentRoute.value.fullPath">
                 <Icon name="mdi:rss" /> Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
             </NuxtLink>
-            <NuxtLink
-                v-if="cloudStore.resolvedPermissions.editEvent" class="ml-2" to="/admin/feedback"
-                title="Nastavení zpětné vazby">
-                <button type="button" class="large">
-                    <Icon name="mdi:pencil" class="baseline" /> Upravit
-                </button>
-            </NuxtLink>
+
+            <template v-if="cloudStore.resolvedPermissions.editEvent">
+                <NuxtLink
+                    class="ml-2" to="/admin/feedback"
+                    title="Nastavení zpětné vazby">
+                    <button type="button" class="large">
+                        <Icon name="mdi:pencil" class="mb-0.5e" /> Upravit
+                    </button>
+                </NuxtLink>
+
+                <NuxtLink
+                    class="ml-2" to="/admin/feedback/result"
+                    title="Výsledky zpětné vazby">
+                    <button type="button" class="large">
+                        <Icon name="mdi:spreadsheet" class="mb-0.5e"/> Výsledky
+                    </button>
+                </NuxtLink>
+            </template>
         </h1>
         <NuxtLink v-if="feedbackPartIndex > 0" :to="`/feedback/${feedbackPartIndex - 1}`">
             <Icon name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;

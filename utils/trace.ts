@@ -1,6 +1,6 @@
 /** @module trace A helper for tracing Firebase actions */
-import { CollectionReference, DocumentReference, type DocumentData, type SetOptions, type WithFieldValue, type PartialWithFieldValue, type Query } from 'firebase/firestore'
-import { setDoc as originalSD, addDoc as originalAD, deleteDoc as originalDel, getDoc as originalGet } from 'firebase/firestore'
+import { CollectionReference, DocumentReference, type DocumentData, type SetOptions, type WithFieldValue, type PartialWithFieldValue, type Query, getDocFromCache, getDocsFromCache, type QuerySnapshot } from 'firebase/firestore'
+import { setDoc as originalSD, addDoc as originalAD, deleteDoc as originalDel, getDoc as originalGet, getDocs as getDocsOriginal } from 'firebase/firestore'
 import { useDocument as originalUseDoc, useCollection as originalUseCol, type _RefFirestore, type UseCollectionOptions, type UseDocumentOptions, type VueFirestoreQueryData, type VueFirestoreDocumentData } from 'vuefire'
 
 function log() {
@@ -29,18 +29,27 @@ export function deleteDoc<AppModelType, DbModelType extends DocumentData>(refere
     return originalDel(reference)
 }
 
-export function getDoc<AppModelType, DbModelType extends DocumentData>(reference: DocumentReference<AppModelType, DbModelType>) {
+/**
+ * EXPERIMENTAL: Cache-first
+ */
+export function getDocCacheOr<AppModelType, DbModelType extends DocumentData>(reference: DocumentReference<AppModelType, DbModelType>) {
     if (log()) {
         console.log('Get ', reference.path)
     }
-    return originalGet(reference)
+    return getDocFromCache(reference).catch(() => originalGet(reference))
+}
+
+export function getDocs<AppModelType, DbModelType extends DocumentData>(query: Query<AppModelType, DbModelType>): Promise<QuerySnapshot<AppModelType, DbModelType>> {
+    if (log()) {
+        console.log('Get', query)
+    }
+    return getDocsFromCache(query).catch(() => getDocsOriginal(query))
 }
 
 type _InferReferenceType<R> = R extends CollectionReference<infer T> | Query<infer T> | DocumentReference<infer T> ? T : R;
 export function useDocument<T>(documentRef: MaybeRefOrGetter<DocumentReference | null | undefined>, options?: UseDocumentOptions<T>): _RefFirestore<VueFirestoreDocumentData<T> | undefined>;
 export function useDocument<R extends DocumentReference<unknown>>(documentRef: MaybeRefOrGetter<R | null | undefined>, options?: UseDocumentOptions<_InferReferenceType<R>>): _RefFirestore<_InferReferenceType<R> | undefined>;
-export function useDocument<T>(documentRef: MaybeRefOrGetter<DocumentReference | null | undefined>, options?: UseDocumentOptions<T>)
-{
+export function useDocument<T>(documentRef: MaybeRefOrGetter<DocumentReference | null | undefined>, options?: UseDocumentOptions<T>) {
     if (log()) {
         const v = toValue(documentRef)
         console.log('Use ', v instanceof DocumentReference ? v.path : v)
@@ -50,9 +59,8 @@ export function useDocument<T>(documentRef: MaybeRefOrGetter<DocumentReference |
 
 export function useCollection<T>(collectionRef: MaybeRefOrGetter<CollectionReference<unknown> | Query<unknown> | null | undefined>, options?: UseCollectionOptions<T[]>): _RefFirestore<VueFirestoreQueryData<T>>;
 export function useCollection<R extends CollectionReference<unknown> | Query<unknown>>(collectionRef: MaybeRefOrGetter<R | null | undefined>, options?: UseCollectionOptions<_InferReferenceType<R>[]>): _RefFirestore<_InferReferenceType<R>[]>;
-export function useCollection<T>(collectionRef: MaybeRefOrGetter<CollectionReference<unknown> | Query<unknown> | null | undefined>, options?: UseCollectionOptions<T[]>)
-{
-    if(log()) {
+export function useCollection<T>(collectionRef: MaybeRefOrGetter<CollectionReference<unknown> | Query<unknown> | null | undefined>, options?: UseCollectionOptions<T[]>) {
+    if (log()) {
         const v = toValue(collectionRef)
         console.log('UseCollection', v instanceof CollectionReference ? v.path : v)
     }
