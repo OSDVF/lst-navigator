@@ -5,7 +5,7 @@
                 v-for="(day, index) in cloud.days" :key="`day${index}`" :style="{
                     'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
                     'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
-                }" :to="dayIndex == index.toString() ? undefined : {
+                }" :to="(dayIndex == index.toString() && !router.currentRoute.value.params.event) ? undefined : {
                     name: 'schedule-day',
                     params: { day: index.toString() },
                     query: $route.query,
