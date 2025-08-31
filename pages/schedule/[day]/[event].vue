@@ -18,7 +18,7 @@
         </h1>
         <h3>{{ eventData?.subtitle }}</h3>
         <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="p" v-html="eventData?.description ?? 'Žádné podrobnosti'" />
+        <div class="p" @click="scanImages" v-html="eventData?.description ?? 'Žádné podrobnosti'" />
 
         <h1>
             <Icon name="mdi:rss" /> Zpětná vazba
@@ -168,11 +168,42 @@ onBeforeRouteLeave(() => {
     permitSwipe.value = true
 })
 
+const ui = useUI()
+
+function scanImages(event: MouseEvent) {
+    if (event.target instanceof HTMLImageElement) {
+        ui.showLightBox(event.target.src)
+    }
+}
+
 </script>
 
 <style lang="scss">
+@use "@/assets/styles/constants" as c;
+
 article {
     padding: 1rem;
     overflow-x: auto;
+
+    figure {
+        position: relative;
+
+        &>img {
+            max-width: 100%;
+            height: auto;
+            cursor: pointer;
+        }
+
+        &:hover::after {
+            content: '';
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba($color: c.$link-background, $alpha: 0.15)
+        }
+    }
 }
 </style>

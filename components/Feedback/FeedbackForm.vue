@@ -79,10 +79,10 @@
             </template>
             <tr v-if="type !== 'select'">
                 <td colspan="2">
-                    <label v-if="props.detailQuestion.length > 100" :for="`detail-${uid}`" class="mb-1 d-block">{{ props.detailQuestion }}</label>
+                    <label v-if="props.detailQuestion?.length > 100" :for="`detail-${uid}`" class="mb-1 d-block">{{ props.detailQuestion }}</label>
                     <textarea
                         :id="`detail-${uid}`" v-model.lazy="controls.syncDetail.value" v-no-overflow v-paste-model
-                        :placeholder="props.detailQuestion.length > 100 ? undefined : (props.detailQuestion ?? 'Tipy a připomínky')" @pointerenter="permitSwipe = false"
+                        :placeholder="props.detailQuestion?.length > 100 ? undefined : (props.detailQuestion ?? 'Tipy a připomínky')" @pointerenter="permitSwipe = false"
                         @pointerleave="permitSwipe = true" />
                 </td>
                 <td>
