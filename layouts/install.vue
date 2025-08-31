@@ -4,20 +4,21 @@
         <Head>
             <Title>{{ config.public.title }}</Title>
         </Head>
-        <NuxtPage :transition="{ name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true }" />
+        <NuxtPage :page-key="route.path" :transition="{ name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true }" />
         <nav class="installNav">
             <ClientOnly>
                 <NuxtLink
                     :to="{
                         path: partIndex > 0 ? `/install/${partIndex - 1}` : route.query.to?.toString() || '/schedule/',
                         query: {
-                            ...$route.query,
+                            ...toRaw($route.query),
                             from: partIndex.toString(),
                             install: partIndex > 0 ? $route.query.install : undefined,
                         },
-                        force: true,
-                    }" @click="currentTransition = 'slide-right'; partIndex == 0 ? settings.installStep = 1 : null">
-                    <Icon :name="partIndex > 0 ? 'material-symbols:arrow-circle-left-outline' : 'mdi:trending-up'" size="2rem" />
+                    }" @click="() => { currentTransition = 'slide-right'; if (partIndex == 0) settings.installStep = 1 }">
+                    <Icon
+                        :name="partIndex > 0 ? 'material-symbols:arrow-circle-left-outline' : 'mdi:trending-up'"
+                        size="2rem" />
                     {{ partIndex > 0 ? 'Předchozí' :
                         'Přeskočit instalaci' }}
                 </NuxtLink>
@@ -32,7 +33,9 @@
                     <Icon name="material-symbols:arrow-circle-right-outline" size="2rem" />
                     {{ next }}
                 </NuxtLink>
-                <NuxtLink v-else :to="route.query.to?.toString() || '/schedule/0'" @click="settings.installStep = partIndex + 1">
+                <NuxtLink
+                    v-else :to="route.query.to?.toString() || '/schedule/0'"
+                    @click="settings.installStep = partIndex + 1">
                     <Icon name="mdi:trending-up" size="2rem" />
                     Začít
                 </NuxtLink>
@@ -47,9 +50,15 @@ import type { WatchHandle } from 'vue'
 
 const settings = useSettings()
 const router = useRouter()
-const route = useRoute()
+const route = router.currentRoute
 const config = useRuntimeConfig()
-const pathParts = computed(() => route.path.split('/'))
+const pathParts = computed(() => {
+    const parts = route.value.name?.toString().split('-')
+    if (parts && parts[0] == 'install') {
+        return parts[1]
+    }
+    return ''
+})
 const lastPart = computed(() => pathParts.value[pathParts.value.length - 1])
 const partIndex = computed(() => parseInt(lastPart.value) || 0)
 const canGoNext = computed(() => partIndex.value < config.public.installStepCount - 1)
@@ -77,7 +86,7 @@ watch(stopWatching, (_, prevVal) => {
 
 provide('skipToNextIf', (predicate: Ref<boolean>) => {
     function skip() {
-        const from = parseInt(route.query.from as string)
+        const from = parseInt(route.value.query.from as string)
         if (!isNaN(from)) {
             if (from < partIndex.value) {
                 onNextButtonClick()
@@ -87,7 +96,7 @@ provide('skipToNextIf', (predicate: Ref<boolean>) => {
             router.replace({
                 path: `/install/${Math.max(partIndex.value - 1, 0)}`,
                 query: {
-                    ...route.query,
+                    ...route.value.query,
                     from: partIndex.value,
                 },
             })
@@ -97,12 +106,12 @@ provide('skipToNextIf', (predicate: Ref<boolean>) => {
                 router.replace({
                     path: `/install/${partIndex.value + 1}`,
                     query: {
-                        ...route.query,
+                        ...route.value.query,
                         from: undefined,
                     },
                 })
             } else {
-                router.replace(route.query.to?.toString() || '/schedule')
+                router.replace(route.value.query.to?.toString() || '/schedule')
             }
         }
     }

@@ -7,8 +7,7 @@
                 </td>
                 <td>
                     <select
-                        :id="`${uid}S`"
-                        v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
+                        :id="`${uid}S`" v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
                         @pointerleave="permitSwipe = true">
                         <option v-for="parallelEvent in selectOptions" :key="parallelEvent" :value="parallelEvent">
                             {{ parallelEvent }}
@@ -27,8 +26,7 @@
                 <td><label :for="uid">Vyberte odpověd</label></td>
                 <td>
                     <select
-                        :id="uid"
-                        v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
+                        :id="uid" v-model="controls.syncSelect.value" @pointerenter="permitSwipe = false"
                         @pointerleave="permitSwipe = true">
                         <option v-for="selectOption in selectOptions" :key="selectOption" :value="selectOption">
                             {{ selectOption }}
@@ -81,9 +79,10 @@
             </template>
             <tr v-if="type !== 'select'">
                 <td colspan="2">
+                    <label v-if="props.detailQuestion.length > 100" :for="`detail-${uid}`" class="mb-1 d-block">{{ props.detailQuestion }}</label>
                     <textarea
-                        v-model.lazy="controls.syncDetail.value" v-no-overflow v-paste-model
-                        :placeholder="props.detailQuestion ?? 'Tipy a připomínky'" @pointerenter="permitSwipe = false"
+                        :id="`detail-${uid}`" v-model.lazy="controls.syncDetail.value" v-no-overflow v-paste-model
+                        :placeholder="props.detailQuestion.length > 100 ? undefined : (props.detailQuestion ?? 'Tipy a připomínky')" @pointerenter="permitSwipe = false"
                         @pointerleave="permitSwipe = true" />
                 </td>
                 <td>
