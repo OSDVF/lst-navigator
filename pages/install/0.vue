@@ -19,10 +19,11 @@ definePageMeta({
 })
 
 const config = useRuntimeConfig()
-
-const next = inject<Ref<string>>('nextText')
-if (next) {
-    next.value = 'Instalovat'
+if (import.meta.browser) {
+    const next = inject<Ref<string>>('nextText')
+    if (next) {
+        next.value = 'Instalovat'
+    }
 }
 
 </script>

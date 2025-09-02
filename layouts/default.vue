@@ -71,6 +71,8 @@ const installComplete = useInstallComplete()
 onMounted(() => {
     isServer.value = false
 })
+
+
 watchEffect(() => {
     if (app.$needRefresh?.value) {
         router.push({

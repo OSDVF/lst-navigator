@@ -29,7 +29,6 @@ export default defineNuxtPlugin({
                     downloadingUpdate.value = false
                 }
             })
-            
 
             const swRegistraions = import.meta.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
             for (const registration of swRegistraions) {
@@ -74,6 +73,7 @@ export default defineNuxtPlugin({
         return {
             provide: {
                 deferredPrompt,
+                hydrated: ref(false),
                 installPromptSupport() { return 'BeforeInstallPromptEvent' in window },
                 downloadingUpdate,
                 needRefresh,

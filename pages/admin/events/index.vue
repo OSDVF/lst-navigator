@@ -33,8 +33,7 @@
             v-if='[Actions.Edit, Actions.New].includes(action) && !form?.importing'
             @submit.prevent='editEvent(action == Actions.New)'>
             <h2>{{ { [Actions.Edit]: 'Upravit', [Actions.New]: 'Nová událost', [Actions.Nothing]: '' }[action] }}</h2>
-            <label>Název <input
-                v-model.lazy='sanitizeTitleAndId' type='text' required></label>
+            <label>Název <input v-model.lazy='sanitizeTitleAndId' type='text' required></label>
             &ensp;
             <small>
                 <label title="Unikátní identifikátor, pod kterým bude událost uložena v databázi">Identifikátor <input
@@ -59,7 +58,8 @@
                 <Icon name="mdi:leak" /> Povolit přenosy uživatelských dat
             </label>
             <input id="transfers" v-model="editedEvent.transfers" type="checkbox" name="transfers">
-
+            
+            <br>
             <label for="advanced">
                 <Icon name="mdi:account-settings" /> Povolit uživatelům pokročilá nastavení
             </label>
@@ -144,7 +144,7 @@
 
 <script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, collection,  arrayUnion, type DocumentData } from 'firebase/firestore'
+import { doc, collection, arrayUnion, type DocumentData } from 'firebase/firestore'
 import { getDocCacheOr, getDocs, setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
@@ -324,21 +324,19 @@ async function editEvent(createNew = false) {
             manager: null,
         }, { merge: true })
     }
+    const dummies = [
+        doc(docs.feedback, 'dummy'),
+        doc(docs.notes, 'dummy'),
+        doc(docs.subscriptions, 'dummy'),
+        doc(docs.users, 'dummy'),
+        doc(docs.feedbackConfig, 'dummy'),
+        editedEvent.value.transfers ? doc(knownCollection(fs, 'transfers'), 'dummy') : undefined,
+    ]
 
     // Create subcollections
-    await Promise.allSettled([
-        setDoc(doc(docs.feedback, 'dummy'), {}, { merge: true }),
-        setDoc(doc(docs.notes, 'dummy'), {}, { merge: true }),
-        setDoc(doc(docs.subscriptions, 'dummy'), {}, { merge: true }),
-        setDoc(doc(docs.users, 'dummy'), {}, { merge: true }),
-        setDoc(doc(docs.feedbackConfig, 'dummy'), {}, { merge: true }),
-    ])
+    await Promise.allSettled(dummies.map(d => d && setDoc(d, {}, { merge: true })))
 
-    deleteDoc(doc(docs.feedback, 'dummy'))
-    deleteDoc(doc(docs.notes, 'dummy'))
-    deleteDoc(doc(docs.subscriptions, 'dummy'))
-    deleteDoc(doc(docs.users, 'dummy'))
-    deleteDoc(doc(docs.feedbackConfig, 'dummy'))
+    dummies.map(d => d && deleteDoc(d))
 
     action.value = Actions.Nothing
 }
@@ -404,14 +402,14 @@ async function startEditingSelected() {
 
 function getSelectedEvent(silent = false): EventDescription<DocumentData> & { id: string } | undefined {
     if (!table.value?.dt) {
-        if(!silent) {
+        if (!silent) {
             alert('Tabulka nenačtena')
         }
         return
     }
     const selectedData = table.value.dt.rows({ selected: true }).data()
     if (selectedData.length != 1) {
-        if(!silent) {
+        if (!silent) {
             alert('Vyberte jednu akci')
         }
         return
@@ -449,7 +447,7 @@ async function importJson(source: EventDescription<DocumentData>, merge: boolean
             if (!selected) {
                 if ((await getDocCacheOr(docs.event)).exists()) {
                     const response = prompt('Událost s ID ' + importingEventId + ' již existuje. Chcete data ' + (merge ? 'sloučit' : 'přepsat') + '? Pokud ne, zadejte nové ID importované události.', importingEventId)
-                    if(!response) {
+                    if (!response) {
                         alert('Import zrušen.')
                         return
                     }

@@ -27,6 +27,16 @@
             <p v-else-if="transferStatus == TransferStatus.Transfered" class="large">
                 <Icon name="mdi:check-circle-outline" /> Přenos proběhl
             </p>
+            <p v-else-if="cloud.resolvedPermissions.editEvent">
+                <Icon name="mdi:shield-lock-open" title="Administrátor události" /> Vynucený přenos uživatele
+                <br>
+
+                Uživatel {{ targetNick ?? '(bez podpisu)' }} (UID {{ target }})
+                <br><br>
+                <button @click="settings.setUserIdentifier(target); router.replace('/settings')">
+                    <Icon name="mdi:download-lock" /> Přenést sem
+                </button>
+            </p>
             <p v-else>
                 <Icon name="mdi:leak-off" /> Zkuste zahájit přenos na druhém zaříení znovu.
             </p>
@@ -57,7 +67,7 @@ const transferStatus = computed(() => transfers.value.find(t => t.id == target.v
 
 async function transfer() {
     if (toOther.value) {
-        // To other device - create a reply
+        // To other device - create a success reply
         await setDocT(transfersDoc(target.value), {
             remote: settings.userIdentifier,
             status: TransferStatus.Reply,
@@ -78,6 +88,7 @@ watch(transferStatus, async (newStatus) => {
         await setDoc(transfersDoc(target.value), {
             status: TransferStatus.None,
         })
+        alert('Přenos dokončen')
     }
 })
 </script>

@@ -3,7 +3,10 @@ import { defineStore, skipHydrate } from 'pinia'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { usePersistentRef } from '@/utils/persistence'
 
-let uniqueIdentifier = new Date().getTime().toString(36)
+function generateUID() {
+    return new Date().getTime().toString(36)
+}
+let uniqueIdentifier = generateUID()
 try {
     const prevIdentifier = localStorage.getItem('uniqueIdentifier')
     if (!prevIdentifier) {
@@ -149,6 +152,7 @@ export const useSettings = defineStore('settings', () => {
     const transitions = usePersistentRef('transitions', true)
 
     return {
+        generateUID,
         transitions,
         expandableItems: usePersistentRef('expandableItems', false),
         gestures: usePersistentRef('gestures', true),

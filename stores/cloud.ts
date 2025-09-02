@@ -1,6 +1,6 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { Firestore, type CollectionReference, type DocumentData, type FieldValue } from 'firebase/firestore'
+import { Firestore, writeBatch, type CollectionReference, type DocumentData, type FieldValue } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
 import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
@@ -153,18 +153,27 @@ export const useCloudStore = defineStore('cloud', () => {
             return deleteCollection(firestore!, feedback.col.value!, 10)
         },
         async deleteUser(uid: string) {
+            const batch = writeBatch(firestore!)
             for (const partIndex in feedback.online.value) {
+                if (!feedbackConfig.value.some((f) => f.title == partIndex)) {
+                    continue // skip user activity records
+                }
+
                 const part = feedback.online.value[partIndex]
                 for (const questionIndex in part) {
                     const question = part[questionIndex as keyof typeof part] as UpdateRecordPayload<Feedback>
                     if (typeof question == 'object') {
                         question[uid] = deleteField()
+                        console.debug(`Remove ${partIndex}/${questionIndex}/${uid}`)
                     }
                 }
 
-                await setDoc(doc(feedback.col.value!, partIndex), part, { merge: true })
+                batch.set(doc(feedback.col.value!, partIndex), part, { merge: true })
+                batch.delete(doc(feedback.col.value!, partIndex, settings.userIdentifier))
+
+                console.debug(`Remove user ${partIndex}/${uid}`)
             }
-            await deleteDoc(doc(feedback.col.value!, settings.userIdentifier))
+            await batch.commit()
         },
         /**
          * Set both online and offline feedback for a program item
@@ -252,6 +261,10 @@ export const useCloudStore = defineStore('cloud', () => {
         if (newId) {
             feedback.dirtyTime.value = 0// force refresh from remote
             feedback.hydrate(feedback.online.value)
+            const nick = feedback.online.value[newId]
+            if (typeof nick.nickname == 'string') {
+                settings.userNickname = nick.nickname
+            }
         } else {// clear feedback if user is not logged in
             if (offlineFeedback.value[selectedEvent.value]) { offlineFeedback.value[selectedEvent.value] = {} }
         }
@@ -328,7 +341,8 @@ export const useCloudStore = defineStore('cloud', () => {
         pendingAction: computed(() => uPending.value),
         async deleteData() {
             await feedback.deleteUser(settings.userIdentifier)
-            return deleteDoc(doc(notesCollection.value!, settings.userIdentifier))
+            await deleteDoc(doc(notesCollection.value!, settings.userIdentifier))
+            settings.setUserIdentifier(settings.generateUID())
         },
         async changePassword(newPassword: string) {
             uPending.value = true
@@ -547,22 +561,27 @@ export const useCloudStore = defineStore('cloud', () => {
         hydrationDebounce = null
         const now = new Date(onlineFeedback?.[settings.userIdentifier]?.updated ?? 0).getTime()
         if (now > feedback.dirtyTime.value) {
+            let off = toRaw(offlineFeedback.value?.[selectedEvent.value])
+            if (!off) {
+                off = {}
+            }
             for (const sIndex in onlineFeedback) {
                 const sPart = onlineFeedback[sIndex]
                 for (const eIndex in sPart) {
                     const ePart = sPart[eIndex]
                     const uPart = ePart[settings.userIdentifier]
                     if (uPart) {
-                        let offSPart = toRaw(offlineFeedback.value[selectedEvent.value][sIndex])
+                        let offSPart = off[sIndex]
                         if (!offSPart) { offSPart = {} }
                         let offEPart = offSPart[eIndex]
                         if (!offEPart) { offEPart = {} }
                         offEPart[settings.userIdentifier] = uPart
                         offSPart[eIndex] = offEPart
-                        offlineFeedback.value[selectedEvent.value][sIndex] = offSPart
+                        off[sIndex] = offSPart
                     }
                 }
             }
+            offlineFeedback.value[selectedEvent.value] = off
             feedback.dirtyTime.value = now
         }
     }

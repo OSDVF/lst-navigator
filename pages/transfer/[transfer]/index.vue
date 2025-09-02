@@ -21,7 +21,8 @@
             </template>
 
             <p v-else-if="transfer.remote && transfer.status == TransferStatus.Reply" class="large">
-                <Icon name="mdi:account-alert" /> Chcete přenést data {{ here? 'ze' : 'do' }} zařízení <code>{{ transfer.remote }}?</code>
+                <Icon name="mdi:account-alert" /> Chcete přenést data {{ here ? 'ze' : 'do' }} zařízení <code>{{ transfer.remote
+                }}?</code>
                 <br>
                 <br>
                 <button
@@ -39,16 +40,35 @@
             <p v-else-if="transfer.remote && transfer.status == TransferStatus.Transfered" class="large">
                 <Icon name="mdi:check-circle-outline" /> Přenos proběhl
             </p>
+
+            <p v-if="transfer?.status">
+                <button class="large" @click="end">
+                    <Icon name="mdi:cancel" /> Ukončit
+                </button>
+            </p>
         </template>
 
         <template v-else>
             Přenosy uživatelských dat pro událost <strong>{{ cloud.eventData?.title }}</strong> nejsou povoleny.
         </template>
+
+        <div v-if="cloud.resolvedPermissions.editEvent && here" class="mt-2">
+            <h3>
+                <Icon name="mdi:shield-lock-open" title="Administrátor události" /> Přenést sem uživatele
+            </h3>
+            <label for="uid">UID</label>&nbsp;
+            <input id="uid" v-model.lazy="adminOtherUIDRaw" type="text" name="uid" placeholder="xasd123"><br>
+            <button
+                :disabled="!validUID"
+                @click="validUID && router.replace('/transfer/admin/' + adminOtherUID)">Přenést</button><br>
+            <span v-if="!validUID && adminOtherUID">Toto UID neexistuje, nebo tento uživatel zatím neprovedl žádnou akci</span>
+        </div>
     </article>
 </template>
 
 <script lang="ts" setup>
 import * as Sentry from '@sentry/nuxt'
+import { doc, getDoc } from 'firebase/firestore'
 import qrcode from 'qrcode'
 import { TransferStatus, type Transfer } from '~/types/cloud'
 import { setDoc as setDocT } from '~/utils/trace'
@@ -65,9 +85,37 @@ const transfers = useTransfers()
 const here = computed(() => router.currentRoute.value.params.transfer === 'here')
 const transfer = computed(() => transfers.value.find(t => t.id == settings.userIdentifier))
 
+const adminOtherUIDRaw = ref('')
+const adminOtherUID = computed(() => adminOtherUIDRaw.value.trim())
+
+const validUID = computedAsync<boolean>(async () => {
+    if (!adminOtherUID.value) {
+        return false
+    }
+
+    if(cloud.feedbackConfig.some(f=>f.title === adminOtherUID.value)) {
+        return false //feedback document with the same name will be otherwise found and trigger "valid UID"
+    }
+
+    if (Object.hasOwn(cloud.feedback.online, adminOtherUID.value)) {
+        return true
+    }
+
+    if (cloud.notesCollection && (await getDoc(doc(cloud.notesCollection, adminOtherUID.value))).exists()) {
+        return true
+    }
+    return false
+}, false)
+
 async function start() {
     await setDocT(transfersDoc(settings.userIdentifier), {
         status: TransferStatus.Request,
+    } as Transfer)
+}
+
+async function end() {
+    await setDocT(transfersDoc(settings.userIdentifier), {
+        status: TransferStatus.None,
     } as Transfer)
 }
 
@@ -80,11 +128,6 @@ watch([canvas, router.currentRoute], async ([newCanvas, newTarget]) => {
                 Sentry.captureException(error)
             }
         })
-    }
-})
-onMounted(()=>{
-    if(!transfer.value?.status) {
-        start()
     }
 })
 
