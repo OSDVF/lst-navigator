@@ -1,7 +1,8 @@
 <template>
     <article>
         <h1>
-            <Icon name="mdi:compass-outline" />&ensp;Vítejte
+            <img v-if="config.public.icon?.includes('/')" :src="config.public.icon" width="32" >
+            <Icon v-else :name="config.public.icon || 'mdi:compass-outline'" />&ensp;Vítejte
         </h1>
         <p>
             {{ config.public.welcome }}

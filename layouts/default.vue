@@ -28,7 +28,7 @@
             <nav role="navigation">
                 <LazyClientOnly>
                     <NuxtLink
-                        v-if="installComplete || $route.name?.toString().includes('install')"
+                        v-if="!installComplete || $route.name?.toString().includes('install')"
                         :to="onFeedbackPage ? '/schedule' : `/install/0?to=/schedule/`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"

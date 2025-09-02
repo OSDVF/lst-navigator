@@ -15,7 +15,7 @@
                 {{ cloudStore.user.pendingPopup ? 'Postupujte podle pokynů v druhém okně' :
                     cloudStore.user.auth?.displayName ?? cloudStore.user.auth?.providerData[0].displayName ?? (prettyError
                         ||
-                        'Uživatel') }}
+                        'Přihlášení / Registrace') }}
             </span>
             <span v-if="cloudStore.user.auth?.email" class="muted nowrap ml-1 mr-1">{{
                 cloudStore.user.auth.email }}</span>

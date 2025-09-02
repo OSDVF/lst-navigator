@@ -15,8 +15,11 @@
 definePageMeta({
     middleware: () => {
         if (typeof window !== 'undefined') {
-            return {
-                path: '/schedule',
+            const installed = useInstallComplete()
+            if (installed.value) {
+                setTimeout(() => navigateTo({
+                    path: '/schedule',// timeout 0 for consistency with layout change
+                }), 0)
             }
         }
     },

@@ -59,7 +59,7 @@ watch(dayIndex, (value) => {
     }
 })
 
-function findToday(newCloud: typeof cloud) {
+function todayOr0(newCloud: typeof cloud) {
     let index: number | string = dayIndex.value ?? 0
     if (newCloud.days?.length) {
         for (const i in newCloud.days) {
@@ -81,7 +81,7 @@ function findToday(newCloud: typeof cloud) {
 if (import.meta.browser) {
     watch(cloud, (newCloud) => {
         if (typeof router.currentRoute.value.params.day === 'undefined' && newCloud.scheduleLoading === false) {
-            findToday(newCloud)
+            setTimeout(() => todayOr0(newCloud), 0)// timeout 0 for consistency with nuxt layout setup
         }
     }, { immediate: true })
 }
@@ -91,7 +91,7 @@ onBeforeRouteUpdate((to, from) => {// guard slide direction and go to today when
     const toDay = parseInt(to.params.day as string)
     const fromDay = parseInt(from.params.day as string)
     if (isNaN(toDay)) {
-        findToday(cloud)
+        todayOr0(cloud)
         return
     }
     else if (!isNaN(fromDay)) {

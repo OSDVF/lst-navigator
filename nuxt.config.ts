@@ -317,6 +317,7 @@ const config = defineNuxtConfig({
             longName: process.env.VITE_APP_NAME,
             defaultEvent: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
             emulators: process.env.FIREBASE_EMULATOR === 'true',
+            icon: process.env.ICON,
             imageCacheFirst: isDevMode,
             installStepCount,
             compileTime,

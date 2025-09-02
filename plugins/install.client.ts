@@ -32,7 +32,7 @@ export default defineNuxtPlugin({
 
             const to = useRoute()
             const installComplete = useInstallComplete()
-            setTimeout(() => app.$nuxt.$router.isReady().then(() => {
+            setTimeout(() => app.$nuxt.$router.isReady().then(() => {// timeout 0 for consistency with nuxt layout hydration
                 if (import.meta.browser && !installComplete.value && !to.name?.toString().includes('update') && !to.path?.toString().includes('install')) {
                     navigateTo({
                         path: '/install/' + settings.installStep,
