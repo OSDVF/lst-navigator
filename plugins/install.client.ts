@@ -23,11 +23,29 @@ export default defineNuxtPlugin({
             const firebaseApp = useFirebaseApp()
             const settings = useSettings()
             const config = useRuntimeConfig()
+
             watch(() => app.$nuxt.$pwa?.offlineReady, (value) => {
                 if (value) {
                     downloadingUpdate.value = false
                 }
             })
+
+            const to = useRoute()
+            const installComplete = useInstallComplete()
+            setTimeout(() => app.$nuxt.$router.isReady().then(() => {
+                if (import.meta.browser && !installComplete.value && !to.name?.toString().includes('update') && !to.path?.toString().includes('install')) {
+                    navigateTo({
+                        path: '/install/' + settings.installStep,
+                        query: {
+                            ...to.query,
+                            to: to.fullPath,
+                        },
+                        replace: true,
+                    })
+                }
+            }), 0)
+
+
             const swRegistraions = import.meta.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
             for (const registration of swRegistraions) {
                 registration?.addEventListener('updatefound', () => {

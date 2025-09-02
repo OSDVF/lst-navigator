@@ -18,7 +18,7 @@
                         <Icon name="mdi:pencil" />&nbsp;Přidat program
                     </button>
                 </NuxtLink>
-                <ImportForm :document="cloud.eventDoc('schedule', selectedDayId)" union />
+                <ImportForm v-if="!!selectedDayId" :document="cloud.eventDoc('schedule', selectedDayId)" union />
                 <button title="Exportovat den" @click="exportDay">
                     <Icon name='mdi:download' /> Export
                 </button>

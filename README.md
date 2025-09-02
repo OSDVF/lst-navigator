@@ -9,9 +9,10 @@ Used for [Moravian-Silesian Youth of Evangelic Church of Czech Brethren](https:/
 # User features
 - Program schedule
 - Configurable feedback questions for each schedule item
-- Completely custom feedback questions
+- Custom feedback questions
 - Basic user permission system
-- Administration page for schedule, user and feedback form managent
+- Administration page for schedule adn used editing
+- Feedback form managent
 - Multiple events support
 
 ## Technical features
@@ -25,6 +26,8 @@ Used for [Moravian-Silesian Youth of Evangelic Church of Czech Brethren](https:/
 ## WIP
 - Notifications
 - Firestore request caching (cache-first)
+- Parallel schedules on single page
+- AI chat assistant?
 
 ## Setup
 Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.

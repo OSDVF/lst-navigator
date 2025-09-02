@@ -84,7 +84,7 @@
                 </button>
             </span>
         </fieldset>
-        <h4>Individuální nastavení</h4>
+        <h4>Uživatel</h4>
         <fieldset>
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
             <NameChangeDialog />

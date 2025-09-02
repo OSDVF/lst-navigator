@@ -28,7 +28,7 @@
             <nav role="navigation">
                 <LazyClientOnly>
                     <NuxtLink
-                        v-if="installNotComplete || $route.name?.toString().includes('install')"
+                        v-if="installComplete || $route.name?.toString().includes('install')"
                         :to="onFeedbackPage ? '/schedule' : `/install/0?to=/schedule/`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
@@ -56,7 +56,6 @@
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
-import { useSettings } from '@/stores/settings'
 
 const app = useNuxtApp()
 const ui = useUI()
@@ -64,22 +63,10 @@ const cloudStore = useCloudStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
-const settings = useSettings()
 const isServer = ref(import.meta.server)
 
 const onFeedbackPage = computed(() => route.name?.toString().includes('feedback') ?? false)
-const installNotComplete = computed(() => (route.query.install == 'true' || settings.installStep == 0) && settings.installStep < config.public.installStepCount)
-watchEffect(() => {
-    if (import.meta.browser && installNotComplete.value && !route.name?.toString().includes('update') && !route.path?.toString().includes('install')) {
-        router.replace({
-            path: '/install/' + settings.installStep,
-            query: {
-                ...route.query,
-                to: route.fullPath,
-            },
-        })
-    }
-})
+const installComplete = useInstallComplete()
 
 onMounted(() => {
     isServer.value = false

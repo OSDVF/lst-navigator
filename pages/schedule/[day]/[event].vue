@@ -24,7 +24,7 @@
             <Icon name="mdi:rss" /> Zpětná vazba
         </h1>
         <template v-if="eventData?.feedbackType">
-            <h4>Tvá zpětná vazba</h4>
+            <h4>Tvá zpětná vazba. Bude zobrazena organizátorům.</h4>
             <small>Odpovídáš jako <NuxtLink
                 class="dotted-underline" to="/settings"
                 title="Jméno je možné nastavit v nastavení">
@@ -47,11 +47,8 @@
         <p v-else>
             Není k dispozici
         </p>
-        <h1>Tvé poznámky&ensp;
-            <Icon
-                tabindex="0" title="Experimentální funkce" name="mdi:alert"
-                style="color: rgb(97, 63, 0);opacity: .5;" />
-        </h1>
+        <h1><Icon name="mdi:note-add" /> Tvé poznámky</h1>
+        <span class="muted">Slouží pouze pro tvou potřebu</span>
         <div class="p">
             <ClassicCKEditor
                 v-model="noteModel" :plain="!settings.richNoteEditor" @focus="permitSwipe = false"
