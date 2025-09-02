@@ -12,17 +12,17 @@
 </template>
 
 <script setup>
+if (import.meta.browser) {
+    const installed = useInstallComplete()
+    if (installed.value) {
+        setTimeout(() => navigateTo({
+            path: '/schedule',// timeout 0 for consistency with layout change
+            replace: true,
+        }), 0)
+    }
+}
+
 definePageMeta({
-    middleware: () => {
-        if (typeof window !== 'undefined') {
-            const installed = useInstallComplete()
-            if (installed.value) {
-                setTimeout(() => navigateTo({
-                    path: '/schedule',// timeout 0 for consistency with layout change
-                }), 0)
-            }
-        }
-    },
     layout: 'install',
 })
 </script>

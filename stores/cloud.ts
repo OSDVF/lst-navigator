@@ -66,7 +66,9 @@ export function eventDocs(fs: Firestore, name: string): EventDocs {
     }
 }
 
-
+/**
+ * Encapsulates all reactive communication with firestore
+ */
 export const useCloudStore = defineStore('cloud', () => {
     const config = useRuntimeConfig()
     const firebaseApp = probe && useFirebaseApp()
@@ -146,7 +148,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }
             return result
         }),
-        async clear(){
+        async clear() {
             deleteCollection(firestore!, feedback.col.value!, 10)
         },
         /**
@@ -190,7 +192,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }, 5000)
         },
         saveAgain(force = true) {
-            if(!force && !feedback.error.value && !feedback.fetchFailed.value && feedback.online.value?.[settings.userIdentifier]?.updated === feedbackDirtyTime.value) {
+            if (!force && !feedback.error.value && !feedback.fetchFailed.value && feedback.online.value?.[settings.userIdentifier]?.updated === feedbackDirtyTime.value) {
                 return Promise.resolve()
             }
 
@@ -245,11 +247,15 @@ export const useCloudStore = defineStore('cloud', () => {
     //
     const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : ref()
     if (userAuth) {
-        watch(userAuth, (newUser) => {
+        watch(userAuth, async (newUser) => {
             if (newUser) {
                 if (!wasAuthenticated.value) {
                     wasAuthenticated.value = true
-                    onSignIn(newUser)
+                    if (config.public.debugUser) {
+                        onSignIn(newUser)
+                    } else {
+                        watch(uInfo, () => onSignIn(newUser), { once: true })
+                    }
                 }
             } else {
                 wasAuthenticated.value = false
@@ -376,7 +382,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     async function onSignIn(newUser: User) {
-        if (user.doc.value && !localStorage.getItem('userIdentifierQuestion')) {// do not ask if the user is already being asked
+        if (user.doc.value && !localStorage.getItem('userIdentifierQuestion')) {// do not ask if the user is already being asked in different browser tab
             localStorage.setItem('userIdentifierQuestion', '1')
             if (user.info.value) {
                 const signatureId = user.info.value.signatureId?.[selectedEvent.value]
@@ -540,7 +546,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }
             feedback.dirtyTime.value = now
         }
-    }   
+    }
     {
         let pendingOnlineFeedback: any
         watch(feedback.online, function (newOnlineFeedback) {

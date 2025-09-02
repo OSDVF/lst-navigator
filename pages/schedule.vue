@@ -2,14 +2,12 @@
     <div style="padding: 4rem 0 3rem 0;">
         <nav role="navigation" class="days">
             <NuxtLink
-                v-for="(day, index) in cloud.days" :key="`day${index}`" :style="{
-                    'backdrop-filter': index === parseInt(dayIndex) ? 'brightness(0.8)' : undefined,
-                    'border-top': isToday(day) ? '2px solid #0000ff99' : undefined
-                }" :to="(dayIndex == index.toString() && !router.currentRoute.value.params.event) ? undefined : {
+                v-for="(day, index) in cloud.days" :key="`day${index}`" :class="dayIndex == index.toString() ? 'selected' : undefined" :to="(dayIndex == index.toString() && !router.currentRoute.value.params.event) ? undefined : {
                     name: 'schedule-day',
                     params: { day: index.toString() },
                     query: $route.query,
                 }">
+                {{ isToday(day) && index.toString() != dayIndex ? '• ' : undefined }}
                 <template v-if="!day.name && !cloud.resolvedPermissions.editSchedule">{{ index }}</template>
                 <EditableField v-if="index == parseInt(dayIndex)" :document="`schedule/${day.id}`" property="name">
                     <template #default="props">{{ props.value }}</template>
@@ -175,15 +173,15 @@ if (settings.gestures) {
     }
     const controller = useDrag(async ({ movement: [x], dragging, swipe }: { movement: number[], dragging: boolean, swipe: Vector2 }) => {
         // x positive when to left
-        if (gestureTransPending.value || !permitSwipe.value) {
+        const intDay = parseInt(dayIndex.value)
+        if (gestureTransPending.value || !permitSwipe.value || !cloud.days || !cloud.days[intDay]) {
             return
         }
-        const intDay = parseInt(dayIndex.value)
-        const lastDayIndex = cloud.days!.length - 1
+        const lastDayIndex = cloud.days.length - 1
         const cantGoLeftDay = (x > 30 && intDay === 0)
         const cantGoRightDay = (x < -30 && intDay === lastDayIndex)
         const eventIndex = parseInt(router.currentRoute.value.params.event as string)
-        const lastEventIndex = cloud.days![intDay].program.length - 1
+        const lastEventIndex = cloud.days[intDay].program.length - 1
 
         if (swipe[0] !== 0) {
             gestureTransPending.value = true
@@ -202,7 +200,7 @@ if (settings.gestures) {
                 // on event item detail page
                 // move to the next or prev event item
                 if (x > 0 && eventIndex === 0 && !cantGoLeftDay) {
-                    await go(swipe[0], `/schedule/${intDay - 1}/${(cloud.days![intDay - 1].program.length - 1 || 0)}`)// last event on the previous schedule par)
+                    await go(swipe[0], `/schedule/${intDay - 1}/${(cloud.days[intDay - 1].program.length - 1 || 0)}`)// last event on the previous schedule par)
                     return
                 } else if (x < 0 && eventIndex === lastEventIndex && !cantGoRightDay) {
                     await go(swipe[0], `/schedule/${intDay + 1}/0`)
@@ -267,9 +265,14 @@ nav.days {
     left: 0;
     z-index: 1;
 
-    border-bottom: 1px solid rgba(c.$link-background, 0.1);
+    border-bottom: 1px solid rgba(c.$link-background, 0.15);
     overflow-x: auto;
     width: 100vw;
+
+    &>.selected {
+        backdrop-filter: brightness(0.8);
+        border-top: 2px solid #0000ff99;
+    }
 }
 
 .daysLoading {

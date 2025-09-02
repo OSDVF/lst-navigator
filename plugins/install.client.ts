@@ -29,22 +29,7 @@ export default defineNuxtPlugin({
                     downloadingUpdate.value = false
                 }
             })
-
-            const to = useRoute()
-            const installComplete = useInstallComplete()
-            setTimeout(() => app.$nuxt.$router.isReady().then(() => {// timeout 0 for consistency with nuxt layout hydration
-                if (import.meta.browser && !installComplete.value && !to.name?.toString().includes('update') && !to.path?.toString().includes('install')) {
-                    navigateTo({
-                        path: '/install/' + settings.installStep,
-                        query: {
-                            ...to.query,
-                            to: to.fullPath,
-                        },
-                        replace: true,
-                    })
-                }
-            }), 0)
-
+            
 
             const swRegistraions = import.meta.client && navigator.serviceWorker ? await navigator.serviceWorker?.getRegistrations() : []
             for (const registration of swRegistraions) {

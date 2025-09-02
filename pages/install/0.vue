@@ -1,7 +1,7 @@
 <template>
     <article>
         <h1>
-            <img v-if="config.public.icon?.includes('/')" :src="config.public.icon" width="32" >
+            <img v-if="config.public.icon?.includes('/')" class="iconify" :src="config.public.icon" width="36">
             <Icon v-else :name="config.public.icon || 'mdi:compass-outline'" />&ensp;Vítejte
         </h1>
         <p>
