@@ -56,9 +56,15 @@
             &nbsp;
             <DateFormat /><br>
             <label for="transfers">
-                <Icon name="mdi:leaks" /> Povolit přenosy uživatelských dat
+                <Icon name="mdi:leak" /> Povolit přenosy uživatelských dat
             </label>
             <input id="transfers" v-model="editedEvent.transfers" type="checkbox" name="transfers">
+
+            <label for="advanced">
+                <Icon name="mdi:account-settings" /> Povolit uživatelům pokročilá nastavení
+            </label>
+            <input id="advanced" v-model="editedEvent.advanced" type="checkbox" name="advanced">
+
             <ClassicCKEditor v-model.lazy='editedEvent.description' />
             <fieldset :disabled='!!remoteImage.uploadTask.value'>
                 <legend>Obrázek</legend>
@@ -168,6 +174,7 @@ const form = useTemplateRef<InstanceType<typeof ImportForm>>('form')
 
 const now = toFirebaseDate(new Date())!
 const editedEvent = ref({
+    advanced: true,
     title: '',
     description: '',
     end: now,
@@ -296,6 +303,7 @@ async function editEvent(createNew = false) {
 
     const end = new Date(editedEvent.value.end)
     await setDoc(docs.event, {// create /events/[event-name]
+        advanced: editedEvent.value.advanced,
         title: editedEvent.value.title,
         start: toFirebaseDate(new Date(editedEvent.value.start)),
         end: toFirebaseDate(end),
@@ -376,7 +384,8 @@ async function startEditingSelected() {
             loading.value = false
             action.value = Actions.Edit
             editedEvent.value = {
-                title: selectedEvent?.title,
+                advanced: selectedEvent.advanced ?? false,
+                title: selectedEvent.title,
                 identifier: selectedEvent.id,
                 description: selectedEvent.description,
                 end: selectedEvent.end,

@@ -101,11 +101,17 @@
                     <Icon name="mdi:upload" />&nbsp;Odeslat
                 </NuxtLink>
                 <NuxtLink to="/scan" class="nowrap inline-block ml-1">
-                    <Icon name="mdi:qrcode"/>&nbsp;Skenovat
+                    <Icon name="mdi:qrcode" />&nbsp;Skenovat
                 </NuxtLink>
             </div>
         </fieldset>
-        <fieldset>
+        <LazyLoginField />
+        <fieldset v-show="!advanced && cloud.eventData?.advanced">
+            <div>
+                <button @click="advanced = true">Zobrazit pokročilá nastavení</button>
+            </div>
+        </fieldset>
+        <fieldset v-show="advanced">
             <label>Datum synchronizace poznámek</label>
             <span>
                 <small>
@@ -121,7 +127,7 @@
                 </button>
             </span>
         </fieldset>
-        <fieldset>
+        <fieldset v-show="advanced">
             <label>Datum synchronizace feedbacku</label>
             <span>
                 <small>
@@ -136,7 +142,17 @@
                 </button>
             </span>
         </fieldset>
-        <LazyLoginField />
+        <fieldset>
+            <label title="Feedback a poznámmky">Uživatelská data</label>
+            <div>
+                <button v-if="deleteResult !== true" title="Smazání mého feedbacku a poznámek" @click="deleteUserData()">
+                    <Icon name="mdi:trash" /> Smazat
+                </button>
+                <ProgressBar v-if="deletePending" />
+                <span v-if="deleteResult === true" style="color:green"> Smazáno </span>
+                <code v-if="typeof deleteResult !== 'boolean'" class="error">{{ deleteResult }}</code>
+            </div>
+        </fieldset>
         <h4>Aplikace</h4>
         <fieldset v-if="!$pwa?.isPWAInstalled && $deferredPrompt?.value">
             <label for="install">Instalace</label>
@@ -193,11 +209,27 @@ const config = useRuntimeConfig()
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
 const myPermission = computed(() => cloud.user.info?.permissions?.[cloud.selectedEvent] as UserLevel)
+const advanced = ref(false)
+const deletePending = ref(false)
+const deleteResult = ref(false)
 
 const lang = computed(() => import.meta.client ? navigator.language : 'cs-CZ')
 
 function leadingPlus(value: number) {
     return value > 0 ? `+${value}` : value
+}
+function deleteUserData() {
+    deleteResult.value = false
+    deletePending.value = true
+    if (confirm('Chcete navždy smazat vaše poznámky a feedback k události ' + (cloud.eventData?.title ?? cloud.selectedEvent) + '?')) {
+        cloud.user.deleteData()
+            .then(() => {
+                deleteResult.value = true
+            }).catch(err => {
+                deleteResult.value = err
+            })
+            .finally(() => deletePending.value = false)
+    }
 }
 function uploadCustomClick() {
     uploading.value = true

@@ -148,8 +148,23 @@ export const useCloudStore = defineStore('cloud', () => {
             }
             return result
         }),
+        /** Delete feedback for all user for this event */
         async clear() {
-            deleteCollection(firestore!, feedback.col.value!, 10)
+            return deleteCollection(firestore!, feedback.col.value!, 10)
+        },
+        async deleteUser(uid: string) {
+            for (const partIndex in feedback.online.value) {
+                const part = feedback.online.value[partIndex]
+                for (const questionIndex in part) {
+                    const question = part[questionIndex as keyof typeof part] as UpdateRecordPayload<Feedback>
+                    if (typeof question == 'object') {
+                        question[uid] = deleteField()
+                    }
+                }
+
+                await setDoc(doc(feedback.col.value!, partIndex), part, { merge: true })
+            }
+            await deleteDoc(doc(feedback.col.value!, settings.userIdentifier))
         },
         /**
          * Set both online and offline feedback for a program item
@@ -247,14 +262,18 @@ export const useCloudStore = defineStore('cloud', () => {
     //
     const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : ref()
     if (userAuth) {
-        watch(userAuth, async (newUser) => {
+        watch(userAuth, async (newUser: User) => {
             if (newUser) {
                 if (!wasAuthenticated.value) {
                     wasAuthenticated.value = true
                     if (config.public.debugUser) {
                         onSignIn(newUser)
-                    } else {
+                    } else if (typeof newUser.metadata.lastSignInTime != 'undefined') {
+                        // is already registered
                         watch(uInfo, () => onSignIn(newUser), { once: true })
+                    } else {
+                        // logs in for the first time
+                        onSignIn(newUser)
                     }
                 }
             } else {
@@ -307,6 +326,10 @@ export const useCloudStore = defineStore('cloud', () => {
         error: ref(),
         pendingPopup: ref(false),
         pendingAction: computed(() => uPending.value),
+        async deleteData() {
+            await feedback.deleteUser(settings.userIdentifier)
+            return deleteDoc(doc(notesCollection.value!, settings.userIdentifier))
+        },
         async changePassword(newPassword: string) {
             uPending.value = true
             try {
@@ -382,18 +405,14 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     async function onSignIn(newUser: User) {
-        if (user.doc.value && !localStorage.getItem('userIdentifierQuestion')) {// do not ask if the user is already being asked in different browser tab
-            localStorage.setItem('userIdentifierQuestion', '1')
+        if (user.doc.value) {// do not ask if the user is already being asked in different browser tab
             if (user.info.value) {
                 const signatureId = user.info.value.signatureId?.[selectedEvent.value]
                 if (signatureId) {
-                    if (confirm('Chcete do tohoto zařízení načíst data z předchozího používání této aplikace? Bude přepsán dosavadně offline uložený stav.')) {
-                        settings.setUserIdentifier(signatureId)
-                        settings.userNickname = user.info.value!.signature[selectedEvent.value] || settings.userNickname
-                    }
+                    settings.setUserIdentifier(signatureId)
+                    settings.userNickname = user.info.value!.signature[selectedEvent.value] || settings.userNickname
                 }
             }
-            localStorage.removeItem('userIdentifierQuestion')
 
             if (newUser.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
                 updateCurrentUserProfile({

@@ -43,6 +43,10 @@ export type EventDocs = {
 };
 
 export type EventDescription<T = string> = {
+    /**
+     * Let users show advanced settings
+     */
+    advanced?: boolean,
     title: string,
     start: string, // in format 2023-01-30
     end: string,
@@ -120,7 +124,7 @@ export type UpdateRecordPayload<T> = {
 export type Feedback = FeedbackOr<undefined>
 export type FeedbackQuestionsProgram = { [question: number]: { [user: string]: Feedback } }
 export type FeedbackQuestionsCustom = { [question: string]: { [user: string]: Feedback } }
-export type FeedbackSections = { [section: string]: { updated: number, nickname?: string } | FeedbackQuestionsProgram & FeedbackQuestionsCustom }
+export type FeedbackSections = { [section: string]: ({ updated: number, nickname?: string } | FeedbackQuestionsProgram & FeedbackQuestionsCustom) }
 
 export type FeedbackOr<T> = {
     basic?: number | T,
