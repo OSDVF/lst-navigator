@@ -2,13 +2,17 @@ import type { WatchHandle } from 'vue'
 
 // middleware/install.global.ts
 export default defineNuxtRouteMiddleware(async (to) => {
-    if (import.meta.server || import.meta.prerender) {
+    if (import.meta.server || import.meta.prerender || import.meta.env.INSTALL_WIZARD === 'false') {
+        return
+    }
+    const config = useRuntimeConfig()
+    if(!config.public.installWizard) {
         return
     }
 
     const installComplete = useInstallComplete(to)
     const settings = useSettings()
-    const config = useRuntimeConfig()
+
 
     if (!installComplete.value &&
         !config.public.noInstallRedirect.some(u => to.name?.toString().includes(u)) &&

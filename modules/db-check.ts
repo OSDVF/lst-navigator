@@ -33,8 +33,17 @@ export default defineNuxtModule({
             const names = existingCollections.map(ec => ec.id)
 
             if (!CollectionsList.every(c => names.includes(c))) {
-                console.warn('Some of required collections ', existingCollections, ' does not exist.\n',
+                console.warn('Some of required collections ', CollectionsList, ' does not exist.\n',
                     'Existing collections: ', names)
+            }
+            if(import.meta.env.CREATE === 'true')
+            {
+                for(const c of CollectionsList) {
+                    const col = fs.collection(c)
+                    const dummy = await col.add({dummy: 'dummy'})
+                    console.log('Created collection', c)
+                    await dummy.delete()
+                }
             }
 
 

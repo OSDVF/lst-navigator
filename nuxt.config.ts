@@ -12,6 +12,7 @@ import {
 
 const isDevMode = process.env.NODE_ENV !== 'production'
 const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
+const installWizard = process.env.INSTALL_WIZARD !== 'false'
 
 const messagingConfig = {
     notifications_title: process.env.VITE_APP_SHORT_NAME ?? 'Upomínka z aplikace',
@@ -92,11 +93,11 @@ const config = defineNuxtConfig({
     },
     hooks: {
         'app:resolve'(app) {
-            if(process.env.SENTRY_DISABLE == 'true') {
+            if (process.env.SENTRY_DISABLE == 'true') {
                 app.plugins = app.plugins.filter((x) => !x.src.includes('sentry'))
             }
         },
-        'build:manifest' (manifest) {
+        'build:manifest'(manifest) {
             const notWanted = ['sentry']
             // remove preload links
             for (const key in manifest) {
@@ -111,8 +112,8 @@ const config = defineNuxtConfig({
         serverBundle: 'remote',
         provider: 'iconify',
     },
-    ignore: [
-        'maintenance/**',
+    ignore: installWizard ? [] : [
+        'pages/install/**',
     ],
     modules: [
         ...(process.env.SENTRY_DISABLE !== 'true' ? ['@sentry/nuxt/module'] : []),
@@ -320,6 +321,7 @@ const config = defineNuxtConfig({
             icon: process.env.ICON,
             imageCacheFirst: isDevMode,
             installStepCount,
+            installWizard,
             compileTime,
             compileTimeZone,
             commitMessageTime,
