@@ -17,6 +17,7 @@
             </span>
         </h1>
         <h3>{{ eventData?.subtitle }}</h3>
+        <h3 v-if="location"><Icon name="mdi:place" /> {{ location }}</h3>
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="p" @click="scanImages" v-html="eventData?.description ?? 'Žádné podrobnosti'" />
 
@@ -100,6 +101,7 @@ const eventData = computed(() => {
     }
     return undefined
 })
+const location = computed(()=>(cloud.days && eventData.value?.location) ? cloud.days[dayIndex]?.locations?.[eventData.value.location] : undefined)
 watch(eventData, (eventData) => {
     const hexColor = colorToHex(eventData?.color || 'gray')
     const darkened = darkenColor(hexColor, -0.2)

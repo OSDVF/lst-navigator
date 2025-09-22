@@ -4,6 +4,17 @@
         <EditableField description="Vaření:" :document="`schedule/${selectedDayId}`" property="cooking" />
         <EditableField description="Nádobí:" :document="`schedule/${selectedDayId}`" property="dishes" class="mb-2" />
 
+        <div v-if="cloud.resolvedPermissions.editSchedule" class="ml-1">
+            <h4>Lokace</h4>
+            <label v-for="(location, index) in locations" :key="`location${index}`" :for="`location${index}`">
+                <input
+                    :id="`location${index}`" type="text" :name="`location${index}`" placeholder="Název místa"
+                    :value="location" @change="e => updateLocation(index, (e.target as HTMLInputElement).value)">
+                <br>
+            </label>
+            <button type="button" title="Přidat lokaci" @click="addLocation">+</button>
+        </div>
+
         <div role="list" class="schedule">
             <ProgramLink
                 v-for="(entry, index) in selectedProgram" :key="`e${index}`" ref="rows" role="listitem" :style="{
@@ -54,12 +65,14 @@ import { useCloudStore } from '@/stores/cloud'
 import { setDoc } from '~/utils/trace'
 import { useAdmin } from '~/stores/admin'
 import { stripHtml } from '~/utils/sanitize'
+import { arrayUnion } from 'firebase/firestore'
 
 const p = defineProps<{ day: number }>()
 const router = useRouter()
 const cloud = useCloudStore()
 const selectedDayId = computed(() => cloud.days[p.day]?.id)
 const selectedProgram = computed(() => cloud.days?.[p.day]?.program || [])
+const locations = computed(() => cloud.days[p.day]?.locations ?? [])
 const admin = useAdmin()
 const now = ref(new Date())
 const prerendering = import.meta.prerender ?? false
@@ -122,6 +135,22 @@ async function moveDown(program: ScheduleItem, index: number) {
     newProgram.splice(index + 1, 0, program)
     await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         program: newProgram,
+    }, { merge: true })
+}
+
+async function addLocation() {
+    await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+        locations: arrayUnion(''),
+    }, { merge: true })
+}
+
+async function updateLocation(index: number, text: string) {
+    const newLocations = toRaw(locations.value)
+
+    newLocations[index] = text
+
+    await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
+        locations: newLocations,
     }, { merge: true })
 }
 

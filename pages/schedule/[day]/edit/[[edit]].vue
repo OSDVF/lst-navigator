@@ -197,6 +197,7 @@ async function editProgram(event: Event) {
         description: emptyToNull(data.get('description')),
         feedbackType: emptyToNull(data.get('feedbackType')),
         icon: emptyToNull(data.get('icon')),
+        location: parseIntOrUndef(data.get('location')?.toString()),
         questions: data.getAll('questions[]'),
         subtitle: data.get('subtitle'),
         time: parseIntOrNull(data.get('time')?.toString()),

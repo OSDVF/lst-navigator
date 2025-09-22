@@ -131,6 +131,12 @@ export function parseIntOrNull(value?: string) {
     return isNaN(parsed) ? null : parsed
 }
 
+export function parseIntOrUndef(value?: string) {
+    if (typeof value === 'undefined') { return undefined }
+    const parsed = parseInt(value)
+    return isNaN(parsed) ? undefined : parsed
+}
+
 export function getBrowserDateFormat() {
     return new Intl.DateTimeFormat((new Intl.NumberFormat()).resolvedOptions().locale).formatToParts(new Date()).map(obj => {
         switch (obj.type) {

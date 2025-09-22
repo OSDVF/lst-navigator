@@ -12,17 +12,20 @@ export type FeedbackConfig = {
         description?: string
     }[],
 }
+/** A single item in day's schedule */
 export type ScheduleItem = {
     color?: string
+    detailQuestion?: string,
+    description?: string,
+    feedbackType?: FeedbackType,
+    icon?: string // iconify code
+    /** Indef of `ScheduleDay.locations` */
+    location?: number,
+    questions?: string[],
     notify?: string[]
     subtitle?: string
     title?: string
     time?: number
-    feedbackType?: FeedbackType,
-    detailQuestion?: string,
-    description?: string,
-    questions?: string[],
-    icon?: string // iconify code
 }
 
 export type ScheduleDay = {
@@ -31,6 +34,7 @@ export type ScheduleDay = {
     dishes: string | null,
     manager: string | null,
     name: string,
+    locations?: string[],
     program: ScheduleItem[],
 };
 
@@ -79,13 +83,13 @@ export type Permissions = {
 }
 
 export enum UserLevel {
-    Nothing,
+    Nothing = 0,
     /// Can edit schedule of one event
-    ScheduleAdmin,
+    ScheduleAdmin = 1,
     /// Can edit schedule and users of one event
-    Admin,
+    Admin = 2,
     /// Can manage all events
-    SuperAdmin
+    SuperAdmin = 3
 }
 
 export const userLevelToIcon = {

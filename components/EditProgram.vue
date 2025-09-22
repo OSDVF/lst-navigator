@@ -31,6 +31,22 @@
         }}</small>
 
         <br>
+
+        <p>
+            <label for="location">
+                <Icon name="mdi:location" />&ensp; Místo
+            </label>&ensp;
+            <select
+                id="location" v-model="editingItem.location" name="location" @pointerenter="permitSwipe = false"
+                @pointerleave="permitSwipe = true">
+                <option v-for="(location, index) in locations" :key="`l${index}`" :value="index">{{ location }}</option>
+            </select>
+            <button
+                type="button" title="Odstranit místo" @pointerenter="permitSwipe = false"
+                @pointerleave="permitSwipe = true" @click="delete editingItem.location">
+                <Icon name="mdi:trash" />
+            </button>
+        </p>
         <p>
             <label for="color">
                 <Icon name="mdi:palette" />&ensp; Barva
@@ -65,10 +81,9 @@
             </legend>
 
             <FeedbackTypeSelect
-                :type="feedbackOrDefault" :permit-empty="true"
-                :schedule-item="editingItem" :detail-question="editingItem.detailQuestion"
-                :questions="editingItem.questions" @update:type="t => feedbackOrDefault = t"
-                @update:detail-question="q => editingItem.detailQuestion = q"
+                :type="feedbackOrDefault" :permit-empty="true" :schedule-item="editingItem"
+                :detail-question="editingItem.detailQuestion" :questions="editingItem.questions"
+                @update:type="t => feedbackOrDefault = t" @update:detail-question="q => editingItem.detailQuestion = q"
                 @update:questions="q => editingItem.questions = q" />
         </fieldset>
     </div>
@@ -78,6 +93,12 @@
 import type { FeedbackType, ScheduleItem } from '@/types/cloud'
 import { colorToHex, windowIsDark } from '@/utils/colors'
 import { toHumanTime } from '@/utils/utils'
+const cloud = useCloudStore()
+const route = useRoute()
+const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? parseInt(route.params.day) : 0)
+
+const locations = computed(() => cloud.days[selectedDayIndex.value]?.locations ?? [])
+
 const dayNight = ['DAY', 'NIGHT']
 const windowDark = windowIsDark()
 
