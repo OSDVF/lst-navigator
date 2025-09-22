@@ -9,11 +9,13 @@
     </LazyClientOnly>
 </template>
 <script setup lang="ts">
+import type { WatchHandle } from 'vue'
+
 // Relies on ckeditor loading procedure in ckeditor.client.ts
 
 const props = defineProps<{
     modelValue?: string | null,
-    plain?: boolean  | null,
+    plain?: boolean | null,
 }>()
 const emit = defineEmits<{
     'update:modelValue': [value: string],
@@ -47,12 +49,14 @@ onMounted(async () => {
     }
     if (!area.value) {
         await new Promise<void>((resolve) => {
-            const stop = watch(() => area.value, (value) => {
-                if (value) {
-                    resolve()
-                    stop()
-                }
-            })
+            let stop: WatchHandle | null
+                = watch(() => area.value, (value) => {
+                    if (value) {
+                        resolve()
+                        stop?.()
+                        stop = null
+                    }
+                })
         })
     }
     editor = await CKEDITOR.ClassicEditor.create(area.value, {

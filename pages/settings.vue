@@ -189,6 +189,9 @@
                 </LazyClientOnly>
             </small>
         </fieldset>
+        <fieldset>
+            <NuxtLink to="/privacy">Zásady ochrany soukromí</NuxtLink>
+        </fieldset>
     </article>
 </template>
 

@@ -10,6 +10,12 @@
         <p>
             Aplikaci můžete používat jako webovou stránku nebo si ji nainstalovat na své zařízení.
         </p>
+        <div class="m-auto"><br>
+            <br>
+        </div>
+        <p>
+            <NuxtLink to="/privacy?install=false"><Icon name="mdi:account-lock" /> Zobrazit zásady ochrany soukromí</NuxtLink>
+        </p>
     </article>
 </template>
 
