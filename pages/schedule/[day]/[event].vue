@@ -101,7 +101,7 @@ const eventData = computed(() => {
     }
     return undefined
 })
-const location = computed(()=>(cloud.days && eventData.value?.location) ? cloud.days[dayIndex]?.locations?.[eventData.value.location] : undefined)
+const location = computed(()=>(cloud.days && typeof eventData.value?.location != 'undefined') ? cloud.days[dayIndex]?.locations?.[eventData.value.location] : undefined)
 watch(eventData, (eventData) => {
     const hexColor = colorToHex(eventData?.color || 'gray')
     const darkened = darkenColor(hexColor, -0.2)

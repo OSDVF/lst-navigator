@@ -1,5 +1,5 @@
 <template>
-    <NuxtLink to="/settings">
+    <NuxtLink to="/settings" :title="showImage ? 'Nastavení a účet' : undefined">
         <img v-show="showImage" ref="img" :src="cloudStore.user.auth?.photoURL ?? ''" class="noinvert round-full w-1_8" referrerPolicy="no-referrer" crossorigin="anonymous" @load="loaded = true">
         <Icon v-show="!showImage" name="mdi:cog" size="1.8rem" />
         <span class="text">{{ cloudStore.user.auth?.displayName || 'Nastavení' }}</span>

@@ -7,10 +7,6 @@
         <p class="absolute bottom-25 p-1" style="max-width: 800px">
             Pokud se aplikace nenačte, zkontrolujte, zda máte zapnutý JavaScript, případně adblocker, nebo napište na
             {{ $config.public.supportEmail }}
-
-            <br>
-            <br>
-            <NuxtLink to="/privacy?install=false"><Icon name="mdi:account-lock" /> Zobrazit zásady ochrany soukromí</NuxtLink>
         </p>
     </article>
 </template>
@@ -27,6 +23,6 @@ if (import.meta.browser) {
 }
 
 definePageMeta({
-    layout: 'install',
+    layout: import.meta.env.INSTALL_WIZARD !== 'false' ? 'install' : 'default',
 })
 </script>

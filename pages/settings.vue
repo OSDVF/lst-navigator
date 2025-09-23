@@ -51,7 +51,7 @@
         </fieldset>
         <fieldset>
             <label for="richNoteEditor">
-                <Icon name="mdi:format-text" /> Rozšířený editor poznámek
+                <Icon name="mdi:format-text" /> Rozšířený editor{{ cloud.resolvedPermissions.editSchedule ? '' : ' poznámek' }}
                 <br>
                 <small class="ml-3 mt-1 inline-block">
                     Formátovat text, vkládat obrázky a odkazy
@@ -190,7 +190,7 @@
             </small>
         </fieldset>
         <fieldset>
-            <NuxtLink to="/privacy">Zásady ochrany soukromí</NuxtLink>
+            <NuxtLink to="/about">O aplikaci</NuxtLink>
         </fieldset>
     </article>
 </template>

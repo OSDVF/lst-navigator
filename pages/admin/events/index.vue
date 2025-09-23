@@ -320,7 +320,7 @@ async function editEvent(createNew = false) {
             date: toFirebaseDate(i),
             dishes: null,
             name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' }).replace('. ', '. ')),
-            program: arrayUnion(),
+            program: [],
             manager: null,
         }, { merge: true })
     }
