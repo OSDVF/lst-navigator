@@ -107,7 +107,7 @@ const props = defineProps<{
 }>()
 
 const permitSwipe = inject('permitSwipe', ref(false))
-permitSwipe.value = false
+onMounted(() => permitSwipe.value = false)
 onBeforeRouteLeave(() => {
     permitSwipe.value = true
 })

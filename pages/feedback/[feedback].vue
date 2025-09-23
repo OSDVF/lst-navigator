@@ -35,7 +35,7 @@
         </NameChangeDialog>
         <br>
 
-        Každá tvá změna je hned uložena. Rozpracovaný formulář bude zachován. {{ cloudStore.eventData?.feedbackInfo }}
+        Každá tvá změna je hned uložena. Rozpracovaný formulář bude v tomto prohlížeči zachován. {{ cloudStore.eventData?.feedbackInfo }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`" class="mb-5 mt-2">
             <h3 v-if="subPart.title" class="mb-1">{{ subPart.title }}</h3>

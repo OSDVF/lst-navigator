@@ -10,7 +10,7 @@
                 <Icon v-if="valueOrValue" name="mdi:pencil" />&nbsp;
                 <input
                     v-autowidth="{
-                        parentLevel: 3,
+                        parentLevel: props.parentLevel ?? 3,
                         overflowParent: false,
                         comfortZone: '5px'
                     }" :value="valueOrValue" type="text" :class="(valueOrValue ?? true) ? 'editable' : ''"
@@ -40,6 +40,7 @@ const props = defineProps<{
     property: string,
     value?: any,
     placeholder?: string,
+    parentLevel?: number,
 }>()
 
 const cloudStore = useCloudStore()

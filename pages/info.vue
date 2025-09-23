@@ -24,9 +24,6 @@
         </h6>
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="text-invert" v-html="cloudStore.eventData?.description ?? 'Žádný popis'" />
-
-        <br>
-        <NuxtLink class="muted" style="float: right;" to="/privacy?install=false"><Icon name="mdi:account-lock" /> Zásady ochrany soukromí aplikace</NuxtLink>
     </article>
 </template>
 

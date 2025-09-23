@@ -1,7 +1,7 @@
 <template>
     <article>
         <h1>{{ $config.public.longName }}</h1>
-        <img :src="$config.public.icon" alt="Ikona aplikace">
+        <img :src="$config.public.icon" class="noinvert" alt="Ikona aplikace">
 
         <p>
             {{ $config.public.welcome }}
@@ -13,6 +13,6 @@
             Případné chyby hlaste na {{ $config.public.supportEmail }}.
         </p>
 
-        <NuxtLink to="/privacy?install=false"><Icon name="mdi:account-lock" /> Zobrazit zásady ochrany soukromí</NuxtLink>
+        <NuxtLink to="/privacy"><Icon name="mdi:account-lock" /> Zobrazit zásady ochrany soukromí</NuxtLink>
     </article>
 </template>

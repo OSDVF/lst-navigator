@@ -153,7 +153,7 @@ export function mapObject<T, U>(obj: { [key: string]: T }, fn: (v: T, k: string,
 }
 
 export function parseIntOrNull(value?: string) {
-    if (typeof value === 'undefined') { return undefined }
+    if (typeof value === 'undefined') { return null }
     const parsed = parseInt(value)
     return isNaN(parsed) ? null : parsed
 }

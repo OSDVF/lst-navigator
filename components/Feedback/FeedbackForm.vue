@@ -81,7 +81,10 @@
                         <button
                             v-if="(index == 0 && !multipleEmpty) || type === 'complicated'"
                             title="Odstranit odpověd" @pointerenter="permitSwipe = false"
-                            @pointerleave="permitSwipe = true" @click="controls.syncComplicated(index, undefined)">
+                            @pointerleave="permitSwipe = true" @click="type === 'complicated' ? controls.syncComplicated(index, undefined) : props.onSetData({
+                                ...data,
+                                complicated: [],
+                            })">
                             <Icon name="mdi:trash" />
                         </button>
                     </td>

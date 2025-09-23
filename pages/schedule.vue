@@ -27,7 +27,7 @@
         <div
             ref="drag" :style="{
                 transition: gestureTransPending || moving ? 'none' : 'transform .2s ease',
-                transform: `translateX(${translateX}px)`,
+                transform: translateX ? `translateX(${translateX}px)` : undefined,
                 position: 'relative',
                 'min-height': '75vh',
             }">

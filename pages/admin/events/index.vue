@@ -144,14 +144,14 @@
 
 <script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, collection, arrayUnion, type DocumentData } from 'firebase/firestore'
+import { doc, collection, arrayUnion, type DocumentData, getDoc } from 'firebase/firestore'
 import { getDocCacheOr, getDocs, setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
 import { toFirebaseMonthDay, toJSDate, toFirebaseDate } from '@/utils/utils'
-import { EventSubcollectionsList, type EventDescription } from '~/types/cloud'
+import { EventSubcollectionsList, type EventDescription, type ScheduleDay } from '~/types/cloud'
 import { ImportForm } from '#components'
 import pickBy from 'lodash.pickby'
 
@@ -315,13 +315,16 @@ async function editEvent(createNew = false) {
     } as EventDescription<void>, { merge: true })
 
     for (let i = new Date(editedEvent.value.start); i <= end; i.setDate(i.getDate() + 1)) {
-        await setDoc(doc(docs.schedule, toFirebaseMonthDay(i)), {
+        const day = doc(docs.schedule, toFirebaseMonthDay(i))
+        const dayContent = (await getDoc(day)).data() as ScheduleDay | undefined
+        await setDoc(day, {
             cooking: null,
             date: toFirebaseDate(i),
             dishes: null,
             name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' }).replace('. ', '. ')),
-            program: [],
+            program: arrayUnion(),
             manager: null,
+            ...dayContent,
         }, { merge: true })
     }
     const dummies = [

@@ -9,23 +9,23 @@
         <p>
             <NuxtLink to="/admin/feedback/result">
                 <button class="large">
-                    <Icon name="mdi:spreadsheet" class="mb-0.5e"/>
+                    <Icon name="mdi:spreadsheet" class="mb-0.5e" />
                     Výsledky
                 </button>
             </NuxtLink>
             <NuxtLink to="/feedback">
                 <button class="large">
-                    <Icon name="mdi:form-select" class="mb-0.5e"/>
+                    <Icon name="mdi:form-select" class="mb-0.5e" />
                     Dotazník
                 </button>
             </NuxtLink>
         </p>
         <button @click="csvExportAll">
-            <Icon name="mdi:file-document-arrow-right" class="mb-0.5e"/>
+            <Icon name="mdi:file-document-arrow-right" class="mb-0.5e" />
             CSV Export
         </button>
         <button @click="exportJson">
-            <Icon name="mdi:export" class="mb-0.5e"/>
+            <Icon name="mdi:export" class="mb-0.5e" />
             Export
         </button>
         <ImportForm
@@ -42,7 +42,7 @@
                 </option>
             </select>
             <EditableField
-                class="p" description="Informace pro respondenty:" property="feedbackInfo"
+                :parent-level="2" class="p" description="Informace pro respondenty:" property="feedbackInfo"
                 placeholder="Vyplňte všechno jako..." />
             <div :class="split ? 'split' : ''">
                 <main class="feedback">

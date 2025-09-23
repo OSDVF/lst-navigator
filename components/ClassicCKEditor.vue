@@ -22,6 +22,13 @@ const emit = defineEmits<{
     focus: [],
     blur: [],
 }>()
+const wasFocued = ref(false)
+
+watch(props, newProps => {
+    if(!newProps.plain && !props.plain && editor && !wasFocued.value) {// TODO track external changes differently
+        editor.setData(newProps.modelValue || '')
+    }
+})
 
 const area = useTemplateRef('area')
 const allowedAttributes = [
@@ -253,6 +260,7 @@ onMounted(async () => {
     })
 
     editor.ui.focusTracker.on('change:isFocused', (_evt: any, _name: string, isFocused: boolean) => {
+        wasFocued.value = isFocused
         if (isFocused) {
             emit('focus')
         } else {

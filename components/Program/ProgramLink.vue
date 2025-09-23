@@ -44,11 +44,13 @@
                     </button>
                     &ensp;
                 </span>
-                <div v-if="width >= 500" class="inline-block mr-2">
+                <div v-if="width >= 450" class="inline-block mr-2">
                     <NuxtRating
                         v-if="typeof feedback !== 'undefined' && !open" :rating-value="feedback"
                         rating-size="1.2rem" inactive-color="#aaa" :title="`Tvé hodnocení: ${feedback}`" tabindex="0" />
                 </div>
+                <strong v-if="typeof (entry.location ?? undefined) !== 'undefined'" class="small muted mr-2">{{
+                    cloud.days?.[p.day].locations?.[entry.location!] }}</strong>
                 <Icon v-if="entry.icon" :name="entry.icon" />
             </div>
         </summary>
@@ -62,7 +64,7 @@
                 query: $route.query,
             }" style="position: relative">
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <div class="content" v-html="entry.description?.trim() || '<p>Žádné detaily</p>'" />
+            <div class="content" v-html="entry.description && (entry.description?.includes('<p>') ? entry.description?.trim() : `<p>${entry.description}</p>`) || '<p>Žádné detaily</p>'" />
             <span class="more">
                 <Icon
                     v-if="!empty || entry.feedbackType" class="icon"
@@ -114,7 +116,7 @@ onUnmounted(() => {
 })
 
 const feedback = computed(() => {
-    const feedback = cloud.offlineFeedback?.[p.day]?.[p.index]?.[settings.userIdentifier]
+    const feedback = fromUpdatePayload(cloud.offlineFeedback?.[p.day]?.[p.index]?.[settings.userIdentifier], {})
     if (!feedback) { return undefined }
     switch (p.entry.feedbackType as FeedbackType) {
     case 'basic':
