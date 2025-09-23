@@ -8,7 +8,7 @@
     <NuxtLink to="/clear">
         <button type="button">
             <Icon name="mdi:delete" />
-            Smazat data
+            Tovární nastavení
         </button>
     </NuxtLink>
 </template>

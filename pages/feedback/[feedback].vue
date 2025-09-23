@@ -6,19 +6,15 @@
             </NuxtLink>
 
             <template v-if="cloudStore.resolvedPermissions.editEvent">
-                <NuxtLink
-                    class="ml-2" to="/admin/feedback"
-                    title="Nastavení zpětné vazby">
+                <NuxtLink class="ml-2" to="/admin/feedback" title="Nastavení zpětné vazby">
                     <button type="button" class="large">
                         <Icon name="mdi:pencil" class="mb-0.5e" /> Upravit
                     </button>
                 </NuxtLink>
 
-                <NuxtLink
-                    class="ml-2" to="/admin/feedback/result"
-                    title="Výsledky zpětné vazby">
+                <NuxtLink class="ml-2" to="/admin/feedback/result" title="Výsledky zpětné vazby">
                     <button type="button" class="large">
-                        <Icon name="mdi:spreadsheet" class="mb-0.5e"/> Výsledky
+                        <Icon name="mdi:spreadsheet" class="mb-0.5e" /> Výsledky
                     </button>
                 </NuxtLink>
             </template>
@@ -73,8 +69,17 @@
                     :detail-question="entry.detailQuestion" :type="entry.feedbackType"
                     :data="entry.data ?? undefined" :complicated-questions="entry.questions"
                     :select-options="entry.selectOptions"
-                    @set-data="(data: Feedback) => cloudStore.feedback.set(subPart.primaryIndex, entry.secondaryIndex, data)" />
+                    @set-data="data => cloudStore.feedback.set(subPart.primaryIndex, entry.secondaryIndex, data)" />
             </fieldset>
+        </div>
+        <div v-if="!currentPart?.subparts.length" class="mt-5 mb-5">
+            <NuxtLink class="large" to="/schedule">
+                <Icon name="mdi:calendar-month" />
+                Hodnotit v harmonogramu
+            </NuxtLink>
+            <p class="muted">
+                Programy můžete hodnotit přímo v harmonogramu
+            </p>
         </div>
         <br>
         <div class="flex justify-content-between">
@@ -84,7 +89,7 @@
                 <Icon name="mdi:chevron-left" />
                 Předchozí část
             </button>
-            <NuxtLink v-else class="large" to="/schedule">
+            <NuxtLink v-else-if="currentPart?.subparts.length" class="large" to="/schedule">
                 <Icon name="mdi:calendar-month" />
                 Program a informace
             </NuxtLink>
@@ -168,7 +173,7 @@ const currentPart = computed(() => {
             function addScheduleItem(scheduleItem: ScheduleItem, index: number | string) {
                 entries.push({
                     ...scheduleItem,
-                    data: cloudStore.offlineFeedback?.[scheduleIndex]?.[index]?.[settings.userIdentifier],
+                    data: fromUpdatePayload(cloudStore.offlineFeedback?.[scheduleIndex]?.[index]?.[settings.userIdentifier], {}),
                     secondaryIndex: index,
                     selectOptions: getParallelEvents(scheduleItem),
                 })
@@ -211,7 +216,9 @@ const currentPart = computed(() => {
                     detailQuestion: individualQuest.description,
                     selectOptions: individualQuest.questions,
                     questions: individualQuest.questions,
-                    data: cloudStore.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier] ?? cloudStore.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier],
+                    data: fromUpdatePayload(
+                        cloudStore.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier] ?? cloudStore.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier], {},
+                    ),
                 }],
             })
         }

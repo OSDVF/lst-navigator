@@ -7,6 +7,7 @@
             <option value="complicated">Několik ⭐⭐⭐⭐⭐</option>
             <option value="text">Textová otázka</option>
             <option v-if="!p.scheduleItem" value="select">Výběr z možností</option>
+            <option v-if="!p.scheduleItem" value="multiple">Zaškrtávací políčka</option>
             <option value="parallel">Paralelní programy</option>
         </select>
 
@@ -14,7 +15,7 @@
             <br>Podtitulek obsahuje čárku. Pokud jde o paralelní programy, nastavte typ otázky na "Paralelní programy".
         </small>
 
-        <div v-if="['complicated', 'select'].includes(type)">
+        <div v-if="['complicated', 'multiple', 'select'].includes(type)">
             <h4 v-if="p.scheduleItem">Položky k hodnocení</h4>
             <div v-for="(_question, index) in questionsOrBlank" :key="`q${index}`">
                 <label :for="`question${index}`" class="muted">

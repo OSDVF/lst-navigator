@@ -8,6 +8,7 @@
             <input
                 v-autowidth="{
                     overflowParent: false,
+                    parentLevel: 2,
                 }" class="editable" :value="p.modelValue.name" type="text" :placeholder="`Otázka ${p.index}`"
                 @change="(ev) => e('update:modelValue', { ...p.modelValue, name: (ev.target as HTMLInputElement).value })">
             <span v-show="!p.disabled" class="button" title="Odebrat otázku" @click="e('delete')">

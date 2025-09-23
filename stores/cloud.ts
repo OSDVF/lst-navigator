@@ -1,6 +1,7 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { Firestore, writeBatch, type CollectionReference, type DocumentData, type FieldValue } from 'firebase/firestore'
+import { FieldValue, Firestore, writeBatch, type CollectionReference, type DocumentData } from 'firebase/firestore'
+import { union } from 'lodash'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
 import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
@@ -11,7 +12,7 @@ import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem } from '@/types/cloud'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem, UpdatePayload } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
 import merge from 'lodash.merge'
@@ -182,7 +183,7 @@ export const useCloudStore = defineStore('cloud', () => {
          * @param data Feedback data
          * @param userIdentifier Specify to set feedback for another user - it will not be saved offline
          */
-        set(sIndex: number | string, eIndex: number | string, data: Feedback | null, userIdentifier?: string) {
+        set(sIndex: number | string, eIndex: number | string, data: UpdatePayload<Feedback | null>, userIdentifier?: string) {
             feedback.fetching.value = true
             if (typeof userIdentifier === 'undefined') {
                 // when userIdentifier is not set, it means that the user is setting his own feedback
@@ -224,7 +225,7 @@ export const useCloudStore = defineStore('cloud', () => {
             const promises = []
 
             // Convert null reply to deleteField
-            const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: Feedback | FieldValue | null } } } = offlineFeedback.value[selectedEvent.value]
+            const payload: { [sIndex: string | number]: { [eIndex: string | number]: { [uIndex: string]: UpdatePayload<Feedback> | FieldValue | null } } } = offlineFeedback.value[selectedEvent.value]
             for (const sIndex in payload) {
                 const section = payload[sIndex]
                 for (const eIndex in section) {
@@ -540,7 +541,7 @@ export const useCloudStore = defineStore('cloud', () => {
     })
 
     const notesCollection = currentEventCollection('notes')
-    const offlineFeedback = usePersistentRef<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: Feedback | null } } } }>('lastNewFeedback', {})
+    const offlineFeedback = usePersistentRef<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: UpdatePayload<Feedback> | FieldValue | null } } } }>('lastNewFeedback', {})
     const messagingToken = usePersistentRef('messagingToken', '')
     const wasAuthenticated = usePersistentRef('isAuthenticated', false)
 
@@ -651,3 +652,30 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 })
 
+export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null, previousData: T): Partial<T> | null {
+    const newData = data
+    if (newData instanceof FieldValue) {
+        return fromUpdatePayload({ a: newData }, { a: null })?.a ?? null
+    } else {
+        for (const key in newData) {
+            const v = newData[key] as any
+            if (typeof v == 'object' && Object.hasOwn(v, '_methodName') && v) {
+                switch (v._methodName) {
+                case 'arrayUnion':
+                    console.debug('arrayUnion', data, previousData)
+                    newData[key] = union<any>(previousData[key] as any, v.Uu) as any
+                    break
+                case 'deleteField':
+                    console.debug('deleteField', data, previousData)
+                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                    delete newData[key]
+                    break
+                default:
+                    console.debug('unknown ' + v._methodName, data, previousData)
+                }
+            }
+        }
+    }
+
+    return newData as Partial<T>
+}

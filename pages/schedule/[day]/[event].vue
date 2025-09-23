@@ -34,7 +34,7 @@
                 :data="currentFeedbackValue" :type="eventData?.feedbackType"
                 :complicated-questions="eventData?.questions" :select-options="getParallelEvents(eventData)"
                 :detail-question="eventData?.detailQuestion"
-                @set-data="(data: Feedback) => cloud.feedback.set(dayIndex, eventItemIndex, data)" />
+                @set-data="data => cloud.feedback.set(dayIndex, eventItemIndex, data)" />
             <p v-if="cloud.feedback.fetchFailed">
                 Nepodařilo se uložit tvou odpověď
                 <br>

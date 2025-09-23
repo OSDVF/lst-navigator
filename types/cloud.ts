@@ -1,10 +1,17 @@
 import type { CollectionReference, DocumentReference, FieldValue } from 'firebase/firestore'
 
-export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' | 'text'
+export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' | 
+/**
+ * Same as 'complicated' but the questions will have only '0' or '1' values
+ */
+'multiple' | 'text'
 export type FeedbackConfig = {
     group?: string | RegExp, // title of parts of schedule to group by
     title: string,
-    dayTitles?: boolean,// falls back to true
+    /**
+     * falls back to true
+     */
+    dayTitles?: boolean,
     individual: {
         name: string,
         questions: string[]
@@ -12,6 +19,24 @@ export type FeedbackConfig = {
         description?: string
     }[],
 }
+
+export type FeedbackOr<T> = {
+    basic?: number | T,
+    detail?: string | T,
+    complicated?: (number | null)[],
+    select?: string | T
+}
+
+export type Feedback = FeedbackOr<undefined>
+export type FeedbackQuestionsProgram = { [question: number]: { [user: string]: Feedback } }
+export type FeedbackQuestionsCustom = { [question: string]: { [user: string]: Feedback } }
+export type FeedbackSections = { [section: string]: ({ updated: number, nickname?: string } | FeedbackQuestionsProgram & FeedbackQuestionsCustom) }
+
+export type TabulatedFeedback = {
+    replies: { [key: string | number]: (Feedback | null)[] },
+    respondents: string[]
+}
+
 /** A single item in day's schedule */
 export type ScheduleItem = {
     color?: string
@@ -123,23 +148,6 @@ export type UpdatePayload<T> = {
 
 export type UpdateRecordPayload<T> = {
     [key: string]: T | UpdateRecordPayload<T> | FieldValue
-}
-
-export type Feedback = FeedbackOr<undefined>
-export type FeedbackQuestionsProgram = { [question: number]: { [user: string]: Feedback } }
-export type FeedbackQuestionsCustom = { [question: string]: { [user: string]: Feedback } }
-export type FeedbackSections = { [section: string]: ({ updated: number, nickname?: string } | FeedbackQuestionsProgram & FeedbackQuestionsCustom) }
-
-export type FeedbackOr<T> = {
-    basic?: number | T,
-    detail?: string | T,
-    complicated?: (number | null)[],
-    select?: string | T
-}
-
-export type TabulatedFeedback = {
-    replies: { [key: string | number]: (Feedback | null)[] },
-    respondents: string[]
 }
 
 export type Subscriptions = /* array of notification groups */string[] | true /* subscribe to all groups */

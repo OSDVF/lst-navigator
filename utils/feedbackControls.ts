@@ -1,13 +1,18 @@
 import type { FieldValue } from 'firebase/firestore'
 import { deleteField } from 'firebase/firestore'
-import type { Feedback } from '@/types/cloud'
+import type { Feedback, UpdatePayload } from '@/types/cloud'
 
 type Props = {
     data: MaybeRefOrGetter<Feedback>,
-    onSetData: (data: Feedback) => void,
+    onSetData: (data: UpdatePayload<Feedback>) => void,
     complicatedQuestions: MaybeRefOrGetter<string[]>
 }
 export default function useFeedbackControls({ props }: {props: Props}) {
+    /**
+     * Sync 'multiple' or 'complicated' feedback type response
+     * @param index Question index
+     * @param value 
+     */
     function syncComplicated(index: number, value?: number) {
         const prevComplicated = new Array(toValue(props.complicatedQuestions).length).fill(null) as (number | null)[]
         const data = toValue(props.data)

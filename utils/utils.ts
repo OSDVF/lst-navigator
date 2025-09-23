@@ -24,6 +24,7 @@ export function toHumanFeedback(feedback?: FeedbackType) {
         complicated: 'Několik ⭐⭐⭐⭐⭐',
         text: 'Textová otázka',
         parallel: 'Paralelní programy',
+        multiple: 'Zaškrtávací políčka',
         select: 'Výběr z možností',
     }[feedback]
 }
@@ -93,6 +94,32 @@ export function getAverage(replies: { [key: string]: Feedback }) {
     return {
         basic: basic / basicCount,
         complicated: Object.keys(compl).map(i => compl[i] / complCount[i]),
+    }
+}
+
+export function getSum(replies: { [key: string]: Feedback }) {
+    const compl: { [index: string | number]: number } = {}
+    let basic = 0
+    for (const rI in replies) {
+        const r = replies[rI]
+        if (r.basic) {
+            basic += r.basic as number
+        }
+        if (r.complicated) {
+            for (const c in r.complicated) {
+                if (r.complicated?.[c] !== null) {
+                    if (!compl[c]) {
+                        compl[c] = 0
+                    }
+                    compl[c] += r.complicated[c]!
+                }
+            }
+        }
+    }
+
+    return {
+        basic: basic,
+        complicated: Object.keys(compl).map(i => compl[i]),
     }
 }
 

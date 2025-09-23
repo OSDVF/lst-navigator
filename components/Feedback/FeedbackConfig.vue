@@ -4,6 +4,7 @@
             <input
                 v-autowidth="{
                     overflowParent: false,
+                    parentLevel: 2,
                 }" title="Název sekce" class="h3 editable" :value="p.isDummy ? '' : editedCategory.title"
                 :placeholder="editedCategory.title || 'Nová sekce'" type="text"
                 @change="(e) => editedCategory.title = (e.target as HTMLInputElement).value">
@@ -64,6 +65,9 @@
             </div>
         </fieldset>
         <div v-if="type != 'group'" class="mt-2 relative" title="Vlastní otázky" tabindex="0">
+            <p v-if="!editedCategory.individual?.length">
+                Pokud nepřidáte žádné otázky, bude zobrazena hláška "Programy můžete hodnotit přímo v harmonogramu" a odkaz na harmonogram.
+            </p>
             <FeedbackEditIndividual
                 v-for="(q, i) in questionsOrBlank" :key="`i${i}`" :disabled="p.disabled"
                 :model-value="q" :index="i" @update:model-value="e => updateQuestion(e, i)"

@@ -157,7 +157,7 @@
         <fieldset v-if="!$pwa?.isPWAInstalled && $deferredPrompt?.value">
             <label for="install">Instalace</label>
             <span>
-                <button id="install" @click="$router.push('/install/0')">
+                <button id="install" @click="$router.push(config.public.installWizard ? '/install/0' : '/schedule')">
                     <Icon name="mdi:download" /> Instalovat
                 </button>
             </span>

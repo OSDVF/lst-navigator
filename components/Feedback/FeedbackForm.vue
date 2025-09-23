@@ -58,18 +58,28 @@
                     </button>
                 </td>
             </tr>
-            <template v-if="type === 'complicated'">
+            <template v-if="['complicated', 'multiple'].includes(type)">
                 <tr v-for="(question, index) in complicatedQuestions" :key="`q${index}`">
-                    <td>{{ question }}</td>
+                    <td><label :for="`complicated-${uid}-${index}`">{{ question }}</label></td>
                     <td @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true">
                         <NuxtRating
-                            v-if="updatedRating.complicated" inactive-color="#aaa" :read-only="false"
+                            v-if="updatedRating.complicated && type === 'complicated'" inactive-color="#aaa"
+                            :read-only="false"
                             :class="{ 'null': normalizedData.complicated?.[index] === null || typeof normalizedData.complicated?.[index] === 'undefined' }"
                             :rating-value="normalizedData.complicated?.[index] ?? 0"
                             @rating-selected="(value: number) => controls.syncComplicated(index, value)" />
+                        <input
+                            :id="`complicated-${uid}-${index}`" type="checkbox" :name="`complicated-${uid}-${index}`"
+                            :title="multipleEmpty ? 'Žádná odpověď' : undefined" :style="{
+                                opacity: multipleEmpty ? .8 : 1,
+                                outline: multipleEmpty ? '1px solid #ff000077' : undefined,
+                            }" :checked="normalizedData.complicated?.[index] == 1" @pointerenter="permitSwipe = false"
+                            @pointerleave="permitSwipe = true"
+                            @change="e => controls.syncComplicated(index, (e.target as HTMLInputElement).checked ? 1 : 0)">
                     </td>
                     <td>
                         <button
+                            v-if="(index == 0 && !multipleEmpty) || type === 'complicated'"
                             title="Odstranit odpověd" @pointerenter="permitSwipe = false"
                             @pointerleave="permitSwipe = true" @click="controls.syncComplicated(index, undefined)">
                             <Icon name="mdi:trash" />
@@ -79,11 +89,12 @@
             </template>
             <tr v-if="type !== 'select'">
                 <td colspan="2">
-                    <label v-if="props.detailQuestion?.length > 100" :for="`detail-${uid}`" class="mb-1 d-block">{{ props.detailQuestion }}</label>
+                    <label v-if="props.detailQuestion?.length > 100" :for="`detail-${uid}`" class="mb-1 d-block">{{
+                        props.detailQuestion }}</label>
                     <textarea
                         :id="`detail-${uid}`" v-model.lazy="controls.syncDetail.value" v-no-overflow v-paste-model
-                        :placeholder="props.detailQuestion?.length > 100 ? undefined : (props.detailQuestion ?? 'Tipy a připomínky')" @pointerenter="permitSwipe = false"
-                        @pointerleave="permitSwipe = true" />
+                        :placeholder="props.detailQuestion?.length > 100 ? undefined : (props.detailQuestion ?? 'Tipy a připomínky')"
+                        @pointerenter="permitSwipe = false" @pointerleave="permitSwipe = true" />
                 </td>
                 <td>
                     <button
@@ -98,7 +109,7 @@
 </template>
 <script setup lang="ts">
 import { defaultQuestions } from '@/stores/cloud'
-import type { Feedback, FeedbackType } from '@/types/cloud'
+import type { Feedback, FeedbackType, UpdatePayload } from '@/types/cloud'
 import useFeedbackControls from '@/utils/feedbackControls'
 
 const props = defineProps({
@@ -132,7 +143,7 @@ const props = defineProps({
         default: 'Tipy a připomínky',
     },
     onSetData: {
-        type: Function as PropType<(data: Feedback) => void>,
+        type: Function as PropType<(data: UpdatePayload<Feedback>) => void>,
         required: true,
     },
 })
@@ -158,6 +169,13 @@ const controls = useFeedbackControls({
         complicatedQuestions: props.complicatedQuestions ?? defaultQuestions,
         onSetData: props.onSetData,
     },
+})
+
+const multipleEmpty = computed(() => {
+    if (normalizedData.value.complicated?.every(c => c == null) ?? true) {
+        return true
+    }
+    return false
 })
 
 const updatedRating = ref({

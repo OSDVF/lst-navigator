@@ -161,7 +161,12 @@ const autowidth = {
         }
     },
     unmounted: function (el: AutowidthInput) {
-        document.body.removeChild(el.mirror)
+        if(typeof el.mirror == 'undefined') {
+            console.warn('Autosize unmounted without mirror', el)
+        }
+        else {
+            document.body.removeChild(el.mirror)
+        }
 
         if (el.sizerFunc) {
             el.removeEventListener('input', el.sizerFunc)

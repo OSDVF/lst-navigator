@@ -1,16 +1,21 @@
 <template>
     <td>
         <div v-no-wrap-border class="flex flex-wrap flex-grow">
-            <template v-if="feedbackType === 'complicated' || repliesValues.find(r => r.complicated?.find(c => !!c))">
+            <template v-if="feedbackType === 'multiple' && questions">
+                <BarChart
+                    :values="questions.map((_, qIndex) => complicatedReplies[qIndex].hist[1])" :min="0"
+                    :colors="complicatedColors[0]" :categories="Object.keys(questions)"
+                    :labels="questions.map(q => metaphone(q).substring(0, 5))" :popups="questions" />
+            </template>
+            <template
+                v-else-if="feedbackType === 'complicated' || repliesValues.find(r => r.complicated?.find(c => !!c))">
                 <span
                     v-for="(q, qIndex) in (questions || defaultQuestions)" :key="`q${qIndex}`"
-                    class="inline-block border-between"
-                >
+                    class="inline-block border-between">
                     <BarChart
                         :values="complicatedReplies[qIndex].hist" :min="0" :colors="complicatedColors[qIndex]"
                         :categories="HISTOGRAM_BUCKETS" :labels="HISTOGRAM_BUCKETS"
-                        :popups="complicatedReplies[qIndex].individuals"
-                    />
+                        :popups="complicatedReplies[qIndex].individuals" />
                     {{ q }}
                 </span>
             </template>
@@ -18,16 +23,15 @@
                 <BarChart
                     :values="clusteredTextIndexed" :min="0"
                     :colors="randomcolor({ count: seenCategories.length, hue: 'orange' }).map(c => setColorTransparency(c, 0.8))"
-                    :categories="Object.keys(seenCategories)" :labels="seenCategories.map(c => c?.substring(0, 4) ?? '')"
-                    :popups="buckets.map(b => Array.from(b).join('\n'))" class="rotated"
-                />
+                    :categories="Object.keys(seenCategories)"
+                    :labels="seenCategories.map(c => c?.substring(0, 4) ?? '')"
+                    :popups="buckets.map(b => Array.from(b).join('\n'))" class="rotated" />
                 Podobné odpovědi
             </div>
             <div v-if="feedbackType == 'basic' || repliesValues.find(r => r.basic)">
                 <BarChart
                     :values="basicReplies.hist" :min="0" :colors="basicColors" :categories="HISTOGRAM_BUCKETS"
-                    :popups="basicReplies.individuals" :labels="HISTOGRAM_BUCKETS"
-                />
+                    :popups="basicReplies.individuals" :labels="HISTOGRAM_BUCKETS" />
                 Celkový dojem
             </div>
         </div>

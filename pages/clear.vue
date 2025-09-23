@@ -4,7 +4,7 @@
         <noscript>
             Pokud se stránka neobnoví automaticky, klikni na tlačítko.
         </noscript>
-        <a href="/install/0">
+        <a :href="home">
             <button>
                 <Icon name="mdi:home" />
                 Zpátky do aplikace
@@ -18,14 +18,16 @@ import * as Sentry from '@sentry/nuxt'
 import { clearIndexedDbPersistence, terminate } from 'firebase/firestore'
 
 const router = useRouter()
+const config = useRuntimeConfig()
+const home = config.public.installWizard ? '/install/0' : '/schedule'
 
 watch(router.currentRoute, (value) => {
-    if (value.query.cleared) { router.replace('/install/0') }
+    if (value.query.cleared) { router.replace(home) }
 }, { immediate: true })
 
 onMounted(async () => {
     if (router.currentRoute.value.query.cleared) {
-        router.replace('/install/0')
+        router.replace(home)
         return
     }
     const f = useFirestore()
