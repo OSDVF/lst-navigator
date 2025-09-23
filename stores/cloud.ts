@@ -1,7 +1,6 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
 import { FieldValue, Firestore, writeBatch, type CollectionReference, type DocumentData } from 'firebase/firestore'
-import { union } from 'lodash'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
 import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
@@ -15,6 +14,7 @@ import type { KnownCollectionName } from '@/utils/db'
 import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem, UpdatePayload } from '@/types/cloud'
 import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
+import union from 'lodash.union'
 import merge from 'lodash.merge'
 
 /**
