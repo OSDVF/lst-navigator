@@ -39,8 +39,11 @@ main .average-rating {
 .toast {
     flex-basis: 100%;
     flex-grow: 1;
-    backdrop-filter: c.$blurred-background;
-    background: rgba(c.$link-background, 0.2);
+    background: #ffffff84;
+    .transp & {
+        backdrop-filter: c.$blurred-background;
+        background: rgba(c.$link-background, 0.2);
+    }
     text-align: center;
     transition: transform .2s ease, margin-top .2s ease;
     $errorBannerHeight: 2.5rem;

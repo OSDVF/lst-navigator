@@ -4,8 +4,11 @@
 //
 nav {
     display: flex;
-    backdrop-filter: c.$blurred-background;
-    background: #0000000d;
+    background: #ffffff84;
+    .transp & {
+        backdrop-filter: c.$blurred-background;
+        background: #0000000d;
+    }
     justify-content: stretch;
 
     &>a {

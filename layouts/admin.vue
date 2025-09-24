@@ -1,6 +1,8 @@
 <template>
-    <div>
-
+    <div
+        :class="{
+            transp: useSettings().blur
+        }">
         <Head>
             <Title>{{ title }}</Title>
         </Head>

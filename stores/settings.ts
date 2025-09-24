@@ -150,8 +150,10 @@ export const useSettings = defineStore('settings', () => {
     const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
 
     const transitions = usePersistentRef('transitions', true)
+    const blur = usePersistentRef('blur', import.meta.browser && !window.matchMedia('(prefers-reduced-transparency)').matches)
 
     return {
+        blur,
         generateUID,
         transitions,
         expandableItems: usePersistentRef('expandableItems', false),

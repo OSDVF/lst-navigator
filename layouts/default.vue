@@ -1,5 +1,8 @@
 <template>
-    <div>
+    <div
+        :class="{
+            transp: useSettings().blur
+        }">
 
         <Head>
             <Title>{{ title }}</Title>
@@ -24,8 +27,8 @@
                         'Nepodařilo se odeslat tvou odpověď. Ale žádný strach, je uložená offline ve tvém zařízení.' }}
                 </nav>
             </div>
-            <div id="additionalNav" class="flex-full" />
-            <nav role="navigation">
+            <div v-show="!keyboardVisible" id="additionalNav" class="flex-full" />
+            <nav v-show="!keyboardVisible" role="navigation">
                 <LazyClientOnly>
                     <NuxtLink
                         v-if="config.public.installWizard && (!installComplete || $route.name?.toString().includes('install'))"
@@ -67,11 +70,27 @@ const isServer = ref(import.meta.server)
 
 const onFeedbackPage = computed(() => route.name?.toString().includes('feedback') ?? false)
 const installComplete = useInstallComplete()
-
+const keyboardVisible = ref(false)
+provide('keyboardVisible', keyboardVisible)
 onMounted(() => {
     isServer.value = false
+    if ('visualViewport' in window) {
+        const VIEWPORT_VS_CLIENT_HEIGHT_RATIO = 0.75
+        window.visualViewport?.addEventListener('resize', function (event) {
+            if (event.target instanceof VisualViewport &&
+                (event.target.height * event.target.scale) / window.screen.height <
+                VIEWPORT_VS_CLIENT_HEIGHT_RATIO
+            ) {
+                keyboardVisible.value = true
+                console.debug('keyboard is shown')
+            }
+            else {
+                keyboardVisible.value = false
+                console.log('keyboard is hidden')
+            }
+        })
+    }
 })
-
 
 watchEffect(() => {
     if (app.$needRefresh?.value) {

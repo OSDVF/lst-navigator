@@ -1,10 +1,15 @@
 <template>
-    <main>
+    <main
+        :class="{
+            transp: settings.blur
+        }">
 
         <Head>
             <Title>{{ config.public.title }}</Title>
         </Head>
-        <NuxtPage :page-key="route.path" :transition="{ name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true }" />
+        <NuxtPage
+            :page-key="route.path"
+            :transition="{ name: currentTransition, duration: { enter: 200, leave: 100 }, appear: true }" />
         <nav class="installNav">
             <ClientOnly>
                 <NuxtLink
@@ -15,7 +20,8 @@
                             from: partIndex.toString(),
                             install: partIndex > 0 ? $route.query.install : undefined,
                         },
-                    }" @click="() => { currentTransition = 'slide-right'; if (partIndex == 0) settings.installStep = 1 }">
+                    }"
+                    @click="() => { currentTransition = 'slide-right'; if (partIndex == 0) settings.installStep = 1 }">
                     <Icon
                         :name="partIndex > 0 ? 'material-symbols:arrow-circle-left-outline' : 'mdi:trending-up'"
                         size="2rem" />

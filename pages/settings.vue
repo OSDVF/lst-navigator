@@ -38,6 +38,14 @@
             </span>
         </fieldset>
         <fieldset>
+            <label for="blur" title="Efekt rozostření na pozadí menu">
+                <Icon name="mdi:blur" /> Rozostřené pozadí
+            </label>
+            <span>
+                <input id="blur" v-model="settings.blur" type="checkbox">
+            </span>
+        </fieldset>
+        <fieldset>
             <label for="expandable">
                 <Icon name="mdi:file-tree" /> Rozbalovací položky harmonogramu
                 <br>

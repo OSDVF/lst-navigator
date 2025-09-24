@@ -1,8 +1,9 @@
 <template>
     <div style="padding: 4rem 0 3rem 0;">
-        <nav role="navigation" class="days">
+        <nav v-show="!keyboardVisible" role="navigation" class="days">
             <NuxtLink
-                v-for="(day, index) in cloud.days" :key="`day${index}`" :class="dayIndex == index.toString() ? 'selected' : undefined" :to="(dayIndex == index.toString() && !router.currentRoute.value.params.event) ? undefined : {
+                v-for="(day, index) in cloud.days" :key="`day${index}`"
+                :class="dayIndex == index.toString() ? 'selected' : undefined" :to="(dayIndex == index.toString() && !router.currentRoute.value.params.event) ? undefined : {
                     name: 'schedule-day',
                     params: { day: index.toString() },
                     query: $route.query,
@@ -45,6 +46,7 @@ import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '~/stores/settings'
 import type { ScheduleDay } from '~/types/cloud'
 
+const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const cloud = useCloudStore()
 const router = useRouter()
 const settings = useSettings()
