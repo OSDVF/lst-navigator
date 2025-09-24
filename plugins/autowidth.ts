@@ -25,6 +25,7 @@ export interface InputAutoWidthOptions {
     minWidth?: string
     comfortZone?: string
     overflowParent?: boolean,
+    overflowMinZone: number,
     parentLevel?: number,
     watchWindowSize?: boolean
     windowResizeHandlerDebounceTime?: number
@@ -36,6 +37,7 @@ const defaults: Complete<InputAutoWidthOptions> = {
     minWidth: undefined,
     comfortZone: '0px',
     overflowParent: true,
+    overflowMinZone: 20,
     parentLevel: 1,
     watchWindowSize: false,
     windowResizeHandlerDebounceTime: 150,
@@ -63,7 +65,13 @@ const checkWidth = (el: AutowidthInput) => {
             parent = parent.parentElement!
         }
         if(parent.clientWidth) {
-            el.style.maxWidth = `calc(${parent.clientWidth - el.offsetLeft}px - ${getComputedStyle(el).marginRight} - ${getComputedStyle(el).marginLeft})`
+            const prev = parseFloat(el.style.maxWidth.substring(5)) || 0//remove calc(
+            const w = parent.clientWidth - el.offsetLeft + parent.offsetLeft
+            if(Math.abs(prev - w) >= options.overflowMinZone)
+            {
+                el.style.maxWidth = `calc(${w}px - ${getComputedStyle(el).marginRight} - ${getComputedStyle(el).marginLeft})`
+            }
+            
         }
     }
 

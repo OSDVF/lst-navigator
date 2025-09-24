@@ -1,10 +1,10 @@
 
 import type { DocumentReference } from 'firebase/firestore'
-import { doc, getDoc, terminate } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, terminate } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
 import { initializeApp } from 'firebase/app'
-import type { EventDescription } from '@/types/cloud'
+import type { EventDescription, EventDocs, EventSubcollection } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 
 
@@ -20,24 +20,23 @@ export default async function () {
     const accessToken = await auth.getAccessToken()
 
     async function eventDocument(event: string) {
-        return (await getDoc(doc(firestore, `${'events' as KnownCollectionName}/${event}`))).data() as { [key in keyof EventDescription]: DocumentReference }
+        return (await getDoc(doc(firestore, `${'events' as KnownCollectionName}/${event}`))).data() as EventDescription
     }
 
-    async function currentEventDocument(docName: keyof EventDescription, ...pathSegments: string[]) {
-        const eDoc = await eventDocument(selectedEvent)
-        return doc(eDoc[docName], '/', ...pathSegments)
+    function currentEventCollection(colName: EventSubcollection, ...pathSegments: string[]) {
+        return collection(firestore, 'events', selectedEvent, colName, ...pathSegments)
     }
 
-    const subscriptionsDocument = await currentEventDocument('subscriptions')
-    if (subscriptionsDocument === null) {
+    const subscriptionsCollections = currentEventCollection('subscriptions')
+    if (subscriptionsCollections === null) {
         return
     }
-    const subscriptions = await (await getDoc(subscriptionsDocument)).data()
+    const subscriptions = (await getDocs(subscriptionsCollections)).docs
     if (typeof subscriptions === 'undefined') {
         return
     }
 
-    const days = (await (await getDoc(await currentEventDocument('schedule'))).data() as DocumentReference[])
+    const days = (await getDocs(currentEventCollection('schedule'))).docs
 
     if (days === null) {
         return
@@ -50,7 +49,7 @@ export default async function () {
     const promises: Promise<void | Response>[] = []
     for (let partIndex = 0; partIndex < days.length; partIndex++) {
         const part = days[partIndex]
-        const partData = await (await getDoc(part)).data()
+        const partData = part.data()
         if (typeof partData === 'undefined') {
             continue
         }
@@ -71,47 +70,49 @@ export default async function () {
                 continue
             }
 
-            for (const subscription of subscriptions.tokens) {
+            for (const subscription of subscriptions) {
                 // send notification
                 console.log(`[${new Date().toISOString()}] Sending notification about ${event.title} to ${subscription}`)
-                promises.push(fetch(`https://fcm.googleapis.com/v1/projects/${(config.vuefire as any).options.config.projectId}/messages:send`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + accessToken,
-                    },
-                    body: JSON.stringify({
-                        message: {
-                            token: subscription,
-                            notification: {
-                                title: event.title,
-                                body: event.subtitle ?? event.description,
-                            },
-                            data: {
-                                url: `/schedule/${partIndex}/${eventIndex}`,
-                            },
-                            webpush: {
-                                headers: {
-                                    Urgency: 'high',
-                                },
-                                notification: {
-                                    requireInteraction: 'true',
-                                },
-                            },
+                if (subscription.data().subscribed) {
+                    promises.push(fetch(`https://fcm.googleapis.com/v1/projects/${(config.vuefire as any).options.config.projectId}/messages:send`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: 'Bearer ' + accessToken,
                         },
-                    }),
-                }).then(async (response) => {
-                    const body = await response.text()
-                    if (response.ok) {
-                        responses[subscription as string] = body
-                    } else {
-                        errors[subscription as string] = body
-                    }
-                    return response
-                }).catch((e) => {
-                    console.error(e)
-                    if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) }
-                }))
+                        body: JSON.stringify({
+                            message: {
+                                token: subscription,
+                                notification: {
+                                    title: event.title,
+                                    body: event.subtitle ?? event.description,
+                                },
+                                data: {
+                                    url: `/schedule/${partIndex}/${eventIndex}`,
+                                },
+                                webpush: {
+                                    headers: {
+                                        Urgency: 'high',
+                                    },
+                                    notification: {
+                                        requireInteraction: 'true',
+                                    },
+                                },
+                            },
+                        }),
+                    }).then(async (response) => {
+                        const body = await response.text()
+                        if (response.ok) {
+                            responses[subscription.id] = body
+                        } else {
+                            errors[subscription.id] = body
+                        }
+                        return response
+                    }).catch((e) => {
+                        console.error(e)
+                        if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) }
+                    }))
+                }
             }
         }
     }

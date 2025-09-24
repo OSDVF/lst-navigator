@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import randomColor from 'randomcolor'
-import type { FeedbackConfig, Feedback, ScheduleItem, TabulatedFeedback } from '~/types/cloud'
+import type { FeedbackConfig, Feedback, ScheduleItem, TabulatedFeedback, UpdatePayload } from '~/types/cloud'
 import { getAverage } from '@/utils/utils'
 import { useAdmin } from '~/stores/admin'
 import { stripHtml } from '~/utils/sanitize'
@@ -51,7 +51,7 @@ const p = defineProps<{
     replies: { [user: string]: Feedback },
     tabulated: TabulatedFeedback['replies'][''],
     respondents: string[],
-    onSetData?: (data: Feedback | null, userIdentifier: string) => void,
+    onSetData?: (data: UpdatePayload<Feedback> | null, userIdentifier: string) => void,
     link?: string
 }>()
 

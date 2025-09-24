@@ -18,7 +18,7 @@
             </li>
             <li>Jméno (pokud ho zadáte nebo se přihlásíte k účtu Google)</li>
         </ul>
-        Tyto osobní data používáme pouze pro účely organizce této akce ({{ useCloudStore().eventData?.title ?? '' }}), jejích dalších ročníků, a funkčnosti této aplikace. Osobní data nesdílíme s žádnou třetí
+        Tato osobní data používáme pouze pro účely organizce této akce ({{ useCloudStore().eventData?.title ?? '' }}), jejích dalších ročníků, a funkčnosti této aplikace. Osobní data nesdílíme s žádnou třetí
         stranou.
         Všechna data uživatele mohou být smazána v této aplikaci na stránce <NuxtLink to="/settings">Nastavení</NuxtLink>
     </article>

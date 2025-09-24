@@ -50,7 +50,7 @@
                             :replies="replies" :tabulated="tabulated.replies[eIndex]"
                             :respondents="tabulated.respondents" :config="config?.config?.[eIndex]"
                             :link="makeLink?.(eIndex)"
-                            @set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)" />
+                            @set-data="(data, user) => $props.onSetData?.(data, eIndex as string, user)" />
                         <tr
                             v-else-if="replies && Object.keys(replies).length > 0"
                             :class="config?.config?.[eIndex]?.type">
@@ -59,10 +59,10 @@
                                     name: eIndex as string,
                                     description: '(poškozená data)',
                                     questions: [],
-                                }" :link="makeLink?.(eIndex)"
-                                :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents"
-                                :replies="replies" :event="event?.[eIndex as number]"
-                                :on-set-data="(data: Feedback | null, user: string) => $props.onSetData?.(data, eIndex as string, user)" />
+                                }" :link="makeLink?.(eIndex)" :tabulated="tabulated.replies[eIndex]"
+                                :respondents="tabulated.respondents" :replies="replies"
+                                :event="event?.[eIndex as number]"
+                                :on-set-data="(data, user) => $props.onSetData?.(data, eIndex as string, user)" />
                         </tr>
                     </template>
                 </tbody>
@@ -76,13 +76,13 @@ import { useAdmin } from '@/stores/admin'
 import { useRespondents } from '@/stores/respondents'
 import { useCloudStore } from '@/stores/cloud'
 import { csvExport } from '~/utils/csvExport'
-import type { Feedback, FeedbackConfig, FeedbackQuestionsCustom, FeedbackQuestionsProgram, TabulatedFeedback } from '@/types/cloud'
+import type { Feedback, FeedbackConfig, FeedbackQuestionsCustom, FeedbackQuestionsProgram, TabulatedFeedback, UpdatePayload } from '@/types/cloud'
 
 const props = defineProps<{
     sectionKey: string | number,
     config?: { name: string, config: { [partName: string]: FeedbackConfig['individual'][0] } },
     feedbackSection: FeedbackQuestionsCustom | FeedbackQuestionsProgram, // firstly indexed by event, secondly by user
-    onSetData?: (data: Feedback | null, eIndex: string, userIdentifier: string) => void
+    onSetData?: (data: UpdatePayload<Feedback> | null, eIndex: string, userIdentifier: string) => void
     makeLink?: (eIndex: string | number) => string
 }>()
 

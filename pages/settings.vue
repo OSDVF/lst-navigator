@@ -27,7 +27,7 @@
         </fieldset>
         <fieldset>
             <label for="gestures">
-                <Icon name="mdi:gesture-tap" /> Povolit gesta
+                <Icon name="mdi:gesture-swipe-horizontal" /> Povolit gesta
                 <br>
                 <small class="ml-3">
                     Přesuny prstem pro navigaci
@@ -154,7 +154,7 @@
             </div>
         </fieldset>
         <h4>Aplikace</h4>
-        <fieldset v-if="!$pwa?.isPWAInstalled && $deferredPrompt?.value">
+        <fieldset v-if="config.public.installWizard && !$pwa?.isPWAInstalled && $deferredPrompt?.value">
             <label for="install">Instalace</label>
             <span>
                 <button id="install" @click="$router.push(config.public.installWizard ? '/install/0' : '/schedule')">
@@ -164,7 +164,7 @@
         </fieldset>
         <fieldset>
             <p>Verze</p>
-            <small :title="config.public.commitHash" @click="$alert(config.public.commitHash)">
+            <small :title="config.public.commitHash" @click="$nuxt.$alert(config.public.commitHash)">
                 {{ config.public.version }}
                 {{ config.public.commitMessageTime }}
             </small>

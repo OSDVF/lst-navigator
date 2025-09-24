@@ -55,6 +55,7 @@
             </div>
         </summary>
         <NuxtLink
+            v-if="settings.expandableItems"
             :to="{
                 name: 'schedule-day-event',
                 params: {
@@ -64,7 +65,7 @@
                 query: $route.query,
             }" style="position: relative">
             <!-- eslint-disable-next-line vue/no-v-html -->
-            <div class="content" v-html="entry.description && (entry.description?.includes('<p>') ? entry.description?.trim() : `<p>${entry.description}</p>`) || '<p>Žádné detaily</p>'" />
+            <div class="content" v-html="entry.description && (!empty ? entry.description?.trim() : `<p>${entry.description}</p>`) || '<p>Žádné detaily</p>'" />
             <span class="more">
                 <Icon
                     v-if="!empty || entry.feedbackType" class="icon"
@@ -102,7 +103,7 @@ const open = ref(false)
 const cloud = useCloudStore()
 const admin = useAdmin()
 const settings = useSettings()
-const empty = computed(() => !(p.entry.description?.match('<p|<br|<ol|<ul') ?? false))
+const empty = computed(() => !(p.entry.description?.match('^(<p|<br|<ol|<ul)') ?? false))
 const selectedProgram = computed(() => cloud.days?.[p.day]?.program || [])
 const router = useRouter()
 const width = ref(0)

@@ -13,8 +13,8 @@ function sanitize(str: string | FieldValue) {
 }
 
 let exportToCsv: null | typeof ExportToCsv = null
-export async function csvExport(name: string, error: Ref<string|unknown>, sections: FeedbackSections, cloud?: ReturnType<typeof useCloudStore>) {
-    const cloudStore = cloud?? useCloudStore()
+export async function csvExport(name: string, error: Ref<string | unknown>, sections: FeedbackSections, cloud?: ReturnType<typeof useCloudStore>) {
+    const cloudStore = cloud ?? useCloudStore()
     try {
         error.value = ''
         if (!exportToCsv) {
@@ -28,25 +28,27 @@ export async function csvExport(name: string, error: Ref<string|unknown>, sectio
             const part = sections[partIndex]
             if (typeof part === 'number' || part === null) { continue }
             for (const eventIndex in part) {
-                const event = part[eventIndex]
-                for (const user in event) {
-                    const feedback = event[user] as Feedback | null
-                    if (feedback?.basic || feedback?.detail || feedback?.select || feedback?.complicated?.find(c => !!c)) {
-                        if (!byUserData[user]) {
-                            byUserData[user] = {}
-                        }
-                        let compoundIndex = `${partIndex}-${eventIndex}`
-                        const potentialTitle = cloudStore.days[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
-                        if (potentialTitle) {
-                            compoundIndex += `-${potentialTitle}`
-                        }
-                        byUserData[user][compoundIndex] = feedback
-                        if (!compoundIndexes.includes(compoundIndex)) {
-                            compoundIndexes.push(compoundIndex)
-                        }
-                        const potentialInner = `${eventIndex}-0`
-                        if (compoundIndexes.includes(potentialInner)) {
-                            byUserData[user][compoundIndex] = merge(byUserData[user][compoundIndex], byUserData[user][potentialInner])
+                const event = part[eventIndex as keyof typeof part]
+                if (typeof event === 'object') {
+                    for (const user in event) {
+                        const feedback = event[user as keyof typeof event] as Feedback | null
+                        if (feedback?.basic || feedback?.detail || feedback?.select || feedback?.complicated?.find(c => !!c)) {
+                            if (!byUserData[user]) {
+                                byUserData[user] = {}
+                            }
+                            let compoundIndex = `${partIndex}-${eventIndex}`
+                            const potentialTitle = cloudStore.days[parseInt(partIndex)]?.program?.[parseInt(eventIndex)]?.title
+                            if (potentialTitle) {
+                                compoundIndex += `-${potentialTitle}`
+                            }
+                            byUserData[user][compoundIndex] = feedback
+                            if (!compoundIndexes.includes(compoundIndex)) {
+                                compoundIndexes.push(compoundIndex)
+                            }
+                            const potentialInner = `${eventIndex}-0`
+                            if (compoundIndexes.includes(potentialInner)) {
+                                byUserData[user][compoundIndex] = merge(byUserData[user][compoundIndex], byUserData[user][potentialInner])
+                            }
                         }
                     }
                 }
@@ -106,9 +108,9 @@ export async function csvExport(name: string, error: Ref<string|unknown>, sectio
             const dayInt2 = parseInt(day2)
             const programInt2 = parseInt(program2)
 
-            if(!isNaN(dayInt) && !isNaN(programInt)) {
-                if(!isNaN(dayInt2) && !isNaN(programInt2)) {
-                    if(dayInt === dayInt2) {
+            if (!isNaN(dayInt) && !isNaN(programInt)) {
+                if (!isNaN(dayInt2) && !isNaN(programInt2)) {
+                    if (dayInt === dayInt2) {
                         return programInt - programInt2
                     }
                     return dayInt - dayInt2

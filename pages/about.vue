@@ -1,7 +1,7 @@
 <template>
     <article>
         <h1>{{ $config.public.longName }}</h1>
-        <img :src="$config.public.icon" class="noinvert" alt="Ikona aplikace">
+        <img :src="$config.public.icon" class="noinvert mw-full" alt="Ikona aplikace">
 
         <p>
             {{ $config.public.welcome }}
@@ -13,6 +13,7 @@
             Případné chyby hlaste na {{ $config.public.supportEmail }}.
         </p>
 
+        <NuxtLink to="/qr"><Icon name="mdi:qrcode" /> Sdílet aplikaci QR kódem</NuxtLink><br>
         <NuxtLink to="/privacy"><Icon name="mdi:account-lock" /> Zobrazit zásady ochrany soukromí</NuxtLink>
     </article>
 </template>

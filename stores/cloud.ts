@@ -170,7 +170,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 }
 
                 batch.set(doc(feedback.col.value!, partIndex), part, { merge: true })
-                batch.delete(doc(feedback.col.value!, partIndex, settings.userIdentifier))
+                batch.delete(doc(feedback.col.value!, settings.userIdentifier))
 
                 console.debug(`Remove user ${partIndex}/${uid}`)
             }
@@ -263,7 +263,7 @@ export const useCloudStore = defineStore('cloud', () => {
             feedback.dirtyTime.value = 0// force refresh from remote
             feedback.hydrate(feedback.online.value)
             const nick = feedback.online.value[newId]
-            if (typeof nick.nickname == 'string') {
+            if (typeof nick !== 'undefined' && typeof nick.nickname == 'string') {
                 settings.userNickname = nick.nickname
             }
         } else {// clear feedback if user is not logged in

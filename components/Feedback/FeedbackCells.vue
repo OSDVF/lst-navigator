@@ -28,7 +28,7 @@
 </template>
 <script setup lang="ts">
 
-import type { Feedback, FeedbackConfig, ScheduleItem, TabulatedFeedback } from '@/types/cloud'
+import type { Feedback, FeedbackConfig, ScheduleItem, TabulatedFeedback, UpdatePayload } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 import { getAverage } from '@/utils/utils'
 import { stripHtml } from '@/utils/sanitize'
@@ -40,7 +40,7 @@ const p = defineProps<{
     event?: ScheduleItem,
     config?: FeedbackConfig['individual'][0],
     link?: string,
-    onSetData?: (data: Feedback | null, userIdentifier: string) => void
+    onSetData?: (data: UpdatePayload<Feedback> | null, userIdentifier: string) => void
 }>()
 
 const admin = useAdmin()

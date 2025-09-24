@@ -41,7 +41,7 @@ const config = defineNuxtConfig({
                 { rel: 'mask-icon', href: '/safari-pinned-tab.svg', color: process.env.MASK_COLOR ?? defaultMaskColor },
             ],
             meta: [
-                { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no' },
+                { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content' },
                 { name: 'msapplication-TileColor', content: process.env.MASK_COLOR ?? defaultMaskColor },
                 { name: 'apple-mobile-web-app-capable', content: 'yes' },
                 { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
@@ -115,6 +115,7 @@ const config = defineNuxtConfig({
     },
     ignore: installWizard ? [] : [
         'pages/install/**',
+        'layouts/install.vue',
     ],
     modules: [
         ...(process.env.SENTRY_DISABLE !== 'true' ? ['@sentry/nuxt/module'] : []),

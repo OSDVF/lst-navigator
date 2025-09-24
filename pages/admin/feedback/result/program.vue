@@ -5,7 +5,7 @@
             :key="`p${key}`" :section-key="key"
             :feedback-section="onlyIntIndexed(programPartsFeedback[key as any])"
             :make-link="(eIndex: string | number) => `/schedule/${key}/${eIndex}`"
-            @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)" />
+            @set-data="(data, eIndex, user) => cloudStore.feedback.set(key, eIndex, data, user)" />
         <NuxtLink to="other">
             <button class="large">
                 <Icon name="mdi:chevron-double-right" /> Další části feedbacku
@@ -15,7 +15,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Feedback } from '@/types/cloud'
 import { onlyIntIndexed } from '@/utils/utils'
 import { useCloudStore } from '@/stores/cloud'
 

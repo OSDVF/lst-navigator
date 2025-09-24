@@ -4,7 +4,7 @@
             v-for="key in Object.keys(otherFeedback).filter(key => !!otherFeedback[key])"
             :key="`p${key}`" :feedback-section="otherFeedback[key as any]" :section-key="key"
             :config="{ config: config[key], name: key }"
-            @set-data="(data: Feedback | null, eIndex: string, user: string) => cloudStore.feedback.set(key, eIndex, data, user)" />
+            @set-data="(data, eIndex, user) => cloudStore.feedback.set(key, eIndex, data, user)" />
     </div>
 </template>
 
@@ -21,7 +21,7 @@ const otherFeedback = computed(() => {
             const val = replies[key]
             const id = (val as any).id
             if (typeof val === 'object' && isNaN(parseInt(id)) && Object.hasOwn(config.value, id)) {
-                result[id] = val
+                result[id] = fromUpdatePayload(val, {})!
             }
         }
     }

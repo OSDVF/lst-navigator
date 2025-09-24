@@ -21,11 +21,11 @@
 </template>
 
 <script setup lang="ts">
-import type { Feedback } from '@/types/cloud'
+import type { Feedback, UpdatePayload } from '@/types/cloud'
 import { useAdmin } from '@/stores/admin'
 
 const props = defineProps<{
-    onSetData?:(data: Feedback | null, userIdentifier: string) => void,
+    onSetData?:(data: UpdatePayload<Feedback> | null, userIdentifier: string) => void,
     replies: (Feedback | null)[],
     respondents: string[]
     questions?: string[],
