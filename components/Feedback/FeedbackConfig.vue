@@ -1,5 +1,9 @@
 <template>
-    <fieldset :class="loading && 'loading'" :disabled="p.disabled">
+    <fieldset
+        :class="{
+            'border-0': true,
+            disabled
+        }">
         <legend class="flex-center">
             <input
                 v-autowidth="{
@@ -31,7 +35,7 @@
                     <Icon name="mdi:clipboard-text" />
                 </span>
                 <span
-                    class="button" title="Odebrat sekci" @click.exact="deleteDocAndShift"
+                    class="button" title="Odebrat sekci" @click.exact="deleteDocAndShift()"
                     @click.ctrl="deleteDocAndShift(true)">
                     <Icon name="mdi:trash-can" />
                 </span>
@@ -66,19 +70,30 @@
         </fieldset>
         <div v-if="type != 'group'" class="mt-2 relative" title="Vlastní otázky" tabindex="0">
             <p v-if="!editedCategory.individual?.length">
-                Pokud nepřidáte žádné otázky, bude zobrazena hláška "Programy můžete hodnotit přímo v harmonogramu" a odkaz na harmonogram.
+                Pokud nepřidáte žádné otázky, bude zobrazena hláška "Programy můžete hodnotit přímo v harmonogramu" a
+                odkaz na harmonogram.
             </p>
             <FeedbackEditIndividual
                 v-for="(q, i) in questionsOrBlank" :key="`i${i}`" :disabled="p.disabled"
-                :model-value="q" :index="i" @update:model-value="e => updateQuestion(e, i)"
-                @delete="updateQuestion(undefined, i)" />
+                :last="i == questionsOrBlank.length - 1" :model-value="q" :index="i"
+                @update:model-value="e => updateQuestion(e, i)" @delete="updateQuestion(undefined, i)" @insert="() => {
+                    if (!editedCategory.individual) { editedCategory.individual = [] } editedCategory.individual = [
+                        ...toRaw(editedCategory.individual.slice(0, i + 1)),
+                        blank,
+                        ...toRaw(editedCategory.individual.slice(i + 1))
+                    ]
+                }" @move-up="editedCategory.individual = [
+                    ...toRaw(editedCategory.individual.slice(0, i - 1)),
+                    toRaw(q),
+                    toRaw(editedCategory.individual[i - 1]),
+                    ...toRaw(editedCategory.individual.slice(i + 1))
+                ]" @move-down="editedCategory.individual = [
+                    ...toRaw(editedCategory.individual.slice(0, i)),
+                    ...(editedCategory.individual.length > i + 1) ? [toRaw(editedCategory.individual[i + 1])] : [],
+                    toRaw(q),
+                    ...toRaw(editedCategory.individual.slice(i + 2)),
+                ]" />
             <br>
-            <button
-                type="button" title="Přidat otázku" class="absolute" style="bottom: .5rem; left:.5rem"
-                @click="() => { if (!editedCategory.individual) { editedCategory.individual = [] } editedCategory.individual?.push(blank) }">
-                +
-                <Icon name="mdi:form-dropdown" />
-            </button>
         </div>
         <div v-if="error" class="p">
             <code tabindex="0" title="Chyba" class="error">{{ error }}</code>
@@ -103,13 +118,12 @@ const p = defineProps<{
 }>()
 const error = ref()
 const loading = ref(false)
-
-const e = defineEmits<{
-    beginUpdate: [],
-    endUpdate: [],
-}>()
+defineExpose({
+    loading,
+})
 
 const admin = useAdmin()
+const ui = useUI()
 const cloud = useCloudStore()
 const doc = computed(() => cloud.eventDoc('feedbackConfig', p.index.toString()))
 const dummy: FeedbackConfig = {
@@ -148,12 +162,16 @@ const safeType = computed({
 let previousValue = cloneDeep(editedCategory.value)
 watch(editedCategory, (value) => {
     if (!reloading.value && !isEqual(value, previousValue)) {
-        e('beginUpdate')
+        const focused = document.activeElement
+        ui.startLoading()
         error.value = undefined
         loading.value = true
         setDoc(doc.value, value, { merge: true }).catch(e => error.value = e).finally(() => {
             loading.value = false
-            e('endUpdate')
+            ui.stopLoading()
+            if (focused instanceof HTMLElement) {
+                focused.focus()
+            }
         })
     }
     previousValue = cloneDeep(value)
@@ -195,11 +213,14 @@ const questionsOrBlank = computed({
 
 function updateQuestion(value: FeedbackConfig['individual'][0] | undefined, i: number) {
     if (value) {
-        questionsOrBlank.value[i] = value
+        questionsOrBlank.value = [
+            ...questionsOrBlank.value.slice(0, i),
+            value,
+            ...questionsOrBlank.value.slice(i + 1),
+        ]
     } else {
         questionsOrBlank.value.splice(i, 1)
     }
-    editedCategory.value.individual = questionsOrBlank.value
 }
 
 const matches = computed(() => {
@@ -263,7 +284,7 @@ async function deleteDocAndShift(force = false) {
         reloading.value = true
         const promises: Promise<void>[] = []
         const shapshot = cloneDeep(cloud.feedbackConfig)
-        e('beginUpdate')
+        ui.startLoading()
         if (p.index !== shapshot.length - 1) {
             for (let i = p.index; i < shapshot.length - 1; i++) {
                 promises.push(setDoc(cloud.eventDoc('feedbackConfig', i.toString()), shapshot[i + 1]))
@@ -274,53 +295,9 @@ async function deleteDocAndShift(force = false) {
         nextTick(() => {
             reloading.value = false
             loading.value = false
-            e('endUpdate')
+            ui.stopLoading()
         })
     }
 }
 
 </script>
-
-<style lang="scss">
-fieldset.loading {
-    border-image-slice: 1;
-    animation: border 1s infinite linear;
-}
-
-@keyframes border {
-    0% {
-        border-top-color: #f00;
-        border-right-color: #ff0;
-        border-bottom-color: #0f0;
-        border-left-color: #0ff;
-    }
-
-    25% {
-        border-top-color: #0ff;
-        border-right-color: #f00;
-        border-bottom-color: #ff0;
-        border-left-color: #0f0;
-    }
-
-    50% {
-        border-top-color: #0f0;
-        border-right-color: #0ff;
-        border-bottom-color: #f00;
-        border-left-color: #ff0;
-    }
-
-    75% {
-        border-top-color: #ff0;
-        border-right-color: #0f0;
-        border-bottom-color: #0ff;
-        border-left-color: #f00;
-    }
-
-    100% {
-        border-top-color: #f00;
-        border-right-color: #ff0;
-        border-bottom-color: #0f0;
-        border-left-color: #0ff;
-    }
-}
-</style>

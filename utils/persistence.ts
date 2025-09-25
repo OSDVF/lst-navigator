@@ -16,15 +16,15 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
             const storedVal = LocalStorage.getItem(key)
             if (storedVal !== internalRef.value) {
                 internalRef.value = storedVal
-                if (import.meta.dev) {
-                    console.log('Hydrated', name, storedVal)
-                }
             }
+        }
+        if (import.meta.dev) {
+            console.log('Hydrated', name, internalRef.value)
         }
         triggerRef(internalRef)
     }
     if (getCurrentInstance()) {
-        onMounted(hydrate)
+        onPrehydrate(hydrate)
     } else {
         app.hook('app:mounted', hydrate)
     }

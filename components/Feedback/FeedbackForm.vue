@@ -69,6 +69,7 @@
                             :rating-value="normalizedData.complicated?.[index] ?? 0"
                             @rating-selected="(value: number) => controls.syncComplicated(index, value)" />
                         <input
+                            v-if="type === 'multiple'"
                             :id="`complicated-${uid}-${index}`" type="checkbox" :name="`complicated-${uid}-${index}`"
                             :title="multipleEmpty ? 'Žádná odpověď' : undefined" :style="{
                                 opacity: multipleEmpty ? .8 : 1,

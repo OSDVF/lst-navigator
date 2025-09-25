@@ -6,7 +6,7 @@
             <meta name="theme-color" :content="windowIsDark() ? '#000000' : $config.public.themeColor">
         </Head>
     </LazyClientOnly>
-    <NuxtLayout :key="$route.path" fallback="default">
+    <NuxtLayout :key="$route.path" :class="useSettings().blur ? 'transp' : ''" fallback="default">
         <NuxtPage />
     </NuxtLayout>
     <LazyClientOnly>

@@ -65,6 +65,10 @@ main .average-rating {
     border: 0 !important
 }
 
+.multiselect {
+    cursor: pointer;
+}
+
 .tab {
     border-bottom: 3px solid #8787873d;
 
@@ -191,7 +195,7 @@ fieldset {
     &:hover,
     &:focus,
     &:focus-within {
-        .fieldset-edit {
+        & > * > .fieldset-edit {
             display: block;
         }
     }

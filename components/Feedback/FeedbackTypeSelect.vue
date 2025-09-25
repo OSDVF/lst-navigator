@@ -22,10 +22,10 @@
                     <Icon :name="type == 'complicated' ? 'mdi:chat-question-outline' : 'mdi:arrow-right'" />
                     {{ index + 1 }}
                 </label>&ensp;
-                <input :id="`question${index}`" v-model.lazy="questions![index]" type="text" name="questions[]">
-                <button :disabled="p.disabled" type="button" title="Odebrat" @click="questions!.splice(index, 1)">
+                <input :id="`question${index}`" v-model.lazy="questions![index]" type="text" name="questions[]" required>
+                <span :disabled="p.disabled" class="button" title="Odebrat" @click="questions!.splice(index, 1)">
                     <Icon name="mdi:trash-can" />
-                </button>
+                </span>
             </div>
             <button
                 v-show="questionsOrBlank[questionsOrBlank.length - 1]" :disabled="p.disabled" type="button"

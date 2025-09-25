@@ -1,9 +1,5 @@
 <template>
-    <div
-        :class="{
-            transp: useSettings().blur
-        }">
-
+    <div>
         <Head>
             <Title>{{ title }}</Title>
         </Head>
@@ -48,7 +44,7 @@
             <ToastArea />
         </div>
         <ProgressBar
-            v-show="isServer || cloudStore.eventLoading || $downloadingUpdate?.value"
+            v-show="isServer || ui.isLoading || cloudStore.eventLoading || $downloadingUpdate?.value"
             class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />

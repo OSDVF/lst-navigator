@@ -55,8 +55,7 @@
                     <h3>Sekce dotazníku</h3>
                     <FeedbackConfig
                         v-for="(_, index) in configCategoriesOrDefault" :key="`c${index}`"
-                        :disabled="loading != 0" class="mb-2" :index="index" :is-dummy="!cloud.feedbackConfig?.length"
-                        @begin-update="loading++" @end-update="loading--" />
+                        :disabled="ui.isLoading" class="mb-2" :index="index" :is-dummy="!cloud.feedbackConfig?.length" />
                     <br>
                     <button
                         v-show="cloud.feedbackConfig?.length" title="Přidat sekci" type="button" @click="setDoc(cloud.eventDoc('feedbackConfig', configCategoriesOrDefault.length.toString()), {
@@ -116,8 +115,8 @@ definePageMeta({
 
 const admin = useAdmin()
 const cloud = useCloudStore()
+const ui = useUI()
 const error = ref()
-const loading = ref(0)
 const previewDay = ref(parseInt(useRoute().hash) || 0)
 const largeBreakpoint = 600
 const largeScreen = ref(import.meta.browser && window.innerWidth > largeBreakpoint)

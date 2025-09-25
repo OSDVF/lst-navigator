@@ -59,19 +59,19 @@ export const debounce = <T extends (...args: any[]) => any>(callback: T, waitFor
 const checkWidth = (el: AutowidthInput) => {
     const { mirror, options } = el
 
-    if(!options.overflowParent) {
-        let parent:HTMLElement = el
-        for(let i = 0; i < (options.parentLevel ?? 1); i++) {
+    if (!options.overflowParent) {
+        let parent: HTMLElement = el
+        for (let i = 0; i < (options.parentLevel ?? 1); i++) {
             parent = parent.parentElement!
         }
-        if(parent.clientWidth) {
+        if (parent.clientWidth) {
             const prev = parseFloat(el.style.maxWidth.substring(5)) || 0//remove calc(
             const w = parent.clientWidth - el.offsetLeft + parent.offsetLeft
-            if(Math.abs(prev - w) >= options.overflowMinZone)
-            {
-                el.style.maxWidth = `calc(${w}px - ${getComputedStyle(el).marginRight} - ${getComputedStyle(el).marginLeft})`
+            if (Math.abs(prev - w) >= options.overflowMinZone && (!prev || w < prev)) {
+                const comp = getComputedStyle(el)
+                el.style.maxWidth = `calc(${w}px - ${comp.marginRight} - ${comp.marginLeft})`
             }
-            
+
         }
     }
 
@@ -169,7 +169,7 @@ const autowidth = {
         }
     },
     unmounted: function (el: AutowidthInput) {
-        if(typeof el.mirror == 'undefined') {
+        if (typeof el.mirror == 'undefined') {
             console.warn('Autosize unmounted without mirror', el)
         }
         else {
