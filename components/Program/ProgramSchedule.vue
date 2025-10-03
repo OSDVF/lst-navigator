@@ -9,7 +9,10 @@
             <label v-for="(location, index) in locations" :key="`location${index}`" :for="`location${index}`">
                 <input
                     :id="`location${index}`" type="text" :name="`location${index}`" placeholder="Název místa"
-                    :value="location" @change="e => updateLocation(index, (e.target as HTMLInputElement).value)">
+                    :value="location" @change="e => updateLocation(index, (e.target as HTMLInputElement).value || '')">
+                <span class="button" title="Odebrat" @click="updateLocation(index, undefined)">
+                    <Icon name="mdi:trash-can" />
+                </span>
                 <br>
             </label>
             <button type="button" title="Přidat lokaci" @click="addLocation">+</button>
@@ -144,10 +147,15 @@ async function addLocation() {
     }, { merge: true })
 }
 
-async function updateLocation(index: number, text: string) {
+async function updateLocation(index: number, text: string | undefined) {
     const newLocations = toRaw(locations.value)
 
-    newLocations[index] = text
+    if (typeof text === 'undefined') {
+        newLocations.splice(index, 1)
+    }
+    else {
+        newLocations[index] = text
+    }
 
     await setDoc(cloud.eventDoc('schedule', selectedDayId.value), {
         locations: newLocations,
