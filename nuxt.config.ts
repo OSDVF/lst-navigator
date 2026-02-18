@@ -13,6 +13,7 @@ import {
 const isDevMode = process.env.NODE_ENV !== 'production'
 const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
 const installWizard = process.env.INSTALL_WIZARD !== 'false'
+const emulators = process.env.FIREBASE_EMULATOR === 'true'
 
 const messagingConfig = {
     notifications_title: process.env.VITE_APP_SHORT_NAME ?? 'Upomínka z aplikace',
@@ -303,8 +304,8 @@ const config = defineNuxtConfig({
             ...(process.env.NOTIFICATIONS === 'true' ? { messagingSenderId: process.env.VITE_APP_MESSAGINGSENDERID } : {}),
         },
         auth: {
-            enabled: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
-            sessionCookie: !process.argv.includes('generate'),
+            enabled: !!process.env.GOOGLE_APPLICATION_CREDENTIALS && process.env.VITE_APP_AUTHDOMAIN,
+            sessionCookie: !process.argv.includes('generate') && !emulators,
         },
         appCheck: process.env.VITE_APP_RECAPTCHA && process.env.FIREBASE_APPCHECK !== 'false'
             ? {
@@ -320,7 +321,7 @@ const config = defineNuxtConfig({
             title: process.env.VITE_APP_SHORT_NAME,
             longName: process.env.VITE_APP_NAME,
             defaultEvent: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
-            emulators: process.env.FIREBASE_EMULATOR === 'true',
+            emulators,
             icon: process.env.ICON,
             imageCacheFirst: isDevMode,
             installStepCount,

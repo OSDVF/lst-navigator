@@ -6,7 +6,9 @@ import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } 
 import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
 import { ref as storageRef } from '@firebase/storage'
 import { getMessaging, getToken } from 'firebase/messaging'
-import { GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, sendEmailVerification } from 'firebase/auth'
+import {
+    GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, sendEmailVerification,
+} from 'firebase/auth'
 import { useSettings } from '@/stores/settings'
 import { usePersistentRef } from '@/utils/persistence'
 import { UserLevel } from '@/types/cloud'
@@ -34,7 +36,7 @@ export const defaultQuestions = [
 const googleAuthProvider = new GoogleAuthProvider()
 
 let probe = true
-if (!import.meta.browser) {
+if (!import.meta.browser && import.meta.env.FIREBASE_EMULATOR !== 'true') {
     // For the use case of SSR without internet access
     // probe the firestore firstly because otherwise we get infinite loading
     try {
