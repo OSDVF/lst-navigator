@@ -43,6 +43,8 @@ export function toJSDate(date?: string) {
     return new Date(year, month - 1, day)
 }
 
+export function toFirebaseDate(date: undefined): null;
+export function toFirebaseDate(date: Date): string;
 export function toFirebaseDate(data?: Date) {
     if (!data) { return null }
     return `${data.getFullYear()}-${toFirebaseMonthDay(data)}`
@@ -190,4 +192,7 @@ export function download(filename: string, text: string) {
     element.click()
 
     document.body.removeChild(element)
+}
+export function useLang() {
+    return computed(() => import.meta.client ? navigator.language : 'cs-CZ')
 }

@@ -77,7 +77,13 @@ export type EventDescription<T = string> = {
      */
     advanced?: boolean,
     title: string,
-    start: string, // in format 2023-01-30
+    /**
+     * YYYYY-MM-D
+     */
+    start: string,
+    /**
+     * YYYYY-MM-D
+     */
     end: string,
 
     description: string,

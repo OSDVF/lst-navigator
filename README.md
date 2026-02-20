@@ -32,6 +32,11 @@ Used for [Moravian-Silesian Youth of Evangelic Church of Czech Brethren](https:/
 ## Setup
 Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
+0. Install firebase CLI
+```bash
+bun add --global firebase-cli firebase-tools
+```
+
 1. Make sure to install the dependencies:
 - [bun](https://bun.sh/)
 - dependencies in project folder
@@ -47,7 +52,12 @@ bun install
 Start the development server on `https://localhost:3000`:
 
 ```bash
-bun dev
+NODE_TLS_REJECT_UNAUTHORIZED=0 bun -b dev
+```
+
+### Emulators
+```bash
+bun -b emulator
 ```
 
 Note the server runs behind HTTPS wihtout HTTP redirects (otherswise firebase auth won't work).
@@ -57,7 +67,7 @@ Note the server runs behind HTTPS wihtout HTTP redirects (otherswise firebase au
 Build the application for production:
 
 ```bash
-bun generate
+bun -b generate
 ```
 
 Locally preview production build:

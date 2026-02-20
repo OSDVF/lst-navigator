@@ -20,6 +20,12 @@
             ref="form" :truncate-option="importInto" @import="importJson" @error="e => error = e">
             <template #legend>
                 {{ importText }}
+                <input id="shiftDateEnabled" v-model="shiftDateEnabled" type="checkbox">
+                <label for="shiftDateEnabled">Posunout datum události</label>
+                <template v-if="shiftDateEnabled">
+                    <input id="shiftDate" v-model="shiftDate" type="date">
+                    <DateFormat />
+                </template>
             </template>
             {{ importText }}
         </ImportForm>
@@ -58,9 +64,9 @@
                 <Icon name="mdi:leak" /> Povolit přenosy uživatelských dat
             </label>
             <input id="transfers" v-model="editedEvent.transfers" type="checkbox" name="transfers">
-            
+
             <br>
-            <label for="advanced">
+            <label for="advanced" title="Např. manuální synchronizace feedbacku a poznámek">
                 <Icon name="mdi:account-settings" /> Povolit uživatelům pokročilá nastavení
             </label>
             <input id="advanced" v-model="editedEvent.advanced" type="checkbox" name="advanced">
@@ -150,7 +156,7 @@ import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
 import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
-import { toFirebaseMonthDay, toJSDate, toFirebaseDate } from '@/utils/utils'
+import { toFirebaseMonthDay, toJSDate, toFirebaseDate, useLang } from '@/utils/utils'
 import { EventSubcollectionsList, type EventDescription, type ScheduleDay } from '~/types/cloud'
 import { ImportForm } from '#components'
 import pickBy from 'lodash.pickby'
@@ -165,7 +171,7 @@ definePageMeta({
 
 const cloud = useCloudStore()
 const error = ref()
-const lang = computed(() => import.meta.client ? navigator.language : 'cs-CZ')
+const lang = useLang()
 enum Actions {
     Nothing, New, Edit
 }
@@ -321,7 +327,7 @@ async function editEvent(createNew = false) {
             cooking: null,
             date: toFirebaseDate(i),
             dishes: null,
-            name: toTitleCase(i.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' }).replace('. ', '. ')),
+            name: dayName(i),
             program: arrayUnion(),
             manager: null,
             ...dayContent,
@@ -363,6 +369,9 @@ const table = ref<{ dt?: Api<typeof eventsIndexed.value> }>()
 const isSelection = ref(false)
 const importInto = computed(() => isSelection.value && action.value != Actions.New)
 const selectedTitle = ref<string>()
+const shiftDateEnabled = ref(false)
+const shiftDate = ref<Date>()
+onMounted(() => shiftDate.value = new Date())
 const importText = computed(() => importInto.value ? 'Importovat do ' + (selectedTitle.value ?? '...') : 'Importovat novou')
 function selectionChanged() {
     if (table.value?.dt) {
@@ -432,7 +441,7 @@ function deleteSelected() {
     }
 }
 
-async function importJson(source: EventDescription<DocumentData>, merge: boolean) {
+async function importJson(source: Record<string, EventDescription<DocumentData>>, merge: boolean) {
     if (fs) {
         for (const importingEventId in source) {// there can be multiple events to import
             const data = source[importingEventId as keyof typeof source]
@@ -458,7 +467,30 @@ async function importJson(source: EventDescription<DocumentData>, merge: boolean
                 }
             }
             // Event props
-            const eventMetaProps = pickBy(data, (_, docKey) => !EventSubcollectionsList.includes(docKey as any))
+            const eventMetaProps = pickBy(data, (_, docKey) => !EventSubcollectionsList.includes(docKey as any)) as EventDescription
+            if (shiftDateEnabled.value) {
+                if (!shiftDate.value) {
+                    throw new Error('Datum posunutého začátku události nezadáno')
+                }
+                const start = toJSDate(eventMetaProps.start).getTime()
+                const end = toJSDate(eventMetaProps.end).getTime()
+                const duration = end - start
+                const day = 1000 * 60 * 24
+                const durationDays = duration / day
+                const shiftStartMilis = shiftDate.value.getTime()
+                eventMetaProps.start = toFirebaseDate(shiftDate.value)
+                eventMetaProps.end = toFirebaseDate(new Date(shiftStartMilis + duration))
+
+                const sortedDays = (data.schedule as (ScheduleDay & { id: string })[]).toSorted((a, b) => toJSDate(a.date).getTime() - toJSDate(b.date).getTime())
+                let thisDay = shiftStartMilis
+                for (let i = 0; i < durationDays; i++, thisDay += day) {
+                    const thisDate = new Date(thisDay)
+                    sortedDays[i].id = `${thisDate.getMonth() + 1}-${thisDate.getDate()}`
+                    sortedDays[i].date = toFirebaseDate(thisDate)
+                    sortedDays[i].name = dayName(thisDate)
+                }
+                data.schedule = sortedDays
+            }
             setDoc(docs.event, eventMetaProps, { merge })
             // Subdocuments
             for (const sub of EventSubcollectionsList) {
@@ -480,6 +512,10 @@ function toTitleCase(s: string) {
     return s.replace(/([^\s:-])([^\s:-]*)/g, function ($0, $1, $2) {
         return $1.toUpperCase() + $2.toLowerCase()
     })
+}
+
+function dayName(date: Date) {
+    return toTitleCase(date.toLocaleDateString(lang.value, { weekday: 'long', month: 'numeric', day: 'numeric' }).replace('. ', '. '))
 }
 
 </script>

@@ -44,7 +44,7 @@
             <button
                 type="button" title="Odstranit místo" @pointerenter="permitSwipe = false"
                 @pointerleave="permitSwipe = true" @click="delete editingItem.location">
-                <Icon name="mdi:trash" />
+                <Icon name="mdi:trash-can" />
             </button>
         </p>
         <p>
