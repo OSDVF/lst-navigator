@@ -24,7 +24,7 @@
             class="w-full autosize mb-1 editable" type="text" name="description" placeholder="Popisek otázky"
             @change="descriptionChange" />
 
-        <span class="error" v-if="error">{{ error }}</span>
+        <span v-if="error" class="error">{{ error }}</span>
 
         <div class="relative">
             <div v-show="!p.disabled" :class="{ 'fieldset-edit': true, disabled: p.disabled, 'edit-bottom': true }">

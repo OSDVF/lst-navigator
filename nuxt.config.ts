@@ -104,6 +104,7 @@ const config = defineNuxtConfig({
             // remove preload links
             for (const key in manifest) {
                 const entry = manifest[key]
+                if (!entry) { continue }
                 entry.dynamicImports = entry.dynamicImports?.filter((x) => !notWanted.some((y) => x.includes(y)))
                 entry.preload = entry.preload = false
                 entry.prefetch = false
@@ -144,7 +145,7 @@ const config = defineNuxtConfig({
                 '/schedule',
                 '/settings',
                 '/update',
-                ...[...Array(prerenderDays).keys()].map((i) => `/schedule/${i}`),
+                ...new Array(prerenderDays).keys().map((i) => `/schedule/${i}`),
             ],
         },
         esbuild: {
@@ -227,7 +228,7 @@ const config = defineNuxtConfig({
     routeRules: {
         '/clear': {
             headers: {
-                [firebaseConfig.hosting.headers[0].headers[0].key]: firebaseConfig.hosting.headers[0].headers[0].value,
+                [firebaseConfig.hosting.headers[0]!.headers[0]!.key]: firebaseConfig.hosting.headers[0]!.headers[0]!.value,
             },
         },
         '/admin/**': {
@@ -326,6 +327,7 @@ const config = defineNuxtConfig({
             imageCacheFirst: isDevMode,
             installStepCount,
             installWizard,
+            keepOrphanCollections: process.env.KEEP_ORPHAN_COLLETIONS,
             company: process.env.COMPANY,
             companyLink: process.env.COMPANY_LINK,
             compileTime,

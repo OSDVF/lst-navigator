@@ -286,16 +286,4 @@ onMounted(async () => {
     max-width: 97vw;
     width: 100%;
 }
-
-.rich-editor {
-    width: 100%;
-    background-color: white;
-    border: 1px inset black;
-    border-radius: 2px;
-    padding: 4px;
-    margin-block: 1px;
-    font-size: 1rem;
-    overflow-x: auto;
-    resize: both
-}
 </style>

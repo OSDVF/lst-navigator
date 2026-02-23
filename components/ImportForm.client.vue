@@ -13,6 +13,7 @@
                     <Icon name="mdi:upload" />
                     Vybrat soubor
                 </button>
+                <slot name="settings" />
                 <button
                     v-if="files?.length" type="button"
                     @click="importText ? null : (files?.item(0)?.text().then(t => t ? (importText = t) : null) ?? (importText = '')); reset()">
@@ -20,10 +21,11 @@
                     Vlastní text
                 </button>
                 <br>
-                <textarea
-                    v-if="importText !== null" ref="textarea" v-model="importText"
-                    :class="{ autosize: !files?.length, 'w-full': true }" :disabled="!!files?.length"
-                    :style="{ 'max-height': '100vh' }" placeholder="Vložit z textu" />
+                <div
+                    v-if="importText !== null" v-no-overflow contenteditable
+                    :class="{ 'rich-editor': true, 'w-full': true, disabled: !!files?.length }" style="max-height: 100vh"
+                    placeholder="Vložit z textu" @blur="e => importText = (e.target as HTMLElement).innerText"
+                    v-text="importText" />
             </div>
             <br>
             <div>
@@ -48,7 +50,7 @@
 <script lang="ts" setup>
 import { arrayUnion, type CollectionReference, doc, type DocumentReference } from 'firebase/firestore'
 
-const { textarea, input: importText } = useTextareaAutosize()
+const importText = ref<string>()
 const importing = ref(false)
 
 const p = defineProps<{
@@ -91,9 +93,9 @@ async function importJson() {
         importText.value ||= await files?.value?.item(0)?.text() ?? ''
         if (!importText.value) { return }
         const json = await JSON.parse(importText.value)
-        if(p.union) {
-            for(const key in json) {
-                if(Array.isArray(json[key])) {
+        if (p.union) {
+            for (const key in json) {
+                if (Array.isArray(json[key])) {
                     json[key] = arrayUnion(...json[key])
                 }
             }
@@ -106,6 +108,8 @@ async function importJson() {
             }
         }
         e('import', json, !(truncate.value ?? p.truncateDefault))
+        reset()
+        importText.value = undefined
     } catch (er) {
         e('error', er)
     }

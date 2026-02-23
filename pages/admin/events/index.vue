@@ -20,12 +20,16 @@
             ref="form" :truncate-option="importInto" @import="importJson" @error="e => error = e">
             <template #legend>
                 {{ importText }}
-                <input id="shiftDateEnabled" v-model="shiftDateEnabled" type="checkbox">
-                <label for="shiftDateEnabled">Posunout datum události</label>
-                <template v-if="shiftDateEnabled">
-                    <input id="shiftDate" v-model="shiftDate" type="date">
-                    <DateFormat />
-                </template>
+            </template>
+            <template #settings>
+                <div>
+                    <input id="shiftDateEnabled" v-model="shiftDateEnabled" type="checkbox">
+                    <label for="shiftDateEnabled">Posunout datum události</label><br>
+                    <template v-if="shiftDateEnabled">
+                        <input id="shiftDate" v-model="shiftDate" type="date">&nbsp;
+                        <DateFormat />
+                    </template>
+                </div>
             </template>
             {{ importText }}
         </ImportForm>
@@ -370,8 +374,7 @@ const isSelection = ref(false)
 const importInto = computed(() => isSelection.value && action.value != Actions.New)
 const selectedTitle = ref<string>()
 const shiftDateEnabled = ref(false)
-const shiftDate = ref<Date>()
-onMounted(() => shiftDate.value = new Date())
+const shiftDate = ref<string>()
 const importText = computed(() => importInto.value ? 'Importovat do ' + (selectedTitle.value ?? '...') : 'Importovat novou')
 function selectionChanged() {
     if (table.value?.dt) {
@@ -380,6 +383,11 @@ function selectionChanged() {
         selectedTitle.value = isSelection.value ? data[0][1] : undefined
     }
 
+}
+function deselect() {
+    table.value?.dt?.rows().deselect()
+    selectedTitle.value = undefined
+    isSelection.value = false
 }
 async function startEditingSelected() {
     if (table.value?.dt && fs) {
@@ -435,7 +443,13 @@ function deleteSelected() {
         if (selectedEvent) {
             if (confirm(`Opravdu chcete smazat akci ${selectedEvent.title}?`)) {
                 deleteDoc(doc(fs, 'events', selectedEvent.id))
-                deleteCollection(fs, collection(fs, selectedEvent.id), 10)// delete in the legacy doc tree
+                const keep = config.public.keepOrphanCollections.split(',')
+                for (const col of EventSubcollectionsList.filter(a => !keep.includes(a))) {
+                    deleteCollection(eventSubCollection(fs, selectedEvent.id, col))
+                }
+
+                deleteCollection(collection(fs, selectedEvent.id))// delete in the legacy doc tree
+                deselect()
             }
         }
     }
@@ -468,28 +482,30 @@ async function importJson(source: Record<string, EventDescription<DocumentData>>
             }
             // Event props
             const eventMetaProps = pickBy(data, (_, docKey) => !EventSubcollectionsList.includes(docKey as any)) as EventDescription
-            if (shiftDateEnabled.value) {
-                if (!shiftDate.value) {
-                    throw new Error('Datum posunutého začátku události nezadáno')
-                }
+            if (shiftDateEnabled.value && shiftDate.value) {
                 const start = toJSDate(eventMetaProps.start).getTime()
                 const end = toJSDate(eventMetaProps.end).getTime()
                 const duration = end - start
-                const day = 1000 * 60 * 24
+                const day = 1000 * 3600 * 24
                 const durationDays = duration / day
-                const shiftStartMilis = shiftDate.value.getTime()
-                eventMetaProps.start = toFirebaseDate(shiftDate.value)
+                const shiftStartMilis = toJSDate(shiftDate.value).getTime()
+                eventMetaProps.start = shiftDate.value
                 eventMetaProps.end = toFirebaseDate(new Date(shiftStartMilis + duration))
 
-                const sortedDays = (data.schedule as (ScheduleDay & { id: string })[]).toSorted((a, b) => toJSDate(a.date).getTime() - toJSDate(b.date).getTime())
+                const sortedDays = Object.values(data.schedule as Record<string, ScheduleDay & { id: string }>).toSorted((a, b) => toJSDate(a.date).getTime() - toJSDate(b.date).getTime())
+                data.schedule = {}
                 let thisDay = shiftStartMilis
-                for (let i = 0; i < durationDays; i++, thisDay += day) {
+                for (let i = 0; i <= durationDays; i++, thisDay += day) {
                     const thisDate = new Date(thisDay)
-                    sortedDays[i].id = `${thisDate.getMonth() + 1}-${thisDate.getDate()}`
-                    sortedDays[i].date = toFirebaseDate(thisDate)
-                    sortedDays[i].name = dayName(thisDate)
+                    if (!sortedDays[i]) {
+                        sortedDays[i] = {} as any
+                    }
+                    const id = `${thisDate.getMonth() + 1}-${thisDate.getDate()}`
+                    sortedDays[i]!.id = id
+                    sortedDays[i]!.date = toFirebaseDate(thisDate)
+                    sortedDays[i]!.name = dayName(thisDate)
+                    data.schedule[id] = sortedDays[i]
                 }
-                data.schedule = sortedDays
             }
             setDoc(docs.event, eventMetaProps, { merge })
             // Subdocuments

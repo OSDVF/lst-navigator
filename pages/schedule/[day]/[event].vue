@@ -17,13 +17,17 @@
             </span>
         </h1>
         <h3>{{ eventData?.subtitle }}</h3>
-        <h3 v-if="location"><Icon name="mdi:place" /> {{ location }}</h3>
+        <h3 v-if="location">
+            <Icon name="mdi:place" /> {{ location }}
+        </h3>
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div class="p" @click="scanImages" v-html="eventData?.description ?? 'Žádné podrobnosti'" />
 
-        <h1>
+        <hr>
+
+        <h2>
             <Icon name="mdi:rss" /> Zpětná vazba
-        </h1>
+        </h2>
         <template v-if="eventData?.feedbackType">
             <h4>Tvá zpětná vazba. Bude zobrazena organizátorům.</h4>
             <small>Odpovídáš jako <NuxtLink
@@ -48,8 +52,10 @@
         <p v-else>
             Není k dispozici
         </p>
-        <h1><Icon name="mdi:note-add" /> Tvé poznámky</h1>
-        <span class="muted">Slouží pouze pro tvou potřebu</span>
+        <h2>
+            <Icon name="mdi:note-add" /> Tvé poznámky
+        </h2>
+        <span class="muted">Viditelné a uložené pouze u tebe</span>
         <div class="p">
             <ClassicCKEditor
                 v-model="noteModel" :plain="!settings.richNoteEditor" @focus="permitSwipe = false"
@@ -101,7 +107,7 @@ const eventData = computed(() => {
     }
     return undefined
 })
-const location = computed(()=>(cloud.days && typeof eventData.value?.location != 'undefined') ? cloud.days[dayIndex]?.locations?.[eventData.value.location] : undefined)
+const location = computed(() => (cloud.days && typeof eventData.value?.location != 'undefined') ? cloud.days[dayIndex]?.locations?.[eventData.value.location] : undefined)
 watch(eventData, (eventData) => {
     const hexColor = colorToHex(eventData?.color || 'gray')
     const darkened = darkenColor(hexColor, -0.2)
@@ -204,5 +210,9 @@ article {
             background: rgba($color: c.$link-background, $alpha: 0.15)
         }
     }
+}
+
+hr {
+    border: 1px solid rgba(0, 0, 0, 0.252)
 }
 </style>

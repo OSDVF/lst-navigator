@@ -153,7 +153,7 @@ export const useCloudStore = defineStore('cloud', () => {
         }),
         /** Delete feedback for all user for this event */
         async clear() {
-            return deleteCollection(firestore!, feedback.col.value!, 10)
+            return deleteCollection(feedback.col.value!)
         },
         async deleteUser(uid: string) {
             const batch = writeBatch(firestore!)

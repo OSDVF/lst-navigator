@@ -28,15 +28,18 @@
             <div id="additionalNav" class="flex-full" />
             <nav role="navigation">
                 <NuxtLink to="/admin/feedback">
-                    <Icon name="mdi:rss" size="1.8rem" />
+                    <span>
+                        <Icon name="mdi:rss" size="1.8rem" />
+                        <Icon name="mdi:pencil" class="absolute" style="transform: translateX(-100%) translateY(50%);" size="1.2rem" />
+                    </span>
                     Zpětná vazba
                 </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/events" no-prefetch>
-                    <Icon name="mdi:calendar-month" size="1.8rem" />
+                    <Icon name="mdi:tag-edit" size="1.8rem" />
                     Akce
                 </NuxtLink>
                 <NuxtLink v-if="cloudStore.resolvedPermissions.editEvent" to="/admin/users">
-                    <Icon name="mdi:person" size="1.8rem" />
+                    <Icon name="mdi:person-edit" size="1.8rem" />
                     Uživatelé
                 </NuxtLink>
                 <NuxtLink to="/">

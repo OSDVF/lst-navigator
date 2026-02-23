@@ -44,7 +44,6 @@
 import { useDrag, type Vector2 } from '@vueuse/gesture'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '~/stores/settings'
-import type { ScheduleDay } from '~/types/cloud'
 
 const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const cloud = useCloudStore()

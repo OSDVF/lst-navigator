@@ -5,14 +5,14 @@ function log() {
     return c.public.logWrites
 }
 
-export async function deleteCollection(fs: Firestore, col: CollectionReference, batchSize: number) {
+export async function deleteCollection(col: CollectionReference, batchSize: number = 10) {
     if (log()) {
         console.log('Deleting collection ' + col.path)
     }
     const q = query(col, orderBy('__name__'), limit(batchSize))
 
     return new Promise<void>((resolve, reject) => {
-        deleteQueryBatch(fs, q, resolve).catch(reject)
+        deleteQueryBatch(col.firestore, q, resolve).catch(reject)
     })
 }
 

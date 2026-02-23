@@ -23,7 +23,7 @@ export function usePersistentRef<T>(name: string, defaultValue: T) {
         }
         triggerRef(internalRef)
     }
-    if (getCurrentInstance()) {
+    if (import.meta.server && getCurrentInstance()) {
         onPrehydrate(hydrate)
     } else {
         app.hook('app:mounted', hydrate)

@@ -31,6 +31,7 @@ Used for [Moravian-Silesian Youth of Evangelic Church of Czech Brethren](https:/
 
 ## Setup
 Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+> Maximum supported Node.js major version is 24.
 
 0. Install firebase CLI
 ```bash
@@ -52,12 +53,13 @@ bun install
 Start the development server on `https://localhost:3000`:
 
 ```bash
-NODE_TLS_REJECT_UNAUTHORIZED=0 bun -b dev
+NODE_TLS_REJECT_UNAUTHORIZED=0 bun dev
 ```
 
 ### Emulators
+
 ```bash
-bun -b emulator
+bun emulator
 ```
 
 Note the server runs behind HTTPS wihtout HTTP redirects (otherswise firebase auth won't work).
@@ -66,6 +68,7 @@ Note the server runs behind HTTPS wihtout HTTP redirects (otherswise firebase au
 
 Build the application for production:
 
+> This can even be done with Bun alone, without Node.js installed
 ```bash
 bun -b generate
 ```
@@ -77,6 +80,15 @@ bun serve
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Development utilities
+`.env` file must be already filled for these to work.
+
+```bash
+bun -b --env-file=.env typecheck
+bun -b --env-file=.env lint
+bun -b --env-file=.env lintfix
+```
 
 ## Deployment
 - Dostupné na https://lst.msmladez.cz  

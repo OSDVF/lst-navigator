@@ -1,10 +1,9 @@
 
-import type { DocumentReference } from 'firebase/firestore'
 import { collection, doc, getDoc, getDocs, terminate } from 'firebase/firestore'
 import { useFirestore } from 'vuefire'
 import { GoogleAuth } from 'google-auth-library'
 import { initializeApp } from 'firebase/app'
-import type { EventDescription, EventDocs, EventSubcollection } from '@/types/cloud'
+import type { EventDescription, EventSubcollection } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 
 

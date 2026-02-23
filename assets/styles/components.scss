@@ -219,6 +219,27 @@ textarea,
     max-width: 99vw;
 }
 
+.rich-editor {
+    width: 100%;
+    background-color: white;
+    border: 1px inset black;
+    border-radius: 2px;
+    padding: 4px;
+    margin-block: 1px;
+    font-size: 1rem;
+    overflow-x: auto;
+    resize: both;
+    cursor: text;
+
+    &:empty::after {
+        content: attr(placeholder);
+        position: absolute;
+        opacity: 0.5;
+    }
+    &.disabled {
+        opacity: .5
+    }
+}
 @function transitions($a) {
     @return "#{$a}.slide-left-enter-active, #{$a}.slide-left-leave-active, #{$a}.slide-right-enter-active, #{$a}.slide-right-leave-active";
 }
