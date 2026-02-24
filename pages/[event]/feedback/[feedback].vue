@@ -35,7 +35,7 @@
         </NameChangeDialog>
         <br>
 
-        Tvé odpovědi jsou okamžitě uloženy a můžeš se k nim na tomto zařízení kdykoliv vrátit. {{ cloud.eventData?.feedbackInfo }}
+        Tvé odpovědi jsou okamžitě uloženy a můžeš se k nim na tomto zařízení kdykoliv vrátit. {{ cloud.eventDescription?.feedbackInfo }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`" class="mb-5 mt-2">
             <h3 v-if="subPart.title" class="mb-1">{{ subPart.title }}</h3>

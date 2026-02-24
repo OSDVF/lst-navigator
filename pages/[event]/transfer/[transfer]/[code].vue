@@ -3,7 +3,7 @@
         <h1>
             <Icon name="mdi:leak" /> Přenést data
         </h1>
-        <template v-if="cloud.eventData?.transfers">
+        <template v-if="cloud.eventDescription?.transfers">
 
             <template v-if="transferStatus == TransferStatus.Request">
                 <p>Přejete si zkopírovat uživatelská data {{ toOther ? 'do' : 'ze' }} zařízení
@@ -42,7 +42,7 @@
             </p>
         </template>
         <template v-else>
-            Přenosy uživatelských dat pro událost <strong>{{ cloud.eventData?.title }}</strong> nejsou povoleny.
+            Přenosy uživatelských dat pro událost <strong>{{ cloud.eventDescription?.title }}</strong> nejsou povoleny.
         </template>
         <p>
             <NuxtLink :to="`/${cloud.selectedEvent}/settings`" replace>Zpět</NuxtLink>

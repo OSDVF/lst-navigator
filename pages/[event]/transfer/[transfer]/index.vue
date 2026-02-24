@@ -3,7 +3,7 @@
         <h1>
             <Icon name="mdi:leak" /> Přenos dat
         </h1>
-        <template v-if="cloud.eventData?.transfers">
+        <template v-if="cloud.eventDescription?.transfers">
             <p v-if="!(transfer?.status)">
                 <button class="large" @click="start">
                     <Icon :name="here ? 'mdi:download' : 'mdi:upload'" /> Zahájit
@@ -49,7 +49,7 @@
         </template>
 
         <template v-else>
-            Přenosy uživatelských dat pro událost <strong>{{ cloud.eventData?.title }}</strong> nejsou povoleny.
+            Přenosy uživatelských dat pro událost <strong>{{ cloud.eventDescription?.title }}</strong> nejsou povoleny.
         </template>
 
         <div v-if="cloud.resolvedPermissions.editEvent && here" class="mt-2">

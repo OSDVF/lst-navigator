@@ -48,6 +48,12 @@ import { useDrag, type Vector2 } from '@vueuse/gesture'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '~/stores/settings'
 
+definePageMeta({
+    layoutTransition: {
+        name: 'slide-left',
+    },
+})
+
 const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const cloud = useCloudStore()
 const router = useRouter()
@@ -145,7 +151,7 @@ function onTransitionBeforeLeave() {
 const drag = useTemplateRef('drag')
 const returning = ref(false)
 function transEnd(e: TransitionEvent) {
-    if ((drag.value!.contains(e.target as HTMLElement) || e.target == drag.value) && e.propertyName === 'transform') {
+    if ((drag.value && drag.value.contains(e.target as HTMLElement) || e.target == drag.value) && e.propertyName === 'transform') {
         setTimeout(() => returning.value = false, 100)
     }
 }

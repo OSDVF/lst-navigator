@@ -86,7 +86,7 @@
             <label for="nickname">Jméno / Podpis do zpětných vazeb</label>
             <NameChangeDialog />
         </fieldset>
-        <fieldset v-if="cloud.eventData?.transfers">
+        <fieldset v-if="cloud.eventDescription?.transfers">
             <label for="transfer">
                 <Icon name="mdi:leak" /> Přenos zadaných dat mezi zařízeními
             </label>
@@ -103,7 +103,7 @@
             </div>
         </fieldset>
         <LazyLoginField />
-        <fieldset v-show="!advanced && cloud.eventData?.advanced">
+        <fieldset v-show="!advanced && cloud.eventDescription?.advanced">
             <div>
                 <button @click="advanced = true">Zobrazit pokročilá nastavení</button>
             </div>
@@ -227,7 +227,7 @@ function leadingPlus(value: number) {
 function deleteUserData() {
     deleteResult.value = false
     deletePending.value = true
-    if (confirm('Chcete navždy smazat vaše poznámky a feedback k události ' + (cloud.eventData?.title ?? cloud.selectedEvent) + '?')) {
+    if (confirm('Chcete navždy smazat vaše poznámky a feedback k události ' + (cloud.eventDescription?.title ?? cloud.selectedEvent) + '?')) {
         cloud.user.deleteData()
             .then(() => {
                 deleteResult.value = true

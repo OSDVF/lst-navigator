@@ -18,7 +18,7 @@
             </li>
             <li>Jméno (pokud ho zadáte nebo se přihlásíte k účtu Google)</li>
         </ul>
-        Tato osobní data používáme pouze pro účely organizce této akce ({{ cloud.eventData?.title ?? '' }}), jejích
+        Tato osobní data používáme pouze pro účely organizce této akce ({{ cloud.eventDescription?.title ?? '' }}), jejích
         dalších
         ročníků, a funkčnosti této aplikace. Osobní data nesdílíme s žádnou třetí
         stranou.

@@ -3,8 +3,7 @@ import { defineStore, skipHydrate } from 'pinia'
 import { FieldValue, Firestore, writeBatch, type CollectionReference, type DocumentData } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
-import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth, useFirebaseStorage, useStorageFileUrl } from 'vuefire'
-import { ref as storageRef } from '@firebase/storage'
+import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth} from 'vuefire'
 import { getMessaging, getToken } from 'firebase/messaging'
 import {
     GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, sendEmailVerification,
@@ -83,7 +82,6 @@ export const useCloudStore = defineStore('cloud', () => {
         console.error(e)
     }
 
-    const firebaseStorage = probe && config.public.storageEnabled && useFirebaseStorage()
     const selectedEvent = computed(()=> useRoute().params.event as string || config.public.defaultEvent)
 
     function eventDoc(...path: (string | EventSubcollection)[]) {
@@ -96,7 +94,7 @@ export const useCloudStore = defineStore('cloud', () => {
         auth?.setPersistence(browserLocalPersistence)
     }
 
-    const eventDocuments = useDocumentT<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
+    const eventDescription = useDocumentT<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
         maxRefDepth: 5,
         wait: true,
     })
@@ -109,10 +107,6 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     const subscriptionsCollection = currentEventCollection('subscriptions')
-
-    const eventImage = computed(() => eventDocuments.value?.image.type == 'cloud' && firebaseStorage
-        ? useStorageFileUrl(storageRef(firebaseStorage, eventDocuments.value?.image.data)).url.value
-        : eventDocuments.value?.image.data)
 
     //
     // Feedback
@@ -524,7 +518,7 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const permissionNames = computed(() => ({
         ...(resolvedPermissions.value.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
-        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + (eventDocuments.value?.title ?? '') } : {}),
+        ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + (eventDescription.value?.title ?? '') } : {}),
         [UserLevel.ScheduleAdmin]: 'Editor programu',
         [UserLevel.Nothing]: 'Nic',
     }))
@@ -634,14 +628,13 @@ export const useCloudStore = defineStore('cloud', () => {
     return {
         currentEventCollection,
         days,
-        eventData: eventDocuments,
+        eventDescription,
         eventDoc,
-        eventImage,
-        eventLoading: skipHydrate(eventDocuments.pending),
+        eventLoading: skipHydrate(eventDescription.pending),
         eventsCollection: useCollectionT<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
         feedback: skipHydrate(feedback),
         feedbackConfig: feedbackConfig,
-        networkError: skipHydrate(eventDocuments.error),
+        networkError: skipHydrate(eventDescription.error),
         notesCollection: skipHydrate(notesCollection),
         offlineFeedback: skipHydrate(computed(() => offlineFeedback.value[selectedEvent.value])),
         permissionNames,
