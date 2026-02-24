@@ -1,6 +1,6 @@
 <template>
     <article>
-        <h1>{{ cloud.eventData?.title }}</h1>
+        <h1>{{ cloud.eventData?.title ?? $config.public.longName }}</h1>
         <canvas ref="canvas" />
         <p>
             <strong>{{ url.origin }}</strong>

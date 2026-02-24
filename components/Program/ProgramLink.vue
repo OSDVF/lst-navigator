@@ -27,7 +27,7 @@
                         @click.stop="e('moveDown', entry, index)">
                         <Icon class="icon" name="mdi:arrow-down" />
                     </button>
-                    <NuxtLink :to="`/schedule/${p.day}/edit/${index}`" @click.stop>
+                    <NuxtLink :to="`/${cloud.selectedEvent}/schedule/${p.day}/edit/${index}`" @click.stop>
                         <button class="edit" title="Upravit">
                             <Icon class="icon" name="mdi:pencil" />
                         </button>
@@ -57,10 +57,11 @@
         <NuxtLink
             v-if="settings.expandableItems"
             :to="{
-                name: 'schedule-day-event',
+                name: 'event-schedule-day-item',
                 params: {
                     day: p.day.toString(),
-                    event: p.index.toString(),
+                    event: $route.params.event,
+                    item: p.index.toString(),
                 },
                 query: $route.query,
             }" style="position: relative">
@@ -135,10 +136,11 @@ function click(e: Event) {
         e.preventDefault()
         if (!(inMotion?.value ?? false)) {
             router.push({
-                name: 'schedule-day-event',
+                name: 'event-schedule-day-item',
                 params: {
                     day: p.day.toString(),
-                    event: p.index.toString(),
+                    event: router.currentRoute.value.params.event,
+                    item: p.index.toString(),
                 },
                 query: router.currentRoute.value.query,
             })

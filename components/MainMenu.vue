@@ -1,17 +1,17 @@
 <template>
-    <NuxtLink to="/info">
+    <NuxtLink :to="`/${cloud.selectedEvent}/info`" >
         <Icon name="mdi:information" size="1.8rem" />
         <span class="text">{{ $config.public.title }}</span>
     </NuxtLink>
-    <NuxtLink to="/feedback" :class="$route.path.includes('feedback') ? 'router-link-active' : undefined">
+    <NuxtLink :to="`/${cloud.selectedEvent}/feedback`" :class="$route.path.includes('feedback') ? 'router-link-active' : undefined">
         <Icon name="mdi:rss" size="1.8rem" />
         <span class="text">Feedback</span>
     </NuxtLink>
-    <NuxtLink to="/schedule">
+    <NuxtLink :to="`/${cloud.selectedEvent}/schedule`">
         <Icon name="mdi:calendar-text" size="1.8rem" />
         <span class="text">Program</span>
     </NuxtLink>
-    <NuxtLink v-if="cloudStore.resolvedPermissions.editSchedule" to="/admin">
+    <NuxtLink v-if="cloud.resolvedPermissions.editSchedule" :to="`/${cloud.selectedEvent}/admin`">
         <Icon name="mdi:account-cog" size="1.8rem" />
         <span class="text">Administrace</span>
     </NuxtLink>
@@ -19,5 +19,5 @@
 </template>
 
 <script setup lang="ts">
-const cloudStore = useCloudStore()
+const cloud = useCloudStore()
 </script>

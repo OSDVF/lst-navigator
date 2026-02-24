@@ -27,7 +27,7 @@
                 @delete-program="deleteProgram" />
 
             <template v-if="cloud.resolvedPermissions.editSchedule">
-                <NuxtLink :to="`/schedule/${p.day}/edit`">
+                <NuxtLink :to="`/${cloud.selectedEvent}/schedule/${p.day}/edit`">
                     <button type="button">
                         <Icon name="mdi:pencil" />&nbsp;Přidat program
                     </button>
@@ -40,7 +40,7 @@
                     <button
                         type="button"
                         :title="`${admin.eventClipboard.title?.toUpperCase()}: ${admin.eventClipboard.subtitle || '--'}\n${stripHtml(admin.eventClipboard.description) || 'Žádný popis'}`"
-                        @click="router.push(`/schedule/${p.day}/edit/paste`)" @contextmenu.prevent="pasteNow"
+                        @click="router.push(`/${cloud.selectedEvent}/schedule/${p.day}/edit/paste`)" @contextmenu.prevent="pasteNow"
                         @auxclick.prevent="pasteNow">
                         <Icon name="mdi:clipboard-arrow-right" />&nbsp;Vložit
                     </button>
@@ -52,7 +52,7 @@
         </div>
 
         <strong>
-            <NuxtLink v-if="p.day == cloud.days.length - 1" to="/feedback" class="p-2 mt-2 d-block">
+            <NuxtLink v-if="p.day == cloud.days.length - 1" :to="`/${cloud.selectedEvent}/feedback`" class="p-2 mt-2 d-block">
                 <Icon name="mdi:rss" size="1.8rem" /> Vyplnit feedbackový dotazník
                 <br>
                 <small>{{ cloud.feedback.dirtyTime == 0 ? 'Obsahuje hodnocení programů a' :
@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
 })
 
 function pasteNow() {
-    router.push(`/schedule/${p.day}/edit/pastenow`)
+    router.push(`/${cloud.selectedEvent}/schedule/${p.day}/edit/pastenow`)
 }
 
 const nowFormatted = computed(() => now.value.getHours() * 100 + now.value.getMinutes())

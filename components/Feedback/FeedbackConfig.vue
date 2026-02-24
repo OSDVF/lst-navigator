@@ -15,7 +15,7 @@
 
             &ensp;<span class="muted"># {{ p.index + 1 }}&ensp;</span>
             <div v-show="!p.disabled" class="fieldset-edit">
-                <NuxtLink :to="`/feedback/${p.index}`" class="button" title="Náhled sekce">
+                <NuxtLink :to="`/${cloud.selectedEvent}/feedback/${p.index}`" class="button" title="Náhled sekce">
                     <Icon name="mdi:eye" />
                 </NuxtLink>
                 <span v-if="p.index > 0" class="button" title="Posunout sekci nahoru" @click="moveUp">
@@ -106,7 +106,6 @@ import cloneDeep from 'lodash.clonedeep'
 import isEqual from 'lodash.isequal'
 import isEmpty from 'lodash.isempty'
 import { setDoc, deleteDoc } from '~/utils/trace'
-import { useCloudStore } from '~/stores/cloud'
 import type { FeedbackConfig, ScheduleItem } from '~/types/cloud'
 import { useAdmin } from '~/stores/admin'
 import { storeToRefs } from 'pinia'

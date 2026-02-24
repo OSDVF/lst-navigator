@@ -84,7 +84,8 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     const firebaseStorage = probe && config.public.storageEnabled && useFirebaseStorage()
-    const selectedEvent = usePersistentRef('selectedEvent-' + config.public.defaultEvent, config.public.defaultEvent)// invalidate the selected event when the default settings change
+    const selectedEvent = computed(()=> useRoute().params.event as string || config.public.defaultEvent)
+
     function eventDoc(...path: (string | EventSubcollection)[]) {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
     }

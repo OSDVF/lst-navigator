@@ -11,12 +11,13 @@
     </article>
 </template>
 
-<script setup>
+<script setup lang="ts">
 if (import.meta.browser) {
     const installed = useInstallComplete()
     if (installed.value) {
+        const cloud = useCloudStore()
         setTimeout(() => navigateTo({
-            path: '/schedule',// timeout 0 for consistency with layout change
+            path: `/${cloud.selectedEvent}/schedule/`,// timeout 0 for consistency with layout change
             replace: true,
         }), 0)
     }

@@ -87,7 +87,7 @@ function goToRedirectedFrom() {
         const url = new URL(redirectString)
         router.replace(`${url.pathname}${url.search}${url.hash}`)
     } else {
-        router.replace(redirectString ?? '/schedule')
+        router.replace(redirectString ?? `/${useRuntimeConfig().public.defaultEvent}/schedule`)
     }
 }
 </script>

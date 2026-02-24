@@ -17,9 +17,9 @@
         </ErrorSolver>
         <div class="navigation">
             <div class="flex-full">
-                <ProgressBar v-if="cloudStore.feedback.fetching" />
-                <nav v-if="cloudStore.feedback.fetchFailed" class="p-1">
-                    {{ cloudStore.feedback.error ||
+                <ProgressBar v-if="cloud.feedback.fetching" />
+                <nav v-if="cloud.feedback.fetchFailed" class="p-1">
+                    {{ cloud.feedback.error ||
                         'Nepodařilo se odeslat tvou odpověď. Ale žádný strach, je uložená offline ve tvém zařízení.' }}
                 </nav>
             </div>
@@ -28,7 +28,7 @@
                 <LazyClientOnly>
                     <NuxtLink
                         v-if="config.public.installWizard && (!installComplete || $route.name?.toString().includes('install'))"
-                        :to="onFeedbackPage ? '/schedule' : `/install/0?to=/schedule/`">
+                        :to="onFeedbackPage ? `/${cloud.selectedEvent}/schedule` : `/install/0?to=/${cloud.selectedEvent}/schedule/`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"
                             size="1.8rem" />
@@ -44,7 +44,7 @@
             <ToastArea />
         </div>
         <ProgressBar
-            v-show="isServer || ui.isLoading || cloudStore.eventLoading || $downloadingUpdate?.value"
+            v-show="isServer || ui.isLoading || cloud.eventLoading || $downloadingUpdate?.value"
             class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
@@ -53,12 +53,11 @@
 </template>
 
 <script setup lang="ts">
-import { useCloudStore } from '@/stores/cloud'
 import { useUI } from '@/stores/ui'
 
 const app = useNuxtApp()
 const ui = useUI()
-const cloudStore = useCloudStore()
+const cloud = useCloudStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()

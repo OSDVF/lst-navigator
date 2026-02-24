@@ -14,7 +14,7 @@
             <ClientOnly>
                 <NuxtLink
                     :to="{
-                        path: partIndex > 0 ? `/install/${partIndex - 1}` : route.query.to?.toString() || '/schedule/',
+                        path: partIndex > 0 ? `/install/${partIndex - 1}` : route.query.to?.toString() || `${config.public.defaultEvent}/schedule/`,
                         query: {
                             ...toRaw($route.query),
                             from: partIndex.toString(),
@@ -40,7 +40,7 @@
                     {{ next }}
                 </NuxtLink>
                 <NuxtLink
-                    v-else :to="route.query.to?.toString() || '/schedule/0'"
+                    v-else :to="route.query.to?.toString() || `${config.public.defaultEvent}/schedule/0`"
                     @click="settings.installStep = partIndex + 1">
                     <Icon name="mdi:trending-up" size="2rem" />
                     Začít
@@ -117,7 +117,7 @@ provide('skipToNextIf', (predicate: Ref<boolean>) => {
                     },
                 })
             } else {
-                router.replace(route.value.query.to?.toString() || '/schedule')
+                router.replace(route.value.query.to?.toString() || `${config.public.defaultEvent}/schedule`)
             }
         }
     }

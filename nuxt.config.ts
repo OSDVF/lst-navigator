@@ -23,6 +23,7 @@ const messagingConfig = {
     notifications_vapidKey: process.env.VAPID_PUBLIC,
 }
 
+const defaultEvent = process.env.VITE_APP_SELECTED_EVENT_COLLECTION
 const defaultMaskColor = '#fbce70ff'
 const defaultThemeColor = '#ffffff'
 
@@ -139,13 +140,15 @@ const config = defineNuxtConfig({
             routes: [
                 '/',
                 '/about',
-                '/feedback',
-                '/info',
+                '/qr',
                 '/login',
-                '/schedule',
-                '/settings',
                 '/update',
-                ...new Array(prerenderDays).keys().map((i) => `/schedule/${i}`),
+                '/privacy',
+                `/${defaultEvent}/info`,
+                `/${defaultEvent}/feedback`,
+                `/${defaultEvent}/schedule`,
+                `/${defaultEvent}/settings`,
+                ...[...new Array(prerenderDays).keys()].map((i) => `/${defaultEvent}/schedule/${i}`),
             ],
         },
         esbuild: {
@@ -231,7 +234,7 @@ const config = defineNuxtConfig({
                 [firebaseConfig.hosting.headers[0]!.headers[0]!.key]: firebaseConfig.hosting.headers[0]!.headers[0]!.value,
             },
         },
-        '/admin/**': {
+        '/*/admin/**': {
             prerender: false,
             static: false,
         },
@@ -321,7 +324,7 @@ const config = defineNuxtConfig({
         public: {
             title: process.env.VITE_APP_SHORT_NAME,
             longName: process.env.VITE_APP_NAME,
-            defaultEvent: process.env.VITE_APP_SELECTED_EVENT_COLLECTION,
+            defaultEvent,
             emulators,
             icon: process.env.ICON,
             imageCacheFirst: isDevMode,
