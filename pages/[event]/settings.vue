@@ -2,7 +2,9 @@
     <article class="settings">
         <h4>Událost</h4>
         <fieldset>
-            <NuxtLink :to="`/`"><Icon name="mdi:tag" />&ensp;Vybrat jinou událost</NuxtLink>
+            <NuxtLink :to="`/`">
+                <Icon name="mdi:tag" />&ensp;Vybrat jinou událost
+            </NuxtLink>
         </fieldset>
         <h4>Obecné</h4>
         <fieldset>
@@ -105,7 +107,9 @@
         <LazyLoginField />
         <fieldset v-show="!advanced && cloud.eventDescription?.advanced">
             <div>
-                <button @click="advanced = true">Zobrazit pokročilá nastavení</button>
+                <button @click="advanced = true">
+                    <Icon name="mdi:cog" />&ensp;Zobrazit pokročilá nastavení
+                </button>
             </div>
         </fieldset>
         <fieldset v-show="advanced">

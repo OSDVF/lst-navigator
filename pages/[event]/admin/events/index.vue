@@ -39,6 +39,11 @@
             @click='deleteSelected'>
             <Icon name='mdi:trash-can' /> Smazat
         </button>
+        &ensp;
+        <span v-show="selectedTitle" class="button small" @click="deselect">
+            <Icon name="mdi:select-off" />Zrušit označení
+        </span>
+
         <form
             v-if='[Actions.Edit, Actions.New].includes(action) && !form?.importing'
             @submit.prevent='editEvent(action == Actions.New)'>
@@ -50,20 +55,61 @@
                     v-model.lazy='editedEvent.identifier' type='text' required
                     :disabled='action == Actions.Edit'></label><br>
             </small>
-            <label>Podtitulek <input v-model.lazy='editedEvent.subtitle' type='text'></label><br>
-            <label>Web <input
-                v-model.lazy='editedEvent.web' placeholder='https://msmladez.cz' type='text'
-                required></label><br>
-            <label>Začátek <input
+            <label>Podtitulek&ensp;<input v-model.lazy='editedEvent.subtitle' type='text'></label><br><br>
+            <label>
+                <Icon name="mdi:link" style="transform: rotate(45deg);" /> Web&ensp;<input
+                    v-model.lazy='editedEvent.web' placeholder='https://msmladez.cz' type='url' required>
+            </label><br>
+            <label>Doba konání od&ensp;<input
                 v-model.lazy='editedEvent.start' type='date' required
                 :disabled='action == Actions.Edit'></label>
             &nbsp;
-            <DateFormat /><br>
-            <label>Konec <input
+            <label>do&ensp;<input
                 v-model.lazy='editedEvent.end' :min='editedEvent.start!' type='date' required
                 :disabled='action == Actions.Edit'></label>
             &nbsp;
             <DateFormat /><br>
+
+            <label
+                title="Zobrazit veřejně na seznamu událostí na úvodní stránce aplikace. Pokud nezadáte nic, bude se zobrazovat ode dneška do posledního dne konání události.">
+                Zobrazení od&ensp;<input v-model.lazy='editedEvent.showFrom' type='date'></label>
+            &nbsp;
+            <label>do&ensp;<input v-model.lazy='editedEvent.showTo' :min='editedEvent.showFrom!' type='date'></label>
+            &nbsp;
+            <DateFormat /><br>
+
+            <label title="Pokud toto pole bude prázdné, feedback bude přijímán jen do posledního dne konání události">
+                <Icon name="mdi:rss" /> Přijímá feedback do&ensp;<input
+                    v-model.lazy='editedEvent.feedbackEnd'
+                    :min='editedEvent.start!' type='date'>
+            </label>
+            &nbsp;
+            <DateFormat /><br>
+
+            <details>
+                <summary>
+                    <label for="form" title="URL Google Formuláře nebo jakýkoliv odkaz">
+                        <Icon name="mdi:form-select" style="color: #7346ba" /> Přihláška
+                    </label>
+                    <input
+                        id="form" v-model.lazy="editedEvent.form" type="url" name="form"
+                        placeholder="https://forms.gle/">
+                </summary>
+
+                <div class="mb-2 ml-2">
+                    <label>Začátek přihlašování&ensp;<input
+                        v-model.lazy='editedEvent.applicationsStart'
+                        type='date'></label>
+                    &nbsp;
+                    <DateFormat /><br>
+                    <label>Konec přihlašování&ensp;<input
+                        v-model.lazy='editedEvent.applicationsEnd'
+                        :min='editedEvent.applicationsStart!' type='date'></label>
+                    &nbsp;
+                    <DateFormat />
+                </div>
+            </details>
+
             <label for="transfers">
                 <Icon name="mdi:leak" /> Povolit přenosy uživatelských dat
             </label>
@@ -74,9 +120,11 @@
                 <Icon name="mdi:account-settings" /> Povolit uživatelům pokročilá nastavení
             </label>
             <input id="advanced" v-model="editedEvent.advanced" type="checkbox" name="advanced">
+            <br><br>
 
-            <ClassicCKEditor v-model.lazy='editedEvent.description' />
-            <fieldset :disabled='!!remoteImage.uploadTask.value'>
+            <ClassicCKEditor v-model.lazy='editedEvent.description' placeholder="Popis události" />
+
+            <fieldset :disabled='!!remoteImage.uploadTask.value' class="mt-2">
                 <legend>Obrázek</legend>
                 <div class="p">
                     <button
@@ -111,8 +159,8 @@
                         <p>
                             <ProgressBar v-if="loadingImage" />
                             <img
-                                v-else-if="editedEvent.imageIdentifier.data" :src="editedEvent.imageIdentifier.data"
-                                alt="Náhled" style="max-width: 100%">
+                                v-else-if="editedEvent.imageIdentifier.data" class="noinvert"
+                                :src="editedEvent.imageIdentifier.data" alt="Náhled" style="max-width: 100%">
                         </p>
                     </fieldset>
                 </div>
@@ -154,7 +202,7 @@
 
 <script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, collection, arrayUnion, type DocumentData, getDoc } from 'firebase/firestore'
+import { doc, collection, arrayUnion, type DocumentData, getDoc, deleteField } from 'firebase/firestore'
 import { getDocCacheOr, getDocs, setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
@@ -185,15 +233,21 @@ const form = useTemplateRef<InstanceType<typeof ImportForm>>('form')
 const now = toFirebaseDate(new Date())!
 const editedEvent = ref({
     advanced: true,
+    applicationsEnd: '',
+    applicationsStart: '',
     title: '',
     description: '',
     end: now,
+    form: '',
+    feedbackEnd: '',
     identifier: '',
     imageIdentifier: {
         type: 'cloud',
         data: '',
     },
     start: now,
+    showFrom: now,
+    showTo: '',
     subtitle: '',
     transfers: false,
     web: '',
@@ -314,11 +368,17 @@ async function editEvent(createNew = false) {
     const end = new Date(editedEvent.value.end)
     await setDoc(docs.event, {// create /events/[event-name]
         advanced: editedEvent.value.advanced,
+        applicationsEnd: toFirebaseDate(new Date(editedEvent.value.applicationsEnd)) || deleteField(),
+        applicationsStart: toFirebaseDate(new Date(editedEvent.value.applicationsStart)) || deleteField(),
         title: editedEvent.value.title,
         start: toFirebaseDate(new Date(editedEvent.value.start)),
         end: toFirebaseDate(end),
+        form: editedEvent.value.form || deleteField(),
+        feedbackEnd: toFirebaseDate(new Date(editedEvent.value.feedbackEnd)) || deleteField(),
         description: editedEvent.value.description,
         image: editedEvent.value.imageIdentifier,
+        showFrom: toFirebaseDate(new Date(editedEvent.value.showFrom)) || deleteField(),
+        showTo: toFirebaseDate(new Date(editedEvent.value.showTo)) || deleteField(),
         subtitle: editedEvent.value.subtitle,
         transfers: editedEvent.value.transfers,
         web: editedEvent.value.web,
@@ -402,15 +462,21 @@ async function startEditingSelected() {
             loading.value = false
             action.value = Actions.Edit
             editedEvent.value = {
+                applicationsEnd: selectedEvent.applicationsEnd ?? '',
+                applicationsStart: selectedEvent.applicationsStart ?? '',
                 advanced: selectedEvent.advanced ?? false,
                 title: selectedEvent.title,
                 identifier: selectedEvent.id,
                 description: selectedEvent.description,
                 end: selectedEvent.end,
+                form: selectedEvent.form ?? '',
+                feedbackEnd: selectedEvent.feedbackEnd ?? '',
                 imageIdentifier: selectedEvent.image || {
                     type: 'cloud',
                     data: '',
                 },
+                showFrom: selectedEvent.showFrom ?? '',
+                showTo: selectedEvent.showTo ?? '',
                 start: selectedEvent.start,
                 subtitle: selectedEvent.subtitle,
                 transfers: selectedEvent.transfers ?? false,
@@ -488,8 +554,9 @@ async function importJson(source: Record<string, EventDescription<DocumentData>>
                 const duration = end - start
                 const day = 1000 * 3600 * 24
                 const durationDays = duration / day
-                const shiftStartMilis = toJSDate(shiftDate.value).getTime()
-                eventMetaProps.start = shiftDate.value
+                const shiftDateJS = new Date(shiftDate.value)
+                const shiftStartMilis = shiftDateJS.getTime()
+                eventMetaProps.start = toFirebaseDate(shiftDateJS)
                 eventMetaProps.end = toFirebaseDate(new Date(shiftStartMilis + duration))
 
                 const sortedDays = Object.values(data.schedule as Record<string, ScheduleDay & { id: string }>).toSorted((a, b) => toJSDate(a.date).getTime() - toJSDate(b.date).getTime())
@@ -500,7 +567,7 @@ async function importJson(source: Record<string, EventDescription<DocumentData>>
                     if (!sortedDays[i]) {
                         sortedDays[i] = {} as any
                     }
-                    const id = `${thisDate.getMonth() + 1}-${thisDate.getDate()}`
+                    const id = toFirebaseMonthDay(thisDate)
                     sortedDays[i]!.id = id
                     sortedDays[i]!.date = toFirebaseDate(thisDate)
                     sortedDays[i]!.name = dayName(thisDate)

@@ -1,10 +1,35 @@
 import type { CollectionReference, DocumentReference, FieldValue } from 'firebase/firestore'
 
-export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' | 
-/**
- * Same as 'complicated' but the questions will have only '0' or '1' values
- */
-'multiple' | 'text'
+export type Application = {
+    id: string,
+    state: ApplicationState,
+    paid: boolean,
+    remaining: number,
+} & {
+    [field in keyof ApplicationForm['fields']]: string;
+}
+
+export type ApplicationForm = {
+    url: string,
+    fields: {
+        arrival?: string,
+        departure?: string,
+        email?: string,
+        category?: string,
+        extras?: string,
+        name?: string,
+    }
+}
+
+export enum ApplicationState {
+    NEW, CONFIRMED, REJECTED 
+}
+
+export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' |
+    /**
+     * Same as 'complicated' but the questions will have only '0' or '1' values
+     */
+    'multiple' | 'text'
 export type FeedbackConfig = {
     group?: string | RegExp, // title of parts of schedule to group by
     title: string,
@@ -63,43 +88,57 @@ export type ScheduleDay = {
     program: ScheduleItem[],
 };
 
-export type EventSubcollection = 'notes' | 'feedback' | 'feedbackConfig' | 'subscriptions' | 'schedule' | 'users'
-export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'feedbackConfig', 'subscriptions', 'schedule', 'users']
+export type EventSubcollection = 'notes' | 'feedback' | 'feedbackConfig' | 'groups' | 'services' | 'subscriptions' | 'schedule' | 'users'
+export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'feedbackConfig', 'groups', 'services', 'subscriptions', 'schedule', 'users']
 export type EventDocs = {
     [K in EventSubcollection]: CollectionReference
 } & {
     event: DocumentReference,
 };
 
+export type Group = {
+    name: string,
+    peopleIDs: string[],
+}
+
 export type EventDescription<T = string> = {
     /**
      * Let users show advanced settings
      */
     advanced?: boolean,
+    applicationsEnd?: FirebaseDate,
+    applicationsStart?: FirebaseDate,
+
+    subtitle: string,
     title: string,
-    /**
-     * YYYYY-MM-D
-     */
-    start: string,
-    /**
-     * YYYYY-MM-D
-     */
-    end: string,
+
+    start: FirebaseDate,
+    end: FirebaseDate,
 
     description: string,
-    subtitle: string,
+    /** URL of a Google Form */
+    form?: string,
     image: {
         type: 'cloud' | 'external',
         data: string, // storage / external url
     },
     feedbackConfig: FeedbackConfig[],// subcollection
     feedbackInfo: string,
-    groups: string[],
-    web: string
+    feedbackEnd?: FirebaseDate,
+
+    showFrom?: FirebaseDate,
+    showTo?: FirebaseDate,
+
     transfers?: boolean,
+    web: string
 } & {
     [key in EventSubcollection]: T
 }
+
+/**
+ * YYYYY-MM-D
+ */
+export type FirebaseDate = string
 
 export type Permissions = {
     superAdmin: boolean,

@@ -42,7 +42,7 @@
                     <Icon name="mdi:person-edit" size="1.8rem" />
                     Uživatelé
                 </NuxtLink>
-                <NuxtLink to="/">
+                <NuxtLink :to="`/${cloud.selectedEvent}/schedule`">
                     <Icon name="mdi:calendar-arrow-left" size="1.8rem" />
                     Program
                 </NuxtLink>

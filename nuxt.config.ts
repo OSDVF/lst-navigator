@@ -341,6 +341,7 @@ const config = defineNuxtConfig({
             commitMessageTime,
             commitHash,
             noInstallRedirect: (process.env.NO_INSTALL_REDIRECT ?? '').split(','),
+            organizerEmail: process.env.ORGANIZER_EMAIL,
             themeColor: process.env.THEME_COLOR ?? defaultThemeColor,
             welcome: process.env.WELCOME,
             signatureInfo: process.env.SIGNATURE_INFO,

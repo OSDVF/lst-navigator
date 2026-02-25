@@ -17,17 +17,28 @@
         <noscript>
             Aplikace vyžaduje zapnutý JavaScript.
         </noscript>
-        <div v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id" class="card p">
-            <EventImage class="noinvert" :event="event.id" />
-            <nav>
-                <NuxtLink :to="`/${event.id}/apply`">
-                    <Icon name="mdi:form-select" size="1.8rem" />&ensp;Přihláška
-                </NuxtLink>
-                <NuxtLink :to="event.id">
-                    <Icon name="mdi:calendar" size="1.8rem" />&ensp; Program
-                </NuxtLink>
-            </nav>
-        </div>
+        <NuxtLink
+            v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id"
+            :to="`/${event.id}/preview`">
+            <div class="card p">
+                <EventImage class="noinvert" :event="event.id" />
+                <nav class="flex-wrap">
+                    <span class="flex-full" style="height: 5rem;"/>
+                    <span class="ml-3 mr-2 flex-full">
+                        <h2>{{ event.title }}</h2>
+                        <h3>{{ event.subtitle }}</h3>
+                    </span>
+                    <NuxtLink v-if="applicationsEnabled(event)" :to="`/${event.id}/apply`">
+                        <Icon name="mdi:form-select" size="1.8rem" />&ensp;Přihláška
+                    </NuxtLink>
+                    <NuxtLink :to="`/${event.id}/schedule`">
+                        <Icon name="mdi:calendar" size="1.8rem" />
+                        <Icon v-if="feedbackEnabled(event)" name="mdi:rss" size="1.8rem" />&ensp; Program<template
+                            v-if="feedbackEnabled(event)"> a feedback</template>
+                    </NuxtLink>
+                </nav>
+            </div>
+        </NuxtLink>
         <details class="p-1 p" style="max-width: 800px">
             <summary class="a nomarker">Řešení potíží</summary>
             Pokud se aplikace nenačte, zkontrolujte, zda máte zapnutý JavaScript, případně adblocker, nebo napište na
@@ -43,9 +54,12 @@ definePageMeta({
     layoutTransition: {
         name: 'slide-left',
     },
-    middleware(to){//redirect
-        if(to.params.event && Object.keys(to.params).length == 1) {
-            return navigateTo(`/${to.params.event}/schedule`)
+    pageTransition: {
+        name: 'slide-left',
+    },
+    middleware(to) {//redirect
+        if (to.params.event && Object.keys(to.params).length == 1) {
+            return navigateTo(`/${to.params.event}/preview`)
         }
     },
 })
@@ -55,7 +69,8 @@ const route = useRoute()
 
 if (import.meta.browser && route.params.event) {
     const installed = useInstallComplete()
-    if (installed.value) {
+    const route = useRoute()
+    if (installed.value && route.params.event) {
         setTimeout(() => navigateTo({
             path: `/${cloud.selectedEvent}/schedule/`,// timeout 0 for consistency with layout change
             replace: true,
@@ -73,32 +88,16 @@ if (import.meta.browser && route.params.event) {
     overflow: hidden;
     position: relative;
 
-    $nav-height: 4.5rem;
-    $link-background: color.adjust($color: c.$link-background, $alpha: 0.2);
-
-    &::after {
-        content: '';
-        backdrop-filter: c.$blurred-background;
-        background-color: $link-background;
-        mask: linear-gradient(transparent, transparent, black);
-        position: absolute;
-        inset: 0;
-        top: 40%;
-        bottom: $nav-height;
-    }
-
     a {
         font-weight: bold;
         text-transform: uppercase;
         font-size: 1.2rem;
-        height: 100%;
-        padding: 0;
+        padding: 1.2rem 0;
         display: flex;
-        align-items: center;
+        align-items: stretch;
         justify-content: center;
 
         &:not(:hover) {
-            background-color: $link-background;
             color: inherit;
         }
     }
@@ -111,12 +110,13 @@ if (import.meta.browser && route.params.event) {
 
     nav {
         position: absolute;
+        background: color.adjust($color: c.$link-background, $alpha: 0.3);
         left: 0;
         right: 0;
         bottom: 0;
         z-index: 1;
-        height: $nav-height;
         align-items: center;
+        mask: linear-gradient(transparent, black, black);
     }
 }
 

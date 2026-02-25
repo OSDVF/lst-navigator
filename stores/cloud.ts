@@ -59,6 +59,8 @@ export function eventSubCollection(fs: Firestore, event: string, document: Event
 export function eventDocs(fs: Firestore, name: string): EventDocs {
     return {
         event: doc(knownCollection(fs, 'events'), name),
+        groups: eventSubCollection(fs, name, 'groups'),
+        services: eventSubCollection(fs, name, 'services'),
         notes: eventSubCollection(fs, name, 'notes'),
         feedback: eventSubCollection(fs, name, 'feedback'),
         feedbackConfig: eventSubCollection(fs, name, 'feedbackConfig'),
@@ -82,7 +84,8 @@ export const useCloudStore = defineStore('cloud', () => {
         console.error(e)
     }
 
-    const selectedEvent = computed(()=> useRoute().params.event as string || config.public.defaultEvent)
+    const router = useRouter()
+    const selectedEvent = computed(()=> router.currentRoute.value.params.event as string || config.public.defaultEvent)
 
     function eventDoc(...path: (string | EventSubcollection)[]) {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)

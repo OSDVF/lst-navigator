@@ -1,9 +1,9 @@
 <template>
     <NuxtLink :to="`/${cloud.selectedEvent}/info`" >
         <Icon name="mdi:information" size="1.8rem" />
-        <span class="text">{{ $config.public.title }}</span>
+        <span class="text">{{ cloud.eventDescription?.title ?? $config.public.title }}</span>
     </NuxtLink>
-    <NuxtLink :to="`/${cloud.selectedEvent}/feedback`" :class="$route.path.includes('feedback') ? 'router-link-active' : undefined">
+    <NuxtLink v-if="(toJSDate(cloud.eventDescription?.start || undefined)?.getTime() ?? 0) <= new Date().getTime()" :to="`/${cloud.selectedEvent}/feedback`" :class="$route.path.includes('feedback') ? 'router-link-active' : undefined">
         <Icon name="mdi:rss" size="1.8rem" />
         <span class="text">Feedback</span>
     </NuxtLink>

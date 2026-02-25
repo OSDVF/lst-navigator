@@ -1,6 +1,6 @@
 <template>
     <RemoteImage
-        v-if="eventImage" :src="eventImage" @click="ui.showLightBox(eventImage)"
+        v-if="eventImage" :src="eventImage" @click="p.lightbox ? ui.showLightBox(eventImage) : null"
         @load="saveCacheImage('eventImage-' + cloud.selectedEvent, $event)" />
 </template>
 
@@ -11,8 +11,10 @@ import type { EventDescription } from '~/types/cloud'
 import { useDocument as useDocumentT } from '~/utils/trace'
 
 const p = defineProps<{
-    event: string
+    event: string,
+    lightbox?: boolean
 }>()
+
 const config = useRuntimeConfig()
 const cloud = useCloudStore()
 const ui = useUI()

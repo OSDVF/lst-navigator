@@ -2,8 +2,8 @@
 <template>
     <LazyClientOnly>
         <div
-            ref="area" v-no-overflow contenteditable class="rich-editor" @focus="emit('focus')"
-            @mousedown="emit('focus')"
+            ref="area" v-no-overflow contenteditable class="rich-editor" :placeholder="props.placeholder"
+            @focus="emit('focus')" @mousedown="emit('focus')"
             @blur="e => { emit('update:modelValue', stripBadElements((e.target as HTMLDivElement).innerHTML)); emit('blur') }"
             v-html="stripBadElements(modelValue)" />
     </LazyClientOnly>
@@ -16,6 +16,7 @@ import type { WatchHandle } from 'vue'
 const props = defineProps<{
     modelValue?: string | null,
     plain?: boolean | null,
+    placeholder?: string,
 }>()
 const emit = defineEmits<{
     'update:modelValue': [value: string],
@@ -25,7 +26,7 @@ const emit = defineEmits<{
 const wasFocued = ref(false)
 
 watch(props, newProps => {
-    if(!newProps.plain && !props.plain && editor && !wasFocued.value) {// TODO track external changes differently
+    if (!newProps.plain && !props.plain && editor && !wasFocued.value) {// TODO track external changes differently
         editor.setData(newProps.modelValue || '')
     }
 })

@@ -1,4 +1,4 @@
-import type { Feedback, FeedbackType, ScheduleDay, ScheduleItem } from '@/types/cloud'
+import type { EventDescription, Feedback, FeedbackType, ScheduleDay, ScheduleItem } from '@/types/cloud'
 
 export type NotificationPayload = {
     title: string,
@@ -37,6 +37,7 @@ export function isToday(scheduleDay: ScheduleDay) {
 
 export function toJSDate(date: undefined): null;
 export function toJSDate(date: string): Date;
+export function toJSDate(date: string | undefined): Date | null;
 export function toJSDate(date?: string) {
     if (!date) { return null }
     const [year, month, day] = date.split('-').map(x => parseInt(x))
@@ -47,7 +48,9 @@ export function toFirebaseDate(date: undefined): null;
 export function toFirebaseDate(date: Date): string;
 export function toFirebaseDate(data?: Date) {
     if (!data) { return null }
-    return `${data.getFullYear()}-${toFirebaseMonthDay(data)}`
+    const year = data.getFullYear()
+    if (isNaN(year)) { return null }
+    return `${year}-${toFirebaseMonthDay(data)}`
 }
 
 export function toFirebaseMonthDay(date: Date) {
@@ -195,4 +198,25 @@ export function download(filename: string, text: string) {
 }
 export function useLang() {
     return computed(() => import.meta.client ? navigator.language : 'cs-CZ')
+}
+
+export function setTitle(title: string) {
+    const config = useRuntimeConfig()
+    useTitle(`${title} · ${config.public.title}`)
+}
+
+export function applicationsEnabled<T>(event: EventDescription<T> | undefined | null): boolean {
+    if (!event || !event.form) {
+        return false
+    }
+    const now = new Date().getTime()
+    return (toJSDate(event.applicationsStart)?.getTime() ?? 0) <= now && now <= (toJSDate(event.applicationsEnd)?.getTime() ?? Infinity)
+}
+
+export function feedbackEnabled<T>(event: EventDescription<T> | undefined | null): boolean {
+    if (!event) {
+        return false
+    }
+    const now = new Date().getTime()
+    return now >= toJSDate(event.start).getTime() && now <= toJSDate(event.feedbackEnd || event.end).getTime()
 }
