@@ -1,4 +1,5 @@
 import type { CollectionReference, DocumentReference, FieldValue } from 'firebase/firestore'
+import type { FirebaseDate } from '~/form-connector/src/settings'
 
 export type Application = {
     id: string,
@@ -22,7 +23,7 @@ export type ApplicationForm = {
 }
 
 export enum ApplicationState {
-    NEW, CONFIRMED, REJECTED 
+    NEW, CONFIRMED, REJECTED
 }
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' |
@@ -88,6 +89,8 @@ export type ScheduleDay = {
     program: ScheduleItem[],
 };
 
+export type ApplicationsSubCollection = 'responses'
+export const ApplicationsSubCollectionList: ApplicationsSubCollection[] = ['responses']
 export type EventSubcollection = 'notes' | 'feedback' | 'feedbackConfig' | 'groups' | 'services' | 'subscriptions' | 'schedule' | 'users'
 export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'feedbackConfig', 'groups', 'services', 'subscriptions', 'schedule', 'users']
 export type EventDocs = {
@@ -106,6 +109,7 @@ export type EventDescription<T = string> = {
      * Let users show advanced settings
      */
     advanced?: boolean,
+    adminLinks?: Record<string, string>
     applicationsEnd?: FirebaseDate,
     applicationsStart?: FirebaseDate,
 
@@ -122,6 +126,7 @@ export type EventDescription<T = string> = {
         type: 'cloud' | 'external',
         data: string, // storage / external url
     },
+    links?: Record<string, string>,
     feedbackConfig: FeedbackConfig[],// subcollection
     feedbackInfo: string,
     feedbackEnd?: FirebaseDate,
@@ -135,10 +140,7 @@ export type EventDescription<T = string> = {
     [key in EventSubcollection]: T
 }
 
-/**
- * YYYYY-MM-D
- */
-export type FirebaseDate = string
+
 
 export type Permissions = {
     superAdmin: boolean,

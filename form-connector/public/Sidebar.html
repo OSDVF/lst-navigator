@@ -1,0 +1,143 @@
+Akce: <strong id="eventName"><?= eventName ?></strong> <br>
+Email pro notifikace: <strong id="adminEmail"><?= adminEmail ?></strong> <br>
+Hlavní organizátor: <strong id="mainOrg"><?= mainOrg ?></strong> <br>
+<hr>  
+Cena se slevou: <strong id="discountPrice"><?= discountPrice ?></strong> <br>
+Klíč slevy: <strong id="discountKey"><?= discountKey ?></strong> <br>
+Plná cena: <strong id="fullPrice"><?= fullPrice ?></strong> <br>
+Pozdní cena: <strong id="latePrice"><?= latePrice ?></strong> <br>
+Termín zaplacení: <strong id="payDue"><?= payDue ?></strong> <br>
+Hlásit úpravy: <strong id="treatAllAsNew"><?= treatAllAsNew ? 'Ne' : 'Ano' ?></strong> 
+
+<br>
+<small id="extracted">🧩&ensp; <em>Extrahováno z formuláře</em></small>
+<hr>
+
+<details>
+  <summary>Formáty pro extrakci dat</summary>
+  Cena se slevou: <strong id="discountedRegex"><?= discountedRegex ?></strong> <br>
+  Plná cena: <strong id="fullRegex"><?= fullRegex ?></strong> <br>
+  Pozdní cena: <strong id="lateRegex"><?= lateRegex ?></strong> <br>
+  Klíč zdarma: <strong id="freeKeyRegex"><?= freeKeyRegex ?></strong> <br>
+  Otázka pro klíč slevy: <strong id="freeQuestionRegex"><?= freeQuestionRegex ?></strong> <br>
+  
+</details>
+
+Automatické odesílání <strong id="triggersRegistered"><?= triggersRegistered ? ('z ' + triggersRegistered) : 'vypnuto' ?></strong>
+<? if (!triggersRegistered) { ?>
+<button id="registerTriggers" type="button" onclick="registerTriggers()">Zapnout</button>
+<? } ?>
+
+<br><br>
+<small><button id="update" onclick="doUpdate()">Aktualizovat</button></small>
+
+<script
+  src="https://js.sentry-cdn.com/8d7f18581a5a2295410b5b61f09a9280.min.js"
+  crossorigin="anonymous"
+></script>
+
+<script>
+  const extracted = document.getElementById('extracted')
+  const eventName = document.getElementById('eventName')
+  const mainOrg = document.getElementById('mainOrg')
+  const adminEmail = document.getElementById('adminEmail')
+  const discountPrice = document.getElementById('discountPrice')
+  const discountKey = document.getElementById('discountKey')
+  const fullPrice = document.getElementById('fullPrice')
+  const payDue = document.getElementById('payDue')
+  const treatAllAsNew = document.getElementById('treatAllAsNew')
+  const update = document.getElementById('update')
+  const discountedRegex = document.getElementById('discountedRegex')
+  const fullRegex = document.getElementById('fullRegex')
+  const lateRegex = document.getElementById('lateRegex')
+  const freeKeyRegex = document.getElementById('freeKeyRegex')
+  const freeQuestionRegex = document.getElementById('freeQuestionRegex')
+  const triggersRegistered = document.getElementById('triggersRegistered')
+  const registerTriggersBtn = document.getElementById('registerTriggers')
+  
+  function onSuccess(settings) {
+    eventName.innerText = settings.eventName
+    adminEmail.innerText = settings.adminEmail
+    mainOrg.innerText = settings.mainOrg
+    discountPrice.innerText = settings.discountPrice
+    discountKey.innerText = settings.discountKey
+    fullPrice.innerText = settings.fullPrice
+    latePrice.innerText = settings.latePrice
+    payDue.innerText = settings.payDue
+    treatAllAsNew.innerText = settings.treatAllAsNew ? 'Ne' : 'Ano'
+    discountedRegex.innerText = settings.discountedRegex
+    fullRegex.innerText = settings.fullRegex
+    lateRegex.innerText = settings.lateRegex
+    freeKeyRegex.innerText = settings.freeKeyRegex
+    freeQuestionRegex.innerText = settings.freeQuestionRegex
+    
+    let found = false
+    for (const source of [eventName, discountPrice, fullPrice, latePrice, payDue]) {
+      if (source.innerText.includes('🧩')) {
+        extracted.style.display = 'inline'
+        found = true
+        break
+      }
+    }
+    if (!found) {
+      extracted.style.display = 'none'
+    }
+
+    if(settings.triggersRegistered) {
+      triggersRegistered.innerText = 'z ' + settings.triggersRegistered
+      if(registerTriggersBtn) {
+        registerTriggersBtn.style.display = 'none'
+      }
+    } else {
+      triggersRegistered.innerText = 'vypnuto'
+      if(registerTriggersBtn) {
+        registerTriggersBtn.style.display = 'inline'
+      }
+    }
+
+    setFetching(false)
+  }
+
+  let fetching = false
+  function setFetching(f) {
+    if(f) {
+      update.disabled = true
+      update.innerText = 'Aktualizace...'
+    } else {
+      update.disabled = false
+      update.innerText = 'Aktualizovat'
+    }
+    fetching = f
+  }
+
+  function onFail(error) {
+    console.error(error)
+    Sentry?.captureException(error)
+    setFetching(false)
+  }
+
+  function edit(name, btn) {
+    setFetching(true)
+    btn.innerText = '...'
+    btn.disabled = true
+    google.script.run.withSuccessHandler(succ => {
+      onSuccess(succ)
+      btn.innerText = '✏️'
+      btn.disabled = false
+    }).withFailureHandler(err => {
+      onFail(err)
+      btn.innerText = '✏️'
+      btn.disabled = false
+    })['set'+name]()
+  }
+
+  function registerTriggers() {
+    setFetching(true)
+    google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFail).registerTriggers()
+  }
+
+  function doUpdate() {
+    setFetching(true)
+    google.script.run.withSuccessHandler(onSuccess).withFailureHandler(onFail).getAllSettings()
+  }
+</script>

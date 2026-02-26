@@ -118,10 +118,10 @@ const config = defineNuxtConfig({
         serverBundle: 'remote',
         provider: 'iconify',
     },
-    ignore: installWizard ? [] : [
+    ignore: (installWizard ? [] : [
         'pages/install/**',
         'layouts/install.vue',
-    ],
+    ]).concat(...['form-connector']),
     modules: [
         ...(process.env.SENTRY_DISABLE !== 'true' ? ['@sentry/nuxt/module'] : []),
         '@vite-pwa/nuxt',

@@ -1,0 +1,19 @@
+{
+  "name": "form-connector",
+  "private": true,
+  "scripts": {
+    "build": "NODE_ENV=production bun run build.ts",
+    "push": "clasp push",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/google-apps-script": "^2.0.8"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "firebase": "^12.9.0"
+  }
+}

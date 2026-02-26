@@ -32,7 +32,8 @@
         "**/.nuxt": true,
         "**/.firebase": true,
         "**/.output": true,
-        "**/__": true
+        "**/__": true,
+        "form-connector/dist": true
     },
     "npm.packageManager": "npm",
     "eslint.useFlatConfig": true,

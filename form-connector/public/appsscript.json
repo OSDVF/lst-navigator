@@ -1,0 +1,26 @@
+{
+  "timeZone": "Europe/Prague",
+  "dependencies": {
+  },
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/forms",
+    "https://www.googleapis.com/auth/script.container.ui",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/script.scriptapp",
+    "https://www.googleapis.com/auth/script.send_mail",
+    "https://www.googleapis.com/auth/userinfo.email"
+  ],
+  "exceptionLogging": "STACKDRIVER",
+  "runtimeVersion": "V8",
+  "urlFetchWhitelist": [
+    "https://api.paylibo.com/paylibo/generator",
+    "https://*.googleapis.com/"
+  ],
+  "addOns": {
+    "common": {
+      "name": "Propojení Přihlášek",
+      "logoUrl": "https://lh3.googleusercontent.com/-JccJDE4InQo/ZvEfMfVLolI/AAAAAAAAAAM/0Qh8vL1l_6kV-7zRF8ldd5VXVZOi6z2WQCNcBGAsYHQ/s72-c/qrsender.png"
+    },
+    "forms": {}
+  }
+}

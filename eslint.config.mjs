@@ -6,7 +6,14 @@ export default withNuxt({
         indent: ['error', 4],
         curly: ['error', 'all'],
         '@typescript-eslint/no-explicit-any': ['off'],
-        '@typescript-eslint/no-unused-vars': ['warn'],
+        '@typescript-eslint/no-unused-vars': [
+            'warn',
+            {
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_',
+            },
+        ],
         'comma-dangle': ['error', 'always-multiline'],
         'space-before-function-paren': ['off'],
         'no-multiple-empty-lines': ['off'],

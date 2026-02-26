@@ -1,0 +1,17 @@
+<form method="get" action="https://api.paylibo.com/paylibo/generator/czech/image" target="_blank">
+  <label>Číslo účtu <input type="text" name="accountNumber" value="<?= accountNumber ?>" /></label>
+  <br>
+  <label>Kód banky <input type="text" name="bankCode" value="<?= bankCode ?>" /></label>
+  <br>
+  <label>Částka <input type="text" name="amount" /></label>
+  <br>
+  <label>Měna <input type="text" name="currency" value="<?= currency ?>" placeholder="CZK" /></label>
+  <br>
+  <label>Poznámka <input type="text" name="message" placeholder="Přihláška" /></label>
+  <br>
+  <input type="submit" value="Vygenerovat" />
+  <input type="reset" value="Reset" />
+  
+  <input type="hidden" value="false" name="compress" />
+  <input type="hidden" value="400" name="size" />
+</form>
