@@ -9,7 +9,7 @@ import {
     GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, sendEmailVerification,
 } from 'firebase/auth'
 import { useSettings } from '@/stores/settings'
-import { usePersistentRef } from '@/utils/persistence'
+import { useLocalStorage } from '@vueuse/core'
 import { UserLevel } from '@/types/cloud'
 import type { KnownCollectionName } from '@/utils/db'
 import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem, UpdatePayload } from '@/types/cloud'
@@ -115,7 +115,7 @@ export const useCloudStore = defineStore('cloud', () => {
     // Feedback
     //
     const fc = currentEventCollection('feedback')
-    const feedbackDirtyTime = usePersistentRef('feedbackDirtyTime', new Date(0).getTime())
+    const feedbackDirtyTime = skipHydrate(useLocalStorage('feedbackDirtyTime', new Date(0).getTime(), {initOnMounted: true}))
     const feedbackRepliesRaw = skipHydrate(useCollectionT(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
     const feedbackConfig = useSorted(useCollectionT<FeedbackConfig>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)), (a, b) => parseInt(a.id) - parseInt(b.id))
     const feedback = {
@@ -541,9 +541,9 @@ export const useCloudStore = defineStore('cloud', () => {
     })
 
     const notesCollection = currentEventCollection('notes')
-    const offlineFeedback = usePersistentRef<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: UpdatePayload<Feedback> | FieldValue | null } } } }>('lastNewFeedback', {})
-    const messagingToken = usePersistentRef('messagingToken', '')
-    const wasAuthenticated = usePersistentRef('isAuthenticated', false)
+    const offlineFeedback = skipHydrate(useLocalStorage<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: UpdatePayload<Feedback> | FieldValue | null } } } }>('lastNewFeedback', {}, {initOnMounted: true}))
+    const messagingToken = skipHydrate(useLocalStorage('messagingToken', '', {initOnMounted: true}))
+    const wasAuthenticated = skipHydrate(useLocalStorage('isAuthenticated', false, {initOnMounted: true}))
 
     watch(messagingToken, async (newToken) => {
         if (user.doc.value && userAuth?.value?.uid && import.meta.client) {

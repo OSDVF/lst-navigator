@@ -12,6 +12,15 @@ declare namespace NodeJS {
 declare function definePageMeta(pageMeta: any): void // Supress typescipt warning in VSCode
 
 declare global {
+  const crypto: Crypto
+  interface Global {
+    crypto: Crypto;
+  }
+
+  interface ImportMeta {
+    browser: boolean
+  }
+
   interface WindowEventMap { 'beforeinstallprompt': BeforeInstallPromptEvent; }
 
   /**

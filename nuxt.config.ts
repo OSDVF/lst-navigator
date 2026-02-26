@@ -10,6 +10,7 @@ import {
     compileTimeZone,
 } from './utils/constants'
 
+const appID = process.env.APP_ID
 const isDevMode = process.env.NODE_ENV !== 'production'
 const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
 const installWizard = process.env.INSTALL_WIZARD !== 'false'
@@ -61,7 +62,7 @@ const config = defineNuxtConfig({
             'lru-cache',
         ],
     },
-    compatibilityDate: '2025-01-30',
+    compatibilityDate: '2026-02-26',
     css: [
         '~/assets/styles/_index.scss',
         '~/assets/styles/components.scss',
@@ -90,6 +91,7 @@ const config = defineNuxtConfig({
         },
     },
     experimental: {
+        appManifest: false,
         headNext: true,
         polyfillVueUseHead: false,
         payloadExtraction: false,
@@ -132,6 +134,7 @@ const config = defineNuxtConfig({
         'nuxt-rating',
         '@nuxt/eslint',
         'nuxt-vitalizer',
+        'nuxt-security',
     ],
     nitro: {
         prerender: {
@@ -187,7 +190,7 @@ const config = defineNuxtConfig({
             name: process.env.VITE_APP_NAME,
             short_name: process.env.VITE_APP_SHORT_NAME,
             start_url: './schedule?install=true',
-            id: process.env.APP_ID,
+            id: appID,
             theme_color: process.env.THEME_COLOR ?? defaultThemeColor,
             description: process.env.APP_DESCRIPTION,
             background_color: process.env.BACKGROUND_COLOR ?? defaultThemeColor,
@@ -214,6 +217,13 @@ const config = defineNuxtConfig({
         },
         srcDir: 'utils',
         strategies: 'injectManifest',
+    },
+    security: {
+        headers: {
+            contentSecurityPolicy: {
+                'img-src': false,//TODO include origins used by events
+            },
+        },
     },
     sourcemap: {
         client: true,

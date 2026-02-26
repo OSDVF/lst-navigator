@@ -18,16 +18,18 @@
             Aplikace vyžaduje zapnutý JavaScript.
         </noscript>
         <NuxtLink
-            v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id"
-            :to="`/${event.id}/preview`">
-            <div class="card p">
+            v-for="event in cloud.eventsCollection" :key="event.id" v-slot="link" :value="event.id"
+            :to="`/${event.id}/preview`" custom>
+            <div
+                class="card a p" tabindex="0"
+                @click="e => ['A', 'SPAN'].includes((e.target as HTMLElement).tagName) ? e.stopPropagation() : link.navigate()">
                 <EventImage class="noinvert" :event="event.id" />
                 <nav class="flex-wrap">
-                    <span class="flex-full" style="height: 5rem;"/>
-                    <span class="ml-3 mr-2 flex-full">
+                    <div class="flex-full" style="height: 5rem;" />
+                    <div class="ml-3 mr-2 flex-full">
                         <h2>{{ event.title }}</h2>
                         <h3>{{ event.subtitle }}</h3>
-                    </span>
+                    </div>
                     <NuxtLink v-if="applicationsEnabled(event)" :to="`/${event.id}/apply`">
                         <Icon name="mdi:form-select" size="1.8rem" />&ensp;Přihláška
                     </NuxtLink>
@@ -87,6 +89,7 @@ if (import.meta.browser && route.params.event) {
     border-radius: 8px;
     overflow: hidden;
     position: relative;
+    cursor: pointer;
 
     a {
         font-weight: bold;
@@ -111,6 +114,7 @@ if (import.meta.browser && route.params.event) {
     nav {
         position: absolute;
         background: color.adjust($color: c.$link-background, $alpha: 0.3);
+        backdrop-filter: c.$blurred-background;
         left: 0;
         right: 0;
         bottom: 0;

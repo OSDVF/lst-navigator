@@ -91,7 +91,7 @@ import { useCloudStore } from '@/stores/cloud'
 import type { Feedback } from '@/types/cloud'
 import { useSettings } from '@/stores/settings'
 import { toHumanTime, getParallelEvents } from '@/utils/utils'
-import { usePersistentRef } from '@/utils/persistence'
+import { useLocalStorage } from '@vueuse/core'
 
 const route = useRoute()
 const settings = useSettings()
@@ -126,7 +126,7 @@ const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
 const notesDocument = useDocumentT<any>(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
-const offlineNote = usePersistentRef(`note.${dayIndex}.${scheduleItemIndex}`, { time: new Date().getTime(), note: '' })
+const offlineNote = useLocalStorage(`note.${dayIndex}.${scheduleItemIndex}`, { time: new Date().getTime(), note: '' }, {initOnMounted: true})
 let noteSaving: NodeJS.Timeout | null
 
 const noteModel = computed<string>({

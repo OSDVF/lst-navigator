@@ -27,7 +27,7 @@
     "@nuxt/devtools": "^1.7.0",
     "@nuxt/eslint": "^0.7.5",
     "@nuxt/icon": "^1.10.3",
-    "@nuxt/kit": "^3.15.2",
+    "@nuxt/kit": "^3.21.1",
     "@rauschma/stringio": "^1.4.0",
     "@types/jquery": "^3.5.32",
     "@types/lodash.clonedeep": "^4.5.9",
@@ -52,7 +52,7 @@
     "fake-indexeddb": "^4.0.2",
     "firebase-admin": "^13.6.1",
     "nuxi": "^3.20.0",
-    "nuxt": "^3.15.2",
+    "nuxt": "^3.21.1",
     "nuxt-scheduler": "^0.1.9",
     "nuxt-vitalizer": "^0.10.0",
     "nuxt-vuefire": "^1.0.4",
@@ -60,15 +60,15 @@
     "sass": "^1.83.4",
     "sharp": "^0.33.5",
     "sharp-ico": "^0.1.5",
-    "ts-localstorage": "^3.1.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "unzipit": "^1.4.3",
     "vite-plugin-externalize-dependencies": "^1.0.1",
     "vue-lazy-hydration": "^2.0.0-beta.4",
     "vue-multiselect": "^3.2.0",
-    "vue-tsc": "^2.2.0"
+    "vue-tsc": "^3.2.5"
   },
   "dependencies": {
+    "@peculiar/webcrypto": "^1.5.0",
     "@pinia/nuxt": "^0.9.0",
     "@sentry/nuxt": "^8.51.0",
     "@types/lodash.pickby": "^4.6.9",
@@ -97,7 +97,7 @@
     "vite": "^7.3.1",
     "vite-plugin-top-level-await": "^1.4.4",
     "vue-easy-lightbox": "^1.19.0",
-    "vuefire": "^3.2.1"
+    "vuefire": "^3.2.2"
   },
   "trustedDependencies": [
     "@parcel/watcher",

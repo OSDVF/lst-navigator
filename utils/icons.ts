@@ -1,3 +1,5 @@
+import { useLocalStorage } from '@vueuse/core'
+
 export function useIconList({
     aliases = false,
     hidden = false,
@@ -7,8 +9,8 @@ export function useIconList({
 } = {}) {
     const config = useRuntimeConfig()
 
-    const offline = usePersistentRef<string[]>('iconList', [])
-    const lastFetch = usePersistentRef<number>('iconListFetch', 0)
+    const offline = useLocalStorage<string[]>('iconList', [], { initOnMounted: true })
+    const lastFetch = useLocalStorage<number>('iconListFetch', 0, { initOnMounted: true })
 
     const now = Date.now()
     const expired = now - lastFetch.value > 1000 * 60 * 60 * 24 * 5 // 5 days

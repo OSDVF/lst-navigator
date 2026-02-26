@@ -1,14 +1,15 @@
 import { defineStore } from 'pinia'
 import type { FeedbackConfig, ScheduleItem } from '~/types/cloud'
+import { useLocalStorage } from '@vueuse/core'
 
 export type DisplayKind = 'histogram' | 'individual'
 
 export const useAdmin = defineStore('admin', function () {
-    const displayKind = usePersistentRef<DisplayKind>('displayKind', 'histogram')
-    const editingFeedback = usePersistentRef('editingFeedback', false)
-    const anonymize = usePersistentRef('anonymize', true)
-    const eventClipboard = usePersistentRef<ScheduleItem | null>('eventClipboard', null)
-    const feedbackConfigClipboard = usePersistentRef<FeedbackConfig | null>('feedbackConfigClipboard', null)
+    const displayKind = useLocalStorage<DisplayKind>('displayKind', 'histogram', {initOnMounted: true})
+    const editingFeedback = useLocalStorage('editingFeedback', false, {initOnMounted: true})
+    const anonymize = useLocalStorage('anonymize', true, {initOnMounted: true})
+    const eventClipboard = useLocalStorage<ScheduleItem | null>('eventClipboard', null, {initOnMounted: true})
+    const feedbackConfigClipboard = useLocalStorage<FeedbackConfig | null>('feedbackConfigClipboard', null, {initOnMounted: true})
 
     return {
         anonymize,

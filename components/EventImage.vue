@@ -29,7 +29,7 @@ const eventDocuments = useDocumentT<EventDescription<void>>(computed(() => fires
 
 const eventImage = computedAsync(async () => await getCacheImage('eventImage-' + p.event,
     eventDocuments.value?.image.type == 'cloud' && firebaseStorage
-        ? useStorageFileUrl(storageRef(firebaseStorage, eventDocuments.value?.image.data)).url.value
+        ? useLocalStorageFileUrl(storageRef(firebaseStorage, eventDocuments.value?.image.data)).url.value
         : eventDocuments.value?.image.data,
 
 ), null, { lazy: true })

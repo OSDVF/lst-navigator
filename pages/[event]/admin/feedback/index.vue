@@ -105,7 +105,7 @@ import { csvExport } from '~/utils/csvExport'
 import type { EventSubcollection, FeedbackConfig } from '@/types/cloud'
 import { useAdmin } from '~/stores/admin'
 import { download } from '~/utils/utils'
-
+import { useLocalStorage } from '@vueuse/core'
 
 definePageMeta({
     title: 'Zpětná vazba',
@@ -120,7 +120,7 @@ const error = ref()
 const previewDay = ref(parseInt(useRoute().hash) || 0)
 const largeBreakpoint = 600
 const largeScreen = ref(import.meta.browser && window.innerWidth > largeBreakpoint)
-const showPreview = usePersistentRef('daysPreview', false)
+const showPreview = useLocalStorage('daysPreview', false, {initOnMounted: true})
 const split = computed(() => showPreview.value && largeScreen.value)
 
 onMounted(() => {

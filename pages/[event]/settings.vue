@@ -60,7 +60,7 @@
                 <input id="richNoteEditor" v-model="settings.richNoteEditor" type="checkbox">
             </span>
         </fieldset>
-        <fieldset v-if="config.public.notifications_title">
+        <fieldset v-if="config.notifications_title">
             <label for="selectedAudioName">
                 <Icon name="mdi:music" /> Zvuk upozornění
             </label>
@@ -157,21 +157,23 @@
             </div>
         </fieldset>
         <h4>Aplikace</h4>
-        <fieldset v-if="config.public.installWizard && !$pwa?.isPWAInstalled && $deferredPrompt?.value">
-            <label for="install">Instalace</label>
-            <span>
-                <button
-                    id="install"
-                    @click="$router.push(config.public.installWizard ? '/install/0' : `/${cloud.selectedEvent}/schedule`)">
-                    <Icon name="mdi:download" /> Instalovat
-                </button>
-            </span>
-        </fieldset>
+        <LazyClientOnly>
+            <fieldset v-if="config.installWizard && !$pwa?.isPWAInstalled && $deferredPrompt?.value">
+                <label for="install">Instalace</label>
+                <span>
+                    <button
+                        id="install"
+                        @click="$router.push(config.installWizard ? '/install/0' : `/${cloud.selectedEvent}/schedule`)">
+                        <Icon name="mdi:download" /> Instalovat
+                    </button>
+                </span>
+            </fieldset>
+        </LazyClientOnly>
         <fieldset>
             <p>Verze</p>
-            <small :title="config.public.commitHash" @click="$nuxt.$alert(config.public.commitHash)">
-                {{ config.public.version }}
-                {{ config.public.commitMessageTime }}
+            <small :title="config.commitHash" @click="$alert(config.commitHash)">
+                {{ config.version }}
+                {{ config.commitMessageTime }}
             </small>
 
         </fieldset>
@@ -179,8 +181,8 @@
             <span>Poslední aktualizace</span>
             <p>
                 <LazyClientOnly>
-                    {{ new Date(parseInt(config.public.compileTime)).toLocaleString(lang) }}{{
-                        leadingPlus(-parseInt(config.public.compileTimeZone) / 60) }}
+                    {{ new Date(parseInt(config.compileTime)).toLocaleString(lang) }}{{
+                        leadingPlus(-parseInt(config.compileTimeZone) / 60) }}
                 </LazyClientOnly>
                 &nbsp;
                 <AppManageBtns />
@@ -190,7 +192,7 @@
             <span>Hlášení chyb</span>
             <small>
                 <LazyClientOnly>
-                    <a :href="`mailto:${config.public.supportEmail}`">{{ config.public.supportEmail }}</a>
+                    <a :href="`mailto:${config.supportEmail}`">{{ config.supportEmail }}</a>
                 </LazyClientOnly>
             </small>
         </fieldset>
@@ -210,12 +212,14 @@ import { userLevelToIcon } from '~/types/cloud'
 import { NuxtLink } from '#components'
 definePageMeta({
     title: 'Nastavení',
-    name: 'ssettings',
+    name: 'settings',
 })
 
 const settings = useSettings()
 const cloud = useCloudStore()
-const config = useRuntimeConfig()
+const app = useNuxtApp()
+const config = app.$config.public
+const $alert = app.$alert
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
 const myPermission = computed(() => cloud.user.info?.permissions?.[cloud.selectedEvent] as UserLevel)

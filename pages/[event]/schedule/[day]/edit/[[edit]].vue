@@ -81,6 +81,7 @@ import type { VueFirestoreDocumentData } from 'vuefire'
 import { useAdmin } from '~/stores/admin'
 import { stripHtml } from '~/utils/sanitize'
 import { slugify } from '@vueuse/motion'
+import { useLocalStorage } from '@vueuse/core'
 
 const router = useRouter()
 const route = router.currentRoute
@@ -98,7 +99,7 @@ const selectedEditIndex = computed(() => {
 const program = computed(() => cloud.days[selectedDayIndex.value].program)
 const editing = computed(() => typeof selectedEditIndex.value !== 'undefined')
 const title = computed(() => editing.value ? `Upravit program #${selectedDayIndex.value}#${selectedEditIndex.value}` : 'Nový program')
-const autoOrder = usePersistentRef('autoOrder', false)
+const autoOrder = useLocalStorage('autoOrder', false, {initOnMounted: true})
 const loading = ref(false)
 const error = ref()
 

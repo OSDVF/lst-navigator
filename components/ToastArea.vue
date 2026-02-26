@@ -3,7 +3,7 @@
         role="dialog" :class="{
             toast: true, visible: !!cloudStore.networkError,
         //TODO offline alert?
-        }" tabindex="0" @click="$nuxt.$alert(cloudStore.networkError?.message)">
+        }" tabindex="0" @click="$alert(cloudStore.networkError?.message)">
         <Icon name="mdi:cloud-off" /> Problém s připojením
     </div>
     <LazyClientOnly>
@@ -16,4 +16,5 @@
 <script lang="ts" setup>
 const cloudStore = useCloudStore()
 const isServer = ref(import.meta.server)
+const $alert = useNuxtApp().$alert
 </script>

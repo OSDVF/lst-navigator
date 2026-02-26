@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/nuxt'
 import { defineStore, skipHydrate } from 'pinia'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
-import { usePersistentRef } from '@/utils/persistence'
+import { useLocalStorage } from '@vueuse/core'
 
 function generateUID() {
     return new Date().getTime().toString(36)
@@ -44,7 +44,7 @@ export const useSettings = defineStore('settings', () => {
         audioList.value = defaultAudioList.concat(uploadedAudioList)
     })
 
-    const selectedAudio = usePersistentRef<number | string>('selectedAudio', 0)
+    const selectedAudio = skipHydrate(useLocalStorage<number | string>('selectedAudio', 0, {initOnMounted: true}))
     const selectedAudioName = computed({
         get() {
             if (typeof selectedAudio.value === 'number') { return audioList.value[selectedAudio.value]?.name }
@@ -140,25 +140,25 @@ export const useSettings = defineStore('settings', () => {
         }
     }
 
-    const selectedGroup = usePersistentRef<number>('selectedGroup', 0)
-    const userNickname = usePersistentRef<string>('userNickname', '')
-    const userIdentifier = usePersistentRef('userIdentifier', uniqueIdentifier)
+    const selectedGroup = skipHydrate(useLocalStorage<number>('selectedGroup', 0, {initOnMounted: true}))
+    const userNickname = skipHydrate(useLocalStorage<string>('userNickname', '', {initOnMounted: true}))
+    const userIdentifier = skipHydrate(useLocalStorage('userIdentifier', uniqueIdentifier, {initOnMounted: true}))
 
-    if(process.env.SENTRY_DISABLED !== 'true') {
+    if (process.env.SENTRY_DISABLED !== 'true') {
         Sentry.setUser({ username: userNickname.value, id: userIdentifier.value })
     }
-    const notesDirtyTime = usePersistentRef('notesDirtyTime', new Date(0).getTime())
+    const notesDirtyTime = skipHydrate(useLocalStorage('notesDirtyTime', new Date(0).getTime(), {initOnMounted: true}))
 
-    const transitions = usePersistentRef('transitions', true)
-    const blur = usePersistentRef('blur', import.meta.browser && !window.matchMedia('(prefers-reduced-transparency)').matches)
+    const transitions = skipHydrate(useLocalStorage('transitions', true, {initOnMounted: true}))
+    const blur = skipHydrate(useLocalStorage('blur', import.meta.browser && !window.matchMedia('(prefers-reduced-transparency)').matches, { initOnMounted: true }))
 
     return {
         blur,
         generateUID,
         transitions,
-        expandableItems: usePersistentRef('expandableItems', false),
-        gestures: usePersistentRef('gestures', true),
-        installStep: usePersistentRef<number>('installStep', 0),
+        expandableItems: skipHydrate(useLocalStorage('expandableItems', false, {initOnMounted: true})),
+        gestures: skipHydrate(useLocalStorage('gestures', true, {initOnMounted: true})),
+        installStep: skipHydrate(useLocalStorage<number>('installStep', 0, {initOnMounted: true})),
         selectedAudioName: skipHydrate(selectedAudioName),
         selectedAudioUrl,
         audioList,
@@ -170,7 +170,7 @@ export const useSettings = defineStore('settings', () => {
         isPlaying,
         audio: ref(audioElem!),
         selectedGroup,
-        richNoteEditor: usePersistentRef('richNoteEditor', false),
+        richNoteEditor: skipHydrate(useLocalStorage('richNoteEditor', false, {initOnMounted: true})),
         userNickname,
         userIdentifier,
         doNotifications: skipHydrate(useIDBKeyval('doNotifications', true)),

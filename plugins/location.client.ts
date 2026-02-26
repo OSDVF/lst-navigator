@@ -12,9 +12,10 @@ export default defineNuxtPlugin({
         nuxtApp.provide('location', location.pathname)
     },
     hooks: {
-        'app:mounted'(app) {
-            if (location.pathname !== app.$nuxt.$location) {
-                useRouter().replace(app.$nuxt.$location)
+        'app:mounted'() {
+            const $nuxt = useNuxtApp()
+            if (location.pathname !== $nuxt.$location) {
+                useRouter().replace($nuxt.$location)
             }
         },
     },

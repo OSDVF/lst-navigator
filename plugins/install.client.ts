@@ -19,12 +19,13 @@ const needRefresh = ref(false)
 export default defineNuxtPlugin({
     parallel: true,
     hooks: {
-        async 'app:mounted'(app) {
+        async 'app:mounted'() {
             const firebaseApp = useFirebaseApp()
             const settings = useSettings()
+            const $nuxt = useNuxtApp()
             const config = useRuntimeConfig()
 
-            watch(() => app.$nuxt.$pwa?.offlineReady, (value) => {
+            watch(() => $nuxt.$pwa?.offlineReady, (value) => {
                 if (value) {
                     downloadingUpdate.value = false
                 }
@@ -42,7 +43,7 @@ export default defineNuxtPlugin({
                             needRefresh.value = true
                         }
                     })
-                    app.$nuxt.$pwa?.updateServiceWorker()
+                    $nuxt.$pwa?.updateServiceWorker()
                 })
                 if (registration.waiting) {
                     console.log('Waiting found')
@@ -53,12 +54,12 @@ export default defineNuxtPlugin({
                         type: 'INITIALIZE_APP',
                         config: {
                             ...firebaseApp.options,
-                            defaultNotification: app.$nuxt.$config.public.notifications_title ? {
-                                title: app.$nuxt.$config.public.notifications_title,
-                                body: app.$nuxt.$config.public.notifications_body,
-                                image: app.$nuxt.$config.public.notifications_image,
-                                icon: app.$nuxt.$config.public.notifications_icon,
-                                vapidKey: app.$nuxt.$config.public.notifications_vapidKey,
+                            defaultNotification: $nuxt.$config.public.notifications_title ? {
+                                title: $nuxt.$config.public.notifications_title,
+                                body: $nuxt.$config.public.notifications_body,
+                                image: $nuxt.$config.public.notifications_image,
+                                icon: $nuxt.$config.public.notifications_icon,
+                                vapidKey: $nuxt.$config.public.notifications_vapidKey,
                             } : undefined,
                         },
                     })

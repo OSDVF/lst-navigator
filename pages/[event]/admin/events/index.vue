@@ -206,7 +206,7 @@ import { doc, collection, arrayUnion, type DocumentData, getDoc, deleteField } f
 import { getDocCacheOr, getDocs, setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
-import { useFirebaseStorage, useStorageFile } from 'vuefire'
+import { useFirebaseStorage, useLocalStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
 import { toFirebaseMonthDay, toJSDate, toFirebaseDate, useLang } from '@/utils/utils'
 import { EventSubcollectionsList, type EventDescription, type ScheduleDay } from '~/types/cloud'
@@ -316,7 +316,7 @@ const storage = cloud.probe && config.public.storageEnabled && useFirebaseStorag
 const fs = cloud.probe && useFirestore()
 
 const { files, open: openFD } = useFileDialog()
-const remoteImage = useStorageFile(computed(() => storage && editedEvent.value.identifier ? storageRef(storage, `${editedEvent.value.identifier}/${files.value?.item(0)?.name ?? 'image'}`) : null))
+const remoteImage = useLocalStorageFile(computed(() => storage && editedEvent.value.identifier ? storageRef(storage, `${editedEvent.value.identifier}/${files.value?.item(0)?.name ?? 'image'}`) : null))
 function uploadImage() {
     const data = files.value?.item(0)
     if (data) {

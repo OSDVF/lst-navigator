@@ -47,6 +47,7 @@
 import { useDrag, type Vector2 } from '@vueuse/gesture'
 import { useCloudStore } from '@/stores/cloud'
 import { useSettings } from '~/stores/settings'
+import { useLocalStorage } from '@vueuse/core'
 
 definePageMeta({
     layoutTransition: {
@@ -58,7 +59,7 @@ const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const cloud = useCloudStore()
 const router = useRouter()
 const settings = useSettings()
-const lastDay = usePersistentRef('lastDay', '0')// workaround for nuxt not remembering nested page on reload
+const lastDay = useLocalStorage('lastDay', '0', {initOnMounted: true})// workaround for nuxt not remembering nested page on reload
 const dayIndex = computed(() => router.currentRoute.value.params.day as string ?? lastDay.value)
 
 watch(dayIndex, (value) => {
