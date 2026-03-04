@@ -2,6 +2,7 @@ import { findTriggers, registerSubmitTrigger, registerSidebarTrigger } from './t
 import { sidebar } from './sidebar'
 import { menu } from './menu'
 export { onSubmitForm } from './submit'
+export { _connect, _adminEmail, _eventName, _mainOrg, _treatAllAsNew, _triggersCheck } from './menu'
 
 export function onOpen(e: GoogleAppsScript.Events.FormsOnOpen) {
     const ui = FormApp.getUi()

@@ -1,21 +1,13 @@
 import { collection, doc, getDoc, setDoc } from 'firebase/firestore'
 import { useFirestore } from './firebase'
-import { getEventSettings, type EventSettings } from './settings'
+import { getEventSettings } from './settings'
+import type { EmailTemplateVars } from './types'
 
 type ResponseRecord = {
     email: string,
     edits: number,
     edit: string,
 }
-
-type EmailTemplateVars = {
-    editLink: string,
-    responseId: string,
-    canEdit: boolean,
-    qrCode: string | boolean,
-    message?: string,
-    price: number,
-} & Partial<Omit<EventSettings, 'priceExpression' | 'emailBody' | 'emailHeadNew' | 'emailHeadEdited' | 'messageTemplate'>>
 
 export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
     const response = e.response
@@ -56,35 +48,75 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
         extras: settings.extras,
         mainOrg: settings.mainOrg,
         priceCategories: settings.priceCategories,
-
+        donation: 0,
+        donationQrCode: false,
         editLink: response.getEditResponseUrl(),
-        message: settings.messageTemplate?.evaluate().getContent(),
         responseId: response.getId(),
         canEdit: canEdit,
         qrCode: false,
         price: 0,
     }
     {
+        // prevent eval from accessing global scope variables
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const ScriptApp = undefined
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const Utilities = undefined
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const FormsApp = undefined
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const MailApp = undefined
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const UrlFetchApp = undefined
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const PropertiesService = undefined
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const useFirestore = undefined
         templateVars.price = eval(`(function(){Object.assign(this,${JSON.stringify(templateVars)});return ${settings.priceExpression}})()`)
+        if (settings.donationExpression) {
+            templateVars.donation = eval(`(function(){Object.assign(this,${JSON.stringify(templateVars)});return ${settings.donationExpression}})()`)
+        }
+    }
+    if (settings.symbolTemplate) {
+        Object.assign(settings.symbolTemplate, templateVars)
+        templateVars.vs = parseInt(settings.symbolTemplate?.evaluate().getContent())
+    }
+    if (settings.messageTemplate) {
+        Object.assign(settings.messageTemplate, templateVars)
+        templateVars.message = settings.messageTemplate?.evaluate().getContent()
+    }
+    if(settings.donationMessageTemplate) {
+        Object.assign(settings.donationMessageTemplate, templateVars)
+        templateVars.donationMessage = settings.donationMessageTemplate?.evaluate().getContent()
+    }
+    if(settings.donationSymbolTemplate) {
+        Object.assign(settings.donationSymbolTemplate, templateVars)
+        templateVars.donationSymbol = parseInt(settings.donationSymbolTemplate?.evaluate().getContent())
     }
 
     const inlineImages: Record<string, GoogleAppsScript.Base.Blob> = {}
-    if (templateVars.price) {
+    function addQRCode(amount: number, message?: string, vs?: number) {
         try {
-            const qrRequest = UrlFetchApp.fetch(`https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=400&accountNumber=${settings.accountNumber}&bankCode=${settings.bankCode}&amount=${templateVars.price}&currency=${settings.currency}&message=${encodeURIComponent(templateVars.message ?? '')}`)
+            const qrRequest = UrlFetchApp.fetch(`https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=400&accountNumber=${settings.accountNumber}&bankCode=${settings.bankCode}&amount=${amount}&currency=${settings.currency}&message=${encodeURIComponent(message ?? '')}&vs=${vs ?? ''}`)
             const code = qrRequest.getResponseCode()
             if (code == 200) {
                 const qrBlob = qrRequest.getBlob()
                 const imageId = `qrCode${Date.now().toString(36).substring(3)}`
                 qrBlob.setName(imageId)
                 inlineImages[imageId] = qrBlob
-                templateVars.qrCode = imageId
+                return imageId
             } else {
                 console.warn('QR code generate response: ', code, qrRequest.getContentText(), qrRequest.getHeaders())
             }
         } catch (e) {
             console.error(e)
         }
+    }
+    if (templateVars.price) {
+        templateVars.qrCode = addQRCode(templateVars.price, templateVars.message, templateVars.vs) ?? false
+    }
+    if (templateVars.donation) {
+        templateVars.donationQrCode = addQRCode(templateVars.donation, templateVars.donationMessage, templateVars.donationSymbol) ?? false
     }
 
     let headContent = ''

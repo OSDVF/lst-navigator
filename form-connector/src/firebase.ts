@@ -1,10 +1,10 @@
 import { getApp, initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
-import { getAppSettings } from './settings'
+import { getInternalSettings } from './settings'
 
 let appInitialized = false
 function getOrInitFirebase() {
-    const appSettings = getAppSettings()
+    const appSettings = getInternalSettings()
 
     if (!appInitialized) {
         const app = initializeApp(appSettings)

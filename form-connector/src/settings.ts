@@ -1,55 +1,21 @@
 import { doc, getDoc } from 'firebase/firestore'
 import { useFirestore } from './firebase'
 import { findTriggers } from './triggers'
+import type { Category, EventSettings, ExtraItem } from './types'
 
 export type AppSettings = {
     apiKey: string,
     projectId: string,
     appId: string,
-}
-
-/**
- * YYYYY-MM-D
- */
-export type FirebaseDate = string
-
-export type Category = {
-    name: string,
-    deadline: FirebaseDate,
-    price: number,
-}
-
-export type ExtraItem = {
-    name: string,
-    price: number,
-}
-
-export type DocumentSettings = {
     /**
      * Path of a document in Firebase in which per-event additional settings are stored
      */
     remoteEventSettings: string,
 }
 
-export type EventSettings<Template = GoogleAppsScript.HTML.HtmlTemplate> = {
-    accountNumber: string,
-    adminEmail: string,
-    bankCode: string,
-    currency: string,
-    emailHeadNew: Template,
-    emailHeadEdited: Template,
-    emailBody: Template,
-    eventName: string,
-    extras: ExtraItem[],
-    messageTemplate: Template,
-    priceCategories: Category[],
-    priceExpression: string,
-    mainOrg: string,
-    responsesCollection: string,
-    treatAllAsNew: boolean
-}
+export type EventSettingsTemplated<T = GoogleAppsScript.HTML.HtmlTemplate> = EventSettings<T>
 
-export async function getEventSettings(): Promise<Partial<EventSettings>> {
+export async function getEventSettings(): Promise<Partial<EventSettingsTemplated>> {
     const docProps = PropertiesService.getDocumentProperties()// Document properties are fallback when firestore doesn't work
     const form = FormApp.getActiveForm()
     const eventName = docProps.getProperty('eventName') || form.getTitle()
@@ -84,11 +50,14 @@ export async function getEventSettings(): Promise<Partial<EventSettings>> {
         })
     }
 
-    const settings: Partial<EventSettings> = {
+    const settings: Partial<EventSettingsTemplated> = {
         accountNumber: docProps.getProperty('accountNumber') ?? undefined,
         adminEmail: docProps.getProperty('adminEmail') ?? undefined,
         bankCode: docProps.getProperty('bankCode') ?? undefined,
         currency: docProps.getProperty('currency') ?? undefined,
+        donationExpression: docProps.getProperty('donationExpression') ?? undefined,
+        donationMessageTemplate: HtmlService.createTemplateFromFile('DonationMessage'),
+        donationSymbolTemplate: HtmlService.createTemplateFromFile('DonationSymbol'),
         eventName,
         extras,
         messageTemplate: HtmlService.createTemplateFromFile('Message'),
@@ -96,6 +65,7 @@ export async function getEventSettings(): Promise<Partial<EventSettings>> {
         priceExpression: docProps.getProperty('priceExpression') ?? undefined,
         mainOrg: docProps.getProperty('mainOrg') ?? undefined,
         responsesCollection: docProps.getProperty('responsesCollection') ?? undefined,
+        symbolTemplate: HtmlService.createTemplateFromFile('Symbol'),
         treatAllAsNew: docProps.getProperty('treatAllAsNew') == 'true',
     }
 
@@ -121,6 +91,15 @@ export async function getEventSettings(): Promise<Partial<EventSettings>> {
             if (remote.messageTemplate) {
                 settings.messageTemplate = HtmlService.createTemplate(remote.messageTemplate)
             }
+            if (remote.symbolTemplate) {
+                settings.symbolTemplate = HtmlService.createTemplate(remote.symbolTemplate)
+            }
+            if (remote.donationMessageTemplate) {
+                settings.donationMessageTemplate = HtmlService.createTemplate(remote.donationMessageTemplate)
+            }
+            if (remote.donationSymbolTemplate) {
+                settings.donationSymbolTemplate = HtmlService.createTemplate(remote.donationSymbolTemplate)
+            }
         }
     } catch (e) {
         console.warn(e, 'Using only document-contained settings')
@@ -133,6 +112,18 @@ export async function getEventSettings(): Promise<Partial<EventSettings>> {
     }
     if (!settings.emailHeadNew) {
         settings.emailHeadNew = HtmlService.createTemplateFromFile('EmailHeadNew')
+    }
+    if (!settings.messageTemplate) {
+        settings.messageTemplate = HtmlService.createTemplateFromFile('Message')
+    }
+    if (!settings.symbolTemplate) {
+        settings.symbolTemplate = HtmlService.createTemplateFromFile('Symbol')
+    }
+    if (!settings.donationMessageTemplate) {
+        settings.donationMessageTemplate = HtmlService.createTemplateFromFile('DonationMessage')
+    }
+    if (!settings.donationSymbolTemplate) {
+        settings.donationSymbolTemplate = HtmlService.createTemplateFromFile('DonationSymbol')
     }
     return settings
 }
@@ -148,6 +139,9 @@ const dummyProperties = new Proxy<Record<string | symbol, any>>({}, {
     },
 })
 
-export function getAppSettings(): Partial<AppSettings> {
-    return PropertiesService.getScriptProperties().getProperties()
+export function getInternalSettings(): Partial<AppSettings> {
+    return {
+        ...PropertiesService.getScriptProperties().getProperties(),
+        ...PropertiesService.getDocumentProperties().getProperties(),
+    }
 }

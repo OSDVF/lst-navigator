@@ -1,15 +1,15 @@
 export function findTriggers(form: GoogleAppsScript.Forms.Form) {
-    let foundSidebar = false
-    let foundSend = false
+    let foundSidebar: GoogleAppsScript.Script.Trigger | null = null
+    let foundSend: GoogleAppsScript.Script.Trigger | null = null
     const triggers = ScriptApp.getUserTriggers(form)
     for (const trigger of triggers) {
         const fn = trigger.getHandlerFunction()
         switch (fn) {
         case 'sidebar':
-            foundSidebar = !!trigger
+            foundSidebar = trigger
             break
         case 'onSubmitForm':
-            foundSend = !!trigger
+            foundSend = trigger
             break
         }
     }
@@ -24,6 +24,18 @@ export function registerSubmitTrigger(form: GoogleAppsScript.Forms.Form) {
 }
 export function registerSidebarTrigger(form: GoogleAppsScript.Forms.Form) {
     return ScriptApp.newTrigger('sidebar').forForm(form).onOpen().create()
+}
+
+export function registerAllTriggers() {
+    const form = FormApp.getActiveForm()
+    let {
+        foundSend,
+        foundSidebar,
+    } = findTriggers(form)
+    if (!foundSidebar) { foundSidebar = registerSidebarTrigger(form) }
+    if (!foundSend) { foundSend = registerSubmitTrigger(form) }
+
+    return { foundSend, foundSidebar }
 }
 
 export function areTriggersRegistered() {
