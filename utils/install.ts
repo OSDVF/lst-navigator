@@ -9,5 +9,5 @@ export function useInstallComplete(to?: RouteLocationNormalized) {
     const settings = useSettings()
     const route = to || useRoute()
 
-    return computed(() => !(route.query.install == 'true' || settings.installStep == 0) || settings.installStep >= config.public.installStepCount)
+    return computed(() => !(route.query.install == 'true' || settings.installStep.value == 0) || settings.installStep.value >= config.public.installStepCount)
 }

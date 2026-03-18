@@ -69,7 +69,7 @@ async function transfer() {
     if (toOther.value) {
         // To other device - create a success reply
         await setDocT(transfersDoc(target.value), {
-            remote: settings.userIdentifier,
+            remote: settings.userIdentifier.value,
             status: TransferStatus.Reply,
         } as Transfer)
     } else {

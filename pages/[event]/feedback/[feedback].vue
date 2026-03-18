@@ -12,7 +12,9 @@
                     </button>
                 </NuxtLink>
 
-                <NuxtLink class="ml-2" :to="`/${cloud.selectedEvent}/admin/feedback/result`" title="Výsledky zpětné vazby">
+                <NuxtLink
+                    class="ml-2" :to="`/${cloud.selectedEvent}/admin/feedback/result`"
+                    title="Výsledky zpětné vazby">
                     <button type="button" class="large">
                         <Icon name="mdi:spreadsheet" class="mb-0.5e" /> Výsledky
                     </button>
@@ -35,7 +37,8 @@
         </NameChangeDialog>
         <br>
 
-        Tvé odpovědi jsou okamžitě uloženy a můžeš se k nim na tomto zařízení kdykoliv vrátit. {{ cloud.eventDescription?.feedbackInfo }}
+        Tvé odpovědi jsou okamžitě uloženy a můžeš se k nim na tomto zařízení kdykoliv vrátit. {{
+            cloud.eventDescription?.feedbackInfo }}
         <h1>{{ currentPart?.title }}</h1>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`" class="mb-5 mt-2">
             <h3 v-if="subPart.title" class="mb-1">{{ subPart.title }}</h3>
@@ -43,7 +46,8 @@
                 <legend v-if="entry.title">
                     <h3>{{ entry.title }}<NuxtLink
                         v-if="entry.time" title="Zobrazit v harmonogramu"
-                        :to="`/${cloud.selectedEvent}/schedule/${subPart.primaryIndex}/${entry.secondaryIndex}`" class="muted">&ensp;{{
+                        :to="`/${cloud.selectedEvent}/schedule/${subPart.primaryIndex}/${entry.secondaryIndex}`"
+                        class="muted">&ensp;{{
                             toHumanTime(entry.time) }}</NuxtLink>
                     </h3>
                 </legend>
@@ -158,6 +162,18 @@ definePageMeta({
     },
 })
 
+onMounted(() => {
+    if (cloud.eventDescription?.id == router.currentRoute.value.params.event) {
+        if (!feedbackEnabled(cloud.eventDescription)) {
+            const warned = useSessionStorage('noFeedbackWarned-' + cloud.selectedEvent, false)
+            if (!warned.value) {
+                warned.value = true
+                alert(`Zpětná vazba k této události by měla probíhat v čase ${cloud.eventDescription?.start ?? 'od začátku události'} až do ${cloud.eventDescription?.feedbackEnd ?? cloud.eventDescription?.end ?? 'konce události'}. Pokračujte s tímto vědomím.`)
+            }
+        }
+    }
+})
+
 const currentPart = computed(() => {
     const config: FeedbackConfig | undefined = cloud.feedbackConfig?.[feedbackPartIndex]
     type Entry = (Partial<ScheduleItem> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })
@@ -171,7 +187,7 @@ const currentPart = computed(() => {
             function addScheduleItem(scheduleItem: ScheduleItem, index: number | string) {
                 entries.push({
                     ...scheduleItem,
-                    data: fromUpdatePayload(cloud.offlineFeedback?.[scheduleIndex]?.[index]?.[settings.userIdentifier], {}),
+                    data: fromUpdatePayload(cloud.offlineFeedback?.[scheduleIndex]?.[index]?.[settings.userIdentifier.value], {}),
                     secondaryIndex: index,
                     selectOptions: getParallelEvents(scheduleItem),
                 })
@@ -215,7 +231,7 @@ const currentPart = computed(() => {
                     selectOptions: individualQuest.questions,
                     questions: individualQuest.questions,
                     data: fromUpdatePayload(
-                        cloud.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier] ?? cloud.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier], {},
+                        cloud.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier.value] ?? cloud.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier.value], {},
                     ),
                 }],
             })

@@ -22,7 +22,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
         stop = watch(app.$hydrated, h => {
             if (h) {
                 setTimeout(() => navigateTo({
-                    path: '/install/' + settings.installStep,
+                    path: '/install/' + settings.installStep.value,
                     query: {
                         ...to.query,
                         to: to.fullPath,

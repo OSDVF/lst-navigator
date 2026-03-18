@@ -3,13 +3,13 @@
         <form v-bind="$attrs" @submit.prevent>
             <slot />
             <input
-                id="nickname" ref="input" v-model="settings.userNickname" v-paste-model placeholder="Vytvořit podpis "
+                id="nickname" ref="input" v-model="settings.userNickname.value" v-paste-model placeholder="Vytvořit podpis "
                 :style="{
-                    textAlign: settings.userNickname ? 'left' : 'right',
+                    textAlign: settings.userNickname.value ? 'left' : 'right',
                 }">
             <br>
             <small class="muted-2" title="Unikátní identifikátor uživatele/instalace">UID:
-                {{ settings.userIdentifier
+                {{ settings.userIdentifier.value
                 }}</small>
         </form>
     </LazyClientOnly>

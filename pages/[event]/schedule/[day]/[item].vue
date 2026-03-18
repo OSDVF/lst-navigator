@@ -59,7 +59,7 @@
         <span class="muted">Viditelné a uložené pouze u tebe</span>
         <div class="p">
             <ClassicCKEditor
-                v-model="noteModel" :plain="!settings.richNoteEditor" @focus="permitSwipe = false"
+                v-model="noteModel" :plain="!settings.richNoteEditor.value" @focus="permitSwipe = false"
                 @blur="permitSwipe = true" />
             <ProgressBar v-if="fetchingNote" />
         </div>
@@ -122,11 +122,11 @@ const noteError = ref()
 const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
 
-const currentFeedbackValue = computed(() => cloud.offlineFeedback?.[dayIndex]?.[scheduleItemIndex]?.[settings.userIdentifier] as Feedback | undefined)
+const currentFeedbackValue = computed(() => cloud.offlineFeedback?.[dayIndex]?.[scheduleItemIndex]?.[settings.userIdentifier.value] as Feedback | undefined)
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocumentT<any>(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, settings.userIdentifier) : null), { once: !!import.meta.server })//TODO server vs client vs browser
+const notesDocument = useDocumentT<any>(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, settings.userIdentifier.value) : null), { once: !!import.meta.server })//TODO server vs client vs browser
 const offlineNote = useLocalStorage(`note.${dayIndex}.${scheduleItemIndex}`, { time: new Date().getTime(), note: '' }, {initOnMounted: true})
 let noteSaving: NodeJS.Timeout | null
 
@@ -141,7 +141,7 @@ const noteModel = computed<string>({
     },
     set(value: string) {
         const newValue = {
-            time: settings.notesDirtyTime = new Date().getTime(),
+            time: settings.notesDirtyTime.value = new Date().getTime(),
             note: value,
         }
         offlineNote.value = newValue
@@ -149,7 +149,7 @@ const noteModel = computed<string>({
             noteSaving = setTimeout(() => {
                 if (cloud.notesCollection) {
                     fetchingNote.value = true
-                    setDoc(doc(cloud.notesCollection, settings.userIdentifier), {
+                    setDoc(doc(cloud.notesCollection, settings.userIdentifier.value), {
                         [dayIndex]: {
                             [scheduleItemIndex]: newValue,
                         },

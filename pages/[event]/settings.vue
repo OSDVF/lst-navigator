@@ -24,7 +24,7 @@
                 <Icon name="mdi:animation" /> Animace
             </label>
             <span>
-                <input id="transitions" v-model="settings.transitions" type="checkbox">
+                <input id="transitions" v-model="settings.transitions.value" type="checkbox">
             </span>
         </fieldset>
         <fieldset>
@@ -36,7 +36,7 @@
                 </small>
             </label>
             <span>
-                <input id="gestures" v-model="settings.gestures" type="checkbox">
+                <input id="gestures" v-model="settings.gestures.value" type="checkbox">
             </span>
         </fieldset>
         <fieldset>
@@ -44,7 +44,7 @@
                 <Icon name="mdi:blur" /> Rozostřené pozadí
             </label>
             <span>
-                <input id="blur" v-model="settings.blur" type="checkbox">
+                <input id="blur" v-model="settings.blur.value" type="checkbox">
             </span>
         </fieldset>
         <fieldset>
@@ -56,7 +56,7 @@
                 </small>
             </label>
             <span>
-                <input id="expandable" v-model="settings.expandableItems" type="checkbox">
+                <input id="expandable" v-model="settings.expandableItems.value" type="checkbox">
             </span>
         </fieldset>
         <fieldset>
@@ -69,7 +69,7 @@
                 </small>
             </label>
             <span>
-                <input id="richNoteEditor" v-model="settings.richNoteEditor" type="checkbox">
+                <input id="richNoteEditor" v-model="settings.richNoteEditor.value" type="checkbox">
             </span>
         </fieldset>
         <fieldset v-if="config.notifications_title">
@@ -77,8 +77,8 @@
                 <Icon name="mdi:music" /> Zvuk upozornění
             </label>
             <span>
-                <select id="selectedAudioName" v-model="settings.selectedAudioName">
-                    <option v-for="audioItem in settings.audioList" :key="audioItem.name" :value="audioItem.name">
+                <select id="selectedAudioName" v-model="settings.selectedAudioName.value">
+                    <option v-for="audioItem in settings.audioList.value" :key="audioItem.name" :value="audioItem.name">
                         {{ audioItem.name }}
                     </option>
                     <option @click="uploadCustomClick">
@@ -87,11 +87,11 @@
                 </select>
                 &ensp;
                 <input v-show="uploading" ref="audioInputField" type="file" accept="audio/*" @change="uploadAudio">
-                <button v-if="settings.isSelectedAudioCustom" @click="deleteCustomAudio">
+                <button v-if="settings.isSelectedAudioCustom.value" @click="deleteCustomAudio">
                     Smazat
                 </button>
                 <button @click="settings.toggleSelectedAudio">
-                    <Icon :name="/* TODO: notification permission */settings.isPlaying ? 'mdi:stop' : 'mdi:play'" />
+                    <Icon :name="/* TODO: notification permission */settings.isPlaying.value ? 'mdi:stop' : 'mdi:play'" />
                 </button>
             </span>
         </fieldset>
@@ -130,7 +130,7 @@
                 <small>
                     <LazyClientOnly>
                         {{
-                            settings.notesDirtyTime === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime).toLocaleString(lang)
+                            settings.notesDirtyTime.value === 0 ? 'Nikdy' : new Date(settings.notesDirtyTime.value).toLocaleString(lang)
                         }}
                     </LazyClientOnly>
                 </small>
@@ -269,7 +269,7 @@ function uploadAudio(e: Event) {
     }
 }
 function deleteCustomAudio() {
-    settings.deleteCustomAudio(settings.selectedAudioName)
+    settings.deleteCustomAudio(settings.selectedAudioName.value)
 }
 async function syncNotes() {
     if (cloud.notesCollection) {
@@ -277,7 +277,7 @@ async function syncNotes() {
             if (key.startsWith('note.')) {
                 const value = localStorage.getItem(key)
                 const indexes = key.split('.')
-                await setDoc(doc(cloud.notesCollection, settings.userIdentifier), {
+                await setDoc(doc(cloud.notesCollection, settings.userIdentifier.value), {
                     [indexes[1]]: {
                         [indexes[2]]: value,
                     },

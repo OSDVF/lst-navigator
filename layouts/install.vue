@@ -1,7 +1,7 @@
 <template>
     <main
         :class="{
-            transp: settings.blur
+            transp: settings.blur.value
         }">
 
         <Head>
@@ -21,7 +21,7 @@
                             install: partIndex > 0 ? $route.query.install : undefined,
                         },
                     }"
-                    @click="() => { currentTransition = 'slide-right'; if (partIndex == 0) settings.installStep = 1 }">
+                    @click="() => { currentTransition = 'slide-right'; if (partIndex == 0) settings.installStep.value = 1 }">
                     <Icon
                         :name="partIndex > 0 ? 'material-symbols:arrow-circle-left-outline' : 'mdi:trending-up'"
                         size="2rem" />
@@ -41,7 +41,7 @@
                 </NuxtLink>
                 <NuxtLink
                     v-else :to="route.query.to?.toString() || `${config.public.defaultEvent}/schedule/0`"
-                    @click="settings.installStep = partIndex + 1">
+                    @click="settings.installStep.value = partIndex + 1">
                     <Icon name="mdi:trending-up" size="2rem" />
                     Začít
                 </NuxtLink>
@@ -76,7 +76,7 @@ const onNextButtonClickListeners = ref<(() => void)[]>([])
 function onNextButtonClick() {
     onNextButtonClickListeners.value.forEach(listener => listener())
     onNextButtonClickListeners.value = []// clear after changing the page
-    settings.installStep = partIndex.value + 1
+    settings.installStep.value = partIndex.value + 1
     next.value = defaultNext
 }
 

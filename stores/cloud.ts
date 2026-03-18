@@ -173,7 +173,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 }
 
                 batch.set(doc(feedback.col.value!, partIndex), part, { merge: true })
-                batch.delete(doc(feedback.col.value!, settings.userIdentifier))
+                batch.delete(doc(feedback.col.value!, settings.userIdentifier.value))
 
                 console.debug(`Remove user ${partIndex}/${uid}`)
             }
@@ -195,11 +195,11 @@ export const useCloudStore = defineStore('cloud', () => {
                     ...offlineFeedback.value[selectedEvent.value],
                     [sIndex]: {
                         ...offlineFeedback.value[selectedEvent.value]?.[sIndex],
-                        [eIndex]: { [settings.userIdentifier]: data },
+                        [eIndex]: { [settings.userIdentifier.value]: data },
                     },
                 }
             }
-            userIdentifier ??= settings.userIdentifier
+            userIdentifier ??= settings.userIdentifier.value
             feedbackDirtyTime.value = new Date().getTime()
 
             setDoc(doc(feedback.col.value!, sIndex.toString()), {
@@ -211,7 +211,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
             setDoc(doc(feedback.col.value!, userIdentifier), {
                 updated: feedbackDirtyTime.value,
-                nickname: settings.userNickname,
+                nickname: settings.userNickname.value,
             }, { merge: true }).catch((e) => { feedback.error.value = e })
 
             setTimeout(() => {
@@ -220,7 +220,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }, 5000)
         },
         saveAgain(force = true) {
-            if (!force && !feedback.error.value && !feedback.fetchFailed.value && feedback.online.value?.[settings.userIdentifier]?.updated === feedbackDirtyTime.value) {
+            if (!force && !feedback.error.value && !feedback.fetchFailed.value && feedback.online.value?.[settings.userIdentifier.value]?.updated === feedbackDirtyTime.value) {
                 return Promise.resolve()
             }
 
@@ -246,9 +246,9 @@ export const useCloudStore = defineStore('cloud', () => {
                 }))
             }
             feedbackDirtyTime.value = new Date().getTime()
-            promises.push(setDoc(doc(feedback.col.value!, settings.userIdentifier), {
+            promises.push(setDoc(doc(feedback.col.value!, settings.userIdentifier.value), {
                 updated: feedbackDirtyTime.value,
-                nickname: settings.userNickname,
+                nickname: settings.userNickname.value,
             }, { merge: true }))
 
 
@@ -261,13 +261,13 @@ export const useCloudStore = defineStore('cloud', () => {
         },
     }
 
-    watch(() => settings.userIdentifier, (newId) => {
+    watch(settings.userIdentifier, (newId) => {
         if (newId) {
             feedback.dirtyTime.value = 0// force refresh from remote
             feedback.hydrate(feedback.online.value)
             const nick = feedback.online.value[newId]
             if (typeof nick !== 'undefined' && typeof nick.nickname == 'string') {
-                settings.userNickname = nick.nickname
+                settings.userNickname.value = nick.nickname
             }
         } else {// clear feedback if user is not logged in
             if (offlineFeedback.value[selectedEvent.value]) { offlineFeedback.value[selectedEvent.value] = {} }
@@ -351,8 +351,8 @@ export const useCloudStore = defineStore('cloud', () => {
         }),
         async deleteData() {
             user.adminAuth.value = undefined
-            await feedback.deleteUser(settings.userIdentifier)
-            await deleteDoc(doc(notesCollection.value!, settings.userIdentifier))
+            await feedback.deleteUser(settings.userIdentifier.value)
+            await deleteDoc(doc(notesCollection.value!, settings.userIdentifier.value))
             settings.setUserIdentifier(settings.generateUID())
         },
         hasAdminScopes: computed((() => {
@@ -461,13 +461,13 @@ export const useCloudStore = defineStore('cloud', () => {
                 const signatureId = user.info.value.signatureId?.[selectedEvent.value]
                 if (signatureId) {
                     settings.setUserIdentifier(signatureId)
-                    settings.userNickname = user.info.value!.signature[selectedEvent.value] || settings.userNickname
+                    settings.userNickname.value = user.info.value!.signature[selectedEvent.value] || settings.userNickname.value
                 }
             }
 
             if (newUser.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
                 updateCurrentUserProfile({
-                    displayName: settings.userNickname,
+                    displayName: settings.userNickname.value,
                 })
             }
 
@@ -475,10 +475,10 @@ export const useCloudStore = defineStore('cloud', () => {
             const payload: Partial<UserInfo> = {
                 name: newUser.displayName || user.info.value?.name,
                 signature: {
-                    [selectedEvent.value]: settings.userNickname,
+                    [selectedEvent.value]: settings.userNickname.value,
                 },
                 signatureId: {
-                    [selectedEvent.value]: settings.userIdentifier,
+                    [selectedEvent.value]: settings.userIdentifier.value,
                 },
                 subscriptions: {
                     [selectedEvent.value]: messagingToken.value,
@@ -503,14 +503,14 @@ export const useCloudStore = defineStore('cloud', () => {
         }
     }
 
-    watch(settings, async (newSettings) => {// TODO check user diff and not set always
-        if (newSettings && user.doc.value && userAuth?.value?.uid && import.meta.client) {
+    watch([settings.userNickname, settings.userIdentifier], async ([nick, ident]) => {// TODO check user diff and not set always
+        if (nick && user.doc.value && userAuth?.value?.uid && import.meta.client) {
             await setDoc(user.doc.value, {
                 signature: {
-                    [selectedEvent.value]: newSettings.userNickname,
+                    [selectedEvent.value]: nick,
                 },
                 signatureId: {
-                    [selectedEvent.value]: newSettings.userIdentifier,
+                    [selectedEvent.value]: ident,
                 },
             }, {
                 merge: true,
@@ -518,7 +518,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
             if (userAuth.value.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
                 updateCurrentUserProfile({
-                    displayName: newSettings.userNickname,
+                    displayName: nick,
                 })
             }
         }
@@ -596,7 +596,7 @@ export const useCloudStore = defineStore('cloud', () => {
     let hydrationDebounce: null | NodeJS.Timeout = null
     function hydrateOfflineFeedback(onlineFeedback?: any) {
         hydrationDebounce = null
-        const now = new Date(onlineFeedback?.[settings.userIdentifier]?.updated ?? 0).getTime()
+        const now = new Date(onlineFeedback?.[settings.userIdentifier.value]?.updated ?? 0).getTime()
         if (now > feedback.dirtyTime.value) {
             let off = toRaw(offlineFeedback.value?.[selectedEvent.value])
             if (!off) {
@@ -606,13 +606,13 @@ export const useCloudStore = defineStore('cloud', () => {
                 const sPart = onlineFeedback[sIndex]
                 for (const eIndex in sPart) {
                     const ePart = sPart[eIndex]
-                    const uPart = ePart[settings.userIdentifier]
+                    const uPart = ePart[settings.userIdentifier.value]
                     if (uPart) {
                         let offSPart = off[sIndex]
                         if (!offSPart) { offSPart = {} }
                         let offEPart = offSPart[eIndex]
                         if (!offEPart) { offEPart = {} }
-                        offEPart[settings.userIdentifier] = uPart
+                        offEPart[settings.userIdentifier.value] = uPart
                         offSPart[eIndex] = offEPart
                         off[sIndex] = offSPart
                     }

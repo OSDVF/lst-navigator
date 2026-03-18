@@ -7,7 +7,7 @@
             <div class="inline-block">
                 <h4>
                     <Icon
-                        v-if="settings.expandableItems && (entry.description?.trim() || entry.feedbackType)"
+                        v-if="settings.expandableItems.value && (entry.description?.trim() || entry.feedbackType)"
                         class="icon" :name="open ? 'mdi:chevron-down' : 'mdi:chevron-right'" />
                     {{ entry.title }}
                 </h4>
@@ -55,8 +55,7 @@
             </div>
         </summary>
         <NuxtLink
-            v-if="settings.expandableItems"
-            :to="{
+            v-if="settings.expandableItems.value" :to="{
                 name: 'event-schedule-day-item',
                 params: {
                     day: p.day.toString(),
@@ -65,15 +64,15 @@
                 },
                 query: $route.query,
             }" style="position: relative">
-            <!-- eslint-disable-next-line vue/no-v-html -->
-            <div class="content" v-html="entry.description && (!empty ? entry.description?.trim() : `<p>${entry.description}</p>`) || '<p>Žádné detaily</p>'" />
+            <div
+                class="content"
+                v-html="entry.description && (!empty ? entry.description?.trim() : `<p>${entry.description}</p>`) || '<p>Žádné detaily</p>'" />
             <span class="more">
                 <Icon
                     v-if="!empty || entry.feedbackType" class="icon"
                     :name="entry.feedbackType ? 'mdi:rss' : 'mdi:script'" />
-                <template v-if="!feedback">{{ entry.feedbackType ? `Feedback ${empty ? 'dostupný' :
-                    'a detaily'}` :
-                    empty ? '' : 'Detail' }}</template>
+                <template v-if="!feedback">{{ entry.feedbackType ?
+                    `Feedback ${empty ? 'dostupný' : 'a detaily'}` : empty ? '' : 'Detail' }}</template>
                 <NuxtRating
                     v-else-if="typeof feedback !== 'undefined'" :rating-value="feedback" rating-size="1.2rem"
                     inactive-color="#aaa" :title="`Tvé hodnocení: ${feedback}`" tabindex="0" />
@@ -118,7 +117,7 @@ onUnmounted(() => {
 })
 
 const feedback = computed(() => {
-    const feedback = fromUpdatePayload(cloud.offlineFeedback?.[p.day]?.[p.index]?.[settings.userIdentifier], {})
+    const feedback = fromUpdatePayload(cloud.offlineFeedback?.[p.day]?.[p.index]?.[settings.userIdentifier.value], {})
     if (!feedback) { return undefined }
     switch (p.entry.feedbackType as FeedbackType) {
     case 'basic':
@@ -132,7 +131,7 @@ const feedback = computed(() => {
 const inMotion = inject<Ref<boolean>>('inMotion')
 
 function click(e: Event) {
-    if (!settings.expandableItems) {
+    if (!settings.expandableItems.value) {
         e.preventDefault()
         if (!(inMotion?.value ?? false)) {
             router.push({

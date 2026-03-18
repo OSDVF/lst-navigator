@@ -37,7 +37,7 @@ export default defineNuxtPlugin({
                     downloadingUpdate.value = true
                     console.log('Update found')
                     registration.installing?.addEventListener('statechange', async (ev) => {
-                        if ((ev.target as ServiceWorker).state !== 'redundant' && (settings.installStep ?? 0) >= config.public.installStepCount) {
+                        if ((ev.target as ServiceWorker).state !== 'redundant' && (settings.installStep.value ?? 0) >= config.public.installStepCount) {
                             console.log('updated is activated')
                             downloadingUpdate.value = false
                             needRefresh.value = true

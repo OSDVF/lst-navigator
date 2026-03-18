@@ -24,7 +24,7 @@ export default defineNuxtPlugin({
     hooks: {
         'app:mounted'(app) {
             const settings = useSettings()
-            watch(() => settings.richNoteEditor, (value) => {
+            watch(settings.richNoteEditor, (value) => {
                 if (value) {
                     append(app)
                 }
