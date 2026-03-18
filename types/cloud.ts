@@ -126,6 +126,8 @@ export type EventDescription<T = string> = {
     form?: string,
     /** Full non-shortened URL of an editable Google Form */
     formDocument?: string,
+    /** Date according to which the event should be ordered (instead of event start date) */
+    order?: FirebaseDate,
     image?: {
         type: 'cloud' | 'external',
         data: string, // storage / external url

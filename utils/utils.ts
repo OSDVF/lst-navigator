@@ -44,6 +44,11 @@ export function toJSDate(date?: string) {
     return new Date(year, month - 1, day)
 }
 
+export function toInputDate(date: Date) {
+    const iso = date.toISOString()
+    return iso.substring(['+', '-'].includes(iso[0]) ? 1 : 0, iso.indexOf('T'))
+}
+
 export function toFirebaseDate(date: undefined): null;
 export function toFirebaseDate(date: Date): string;
 export function toFirebaseDate(data?: Date) {
@@ -228,8 +233,8 @@ export function maybe<T, U, V = undefined>(t: T | undefined, y: (_: T) => U, n?:
     if (t) { return y(t) } else { return n?.() }
 }
 
-export function boolToNum(val?: boolean | number) : number {
-    if(typeof val == 'boolean') {
+export function boolToNum(val?: boolean | number): number {
+    if (typeof val == 'boolean') {
         return val ? 1 : 0
     }
     return val ?? 0

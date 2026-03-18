@@ -358,7 +358,7 @@ export const useCloudStore = defineStore('cloud', () => {
         hasAdminScopes: computed((() => {
             const currentScopes = user.adminAuth.value.scopes
             return user.isGoogleSignedIn.value && user.adminAuth.value.expirationTime > new Date().getTime() && scopes.every(s => currentScopes.includes(s))
-        }) as (()=>boolean)),
+        }) as (() => boolean)),
         hydrateFromCredential(result: UserCredential) {
             const credential = GoogleAuthProvider.credentialFromResult(result)
             user.adminAuth.value = {
@@ -684,7 +684,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 }
             }
         }
-        return events
+        return events.sort((a, b) => toJSDate(a.order ?? a.start).getTime() - toJSDate(b.order ?? b.start).getTime())
     })
     return {
         currentEventCollection,
@@ -706,7 +706,7 @@ export const useCloudStore = defineStore('cloud', () => {
         selectedEvent,
         suggestions,
         /**
-         * Events shown on main page
+         * Events shown on main page sorted by date ascending
          */
         visibleEvents,
         lastSuggestion,
@@ -718,7 +718,7 @@ export function shouldShowEvent<T>(e: EventDescription<T>): boolean | undefined 
     const now = new Date().getTime()
     if (e.showFrom && toJSDate(e.showFrom).getTime() > now) {
         return false
-    } else if(e.showTo && toJSDate(e.showTo).getTime() >= now) {
+    } else if (e.showTo && toJSDate(e.showTo).getTime() >= now) {
         return true
     }
 

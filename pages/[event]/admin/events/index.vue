@@ -6,7 +6,8 @@
             @click='() => { action = Actions.New; table?.dt?.rows().deselect() }'>
             <Icon name='mdi:plus' /> Nová
         </button>
-        <template v-if="isSelection && (cloud.resolvedPermissions.superAdmin || boolToNum(cloud.user.info?.permissions?.[getSelectedEvent()?.id ?? '']) >= UserLevel.Admin) && action == Actions.Nothing">
+        <template
+            v-if="isSelection && (cloud.resolvedPermissions.superAdmin || boolToNum(cloud.user.info?.permissions?.[getSelectedEvent()?.id ?? '']) >= UserLevel.Admin) && action == Actions.Nothing">
             <button @click='startEditingSelected'>
                 <Icon name='mdi:pencil' /> Upravit
             </button>
@@ -20,7 +21,9 @@
                 <Icon name="mdi:form-select" style="color: #7346ba" /> Nastavení přihlášky
             </button>
         </template>
-        <button v-if="isSelection && getSelectedEvent()?.id != cloud.selectedEvent" @click="maybe(getSelectedEvent(), e => $router.push(`/${e.id}/admin/events`))">
+        <button
+            v-if="isSelection && getSelectedEvent()?.id != cloud.selectedEvent"
+            @click="maybe(getSelectedEvent(), e => $router.push(`/${e.id}/admin/events`))">
             <Icon name="mdi:home-edit" /> Přepnout na událost
         </button>
         <ImportForm
@@ -104,10 +107,19 @@
             &nbsp;
             <DateFormat /><br>
 
+            <label>
+                <Icon name="mdi:clock-edit-outline" /> Vlastní pořadí na úvodní stránce <input
+                    v-model="customOrder"
+                    type="checkbox">
+            </label>
+            <label v-if="customOrder" title="Seřadit na úvodní stránce jako kdyby událost začínala v tento den.">
+                Pořadí&ensp;<input v-model.lazy='editedEvent.order' type='date'></label>
+            <br>
+
             <label title="Pokud toto pole bude prázdné, feedback bude přijímán jen do posledního dne konání události">
                 <Icon name="mdi:rss" /> Přijímá feedback do&ensp;<input
                     v-model.lazy='editedEvent.feedbackEnd'
-                    :min='editedEvent.start!' type='date'>
+                    :min='toInputDate(new Date(new Date(editedEvent.start!).getTime() - oneDay))' type='date'>
             </label>
             &nbsp;
             <DateFormat /><br>
@@ -249,6 +261,7 @@ definePageMeta({
     middleware: ['auth'],
 })
 
+const oneDay = 1000 * 3600 * 24
 const cloud = useCloudStore()
 const error = ref()
 const gapi = useGapi()
@@ -270,6 +283,7 @@ const editedEvent = ref({
     form: '',
     formDocument: '',
     feedbackEnd: '',
+    order: '',
     identifier: '',
     imageIdentifier: {
         type: 'cloud',
@@ -282,7 +296,28 @@ const editedEvent = ref({
     transfers: false,
     web: '',
 })
-const loading = ref(0)
+const customOrder = computed({
+    get() {
+        return !!editedEvent.value.order
+    },
+    set(value: boolean) {
+        if (value && !editedEvent.value.order) {
+            editedEvent.value.order = editedEvent.value.start
+        } else if (!value) {
+            editedEvent.value.order = ''
+        }
+    },
+})
+
+let _loading = 0
+const loading = computed({
+    get() {
+        return _loading
+    },
+    set(val: number) {
+        _loading = Math.max(0, val)
+    },
+})
 provide('loading', loading)
 
 const sanitizeTitleAndId = computed({
@@ -486,6 +521,7 @@ async function editEvent(createNew = false) {
         form: editedEvent.value.form || deleteField(),
         formDocument: editedEvent.value.formDocument || deleteField(),
         feedbackEnd: toFirebaseDate(new Date(editedEvent.value.feedbackEnd)) || deleteField(),
+        order: toFirebaseDate(new Date(editedEvent.value.order)) || deleteField(),
         description: editedEvent.value.description,
         image: editedEvent.value.imageIdentifier,
         showFrom: toFirebaseDate(new Date(editedEvent.value.showFrom)) || deleteField(),
@@ -585,6 +621,7 @@ async function startEditingSelected() {
                 form: selectedEvent.form ?? '',
                 formDocument: selectedEvent.formDocument ?? '',
                 feedbackEnd: selectedEvent.feedbackEnd ?? '',
+                order: selectedEvent.order ?? '',
                 imageIdentifier: selectedEvent.image || {
                     type: 'cloud',
                     data: '',
@@ -667,8 +704,7 @@ async function importJson(source: Record<string, EventDescription<DocumentData>>
                 const start = toJSDate(eventMetaProps.start).getTime()
                 const end = toJSDate(eventMetaProps.end).getTime()
                 const duration = end - start
-                const day = 1000 * 3600 * 24
-                const durationDays = duration / day
+                const durationDays = duration / oneDay
                 const shiftDateJS = new Date(shiftDate.value)
                 const shiftStartMilis = shiftDateJS.getTime()
                 eventMetaProps.start = toFirebaseDate(shiftDateJS)
@@ -677,7 +713,7 @@ async function importJson(source: Record<string, EventDescription<DocumentData>>
                 const sortedDays = Object.values(data.schedule as Record<string, ScheduleDay & { id: string }>).toSorted((a, b) => toJSDate(a.date).getTime() - toJSDate(b.date).getTime())
                 data.schedule = {}
                 let thisDay = shiftStartMilis
-                for (let i = 0; i <= durationDays; i++, thisDay += day) {
+                for (let i = 0; i <= durationDays; i++, thisDay += oneDay) {
                     const thisDate = new Date(thisDay)
                     if (!sortedDays[i]) {
                         sortedDays[i] = {} as any
