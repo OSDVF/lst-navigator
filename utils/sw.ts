@@ -46,14 +46,19 @@ if (precacheController.getCacheKeyForURL('/')) {
 const comChannel = new BroadcastChannel('SWCom')
 self.addEventListener('fetch', async (event) => {
     const { request } = event
-    const responsePromise = router.handleRequest({
-        event,
-        request,
-    }) ?? fetch(request)
-    event.respondWith(responsePromise)
-    const resp = await responsePromise
+    try {
+        const responsePromise = router.handleRequest({
+            event,
+            request,
+        }) ?? fetch(request)
+        event.respondWith(responsePromise)
+        const resp = await responsePromise
 
-    comChannel.postMessage(resp.status)
+        comChannel.postMessage(resp.status)
+    } catch (e) {
+        console.error(e)
+        throw e
+    }
 })
 
 // Service worker lifecycle

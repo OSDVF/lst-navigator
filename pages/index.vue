@@ -47,6 +47,7 @@
         </p>
         <details class="p-1 p" style="max-width: 800px">
             <summary class="a nomarker">Řešení potíží</summary>
+            Při problémech s aplikací zkuste <NuxtLink class="strong inline" to="/update" @click.stop.prevent="reload">obnovit aktuální verzi</NuxtLink>. <br>
             Pokud se aplikace nenačte, zkontrolujte, zda máte zapnutý JavaScript, případně adblocker, nebo napište na
             {{ $config.public.supportEmail }}
         </details>
@@ -76,6 +77,10 @@ definePageMeta({
         }
     },
 })
+
+function reload() {
+    location.reload(true)
+}
 
 const cloud = useCloudStore()
 const router = useRouter()
