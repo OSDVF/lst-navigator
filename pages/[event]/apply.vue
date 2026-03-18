@@ -17,7 +17,8 @@
         </span>
         <p>
             <NuxtLink to="/" replace>
-                <Icon name="mdi:apps" /><Icon name="mdi:arrow-left" /> Zpět na seznam událostí
+                <Icon name="mdi:apps" />
+                <Icon name="mdi:arrow-left" /> Zpět na seznam událostí
             </NuxtLink>
         </p>
     </article>
@@ -31,8 +32,10 @@ onMounted(() => {
     watchEffect(() => {
         // The eventDescription ref can be outdated
         if (cloud.eventDescription?.id == route.params.event && cloud.eventDescription?.form) {
-            link.value?.click()
-            setTitle('Přihláška - ' + cloud.eventDescription.title)
+            nextTick(() => {
+                link.value?.click()
+                setTitle('Přihláška - ' + cloud.eventDescription!.title)
+            })
         }
     })
 })
