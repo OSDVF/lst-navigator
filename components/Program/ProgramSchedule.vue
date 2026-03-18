@@ -197,52 +197,6 @@ async function updateLocation(index: number, text: string | undefined) {
     }
 }
 
-details {
-    background: var(--color);
-
-    .content {
-
-        &>p:first-child {
-            margin-top: .5rem;
-        }
-
-        &>p:last-child {
-            margin-bottom: .5rem;
-        }
-
-        p {
-            margin: 1rem .5rem
-        }
-
-        &>ul {
-            display: inline-block;
-        }
-    }
-
-    .content {
-        display: inline-block;
-    }
-
-    &>a {
-        display: block;
-        overflow: hidden;
-
-        &>.icon {
-            margin-left: 2.9rem;
-        }
-    }
-
-    &:hover {
-        .more {
-            opacity: 1;
-        }
-    }
-
-    ol li+li ul {
-        margin-top: .5rem;
-    }
-}
-
 .more {
     color: #1a476ac0;
     float: right;

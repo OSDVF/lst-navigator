@@ -20,4 +20,5 @@ export default {
     },
     async toJSON() {
     },
+    stsTokenManager: {} as any,
 } as User

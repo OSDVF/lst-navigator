@@ -1,5 +1,5 @@
-import { collection, doc, getDoc, setDoc } from 'firebase/firestore'
-import { useFirestore } from './firebase'
+import path from 'path'
+import { useFirestore } from './firestore'
 import { getEventSettings } from './settings'
 import type { EmailTemplateVars } from './types'
 
@@ -52,7 +52,20 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
         donationQrCode: false,
         editLink: response.getEditResponseUrl(),
         responseId: response.getId(),
+        timestampUTC: response.getTimestamp().toUTCString(),
         canEdit: canEdit,
+        questionResponses: itemResponses.map(r => {
+            let response = r.getResponse()
+            const concat = (p: string, c: string) => `${p}, ${c}`
+            if (Array.isArray(response)) {
+                response = response.map(rr => Array.isArray(rr) ? rr.reduce(concat, '') : rr).reduce(concat, '')
+            }
+            return {
+                title: r.getItem().getTitle(),
+                description: r.getItem().getHelpText(),
+                response,// it's now just a stirng, yay!
+            }
+        }),
         qrCode: false,
         price: 0,
     }
@@ -60,21 +73,20 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
         // prevent eval from accessing global scope variables
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const ScriptApp = undefined
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const Utilities = undefined
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const FormsApp = undefined
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const MailApp = undefined
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const UrlFetchApp = undefined
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const PropertiesService = undefined
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const useFirestore = undefined
-        templateVars.price = eval(`(function(){Object.assign(this,${JSON.stringify(templateVars)});return ${settings.priceExpression}})()`)
+        const {
+            accountNumber, adminEmail, bankCode, currency, eventName, extras, mainOrg, priceCategories, donation, donationQrCode, editLink, responseId, timestampUTC, canEdit, questionResponses, price, qrCode, donationMessage, donationSymbol, message, treatAllAsNew, vs }
+            = templateVars
+        if (settings.priceExpression) {
+            templateVars.price = eval(`(function(){return ${settings.priceExpression}})()`)
+        }
         if (settings.donationExpression) {
-            templateVars.donation = eval(`(function(){Object.assign(this,${JSON.stringify(templateVars)});return ${settings.donationExpression}})()`)
+            templateVars.donation = eval(`(function(){return ${settings.donationExpression}})()`)
         }
     }
     if (settings.symbolTemplate) {
@@ -85,11 +97,11 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
         Object.assign(settings.messageTemplate, templateVars)
         templateVars.message = settings.messageTemplate?.evaluate().getContent()
     }
-    if(settings.donationMessageTemplate) {
+    if (settings.donationMessageTemplate) {
         Object.assign(settings.donationMessageTemplate, templateVars)
         templateVars.donationMessage = settings.donationMessageTemplate?.evaluate().getContent()
     }
-    if(settings.donationSymbolTemplate) {
+    if (settings.donationSymbolTemplate) {
         Object.assign(settings.donationSymbolTemplate, templateVars)
         templateVars.donationSymbol = parseInt(settings.donationSymbolTemplate?.evaluate().getContent())
     }
@@ -133,11 +145,11 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
 
     let edited = false
     try {
-        const fs = useFirestore()
+        const fs = useFirestore(e.source.getId())
 
         if (settings.responsesCollection) {
-            const d = doc(collection(fs, settings.responsesCollection), templateVars.responseId)
-            let responseRecord = (await getDoc(d)).data() as ResponseRecord | undefined
+            const d = path.join(settings.responsesCollection, templateVars.responseId)
+            let responseRecord = fs.getDocument(d).obj as ResponseRecord | undefined
             if (responseRecord && !settings.treatAllAsNew) {
                 responseRecord.edits = responseRecord.edits + 1
                 responseRecord.email = responseRecord.email ?? respondentAddress
@@ -146,14 +158,16 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
                     headContent = head.evaluate().getContent()
                 }
                 edited = true
+                fs.updateDocument(d, responseRecord, true)
             } else {
                 responseRecord = { email: respondentAddress, edits: 0, edit: templateVars.editLink }
                 if (settings.emailHeadNew) {
                     headContent = settings.emailHeadNew.evaluate().getContent()
                 }
+                fs.createDocument(d, responseRecord)
             }
-
-            setDoc(d, responseRecord, { merge: true })
+        } else {
+            console.warn("Responses collection not set for " + form.getId())
         }
 
     } catch (e) {
@@ -248,7 +262,7 @@ export function parseDate(str: string) {
 }
 
 export function test() {
-    const form = FormApp.openById('1XfBawBAkNp8jHmnwtQibvDlfxZHE1uK1G-39ap-3dVM')
+    const form = FormApp.openById('')
     const response = form.getResponses()[0]
     onSubmitForm({
         source: form,

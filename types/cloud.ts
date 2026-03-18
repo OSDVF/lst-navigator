@@ -1,5 +1,5 @@
 import type { CollectionReference, DocumentReference, FieldValue } from 'firebase/firestore'
-import type { FirebaseDate } from '~/form-connector/src/settings'
+import type { FirebaseDate } from '~/form-connector/src/types'
 
 export type Application = {
     id: string,
@@ -11,7 +11,8 @@ export type Application = {
 }
 
 export type ApplicationForm = {
-    url: string,
+    responderUrl: string,
+    documentUrl: string,
     fields: {
         arrival?: string,
         departure?: string,
@@ -19,6 +20,7 @@ export type ApplicationForm = {
         category?: string,
         extras?: string,
         name?: string,
+        [field: string]: string | undefined
     }
 }
 
@@ -120,9 +122,11 @@ export type EventDescription<T = string> = {
     end: FirebaseDate,
 
     description: string,
-    /** URL of a Google Form */
+    /** URL of an application form responder link */
     form?: string,
-    image: {
+    /** Full non-shortened URL of an editable Google Form */
+    formDocument?: string,
+    image?: {
         type: 'cloud' | 'external',
         data: string, // storage / external url
     },

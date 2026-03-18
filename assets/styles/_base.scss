@@ -5,7 +5,7 @@
     overflow-x: hidden;
 
     //dark mode
-    @media (prefers-color-scheme: dark) {
+    &.dark {
         //invert 
         filter: invert(100%);
         -webkit-font-smoothing: antialiased;
@@ -27,6 +27,12 @@
         .noinvert,
         .ck-editor__main {
             filter: invert(100%);
+        }
+        .dt-input {
+            --dt-html-background: #dddddd
+        }
+        table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
+            border-left-color: black !important
         }
 
         textarea {
@@ -135,7 +141,7 @@ code {
     background: #f4f4f4;
     padding: .4rem;
     border-radius: .4rem;
-    font-family: 'Fira Code', 'Cascadia Code', 'Cascadia Mono', 'Consolas', 'Courier New', monospace;
+    font-family: c.$code-font;
     font-size: .9rem;
 }
 

@@ -19,18 +19,27 @@ const config = useRuntimeConfig()
 const cloud = useCloudStore()
 const ui = useUI()
 const firebaseStorage = cloud.probe && config.public.storageEnabled && useFirebaseStorage()
-const firestore = cloud.probe && useFirestore()
+const eventDoc = cloud.eventsCollection.find(e => e.id == p.event)
 
-const eventDocuments = useDocumentT<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, p.event) : null), {
-    maxRefDepth: 5,
-    wait: true,
-    once: true,
-})
+const eventImage = computedAsync(async () => {
+    const type = eventDoc?.image?.type
+    let url: string | undefined
+    if (type) {
+        switch (type) {
+        case 'cloud':
+            if (firebaseStorage) {
+                url = useStorageFileUrl(storageRef(firebaseStorage, eventDoc!.image!.data)).url.value ?? undefined
+            }
+            break
+        case 'external':
+            url = eventDoc!.image!.data
+            break
+        }
+    }
+    if (url) {
+        return await getCacheImage('eventImage-' + p.event, url)
+    }
+    return url
 
-const eventImage = computedAsync(async () => await getCacheImage('eventImage-' + p.event,
-    eventDocuments.value?.image.type == 'cloud' && firebaseStorage
-        ? useLocalStorageFileUrl(storageRef(firebaseStorage, eventDocuments.value?.image.data)).url.value
-        : eventDocuments.value?.image.data,
-
-), null, { lazy: true })
+}, null, { lazy: true })
 </script>

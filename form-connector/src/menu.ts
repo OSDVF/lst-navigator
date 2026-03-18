@@ -1,4 +1,4 @@
-import { getInternalSettings, type EventSettingsTemplated } from './settings'
+import { getSecrets, type ApplicationFormSecrets, type EventSettingsTemplated } from './settings'
 import { sidebar } from './sidebar'
 import { findTriggers, registerAllTriggers} from './triggers'
 
@@ -76,16 +76,17 @@ export function editSetting(id: keyof typeof settingsMenuFields) {
 
 export function _connect() {
     const ui = FormApp.getUi()
-    const appSettings = getInternalSettings()
+    const appSettings = getSecrets(FormApp.getActiveForm().getId())
 
-    const result = ui.prompt('🔌 Propojit s aplikací', (appSettings.apiKey && appSettings.remoteEventSettings) ? 'Již je propojeno.' : 'Zadejte kód vygenerovaný aplikací.', ui.ButtonSet.OK_CANCEL)
+    const result = ui.prompt('🔌 Propojit s aplikací', (appSettings.key && appSettings.remoteEventSettings) ? 'Již je propojeno.' : 'Zadejte kód vygenerovaný aplikací.', ui.ButtonSet.OK_CANCEL)
     if (result.getSelectedButton() == ui.Button.OK) {
         try {
-            const response = JSON.parse(result.getResponseText())
-            if (response.apiKey && response.remoteEventSettings) {
+            const response = JSON.parse(result.getResponseText()) as ApplicationFormSecrets
+            if (response.email && response.projectId && response.key && response.remoteEventSettings) {
                 for (const key in response) {
-                    if (response[key]) {
-                        PropertiesService.getDocumentProperties().setProperty(key, response[key])
+                    const val = response[key as keyof typeof response]
+                    if (val) {
+                        PropertiesService.getDocumentProperties().setProperty(key, val)
                     }
                 }
                 ui.alert('Propojení bylo úspěšné!')

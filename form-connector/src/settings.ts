@@ -1,12 +1,11 @@
-import { doc, getDoc } from 'firebase/firestore'
-import { useFirestore } from './firebase'
+import { useFirestore } from './firestore'
 import { findTriggers } from './triggers'
 import type { Category, EventSettings, ExtraItem } from './types'
 
-export type AppSettings = {
-    apiKey: string,
+export type ApplicationFormSecrets = {
+    email: string,
     projectId: string,
-    appId: string,
+    key: string,
     /**
      * Path of a document in Firebase in which per-event additional settings are stored
      */
@@ -74,9 +73,9 @@ export async function getEventSettings(): Promise<Partial<EventSettingsTemplated
         if (!remotePath) {
             throw new Error('Remote event settings document path not set')
         }
-        const fs = useFirestore()
+        const fs = useFirestore(form.getId())
 
-        const remote = (await getDoc(doc(fs, remotePath))).data() as EventSettings<string>
+        const remote = fs.getDocument(remotePath).obj as EventSettings<string>
         Object.assign(settings, remote)
         if (remote) {
             if (remote.emailBody) {
@@ -139,9 +138,9 @@ const dummyProperties = new Proxy<Record<string | symbol, any>>({}, {
     },
 })
 
-export function getInternalSettings(): Partial<AppSettings> {
+export function getSecrets(id: string): Partial<ApplicationFormSecrets> {
     return {
-        ...PropertiesService.getScriptProperties().getProperties(),
-        ...PropertiesService.getDocumentProperties().getProperties(),
+        ...JSON.parse(PropertiesService.getScriptProperties().getProperty(id) ?? '{}'),
+        ...(PropertiesService.getDocumentProperties()?.getProperties() ?? {}),
     }
 }

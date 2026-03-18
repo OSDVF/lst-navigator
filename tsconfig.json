@@ -8,7 +8,13 @@
       "WebWorker",
     ],
     "types": [
-      "./global.d.ts"
-    ]
+      "./global.d.ts",
+      "@types/google.picker",
+      "@types/gapi.auth2",
+      "@types/gapi.client.forms-v1",
+    ],
   },
+  "exclude": [
+    "form-connector/**"
+  ]
 }

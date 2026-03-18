@@ -3,10 +3,13 @@ import { defineStore, skipHydrate } from 'pinia'
 import { FieldValue, Firestore, writeBatch, type CollectionReference, type DocumentData } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
-import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth} from 'vuefire'
+import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth } from 'vuefire'
 import { getMessaging, getToken } from 'firebase/messaging'
 import {
     GoogleAuthProvider, getRedirectResult, signInWithPopup, signInWithRedirect, signOut, browserLocalPersistence, type User, browserPopupRedirectResolver, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, sendEmailVerification,
+    reauthenticateWithPopup,
+    reauthenticateWithRedirect,
+    type UserCredential,
 } from 'firebase/auth'
 import { useSettings } from '@/stores/settings'
 import { useLocalStorage } from '@vueuse/core'
@@ -17,6 +20,7 @@ import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
 import union from 'lodash.union'
 import merge from 'lodash.merge'
+import { scopes } from './gapi'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -32,7 +36,7 @@ export const defaultQuestions = [
     'Srozumitelnost',
 ]
 
-const googleAuthProvider = new GoogleAuthProvider()
+export const googleAuthProvider = new GoogleAuthProvider()
 
 let probe = true
 if (!import.meta.browser && import.meta.env.FIREBASE_EMULATOR !== 'true') {
@@ -85,7 +89,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     const router = useRouter()
-    const selectedEvent = computed(()=> router.currentRoute.value.params.event as string || config.public.defaultEvent)
+    const selectedEvent = computed(() => router.currentRoute.value.params.event as string || config.public.defaultEvent)
 
     function eventDoc(...path: (string | EventSubcollection)[]) {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
@@ -96,7 +100,6 @@ export const useCloudStore = defineStore('cloud', () => {
     if (import.meta.client) {
         auth?.setPersistence(browserLocalPersistence)
     }
-
     const eventDescription = useDocumentT<EventDescription<void>>(computed(() => firestore ? doc(firestore, 'events' as KnownCollectionName, selectedEvent.value) : null), {
         maxRefDepth: 5,
         wait: true,
@@ -115,7 +118,7 @@ export const useCloudStore = defineStore('cloud', () => {
     // Feedback
     //
     const fc = currentEventCollection('feedback')
-    const feedbackDirtyTime = skipHydrate(useLocalStorage('feedbackDirtyTime', new Date(0).getTime(), {initOnMounted: true}))
+    const feedbackDirtyTime = skipHydrate(useLocalStorage('feedbackDirtyTime', new Date(0).getTime(), { initOnMounted: true }))
     const feedbackRepliesRaw = skipHydrate(useCollectionT(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
     const feedbackConfig = useSorted(useCollectionT<FeedbackConfig>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)), (a, b) => parseInt(a.id) - parseInt(b.id))
     const feedback = {
@@ -275,7 +278,7 @@ export const useCloudStore = defineStore('cloud', () => {
     // User auth
     //
     const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : ref()
-    if (userAuth) {
+    if (userAuth.value) {
         watch(userAuth, async (newUser: User) => {
             if (newUser) {
                 if (!wasAuthenticated.value) {
@@ -295,6 +298,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }
         })
     }
+
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
     const uPending = ref(false)
@@ -316,7 +320,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     const user = {
-        auth: skipHydrate(userAuth),
+        auth: skipHydrate(userAuth as Ref<User | null>),
         doc: skipHydrate(ud),
         info: config.public.debugUser ? ref(<UserInfo>{
             lastLogin: new Date().getTime(),
@@ -340,11 +344,30 @@ export const useCloudStore = defineStore('cloud', () => {
         error: ref(),
         pendingPopup: ref(false),
         pendingAction: computed(() => uPending.value),
+        adminAuth: useLocalStorage<{ accessToken: string, expirationTime: number, scopes: string[] }>('adminAuth', {
+            accessToken: '',
+            expirationTime: 0,
+            scopes: [],
+        }),
         async deleteData() {
+            user.adminAuth.value = undefined
             await feedback.deleteUser(settings.userIdentifier)
             await deleteDoc(doc(notesCollection.value!, settings.userIdentifier))
             settings.setUserIdentifier(settings.generateUID())
         },
+        hasAdminScopes: computed((() => {
+            const currentScopes = user.adminAuth.value.scopes
+            return user.isGoogleSignedIn.value && user.adminAuth.value.expirationTime > new Date().getTime() && scopes.every(s => currentScopes.includes(s))
+        }) as (()=>boolean)),
+        hydrateFromCredential(result: UserCredential) {
+            const credential = GoogleAuthProvider.credentialFromResult(result)
+            user.adminAuth.value = {
+                accessToken: credential!.accessToken!,
+                expirationTime: new Date().getTime() + (parseInt(result._tokenResponse.expiresIn!) * 1000),
+                scopes: JSON.parse(result._tokenResponse.rawUserInfo!).granted_scopes.split(' '),
+            }
+        },
+        isGoogleSignedIn: computed(() => userAuth.value?.uid && userAuth.value?.providerData[0].providerId == GoogleAuthProvider.PROVIDER_ID),
         async changePassword(newPassword: string) {
             uPending.value = true
             try {
@@ -372,6 +395,7 @@ export const useCloudStore = defineStore('cloud', () => {
         async signOut() {
             uPending.value = true
             await signOut(auth!)
+            user.adminAuth.value = undefined
             wasAuthenticated.value = false
             uPending.value = false
         },
@@ -388,7 +412,15 @@ export const useCloudStore = defineStore('cloud', () => {
                 throw reason
             }
         },
-        async signIn(useRedirect = false, secondAttempt = false, email?: string, password?: string): Promise<boolean> {
+        async signIn(useRedirect = false, secondAttempt = false, email?: string, password?: string, admin?: boolean): Promise<boolean> {
+            if (config.public.featureForms && !config.public.emulators && (router.currentRoute.value.fullPath.includes('admin') || admin)) {
+                const currentScopes = googleAuthProvider.getScopes()
+                for (const scope of scopes) {
+                    if (!currentScopes.includes(scope)) {
+                        googleAuthProvider.addScope(scope)
+                    }
+                }
+            }
             if (!useRedirect) { user.pendingPopup.value = true }
             uPending.value = true
             try {
@@ -397,7 +429,10 @@ export const useCloudStore = defineStore('cloud', () => {
                     await signInWithEmailAndPassword(auth!, email, password)
                 } else {
                     // With emulators the popup version would throw cross-origin error
-                    await (useRedirect === true && !config.public.emulators ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver)
+                    const result = await (user.auth.value ?
+                        ((useRedirect === true || config.public.emulators) ? reauthenticateWithRedirect : reauthenticateWithPopup)(user.auth.value!, googleAuthProvider, browserPopupRedirectResolver)
+                        : ((useRedirect === true || config.public.emulators) ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver))
+                    user.hydrateFromCredential(result)
                 }
                 user.pendingPopup.value = false
                 uPending.value = false
@@ -408,8 +443,8 @@ export const useCloudStore = defineStore('cloud', () => {
                 if (!email || !password) {
                     if (secondAttempt === true) {
                         alert('Přihlášení se nepodařilo provést')
-                    } else if (useRedirect !== true && confirm('Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?')) {
-                        nextResult = await user.signIn(true, true, email, password)
+                    } else if (useRedirect !== true && confirm(retrySignInText)) {
+                        nextResult = await user.signIn(true, true, email, password, admin)
                     }
                 }
                 uPending.value = false
@@ -418,6 +453,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }
         },
     }
+
 
     async function onSignIn(newUser: User) {
         if (user.doc.value) {// do not ask if the user is already being asked in different browser tab
@@ -541,9 +577,9 @@ export const useCloudStore = defineStore('cloud', () => {
     })
 
     const notesCollection = currentEventCollection('notes')
-    const offlineFeedback = skipHydrate(useLocalStorage<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: UpdatePayload<Feedback> | FieldValue | null } } } }>('lastNewFeedback', {}, {initOnMounted: true}))
-    const messagingToken = skipHydrate(useLocalStorage('messagingToken', '', {initOnMounted: true}))
-    const wasAuthenticated = skipHydrate(useLocalStorage('isAuthenticated', false, {initOnMounted: true}))
+    const offlineFeedback = skipHydrate(useLocalStorage<{ [event: string]: { [sIndex: number | string]: { [eIndex: number | string]: { [userIdentifier: string]: UpdatePayload<Feedback> | FieldValue | null } } } }>('lastNewFeedback', {}, { initOnMounted: true }))
+    const messagingToken = skipHydrate(useLocalStorage('messagingToken', '', { initOnMounted: true }))
+    const wasAuthenticated = skipHydrate(useLocalStorage('isAuthenticated', false, { initOnMounted: true }))
 
     watch(messagingToken, async (newToken) => {
         if (user.doc.value && userAuth?.value?.uid && import.meta.client) {
@@ -599,7 +635,11 @@ export const useCloudStore = defineStore('cloud', () => {
     if (import.meta.browser) {
         // Hydrate user
         setTimeout(() => {
-            getRedirectResult(auth!).catch((reason) => {
+            getRedirectResult(auth!).then(result => {
+                if (result) {
+                    user.hydrateFromCredential(result)
+                }
+            }).catch((reason) => {
                 console.error('Failed redirect result', reason)
                 if (process.env.SENTRY_DISABLED !== 'true') {
                     Sentry.captureEvent(reason, {
@@ -628,13 +668,31 @@ export const useCloudStore = defineStore('cloud', () => {
             }
         }).catch(e => { console.error(e); if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) } })
     }
+
+    const eventsCollection = useCollectionT<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const visibleEvents = computed(() => {
+        const events: (EventDescription<DocumentData> & { id: string, a: boolean, f: boolean })[] = []
+        for (const e of eventsCollection.value) {
+            const s = shouldShowEvent(e)
+            if (s ?? config.public.showEventsWithoutInteractions) {
+                const a = applicationsEnabled(e)
+                const f = feedbackEnabled(e)
+                if (a || f || config.public.showEventsWithoutInteractions) {
+                    events.push({
+                        ...e, f, a, id: e.id,
+                    })
+                }
+            }
+        }
+        return events
+    })
     return {
         currentEventCollection,
         days,
         eventDescription,
         eventDoc,
         eventLoading: skipHydrate(eventDescription.pending),
-        eventsCollection: useCollectionT<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server }),
+        eventsCollection,
         feedback: skipHydrate(feedback),
         feedbackConfig: feedbackConfig,
         networkError: skipHydrate(eventDescription.error),
@@ -644,12 +702,33 @@ export const useCloudStore = defineStore('cloud', () => {
         probe,
         resolvedPermissions,
         scheduleLoading: skipHydrate(scheduleCollection.pending),
+        /** ID */
         selectedEvent,
         suggestions,
+        /**
+         * Events shown on main page
+         */
+        visibleEvents,
         lastSuggestion,
         user,
     }
 })
+
+export function shouldShowEvent<T>(e: EventDescription<T>): boolean | undefined {
+    const now = new Date().getTime()
+    if (e.showFrom && toJSDate(e.showFrom).getTime() > now) {
+        return false
+    } else if(e.showTo && toJSDate(e.showTo).getTime() >= now) {
+        return true
+    }
+
+    if (e.showTo && toJSDate(e.showTo).getTime() < now) {
+        return false
+    } else if (e.showFrom && toJSDate(e.showFrom).getTime() <= now) {
+        return true
+    }
+    return undefined
+}
 
 export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null, previousData: T): Partial<T> | null {
     const newData = data
@@ -678,3 +757,5 @@ export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null,
 
     return newData as Partial<T>
 }
+
+export const retrySignInText = 'Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?'

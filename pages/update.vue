@@ -26,7 +26,7 @@
         <p class="small">
             Pokud se vám nedaří aktualizovat, zkuste vynutit obnovení pomocí <kbd>Ctrl+F5</kbd> nebo <kbd>
                 <Icon name="mdi:apple-keyboard-command" />+Shift+R
-            </kbd> na MacOS.
+            </kbd> &nbsp; na MacOS.
         </p>
     </article>
 </template>

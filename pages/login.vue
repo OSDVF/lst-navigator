@@ -1,6 +1,7 @@
 <template>
     <article class="login">
         <h1>{{ typeof $route.query.register !== 'undefined' ? 'Registrujte se' : user?.uid ? 'Přihlášeno' :
+            $route.query.redirect?.includes('admin') ? 'Přihlásit se do administrace' :
             'Přihlaste se' }}</h1>
         <LazyLoginField
             class="large" :email="!user && typeof $route.query.email !== 'undefined'"

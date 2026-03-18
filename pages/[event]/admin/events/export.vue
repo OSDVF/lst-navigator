@@ -25,7 +25,7 @@
 </template>
 <script setup lang="ts">
 import { collection, doc } from 'firebase/firestore'
-import { getDocCacheOr } from '~/utils/trace'
+import { getDocCacheOr, useCollection as useCollectionT } from '~/utils/trace'
 import pickBy from 'lodash.pickby'
 import { EventSubcollectionsList, type EventSubcollection } from '~/types/cloud'
 
@@ -56,7 +56,7 @@ async function exportEvent() {
                 continue
             }
 
-            const subcol = await useCollection(collection(fs, 'events', event.id, sub), { once: true, wait: true }).promise.value
+            const subcol = await useCollectionT(collection(fs, 'events', event.id, sub), { once: true, wait: true }).promise.value
 
             if (subcol) {
                 subdocs[sub] ??= {}

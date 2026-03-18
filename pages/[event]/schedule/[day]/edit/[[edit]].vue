@@ -6,7 +6,7 @@
                 @import="importJson"
                 @error="e => error = e">
                 Importovat program</ImportForm>
-            <p v-if="error"><code>{{ error }}</code></p>
+            <p v-if="error" class="error"><code>{{ error }}</code></p>
             <button title="Exportovat program" @click='exportItem'>
                 <Icon name='mdi:download' /> Export
             </button>
@@ -227,7 +227,7 @@ async function editProgram(event: Event) {
     }, { merge: true })
 
     dirty.value = false // Reset dirty state
-    router.push(`${cloud.selectedEvent}/schedule/${selectedDayIndex.value}`)
+    router.push(`/${cloud.selectedEvent}/schedule/${selectedDayIndex.value}`)
 
     const last = (cloud.lastSuggestion + 1) % parseInt(config.public.maxSuggestions)
     await setDoc(

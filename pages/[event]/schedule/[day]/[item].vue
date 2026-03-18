@@ -11,6 +11,7 @@
                 {{ toHumanTime(scheduleItemData?.time) }}
                 <NuxtLink
                     v-if="cloud.resolvedPermissions.editSchedule"
+                    class="button"
                     :to="`/${cloud.selectedEvent}/schedule/${dayIndex}/edit/${scheduleItemIndex}`" title="Upravit program">
                     <Icon name="mdi:pencil" />
                 </NuxtLink>

@@ -3,10 +3,13 @@
         <EventInfo />
 
         <nav v-if="cloud.eventDescription.value" style="position: fixed;left:0;right:0;bottom:0;">
-            <NuxtLink to="/">
-                <Icon name="mdi:apps" size="2rem" /><Icon name="mdi:arrow-left" />&ensp;Události
+            <NuxtLink v-if="cloud.visibleEvents.value.length > 1 || cloud.visibleEvents.value[0]?.id != cloud.selectedEvent.value" to="/">
+                <Icon name="mdi:apps" size="2rem" />
+                <Icon name="mdi:arrow-left" />&ensp;Události
             </NuxtLink>
-            <NuxtLink v-if="applicationsEnabled(cloud.eventDescription.value)" :to="`/${cloud.eventDescription.value.id}/apply`">
+            <NuxtLink
+                v-if="applicationsEnabled(cloud.eventDescription.value)"
+                :to="`/${cloud.eventDescription.value.id}/apply`">
                 <Icon name="mdi:form-select" size="2rem" />&ensp;Přihláška
             </NuxtLink>
             <NuxtLink :to="`/${cloud.eventDescription.value.id}/schedule`">

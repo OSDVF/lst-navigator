@@ -1,0 +1,58 @@
+<p>
+    Pokud bys potřeboval*a jakékoliv informace, neváhej napsat na&nbsp;prihlasky@travna.cz,
+    nebo
+    kontaktuj
+    <? if(mainOrg) { ?>
+    hlavního organizátora –
+    <?= mainOrg ?>.
+    <? } else { ?>
+    ondra@travna.cz.
+    <? } ?>
+</p>
+
+<? if (price || price.toString() === '0') { ?>
+<p>
+    Tvůj účastnický poplatek
+    <?= price ?>&nbsp;Kč pošli na&nbsp;účet <?= accountNumber ?>/<?= bankCode ?>
+    <? if(payDue) {?>nejpozději do&nbsp;
+    <?= payDue ?>
+    <?} ?>.
+    <br>
+    Do poznámky napiš své jméno a&nbsp;příjmení nebo kód přihlášky&nbsp;<code><?= responseId.substring(7, 14) ?></code>.
+    <? if(payDue && latePrice) {?> Po
+    <?= payDue ?> bude cena zvýšena na&nbsp;
+    <?= latePrice ?>&nbsp;Kč.
+    <?} ?>
+    <? if (qrCode) { ?>
+    QR kód pro uhrazení platby <br>
+    <img src="cid:<?= qrCode ?>" alt="QR kód pro uhrazení platby <?= price ?> Kč na účet <?= accountNumber ?>/<?= bankCode ?>" />
+    <? } ?>
+</p>
+<? } else { ?>
+<p>Účet pro účastnické poplatky: <?= accountNumber ?>/<?= bankCode ?>.</p>
+<p>Pro tvou přihlášku se nepodařilo automaticky vypočítat účastnický poplatek, takže ti ohledně něj zanedlouho napíšeme.</p>
+<? } ?>
+
+<p>
+    Těšíme se na Tebe!
+    <br>
+    Organizační tým
+</p>
+<? if (canEdit === true) { ?>
+<p>PS.: Kdybys chtěl*a svou přihlášku upravit, můžeš tak kdykoliv učinit na tomto odkazu:<br>
+    <a href="<?= editLink ?>">
+        <?= editLink ?>
+    </a>
+</p>
+<? } ?>
+<small>
+    ID přihlášky:
+    <?= responseId ?><br>
+</small>
+
+<style>
+    table tr:first-child td,
+    table tr:first-child th {
+        background: #99999999;
+    }
+</style>

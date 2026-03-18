@@ -1,5 +1,7 @@
 import type { PwaInjection } from '@vite-pwa/nuxt'
 import { idb } from '@composi/idb/types'
+import type { IdTokenResponse, StsTokenManager } from './types/auth'
+import type { JSONSchema7 } from 'json-schema'
 
 // define environment variables here
 declare namespace NodeJS {
@@ -73,8 +75,21 @@ declare module '#app' {
   }
 }
 
+declare module 'firebase/auth' {
+  interface User {
+    stsTokenManager: StsTokenManager
+  }
+  interface UserCredential {
+    _tokenResponse: IdTokenResponse
+  }
+}
+
 declare module '@composi/idb' {
   export = idb
+}
+
+declare module '#build/forms/schema.json' {
+  export = {} as JSONSchema7
 }
 
 export { }

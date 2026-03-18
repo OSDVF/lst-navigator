@@ -2,8 +2,16 @@
 <template>
     <LazyClientOnly>
         <div
-            ref="area" v-no-overflow contenteditable class="rich-editor" :placeholder="props.placeholder"
-            @focus="emit('focus')" @mousedown="emit('focus')"
+            ref="area" v-no-overflow :disabled="disabled" :readonly="readonly"
+            :contenteditable="props.plainText ? 'plaintext-only' : true" :class="{
+                'rich-editor': true,
+                readonly,
+                disabled
+            }"
+            :placeholder="props.placeholder"
+            @keydown="(readonly || disabled) ? (e: Event) => e.preventDefault() : undefined"
+            @beforeinput="(readonly || disabled) ? (e: Event) => e.preventDefault() : undefined" @focus="emit('focus')"
+            @mousedown="emit('focus')"
             @blur="e => { emit('update:modelValue', stripBadElements((e.target as HTMLDivElement).innerHTML)); emit('blur') }"
             v-html="stripBadElements(modelValue)" />
     </LazyClientOnly>
@@ -17,6 +25,9 @@ const props = defineProps<{
     modelValue?: string | null,
     plain?: boolean | null,
     placeholder?: string,
+    plainText?: boolean,
+    readonly?: boolean,
+    disabled?: boolean,
 }>()
 const emit = defineEmits<{
     'update:modelValue': [value: string],
@@ -26,8 +37,15 @@ const emit = defineEmits<{
 const wasFocued = ref(false)
 
 watch(props, newProps => {
-    if (!newProps.plain && !props.plain && editor && !wasFocued.value) {// TODO track external changes differently
-        editor.setData(newProps.modelValue || '')
+    if (editor) {
+        if (!newProps.plain && !props.plain && editor && !wasFocued.value) {// TODO track external changes differently
+            editor.setData(newProps.modelValue || '')
+        }
+        if (props.readonly || props.disabled) {
+            editor.enableReadOnlyMode(uid)
+        } else {
+            editor.disableReadOnlyMode(uid)
+        }
     }
 })
 
@@ -35,8 +53,9 @@ const area = useTemplateRef('area')
 const allowedAttributes = [
     'href', 'name', 'target', 'src', 'srcset', 'alt', 'title', 'width', 'height', 'loading', 'type', 'data-type',
 ]
-let editor: any | null = null
-declare const CKEDITOR: any
+let editor: (Awaited<ReturnType<typeof import('ckeditor5').ClassicEditor.create>>) | null = null
+declare const CKEDITOR: typeof import('ckeditor5')
+const uid = useId()
 
 onBeforeUnmount(() => {
     editor?.destroy?.()
@@ -67,7 +86,7 @@ onMounted(async () => {
                 })
         })
     }
-    editor = await CKEDITOR.ClassicEditor.create(area.value, {
+    editor = await CKEDITOR.ClassicEditor.create(area.value!, {
         licenseKey: 'GPL',
         toolbar: {
             items: [
@@ -252,12 +271,12 @@ onMounted(async () => {
             contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells', 'tableProperties', 'tableCellProperties'],
         },
     })
-
+    if (props.readonly) { editor.enableReadOnlyMode(uid) }
     // set initial data
     editor.setData(props.modelValue || '')
 
     editor.model.document.on('change:data', () => {
-        emit('update:modelValue', editor.getData())
+        emit('update:modelValue', editor!.getData())
     })
 
     editor.ui.focusTracker.on('change:isFocused', (_evt: any, _name: string, isFocused: boolean) => {

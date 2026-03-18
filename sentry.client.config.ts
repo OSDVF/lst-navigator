@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nuxt'
 const config = useRuntimeConfig()
 
 const sentryConfig: Partial<Sentry.BrowserOptions> = {
-    enabled: config.public.SENTRY_ENABLED,
+    enabled: config.public.sentryEnabled,
     debug: config.public.ENV !== 'production',
     dsn: config.public.SENTRY_DSN,
     release: config.public.commitHash,

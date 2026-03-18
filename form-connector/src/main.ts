@@ -1,6 +1,7 @@
 import { findTriggers, registerSubmitTrigger, registerSidebarTrigger } from './triggers'
 import { sidebar } from './sidebar'
 import { menu } from './menu'
+export { doGet, doPost } from './api'
 export { onSubmitForm } from './submit'
 export { _connect, _adminEmail, _eventName, _mainOrg, _treatAllAsNew, _triggersCheck } from './menu'
 
@@ -42,4 +43,8 @@ export function onInstall() {
         menu(ui)
     }
     sidebar()
+}
+
+export function setTimeout(fn: CallableFunction) {
+    return fn()
 }

@@ -1,27 +1,26 @@
 <template>
     <tr>
         <td
-            :colspan="Object.keys(p.replies).length" class="caption"
-            :title="stripHtml(p.config?.description ?? p.event?.description) || undefined" tabindex="0">
-            <div v-if="p.link">
-                <NuxtLink :to="p.link" class="sticky left-0">
-                    {{ (p.config?.name ?? p.event?.title) }}
+            :colspan="Object.keys(replies).length" class="caption"
+            :title="stripHtml(config?.description ?? event?.description) || undefined" tabindex="0">
+            <div v-if="link">
+                <NuxtLink :to="link" class="sticky left-0">
+                    {{ (config?.name ?? event?.title) }}
                 </NuxtLink>
             </div>
             <div v-else>
                 <span class="sticky left-0">
-                    {{ (p.config?.name ?? p.event?.title) }}
+                    {{ (config?.name ?? event?.title) }}
                 </span>
             </div>
         </td>
     </tr>
-    <!-- Filtered by selected option -->
     <tr v-for="(filteredByOption, option) in repliesByOption" :key="option">
         <td :title="Object.keys(filteredByOption.replies).join(', ') || undefined" tabindex="0">
             <div
                 class="absolute left-0 top-0 bottom-0 z--1"
                 :style="{ width: `${100 * filteredByOption.count / maxCount}%`, background: randomColors?.[option] }" />
-            <em>{{ option }} ({{ filteredByOption.count }})</em>
+            <em>{{ option || '(žádný výběr)' }} ({{ filteredByOption.count }})</em>
         </td>
         <template v-if="filteredByOption">
             <td>
@@ -58,7 +57,7 @@ const p = defineProps<{
 const admin = useAdmin()
 const questions = computed(() => (p.event ?? p.config)?.questions)
 const type = computed(() => (p.event?.feedbackType ?? p.config?.type))
-const options = computed(() => getParallelOrSelectEvents(p.event ?? p.config))
+const options = computed(() => ['', ...(getParallelOrSelectEvents(p.event ?? p.config) ?? [])])
 const randomColors: { [option: string]: string } = {}
 if (options.value) {
     for (const option of options.value) {
@@ -77,7 +76,7 @@ const repliesByOption = computed(() => {
         for (const user in p.replies) {
             const reply = p.replies[user]
             for (const option of options.value) {
-                if (reply.select === option) {
+                if ((reply.select ?? '') === option) {
                     if (!result[option]) {
                         result[option] = { replies: {}, count: 0 }
                     }
@@ -107,7 +106,7 @@ const maxCount = computed(() => {
 })
 
 function getParallelOrSelectEvents(event: ScheduleItem | typeof p.config) {
-    switch ((event as ScheduleItem).feedbackType ?? (event as typeof p.config)?.type) {
+    switch ((event as ScheduleItem)?.feedbackType ?? (event as typeof p.config)?.type) {
     case 'select':
         return event!.questions
     case 'parallel':

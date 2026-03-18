@@ -1,20 +1,28 @@
 <template>
     <ProgressBar v-if='cloud.eventLoading' />
-    <article v-else>
+    <div v-else>
         <button
             v-if='action == Actions.Nothing && cloud.resolvedPermissions.superAdmin'
             @click='() => { action = Actions.New; table?.dt?.rows().deselect() }'>
             <Icon name='mdi:plus' /> Nová
         </button>
-        <template v-if="isSelection && cloud.resolvedPermissions.editEvent && action == Actions.Nothing">
+        <template v-if="isSelection && (cloud.resolvedPermissions.superAdmin || boolToNum(cloud.user.info?.permissions?.[getSelectedEvent()?.id ?? '']) >= UserLevel.Admin) && action == Actions.Nothing">
             <button @click='startEditingSelected'>
                 <Icon name='mdi:pencil' /> Upravit
             </button>
-            <button @click="$router.push(`/${cloud.selectedEvent}/admin/events/${getSelectedEvent()?.id}/export`)">
+            <button
+                @click="maybe(getSelectedEvent(), e => $router.push(`/${cloud.selectedEvent}/admin/events/export`))">
                 <Icon name='mdi:download' /> Export
             </button>
-
+            <button
+                v-if="config.public.featureForms && isSelection && maybe(getSelectedEvent(true), d => d.formDocument ?? d.form)?.startsWith(applicationFormDocumentPrefix)"
+                type="button" @click="action = Actions.ConnectForm">
+                <Icon name="mdi:form-select" style="color: #7346ba" /> Nastavení přihlášky
+            </button>
         </template>
+        <button v-if="isSelection && getSelectedEvent()?.id != cloud.selectedEvent" @click="maybe(getSelectedEvent(), e => $router.push(`/${e.id}/admin/events`))">
+            <Icon name="mdi:home-edit" /> Přepnout na událost
+        </button>
         <ImportForm
             v-if="cloud.resolvedPermissions.superAdmin && [Actions.Nothing, Actions.New].includes(action)"
             ref="form" :truncate-option="importInto" @import="importJson" @error="e => error = e">
@@ -33,21 +41,39 @@
             </template>
             {{ importText }}
         </ImportForm>
-        <p v-if="error"><code>{{ error }}</code></p>
+        <p v-if="error" class="error"><code>{{ error }}</code></p>
         <button
             v-if='action == Actions.Nothing && isSelection && cloud.resolvedPermissions.superAdmin'
             @click='deleteSelected'>
             <Icon name='mdi:trash-can' /> Smazat
         </button>
         &ensp;
-        <span v-show="selectedTitle" class="button small" @click="deselect">
+        <span v-show="action == Actions.Nothing && selectedTitle" class="button small" @click="deselect">
             <Icon name="mdi:select-off" />Zrušit označení
         </span>
 
+        <FormSettings
+            v-if="action == Actions.ConnectForm" :event-id="getSelectedEvent(true)?.id"
+            @edit="startEditingSelected()" @return="action = Actions.Nothing" />
+
         <form
-            v-if='[Actions.Edit, Actions.New].includes(action) && !form?.importing'
+            v-else-if='[Actions.Edit, Actions.New].includes(action) && !form?.importing' class="p-2"
             @submit.prevent='editEvent(action == Actions.New)'>
-            <h2>{{ { [Actions.Edit]: 'Upravit', [Actions.New]: 'Nová událost', [Actions.Nothing]: '' }[action] }}</h2>
+            <h2>{{ {
+                [Actions.Edit]: 'Upravit', [Actions.New]: 'Nová událost', [Actions.Nothing]: '',
+                [Actions.ConnectForm]:
+                    'Propojit s přihláškou'
+            }[action] }}</h2>
+
+            <div style="float:right">
+                <button type='submit' class="large">
+                    <Icon name="material-symbols:save" /> Uložit
+                </button>
+                <button type="reset" class="large" @click="action = Actions.Nothing">
+                    <Icon name="mdi:cancel" /> Zrušit
+                </button>
+            </div>
+
             <label>Název <input v-model.lazy='sanitizeTitleAndId' type='text' required></label>
             &ensp;
             <small>
@@ -88,15 +114,12 @@
 
             <details>
                 <summary>
-                    <label for="form" title="URL Google Formuláře nebo jakýkoliv odkaz">
-                        <Icon name="mdi:form-select" style="color: #7346ba" /> Přihláška
-                    </label>
-                    <input
-                        id="form" v-model.lazy="editedEvent.form" type="url" name="form"
-                        placeholder="https://forms.gle/">
+                    <FormInput v-model="editedEvent.form" />
                 </summary>
 
                 <div class="mb-2 ml-2">
+                    <FormDocumentInput v-model="editedEvent.formDocument" :form-url="editedEvent.form" /><br>
+
                     <label>Začátek přihlašování&ensp;<input
                         v-model.lazy='editedEvent.applicationsStart'
                         type='date'></label>
@@ -124,8 +147,10 @@
 
             <ClassicCKEditor v-model.lazy='editedEvent.description' placeholder="Popis události" />
 
-            <fieldset :disabled='!!remoteImage.uploadTask.value' class="mt-2">
-                <legend>Obrázek</legend>
+            <details :disabled='!!remoteImage.uploadTask.value' class="mt-2">
+                <summary>
+                    <Icon name="mdi:image" /> Obrázek
+                </summary>
                 <div class="p">
                     <button
                         type='button' :disabled="!storage"
@@ -172,7 +197,7 @@
                     <label v-if='editedEvent.imageIdentifier.type === "cloud"'>Výsledná lokace <input
                         v-model.lazy='editedEvent.imageIdentifier.data' type='text'></label>
                 </p>
-            </fieldset>
+            </details>
             <button type='submit' class="large">
                 <Icon name="material-symbols:save" /> Uložit
             </button>
@@ -197,7 +222,7 @@
                 </tr>
             </thead>
         </LazyDataTable>
-    </article>
+    </div>
 </template>
 
 <script setup lang='ts'>
@@ -206,14 +231,17 @@ import { doc, collection, arrayUnion, type DocumentData, getDoc, deleteField } f
 import { getDocCacheOr, getDocs, setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
-import { useFirebaseStorage, useLocalStorageFile } from 'vuefire'
+import { useFirebaseStorage, useStorageFile } from 'vuefire'
 import { eventDocs, useCloudStore } from '@/stores/cloud'
 import { toFirebaseMonthDay, toJSDate, toFirebaseDate, useLang } from '@/utils/utils'
-import { EventSubcollectionsList, type EventDescription, type ScheduleDay } from '~/types/cloud'
+import { EventSubcollectionsList, UserLevel, type EventDescription, type ScheduleDay } from '~/types/cloud'
 import { ImportForm } from '#components'
 import pickBy from 'lodash.pickby'
+import { stringify } from 'devalue'
 
 import type { Api } from '~/types/datatables'
+import { captureException } from '@sentry/nuxt'
+import { GoogleAuthProvider } from 'firebase/auth'
 
 definePageMeta({
     title: 'Akce',
@@ -223,9 +251,10 @@ definePageMeta({
 
 const cloud = useCloudStore()
 const error = ref()
+const gapi = useGapi()
 const lang = useLang()
 enum Actions {
-    Nothing, New, Edit
+    Nothing, New, Edit, ConnectForm
 }
 const action = ref<Actions>(Actions.Nothing)
 const form = useTemplateRef<InstanceType<typeof ImportForm>>('form')
@@ -239,6 +268,7 @@ const editedEvent = ref({
     description: '',
     end: now,
     form: '',
+    formDocument: '',
     feedbackEnd: '',
     identifier: '',
     imageIdentifier: {
@@ -252,7 +282,8 @@ const editedEvent = ref({
     transfers: false,
     web: '',
 })
-const loading = ref(false)
+const loading = ref(0)
+provide('loading', loading)
 
 const sanitizeTitleAndId = computed({
     get() {
@@ -316,7 +347,7 @@ const storage = cloud.probe && config.public.storageEnabled && useFirebaseStorag
 const fs = cloud.probe && useFirestore()
 
 const { files, open: openFD } = useFileDialog()
-const remoteImage = useLocalStorageFile(computed(() => storage && editedEvent.value.identifier ? storageRef(storage, `${editedEvent.value.identifier}/${files.value?.item(0)?.name ?? 'image'}`) : null))
+const remoteImage = useStorageFile(computed(() => storage && editedEvent.value.identifier ? storageRef(storage, `${editedEvent.value.identifier}/${files.value?.item(0)?.name ?? 'image'}`) : null))
 function uploadImage() {
     const data = files.value?.item(0)
     if (data) {
@@ -324,7 +355,72 @@ function uploadImage() {
     }
 }
 
+async function normalizeForms() {
+    try {
+        const formUrlIsDoc = editedEvent.value.form.startsWith(applicationFormDocumentPrefix)
+        const formDocUrlIsDoc = editedEvent.value.formDocument.startsWith(applicationFormDocumentPrefix)
+        if (!editedEvent.value.form && !editedEvent.value.formDocument && !formUrlIsDoc && !formDocUrlIsDoc) {
+            return
+        }
+        if (cloud.user.auth?.providerData[0].providerId != GoogleAuthProvider.PROVIDER_ID && !gapi.loading) {
+            if (confirm('Pokud chcete v budoucnu propojit událost s Google Forms přihláškou, přihlašte se, prosím, k účtu Google, který má k formuláři přístup.')) {
+                await gapi.client()
+            } else {
+                return
+            }
+        }
+        if (gapi.loading) {
+            if (!confirm('Přihlášení ke Google nebylo dokončeno. Chcete přesto pokračovat?')) {
+                return
+            }
+        }
+        const wrongURLError = 'Je třeba zadat adresu upravitelného souboru formuláře na Disku Google (https://docs.google.com/forms/d/.../edit).'
+        const client = await gapi.client()
+        if (formDocUrlIsDoc) {
+            const id = extractFormIdFromURL(editedEvent.value.formDocument)
+            if (!id) {
+                throw new Error(wrongURLError)
+            }
+            const result = await client.forms.forms.get({
+                formId: id,
+                fields: 'responderUri,info',
+            })
+            if (!editedEvent.value.form.startsWith(applicationFormShortUrlPrefix)) {
+                if (result.result.responderUri && result.result.info) {
+                    if (editedEvent.value.form != result.result.responderUri) {
+                        if (confirm(`Zadaný odkaz na vyplnění přihlášky ${result.result.info.title} (${editedEvent.value.form}) se liší od výchozí adresy uložené v dokumentu ${result.result.info.documentTitle} na Google Disku (${editedEvent.value.formDocument}). ` +
+                            '\nChcete ji přepsat adresou z dokumentu?',
+                        )) {
+                            editedEvent.value.form = result.result.responderUri
+                        }
+                    }
+                }
+            }
+        } else if (formUrlIsDoc) {
+            const id = extractFormIdFromURL(editedEvent.value.form)
+            if (!id) {
+                throw new Error(wrongURLError)
+            }
+            const result = await client.forms.forms.get({
+                formId: id,
+                fields: 'responderUri,info',
+            })
+            if (result.result.responderUri) {
+                editedEvent.value.formDocument = editedEvent.value.form
+                editedEvent.value.form = result.result.responderUri
+            }
+
+        }
+    } catch (e) {
+        captureException(e)
+        error.value = 'Could not load Google Form: ' + (typeof e == 'object' ? ((e && 'result' in e) ? stringify(e.result) : e instanceof Error ? e.message : stringify(e)) : ' unknown error')
+        console.error(e)
+    }
+
+}
+
 async function editEvent(createNew = false) {
+    loading.value++
     if (files.value?.length) {
         await uploadImage()
         if (remoteImage.metadata.value) {
@@ -335,34 +431,48 @@ async function editEvent(createNew = false) {
         }
     }
     if (!fs) {
+        loading.value--
         return
     }
     const docs = eventDocs(fs, editedEvent.value.identifier)
     if (createNew) {
         if ((await getDocCacheOr(docs.event)).exists()) {
             alert('Akce s tímto názvem již existuje')
+            loading.value--
             return
         }
         if (!((await getDocs(docs.notes)).empty)) {
             alert('Dokument \'notes\' k akci s tímto názvem již existuje')
+            loading.value--
             return
         }
         if (!(await getDocs(docs.feedback)).empty) {
             alert('Dokument \'feedback\' k akci s tímto názvem již existuje')
+            loading.value--
             return
         }
         if (!(await getDocs(docs.subscriptions)).empty) {
             alert('Dokument \'subscriptions\' k akci s tímto názvem již existuje')
+            loading.value--
             return
         }
         if (!(await getDocs(docs.schedule)).empty) {
             alert('Dokument \'schedule\' k akci s tímto názvem již existuje')
+            loading.value--
             return
         }
         if (!(await getDocs(docs.users)).empty) {
             alert('Dokument \'users\' k akci s tímto názvem již existuje')
+            loading.value--
             return
         }
+    }
+
+    // normalize application form URL
+    editedEvent.value.formDocument = editedEvent.value.formDocument.trim()
+    editedEvent.value.form = editedEvent.value.form.trim()
+    if (config.public.featureForms) {
+        await normalizeForms()
     }
 
     const end = new Date(editedEvent.value.end)
@@ -374,6 +484,7 @@ async function editEvent(createNew = false) {
         start: toFirebaseDate(new Date(editedEvent.value.start)),
         end: toFirebaseDate(end),
         form: editedEvent.value.form || deleteField(),
+        formDocument: editedEvent.value.formDocument || deleteField(),
         feedbackEnd: toFirebaseDate(new Date(editedEvent.value.feedbackEnd)) || deleteField(),
         description: editedEvent.value.description,
         image: editedEvent.value.imageIdentifier,
@@ -383,6 +494,7 @@ async function editEvent(createNew = false) {
         transfers: editedEvent.value.transfers,
         web: editedEvent.value.web,
     } as EventDescription<void>, { merge: true })
+    loading.value--
 
     for (let i = new Date(editedEvent.value.start); i <= end; i.setDate(i.getDate() + 1)) {
         const day = doc(docs.schedule, toFirebaseMonthDay(i))
@@ -412,6 +524,7 @@ async function editEvent(createNew = false) {
     dummies.map(d => d && deleteDoc(d))
 
     action.value = Actions.Nothing
+    loading.value--
 }
 
 const eventsIndexed = computed(() => {
@@ -458,8 +571,8 @@ async function startEditingSelected() {
         }
         const selectedEvent = cloud.eventsCollection.find(e => e.id === selectedData[0][0])
         if (selectedEvent) {
-            loading.value = true
-            loading.value = false
+            loading.value++
+            loading.value--
             action.value = Actions.Edit
             editedEvent.value = {
                 applicationsEnd: selectedEvent.applicationsEnd ?? '',
@@ -470,6 +583,7 @@ async function startEditingSelected() {
                 description: selectedEvent.description,
                 end: selectedEvent.end,
                 form: selectedEvent.form ?? '',
+                formDocument: selectedEvent.formDocument ?? '',
                 feedbackEnd: selectedEvent.feedbackEnd ?? '',
                 imageIdentifier: selectedEvent.image || {
                     type: 'cloud',
@@ -522,6 +636,7 @@ function deleteSelected() {
 }
 
 async function importJson(source: Record<string, EventDescription<DocumentData>>, merge: boolean) {
+    //TODO create dummy schedule
     if (fs) {
         for (const importingEventId in source) {// there can be multiple events to import
             const data = source[importingEventId as keyof typeof source]

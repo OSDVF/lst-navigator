@@ -27,7 +27,7 @@
             <nav v-show="!keyboardVisible" role="navigation">
                 <LazyClientOnly>
                     <NuxtLink
-                        v-if="config.public.installWizard && (!installComplete || $route.name?.toString().includes('install'))"
+                        v-if="config.public.featureInstallWizard && (!installComplete || $route.name?.toString().includes('install'))"
                         :to="onFeedbackPage ? `/${cloud.selectedEvent}/schedule` : `/install/0?to=/${cloud.selectedEvent}/schedule/`">
                         <Icon
                             :name="onFeedbackPage ? 'mdi:calendar-month-outline' : 'mdi:arrow-left-bold-circle-outline'"

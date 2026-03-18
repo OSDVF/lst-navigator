@@ -45,25 +45,29 @@
                     <template
                         v-for="(replies, eIndex) in (feedbackSection as FeedbackQuestionsCustom)"
                         :key="`e${eIndex}td`">
-                        <SelectFeedbackRows
-                            v-if="isSelect(eIndex)" :event="event?.[eIndex as number]"
-                            :replies="replies" :tabulated="tabulated.replies[eIndex]"
-                            :respondents="tabulated.respondents" :config="config?.config?.[eIndex]"
-                            :link="makeLink?.(eIndex)"
-                            @set-data="(data, user) => $props.onSetData?.(data, eIndex as string, user)" />
-                        <tr
-                            v-else-if="replies && Object.keys(replies).length > 0"
-                            :class="config?.config?.[eIndex]?.type">
-                            <FeedbackCells
-                                :config="config?.config?.[eIndex] ?? {
-                                    name: eIndex as string,
+                        <template v-if="replies">
+                            <SelectFeedbackRows
+                                v-if="isSelect(eIndex) || Object.values(replies).find(v => v.select)"
+                                :event="event?.[eIndex as any]" :replies="replies"
+                                :tabulated="tabulated.replies[eIndex]" :respondents="tabulated.respondents" :config="config?.config?.[eIndex] ?? (event?.[eIndex as any] ? undefined : {
+                                    name: `❗ ${eIndex}`,
+                                    questions: Object.values(replies).map(r => r.select).filter((r, index, rs) => rs.indexOf(r) === index && typeof rs != 'undefined') as string[],
                                     description: '(poškozená data)',
-                                    questions: [],
-                                }" :link="makeLink?.(eIndex)" :tabulated="tabulated.replies[eIndex]"
-                                :respondents="tabulated.respondents" :replies="replies"
-                                :event="event?.[eIndex as number]"
-                                :on-set-data="(data, user) => $props.onSetData?.(data, eIndex as string, user)" />
-                        </tr>
+                                    type: 'select'
+                                })" :link="makeLink?.(eIndex)"
+                                @set-data="(data, user) => onSetData?.(data, eIndex as string, user)" />
+                            <tr v-else-if="Object.keys(replies).length > 0" :class="config?.config?.[eIndex]?.type">
+                                <FeedbackCells
+                                    :config="config?.config?.[eIndex] ?? {
+                                        name: eIndex as string,
+                                        description: '(poškozená data)',
+                                        questions: [],
+                                    }" :link="makeLink?.(eIndex)" :tabulated="tabulated.replies[eIndex]"
+                                    :respondents="tabulated.respondents" :replies="replies"
+                                    :event="event?.[eIndex as any]"
+                                    :on-set-data="(data, user) => onSetData?.(data, eIndex as string, user)" />
+                            </tr>
+                        </template>
                     </template>
                 </tbody>
             </table>

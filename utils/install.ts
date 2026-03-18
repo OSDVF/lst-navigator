@@ -2,7 +2,7 @@ import type { RouteLocationNormalized } from '#vue-router'
 
 export function useInstallComplete(to?: RouteLocationNormalized) {
     const config = useRuntimeConfig()
-    if (!config.public.installWizard) {
+    if (!config.public.featureInstallWizard) {
         return computed(() => true)
     }
 

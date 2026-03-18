@@ -14,19 +14,27 @@ export type ExtraItem = {
     price: number,
 }
 
+export type SimplifiedQuestionResponse = {
+    title: string,
+    description: string,
+    response: string
+}
+
 export type EmailTemplateVars = {
-    editLink: string,
-    responseId: string,
     canEdit: boolean,
-    qrCode: string | boolean,
+    donation: number,
     donationQrCode: string | boolean,
-    message?: string,
-    vs?: number,
     donationMessage?: string,
     donationSymbol?: number,
+    editLink: string,
+    timestampUTC: string,
+    questionResponses: SimplifiedQuestionResponse[],
+    qrCode: string | boolean,
+    message?: string,
     price: number,
-    donation: number,
-} & Partial<Omit<EventSettings<void>, 'priceExpression' | 'emailBody' | 'emailHeadNew' | 'emailHeadEdited' | 'messageTemplate' | 'symbolTemplate' | 'donationMessageTemplate' | 'donationSymbolTemplate'>>
+    responseId: string,
+    vs?: number,
+} & Partial<Omit<EventSettings<void>, 'responsesCollection' | 'donationExpression' | 'priceExpression' | 'emailBody' | 'emailHeadNew' | 'emailHeadEdited' | 'messageTemplate' | 'symbolTemplate' | 'donationMessageTemplate' | 'donationSymbolTemplate'>>
 
 export type EventSettings<Template> = {
     accountNumber: string,

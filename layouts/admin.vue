@@ -1,5 +1,6 @@
 <template>
     <div>
+
         <Head>
             <Title>{{ title }}</Title>
         </Head>
@@ -7,7 +8,16 @@
             <nav class="flex justify-content-center flex-grow">
                 <label class="m-auto p-1 text-right">
                     <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
-                    <select @change="e => $router.push(`/${(e.target as HTMLSelectElement).value}/`)">
+                    <select
+                        :value="cloud.eventDescription?.id ?? $config.public.defaultEvent" @change="e => $router.push({
+                            name: $route.name,
+                            path: $route.path,
+                            query: $route.query,
+                            params: {
+                                ...$route.params,
+                                event: (e.target as HTMLSelectElement).value
+                            }
+                        } as RouteLocationRaw)">
                         <option v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id">{{
                             event.title }}</option>
                     </select>
@@ -30,11 +40,15 @@
                 <NuxtLink :to="`/${cloud.selectedEvent}/admin/feedback`">
                     <span>
                         <Icon name="mdi:rss" size="1.8rem" />
-                        <Icon name="mdi:pencil" class="absolute" style="transform: translateX(-100%) translateY(50%);" size="1.2rem" />
+                        <Icon
+                            name="mdi:pencil" class="absolute" style="transform: translateX(-100%) translateY(50%);"
+                            size="1.2rem" />
                     </span>
                     Zpětná vazba
                 </NuxtLink>
-                <NuxtLink v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/events`" no-prefetch>
+                <NuxtLink
+                    v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/events`"
+                    no-prefetch>
                     <Icon name="mdi:tag-edit" size="1.8rem" />
                     Akce
                 </NuxtLink>
@@ -50,7 +64,9 @@
             </nav>
             <ToastArea />
         </div>
-        <ProgressBar v-show="cloud.eventLoading || $downloadingUpdate?.value || ui.isLoading" class="backgroundLoading" />
+        <ProgressBar
+            v-show="cloud.eventLoading || $downloadingUpdate || ui.isLoading || gapi.loading"
+            class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
@@ -59,17 +75,19 @@
 
 <script setup lang="ts">
 import { useUI } from '@/stores/ui'
+import type { RouteLocationRaw } from 'vue-router'
 
 const ui = useUI()
 const cloud = useCloudStore()
-const config = useRuntimeConfig()
+const {$config, $downloadingUpdate} = useNuxtApp()
 const route = useRoute()
+const gapi = useGapi()
 
 const title = computed(() => {
     if (route.meta.title) {
-        return `${route.meta.title} · Administrace ${config.public.title}`
+        return `${route.meta.title} · Administrace ${$config.public.title}`
     }
-    return config.public.title
+    return $config.public.title
 })
 
 </script>

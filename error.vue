@@ -23,7 +23,7 @@
                             v-if="'stack' in props.error" style="overflow: auto; max-width: calc(100vw - 2rem);"
                             v-html="props.error.stack" />
                         <template v-else>
-                            {{ props.error.toJSON() }}
+                            {{ (typeof props.error.toJSON == 'function') ? props.error.toJSON() : props.error }}
                         </template>
                     </div>
                 </div>

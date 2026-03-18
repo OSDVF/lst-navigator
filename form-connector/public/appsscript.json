@@ -1,6 +1,13 @@
 {
   "timeZone": "Europe/Prague",
   "dependencies": {
+    "libraries": [
+      {
+        "userSymbol": "FirestoreApp",
+        "version": "33",
+        "libraryId": "1VUSl4b1r1eoNcRWotZM3e87ygkxvXltOgyDZhixqncz9lQ3MjfT1iKFw"
+      }
+    ]
   },
   "oauthScopes": [
     "https://www.googleapis.com/auth/forms",
@@ -22,5 +29,9 @@
       "logoUrl": "https://lh3.googleusercontent.com/-JccJDE4InQo/ZvEfMfVLolI/AAAAAAAAAAM/0Qh8vL1l_6kV-7zRF8ldd5VXVZOi6z2WQCNcBGAsYHQ/s72-c/qrsender.png"
     },
     "forms": {}
+  },
+  "webapp": {
+    "executeAs": "USER_DEPLOYING",
+    "access": "ANYONE_ANONYMOUS"
   }
 }

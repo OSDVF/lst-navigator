@@ -19,7 +19,7 @@ import { clearIndexedDbPersistence, terminate } from 'firebase/firestore'
 
 const router = useRouter()
 const config = useRuntimeConfig()
-const home = config.public.installWizard ? '/install/0' : `/${config.public.defaultEvent}/schedule`
+const home = config.public.featureInstallWizard ? '/install/0' : `/${config.public.defaultEvent}/schedule`
 
 watch(router.currentRoute, (value) => {
     if (value.query.cleared) { router.replace(home) }

@@ -47,7 +47,8 @@ watch(dt, (newDt, old) => {
     if (!old) {
         nextTick(() => newDt?.responsive.recalc())
     }
-})
+    newDt?.on('page', () => nextTick(() => newDt?.responsive.recalc()))
+}, { immediate: true })
 
 onMounted(() => {
     const dtModule = import('datatables.net-vue3')

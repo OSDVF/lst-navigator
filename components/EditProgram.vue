@@ -25,7 +25,8 @@
         </label>&ensp;
         <input
             id="time" :value="isNaN(editingItem.time ?? NaN) ? '' : editingItem.time" type="text" name="time"
-            placeholder="HMM" required
+            placeholder="HMM" required @focus="permitSwipe = false" @mouseenter="permitSwipe = false"
+            @blur="permitSwipe = true"
             @input="(e) => editingItem.time = parseInt((e.target as HTMLInputElement).value.replace(/[^0-9]/g, ''))">
         <br><small>{{ editingItem.time ? `Bude zobrazeno ${toHumanTime(editingItem.time)}` : "Např. 730 = 7:30"
         }}</small>
@@ -71,7 +72,9 @@
         <label for="description">
             <Icon name="mdi:text" />&ensp; Dlouhý popis
         </label>&ensp;
-        <ClassicCKEditor id="description" v-model.lazy="editingItem.description" />
+        <ClassicCKEditor
+            id="description" v-model.lazy="editingItem.description" @focus="permitSwipe = false"
+            @blur="permitSwipe = true" />
         <input v-model.lazy="editingItem.description" type="hidden" name="description">
 
         <br>
@@ -91,7 +94,7 @@
 
 <script setup lang="ts">
 import type { FeedbackType, ScheduleItem } from '@/types/cloud'
-import { colorToHex, windowIsDark } from '@/utils/colors'
+import { colorToHex } from '@/utils/colors'
 import { toHumanTime } from '@/utils/utils'
 const cloud = useCloudStore()
 const route = useRoute()
@@ -100,7 +103,7 @@ const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? p
 const locations = computed(() => cloud.days[selectedDayIndex.value]?.locations ?? [])
 
 const dayNight = ['DAY', 'NIGHT']
-const windowDark = windowIsDark()
+const windowDark = computed(() => useColorMode().state.value == 'dark')
 
 const props = defineProps<{
     value: ScheduleItem,

@@ -220,3 +220,17 @@ export function feedbackEnabled<T>(event: EventDescription<T> | undefined | null
     const now = new Date().getTime()
     return now >= toJSDate(event.start).getTime() && now <= toJSDate(event.feedbackEnd || event.end).getTime()
 }
+
+export function maybe<T, U, V>(t: T | undefined, y: (_: T) => U, n: (() => V)): U | V
+export function maybe<T, U>(t: T | undefined, y: (_: T) => U): U | undefined
+// spaceship operator. Do something on t if it is not undefined
+export function maybe<T, U, V = undefined>(t: T | undefined, y: (_: T) => U, n?: (() => V)): U | V | undefined {
+    if (t) { return y(t) } else { return n?.() }
+}
+
+export function boolToNum(val?: boolean | number) : number {
+    if(typeof val == 'boolean') {
+        return val ? 1 : 0
+    }
+    return val ?? 0
+}

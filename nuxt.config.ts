@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
+import prismjs from 'vite-plugin-prismjs'
 import firebaseConfig from './firebase.json'
 
 import {
@@ -13,7 +14,7 @@ import {
 const appID = process.env.APP_ID
 const isDevMode = process.env.NODE_ENV !== 'production'
 const prerenderDays = parseInt(process.env.PRERENDER_DAYS ?? '0') || 0
-const installWizard = process.env.INSTALL_WIZARD !== 'false'
+const featureInstallWizard = process.env.FEATURE_INSTALL_WIZARD !== 'false'
 const emulators = process.env.FIREBASE_EMULATOR === 'true'
 
 const messagingConfig = {
@@ -92,6 +93,8 @@ const config = defineNuxtConfig({
     },
     experimental: {
         appManifest: false,
+        entryImportMap: false,
+
         headNext: true,
         polyfillVueUseHead: false,
         payloadExtraction: false,
@@ -118,7 +121,7 @@ const config = defineNuxtConfig({
         serverBundle: 'remote',
         provider: 'iconify',
     },
-    ignore: (installWizard ? [] : [
+    ignore: (featureInstallWizard ? [] : [
         'pages/install/**',
         'layouts/install.vue',
     ]).concat(...['form-connector']),
@@ -148,6 +151,7 @@ const config = defineNuxtConfig({
                 '/update',
                 '/privacy',
                 `/${defaultEvent}/info`,
+                `/${defaultEvent}/preview`,
                 `/${defaultEvent}/feedback`,
                 `/${defaultEvent}/schedule`,
                 `/${defaultEvent}/settings`,
@@ -219,10 +223,20 @@ const config = defineNuxtConfig({
         strategies: 'injectManifest',
     },
     security: {
+        ssg: {
+            meta: true, // Enables CSP as a meta tag in SSG mode
+            hashScripts: true, // Enables CSP hash support for scripts in SSG mode
+            hashStyles: false, // Disables CSP hash support for styles in SSG mode (recommended)
+            exportToPresets: true, // Export security headers to Nitro presets
+        },
+        sri: true,
         headers: {
             contentSecurityPolicy: {
                 'img-src': false,//TODO include origins used by events
+                'script-src': false,
             },
+            crossOriginOpenerPolicy: false,
+            crossOriginEmbedderPolicy: false,
         },
     },
     sourcemap: {
@@ -260,6 +274,11 @@ const config = defineNuxtConfig({
         },
     },
     vite: {
+        plugins: [
+            prismjs({
+                languages: ['javascript', 'markup'],
+            }),
+        ],
         build: {
             target: 'esnext',
             modulePreload: false,
@@ -286,7 +305,7 @@ const config = defineNuxtConfig({
                     find: '@composi/idb/types', replacement: '@composi/idb/src/index.js',
                 },
                 ...(process.env.SENTRY_DISABLE === 'true' ? [{
-                    find: '@sentry/nuxt', replacement: './dummy.ts',
+                    find: '@sentry/nuxt', replacement: '~/dummy.ts',
                 }] : []),
             ],
         },
@@ -332,6 +351,17 @@ const config = defineNuxtConfig({
     },
     runtimeConfig: {
         public: {
+            applicationDefaultCurrency: process.env.APPLICATION_DEFAULT_CURRENCY,
+            applicationDefaultBankCode: process.env.APPLICATION_DEFAULT_BANK_CODE,
+            applicationDefaultAccount: process.env.APPLICATION_DEFAULT_ACCOUNT,
+            applicationDefaultDonationSymbol: process.env.APPLICATION_DEFAULT_DONATION_SYMBOL,
+            applicationDefaultArrivalField: process.env.APPLICATION_DEFAULT_ARRIVAL_FIELD,
+            applicationDefaultDepartureField: process.env.APPLICATION_DEFAULT_DEPARTURE_FIELD,
+            applicationDefaultEmailField: process.env.APPLICATION_DEFAULT_EMAIL_FIELD,
+            applicationDefaultNameField: process.env.APPLICATION_DEFAULT_NAME_FIELD,
+            applicationDefaultExtrasField: process.env.APPLICATION_DEFAULT_EXTRAS_FIELD,
+            applicationDefaultCategoryField: process.env.APPLICATION_DEFAULT_CATEGORY_FIELD,
+            applicationFormApi: process.env.APPLICATION_FORM_API,
             title: process.env.VITE_APP_SHORT_NAME,
             longName: process.env.VITE_APP_NAME,
             defaultEvent,
@@ -342,7 +372,6 @@ const config = defineNuxtConfig({
             icon: process.env.ICON,
             imageCacheFirst: isDevMode,
             installStepCount,
-            installWizard,
             keepOrphanCollections: process.env.KEEP_ORPHAN_COLLETIONS,
             company: process.env.COMPANY,
             companyLink: process.env.COMPANY_LINK,
@@ -350,13 +379,16 @@ const config = defineNuxtConfig({
             compileTimeZone,
             commitMessageTime,
             commitHash,
+            featureInstallWizard,
+            featureForms: process.env.FEATURE_APPLICATION_FORMS !== 'false',
             noInstallRedirect: (process.env.NO_INSTALL_REDIRECT ?? '').split(','),
             organizerEmail: process.env.ORGANIZER_EMAIL,
             themeColor: process.env.THEME_COLOR ?? defaultThemeColor,
             welcome: process.env.WELCOME,
             signatureInfo: process.env.SIGNATURE_INFO,
+            showEventsWithoutInteractions: process.env.SHOW_EVENTS_WITHOUT_INTERACTIONS !== 'false',
             ENV: process.env.NODE_ENV ?? 'production',
-            SENTRY_ENABLED: (process.env.NODE_ENV ?? 'production') === 'production',
+            sentryEnabled: (process.env.NODE_ENV ?? 'production') === 'production',
             SENTRY_DSN: process.env.VITE_APP_DSN,
             SENTRY_TRACE_PROPAGATION_TARGET: process.env.VITE_APP_TRACE_PROPAGATION_TARGET,
             debugUser: process.env.VITE_APP_DEBUG_USER,
@@ -370,6 +402,9 @@ const config = defineNuxtConfig({
         },
     },
     ssr: true,
+    watch: [
+        './form-connector/src/types.ts',
+    ],
 })
 
 fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
@@ -377,7 +412,7 @@ fs.writeFileSync('./utils/swenv.js', `export default ${JSON.stringify({
     messaging: messagingConfig,
     commitHash,
     sentry: {
-        enabled: config.runtimeConfig!.public!.SENTRY_ENABLED,
+        enabled: config.runtimeConfig!.public!.sentryEnabled,
         autoSessionTracking: true,
         debug: process.env.NODE_ENV !== 'production',
         dsn: process.env.VITE_APP_DSN,

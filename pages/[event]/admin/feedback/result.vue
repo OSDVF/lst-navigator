@@ -113,7 +113,7 @@ definePageMeta({
 
 const router = useRouter()
 onMounted(() => {
-    if (!router.currentRoute.value.matched.find(r => r.name?.toString().startsWith('admin-feedback-result-'))) {
+    if (!router.currentRoute.value.matched.find(r => r.name?.toString().startsWith('event-admin-feedback-result-'))) {
         // There is no loaded sub-page
         router.replace(`/${cloud.selectedEvent}/admin/feedback/result/program`)
     }
@@ -212,8 +212,8 @@ $border-color: rgba(128, 128, 128, 0.657);
     }
 
     &.histogram {
-        table>tbody>tr>td:last-child {
-            min-width: 20rem
+        table>tbody>tr>td:last-child:not(.caption) {
+            min-width: 20rem;
         }
     }
 
@@ -262,7 +262,6 @@ $border-color: rgba(128, 128, 128, 0.657);
     }
 
     .caption {
-        width: 100%;
         font-size: 1.5em;
         font-weight: bold;
         padding: .5rem;
@@ -271,6 +270,7 @@ $border-color: rgba(128, 128, 128, 0.657);
         border-top-right-radius: 1rem;
 
         &.header {
+            width: 100%;
             display: flex;
             justify-content: center;
         }

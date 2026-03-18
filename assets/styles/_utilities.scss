@@ -176,6 +176,10 @@ $sides: (
   max-height: unset;
 }
 
+.fixed {
+  position: fixed
+}
+
 .flex {
   display: flex;
 }
@@ -239,6 +243,9 @@ $sides: (
 
 .mw-full {
   max-width: 100%;
+}
+.mw-50-vw {
+  max-width: 50vw;
 }
 
 .absolute {

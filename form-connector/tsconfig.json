@@ -29,7 +29,9 @@
     "noPropertyAccessFromIndexSignature": false,
     "types": [
       "google-apps-script",
-      "bun"
+      "bun",
+      "firestore_google-apps-script/typings/index.d.ts",
+      "./global.d.ts"
     ]
   },
   "exclude": [

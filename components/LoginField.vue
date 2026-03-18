@@ -1,37 +1,37 @@
 <template>
     <fieldset class="relative">
         <label>
-            <template v-if="cloudStore.resolvedPermissions.superAdmin">
+            <template v-if="cloud.resolvedPermissions.superAdmin">
                 <Icon name="mdi:shield-lock-open" title="Úpravy povoleny" tabindex="0" />
                 &nbsp;
             </template>
-            <template v-else-if="cloudStore.user.auth?.photoURL">
+            <template v-else-if="cloud.user.auth?.photoURL">
                 <img
                     class="noinvert" referrerPolicy="no-referrer" crossorigin="anonymous"
-                    :src="cloudStore.user.auth.photoURL" alt="Profilový obrázek" width="24" height="24">
+                    :src="cloud.user.auth.photoURL" alt="Profilový obrázek" width="24" height="24">
                 &nbsp;
             </template>
-            <span v-if="(!p.register && !p.email) || cloudStore.user.error" class="inline-block">
-                {{ cloudStore.user.pendingPopup ? 'Postupujte podle pokynů v druhém okně' :
-                    cloudStore.user.auth?.displayName ?? cloudStore.user.auth?.providerData[0].displayName ?? (prettyError
+            <span v-if="(!p.register && !p.email) || cloud.user.error" class="inline-block">
+                {{ cloud.user.pendingPopup ? 'Postupujte podle pokynů v druhém okně' :
+                    cloud.user.auth?.displayName ?? cloud.user.auth?.providerData[0].displayName ?? (prettyError
                         ||
                         'Přihlášení / Registrace') }}
             </span>
-            <span v-if="cloudStore.user.auth?.email" class="muted nowrap ml-1 mr-1">{{
-                cloudStore.user.auth.email }}</span>
-            <small v-if="cloudStore.user.error" class="inline-block">
-                <code>{{ cloudStore.user.error.message.replace('Firebase: ', '') }}</code>
+            <span v-if="cloud.user.auth?.email" class="muted nowrap ml-1 mr-1">{{
+                cloud.user.auth.email }}</span>
+            <small v-if="cloud.user.error" class="inline-block">
+                <code>{{ cloud.user.error.message.replace('Firebase: ', '') }}</code>
             </small>
         </label>
         <span>
             <LazyClientOnly>
-                <template v-if="cloudStore.user.auth?.uid">
-                    <button @click="cloudStore.user.signOut">
+                <template v-if="cloud.user.auth?.uid">
+                    <button @click="cloud.user.signOut">
                         <Icon name="mdi:logout" /> Odhlásit
                     </button>
                     &nbsp;
                     <NuxtLink
-                        v-if="cloudStore.user?.auth.providerData[0].providerId === EmailAuthProvider.PROVIDER_ID"
+                        v-if="cloud.user?.auth.providerData[0].providerId === EmailAuthProvider.PROVIDER_ID"
                         to="/login?change">
                         <button>
                             <Icon name="mdi:account-key" />
@@ -39,9 +39,7 @@
                         </button>
                     </NuxtLink>
                 </template>
-                <form
-                    v-else-if="p.lost"
-                    @submit.prevent="cloudStore.user.sendPasswordResetEmail(emailInput).then(clear)">
+                <form v-else-if="p.lost" @submit.prevent="cloud.user.sendPasswordResetEmail(emailInput).then(clear)">
                     <input id="email" v-model="emailInput" required type="email" placeholder="Email"><br>
                     <button type="submit">
                         <Icon name="mdi:email" /> Odeslat email s resetovacím odkazem
@@ -53,7 +51,7 @@
                 </form>
                 <form
                     v-else-if="p.register"
-                    @submit.prevent="password == confirmPassword ? cloudStore.user.register(emailInput, password) : alert('Hesla se neshodují')">
+                    @submit.prevent="password == confirmPassword ? cloud.user.register(emailInput, password) : alert('Hesla se neshodují')">
                     <input id="email" v-model="emailInput" required type="email" placeholder="Email"><br>
                     <input id="password" v-model="password" required type="password" placeholder="Heslo"><br>
                     <input
@@ -73,7 +71,7 @@
                 </form>
                 <form
                     v-else-if="p.email"
-                    @submit.prevent="cloudStore.user.signIn(false, false, emailInput, password).then((success) => success && clear())">
+                    @submit.prevent="cloud.user.signIn(false, false, emailInput, password).then((success) => success && clear())">
                     <input id="email" v-model="emailInput" required type="email" placeholder="Email"><br>
                     <input id="password" v-model="password" required type="password" placeholder="Heslo"><br>
                     <button type="submit">
@@ -99,7 +97,7 @@
 
                 <form
                     v-if="p.change"
-                    @submit.prevent="password == confirmPassword ? cloudStore.user.changePassword(password).then(() => { alert('Heslo změněno'); clear() }) : alert('Hesla se neshodují')">
+                    @submit.prevent="password == confirmPassword ? cloud.user.changePassword(password).then(() => { alert('Heslo změněno'); clear() }) : alert('Hesla se neshodují')">
                     <label for="new">Nové heslo</label>&nbsp;
                     <input id="new" v-model="password" type="password" required><br>
                     <label for="confirm">Potvrzení hesla</label>&nbsp;
@@ -109,13 +107,15 @@
                         Změnit heslo
                     </button>
                 </form>
-                <span v-if="!cloudStore.user.auth?.uid">
-                    <button @click="cloudStore.user.signIn()">
+                <span v-if="!cloud.user.auth?.uid">
+                    <button
+                        @click.exact="cloud.user.signIn()"
+                        @click.ctrl="cloud.user.signIn(undefined, undefined, undefined, undefined, true)">
                         <Icon name="mdi:google" /> Použít účet Google
                     </button>
                 </span>
 
-                <ProgressBar v-if="cloudStore.user.pendingAction" class="absolute left-0 bottom-0 right-0" />
+                <ProgressBar v-if="cloud.user.pendingAction" class="absolute left-0 bottom-0 right-0" />
             </LazyClientOnly>
         </span>
     </fieldset>
@@ -125,7 +125,7 @@
 import { useCloudStore } from '@/stores/cloud'
 import { EmailAuthProvider } from 'firebase/auth'
 
-const cloudStore = useCloudStore()
+const cloud = useCloudStore()
 const prettyError = ref()
 const previousCode = ref()
 const p = defineProps<{
@@ -158,11 +158,11 @@ function clear() {
 }
 
 watchEffect(() => {
-    if (cloudStore.user.error?.code) {
-        if (cloudStore.user.error.code === previousCode.value) { return }
-        previousCode.value = cloudStore.user.error.code
+    if (cloud.user.error?.code) {
+        if (cloud.user.error.code === previousCode.value) { return }
+        previousCode.value = cloud.user.error.code
     }
-    switch (cloudStore.user.error?.code) {
+    switch (cloud.user.error?.code) {
     case 'auth/popup-blocked':
         alert('Přihlášení bylo zablokováno vaším prohlížečem. Povolte vyskakovací okna (pop-up)')
         setTimeout(() => location.reload(), 7000)
@@ -216,7 +216,7 @@ watchEffect(() => {
         prettyError.value = 'Neplatný ověřovací kód'
         break
     default:
-        prettyError.value = cloudStore.user.error?.message
+        prettyError.value = cloud.user.error?.message
         break
     }
 })

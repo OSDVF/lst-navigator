@@ -8,6 +8,18 @@
         </fieldset>
         <h4>Obecné</h4>
         <fieldset>
+            <label for="colorMode">
+                <Icon name="mdi:invert-colors" /> Barevný režim
+            </label>
+            <span>
+                <select id="colorMode" v-model="useColorMode().store.value">
+                    <option value="dark">Tmavý</option>
+                    <option value="light">Světlý</option>
+                    <option value="auto">Automaticky</option>
+                </select>
+            </span>
+        </fieldset>
+        <fieldset>
             <label for="transitions">
                 <Icon name="mdi:animation" /> Animace
             </label>
@@ -50,7 +62,7 @@
         <fieldset>
             <label for="richNoteEditor">
                 <Icon name="mdi:format-text" /> Rozšířený editor{{ cloud.resolvedPermissions.editSchedule ? '' :
-                    'poznámek' }}
+                    ' poznámek' }}
                 <br>
                 <small class="ml-3 mt-1 inline-block">
                     Formátovat text, vkládat obrázky a odkazy
@@ -158,12 +170,12 @@
         </fieldset>
         <h4>Aplikace</h4>
         <LazyClientOnly>
-            <fieldset v-if="config.installWizard && !$pwa?.isPWAInstalled && $deferredPrompt?.value">
+            <fieldset v-if="config.featureInstallWizard && !$pwa?.isPWAInstalled && $deferredPrompt?.value">
                 <label for="install">Instalace</label>
                 <span>
                     <button
                         id="install"
-                        @click="$router.push(config.installWizard ? '/install/0' : `/${cloud.selectedEvent}/schedule`)">
+                        @click="$router.push(config.featureInstallWizard ? '/install/0' : `/${cloud.selectedEvent}/schedule`)">
                         <Icon name="mdi:download" /> Instalovat
                     </button>
                 </span>
@@ -208,7 +220,6 @@ import { doc } from 'firebase/firestore'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
 import type { UserLevel } from '~/types/cloud'
-import { userLevelToIcon } from '~/types/cloud'
 import { NuxtLink } from '#components'
 definePageMeta({
     title: 'Nastavení',

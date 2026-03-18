@@ -99,7 +99,7 @@ const usersIndexed = computed(() => {
                 user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
-                cloudStore.feedback.online?.[effectiveSignature]?.toString() ?? 'Nikdy',
+                maybe(cloudStore.feedback.online?.[effectiveSignature]?.updated, d => new Date(d as number).toLocaleString(), () => 'Nikdy'),
                 user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent] ?? UserLevel.Nothing,
                 user.id,
             ]
@@ -133,7 +133,7 @@ function changePermissions() {
             const uid = selectedRow[7]
             const userDoc = doc(knownCollection(firestore, 'users'), uid)
             await setDoc(userDoc, {
-                permissions: targetPermission.value === UserLevel.SuperAdmin
+                permissions: targetPermission.value == UserLevel.SuperAdmin
                     ? {
                         superAdmin: true,
                     }

@@ -36,6 +36,10 @@ main .average-rating {
     z-index: 2; // to also show above image fade overlay on /info
 }
 
+.mono, .mono span {
+    font-family: c.$code-font;
+}
+
 .toast {
     flex-basis: 100%;
     flex-grow: 1;
@@ -106,13 +110,65 @@ summary {
     }
 }
 
+details {
+    background: var(--color);
+
+    .content {
+        display: inline-block;
+
+        &>p:first-child {
+            margin-top: .5rem;
+        }
+
+        &>p:last-child {
+            margin-bottom: .5rem;
+        }
+
+        p {
+            margin: 1rem .5rem
+        }
+
+        &>ul {
+            display: inline-block;
+        }
+    }
+
+    &>summary {
+        h1,h2,h3 {
+            display: inline-block;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+    }
+
+    &>a {
+        display: block;
+        overflow: hidden;
+
+        &>.icon {
+            margin-left: 2.9rem;
+        }
+    }
+
+    &:hover {
+        .more {
+            opacity: 1;
+        }
+    }
+
+    ol li+li ul {
+        margin-top: .5rem;
+    }
+}
+
+
 details.border {
     border: 1px solid #aaa;
     border-radius: 4px;
     padding: 0 0.5em 0;
     margin: .1rem;
 
-    summary {
+    &>summary {
         padding: 0.5rem 0;
 
     }
@@ -120,7 +176,7 @@ details.border {
     &[open] {
         padding: 0 0.5em .5em;
 
-        summary {
+        &>summary {
             border-bottom: 1px solid #aaa;
             margin-bottom: 0.5em;
         }
@@ -278,4 +334,10 @@ textarea,
 .slide-right-leave-to {
     opacity: .0;
     transform: translate(50px, 0);
+}
+
+.split {
+    display: flex;
+    gap: .5rem;
+    align-items: start
 }
