@@ -3,7 +3,7 @@ import type { FirebaseDate } from '~/form-connector/src/types'
 
 export type Application = {
     id: string,
-    confiramtionSent?: boolean,
+    confirmationSent?: boolean,
     state?: ApplicationState,
     paid?: boolean,
     remaining?: number,
@@ -175,20 +175,17 @@ export type Permissions = {
 
 export enum UserLevel {
     Nothing = 0,
-    /// Show groups and own application
-    Participant = 1,
     /// Show applications
-    ShowApplications = 2,
+    ShowApplications = 1,
     /// Can edit schedule of one event
-    ScheduleAdmin = 3,
+    ScheduleAdmin = 2,
     /// Can edit schedule and users of one event
-    Admin = 4,
+    Admin = 3,
     /// Can manage all events
-    SuperAdmin = 5
+    SuperAdmin = 4
 }
 
 export const userLevelToIcon = {
-    [UserLevel.Participant]: 'hail',
     [UserLevel.ShowApplications]: 'vote-outline',
     [UserLevel.SuperAdmin]: 'shield-lock-open',
     [UserLevel.ScheduleAdmin]: 'calendar-check',

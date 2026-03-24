@@ -32,7 +32,7 @@
                     &nbsp;
                     <NuxtLink
                         v-if="cloud.user?.auth.providerData[0].providerId === EmailAuthProvider.PROVIDER_ID"
-                        to="/login?change">
+                        :to="'/login?change' + ($route.params.redirect ? `&redirect=${$route.params.redirect}` : '')">
                         <button>
                             <Icon name="mdi:account-key" />
                             Změnit heslo
@@ -45,7 +45,9 @@
                         <Icon name="mdi:email" /> Odeslat email s resetovacím odkazem
                     </button>
                     <br>
-                    <NuxtLink to="/login?email" class="dotted-underline small">
+                    <NuxtLink
+                        :to="'/login?email' + ($route.params.redirect ? `&redirect=${$route.params.redirect}` : '')"
+                        class="dotted-underline small">
                         <Icon name="mdi:account-plus" /> Registrovat
                     </NuxtLink>
                 </form>
@@ -61,11 +63,15 @@
                         <Icon name="mdi:account-plus" /> Registrovat
                     </button>
                     <br>
-                    <NuxtLink to="/login?email" class="dotted-underline small">
+                    <NuxtLink
+                        :to="'/login?email' + ($route.params.redirect ? `&redirect=${$route.params.redirect}` : '')"
+                        class="dotted-underline small">
                         <Icon name="mdi:account-plus" /> Přihlásit
                     </NuxtLink>
                     &ensp;
-                    <NuxtLink to="/login?lost" class="dotted-underline small">
+                    <NuxtLink
+                        :to="'/login?lost' + ($route.params.redirect ? `&redirect=${$route.params.redirect}` : '')"
+                        class="dotted-underline small">
                         <Icon name="mdi:account-question" /> Zapomenuté heslo
                     </NuxtLink>
                 </form>
@@ -77,17 +83,23 @@
                     <button type="submit">
                         <Icon name="mdi:login" /> Přihlásit
                     </button><br>
-                    <NuxtLink to="/login?register" class="dotted-underline small">
+                    <NuxtLink
+                        :to="'/login?register' + ($route.params.redirect ? `&redirect=${$route.params.redirect}` : '')"
+                        class="dotted-underline small">
                         <Icon name="mdi:account-plus" /> Registrovat
                     </NuxtLink>
                     &ensp;
-                    <NuxtLink to="/login?lost" class="dotted-underline small">
+                    <NuxtLink
+                        :to="'/login?lost' + ($route.params.redirect ? `&redirect=${$route.params.redirect}` : '')"
+                        class="dotted-underline small">
                         <Icon name="mdi:account-question" /> Zapomenuté heslo
                     </NuxtLink>
                 </form>
                 <template v-else>
                     &nbsp;
-                    <NuxtLink v-if="!p.email" to="/login?email">
+                    <NuxtLink
+                        v-if="!p.email"
+                        :to="'/login?email' + ($route.params.redirect ? `&redirect=${$route.params.redirect}` : '')">
                         <button>
                             <Icon name="mdi:login" /> Přihlásit emailem
                         </button>
@@ -131,6 +143,7 @@ const previousCode = ref()
 const p = defineProps<{
     email?: boolean,
     register?: boolean,
+    participant?: boolean,
     lost?: boolean,
     change?: boolean,
 }>()

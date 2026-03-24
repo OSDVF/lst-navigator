@@ -75,7 +75,7 @@ type Statistics = {
     },
 }
 
-const noEmailSent = computed(() => applications.filtered?.filter(a => !a.confiramtionSent))
+const noEmailSent = computed(() => applications.filtered?.filter(a => !a.confirmationSent))
 
 function sendWhereNotSent() {
 
@@ -85,7 +85,7 @@ const statistics = computed(() => {
     if (!applications.filteredMapped || !cloud.eventDescription || !applications.settings) { return [] }
 
     const days: Record<number, Statistics> = {}
-    const foodField = applications.settings?.fields.food ?? maybeInt(config.public.applicationDefaultFoodField)
+    const foodField = applications.settings?.fields.food ?? config.public.applicationDefaultFoodField
     const foodTypes = formData.value.items?.find(i => typeof foodField == 'number' ? parseInt(i.itemId!, 16) == foodField : i.title == foodField)?.questionItem?.question?.choiceQuestion?.options
     const mealNames = applications.settings.values.mealNames
 

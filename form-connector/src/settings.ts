@@ -18,12 +18,11 @@ export type SyncState = {
     responsesSync: number,
 }
 
-export function getEventSettings(formId: string, fs?: Firestore): Partial<EventSettingsTemplated & SyncState> {
-    const docProps = PropertiesService.getDocumentProperties()// Document properties are fallback when firestore doesn't work
-    const form = FormApp.getActiveForm()
-    const eventName = docProps.getProperty('eventName') || form.getTitle()
+export function getEventSettings(form: GoogleAppsScript.Forms.Form, fs?: Firestore): Partial<EventSettingsTemplated & SyncState> {
+    const docProps = PropertiesService.getDocumentProperties() as GoogleAppsScript.Properties.Properties | null// Document properties are fallback when firestore doesn't work
+    const eventName = docProps?.getProperty('eventName') || form.getTitle()
     let extras: ExtraItem[] = []
-    const e = docProps.getProperty('extras')
+    const e = docProps?.getProperty('extras')
     if (e) {
         extras = e.split(',').map(e => {
             const [name, price] = e.split(':').map(e => e.trim())
@@ -38,7 +37,7 @@ export function getEventSettings(formId: string, fs?: Firestore): Partial<EventS
     }
 
     let prices: Category[] = []
-    const c = docProps.getProperty('extras')
+    const c = docProps?.getProperty('extras')
     if (c) {
         prices = c.split(',').map(c => {
             const [name, deadline, price] = c.split(':').map(e => e.trim())
@@ -54,25 +53,22 @@ export function getEventSettings(formId: string, fs?: Firestore): Partial<EventS
     }
 
     const settings: Partial<EventSettingsTemplated> = {
-        accountNumber: docProps.getProperty('accountNumber') ?? undefined,
-        adminEmail: docProps.getProperty('adminEmail') ?? undefined,
-        bankCode: docProps.getProperty('bankCode') ?? undefined,
-        currency: docProps.getProperty('currency') ?? undefined,
-        donationExpression: docProps.getProperty('donationExpression') ?? undefined,
-        donationMessageTemplate: HtmlService.createTemplateFromFile('DonationMessage'),
-        donationSymbolTemplate: HtmlService.createTemplateFromFile('DonationSymbol'),
+        accountNumber: docProps?.getProperty('accountNumber') ?? undefined,
+        adminEmail: docProps?.getProperty('adminEmail') ?? undefined,
+        bankCode: docProps?.getProperty('bankCode') ?? undefined,
+        currency: docProps?.getProperty('currency') ?? undefined,
+        donationExpression: docProps?.getProperty('donationExpression') ?? undefined,
         eventName,
         extras,
-        messageTemplate: HtmlService.createTemplateFromFile('Message'),
         priceCategories: prices,
-        priceExpression: docProps.getProperty('priceExpression') ?? undefined,
-        mainOrg: docProps.getProperty('mainOrg') ?? undefined,
-        responsesCollection: docProps.getProperty('responsesCollection') ?? undefined,
-        symbolTemplate: HtmlService.createTemplateFromFile('Symbol'),
-        treatAllAsNew: docProps.getProperty('treatAllAsNew') == 'true',
+        priceExpression: docProps?.getProperty('priceExpression') ?? undefined,
+        mainOrg: docProps?.getProperty('mainOrg') ?? undefined,
+        responsesCollection: docProps?.getProperty('responsesCollection') ?? undefined,
+        treatAllAsNew: docProps?.getProperty('treatAllAsNew') == 'true',
     }
 
     try {
+        const formId = form.getId()
         const secrets = getSecrets(formId)
         if (!secrets.remoteEventSettings) {
             throw new Error('Remote event settings document path not set')

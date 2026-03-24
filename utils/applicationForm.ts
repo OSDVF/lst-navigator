@@ -19,9 +19,10 @@ export function useApplicationForm() {
             [formId]: settings,
         })
     }
-    function refreshResponses(formId: string) {
+    function refreshResponses(formId: string, force?: boolean) {
         return fetchApi('refreshResponses', {
             formId,
+            force,
         })
     }
 
@@ -50,6 +51,7 @@ export function useApplicationForm() {
 
     return {
         getInternal,
+        refreshResponses,
         setInternal,
         setSecrets,
         fetch: fetchApi,

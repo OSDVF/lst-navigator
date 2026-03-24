@@ -126,7 +126,7 @@
 
             <details>
                 <summary>
-                    <FormInput v-model="editedEvent.form" />
+                    <FormInput v-model="editedEvent.form" :document="editedEvent.formDocument" />
                 </summary>
 
                 <div class="mb-2 ml-2">
@@ -381,7 +381,7 @@ function uploadImage() {
 
 async function normalizeForms() {
     try {
-        const formUrlIsDoc = editedEvent.value.form.startsWith(applicationFormDocumentPrefix)
+        const formUrlIsDoc = typeof extractFormIdFromURL(editedEvent.value.form) != 'undefined'
         const formDocUrlIsDoc = editedEvent.value.formDocument.startsWith(applicationFormDocumentPrefix)
         if (!editedEvent.value.form && !editedEvent.value.formDocument && !formUrlIsDoc && !formDocUrlIsDoc) {
             return
@@ -400,7 +400,7 @@ async function normalizeForms() {
         }
         const wrongURLError = 'Je třeba zadat adresu upravitelného souboru formuláře na Disku Google (https://docs.google.com/forms/d/.../edit).'
         const client = await gapi.client()
-        if (formDocUrlIsDoc) {
+        if (formDocUrlIsDoc && !formUrlIsDoc) {
             const id = extractFormIdFromURL(editedEvent.value.formDocument)
             if (!id) {
                 throw new Error(wrongURLError)
@@ -420,7 +420,7 @@ async function normalizeForms() {
                     }
                 }
             }
-        } else if (formUrlIsDoc) {
+        } else {
             const id = extractFormIdFromURL(editedEvent.value.form)
             if (!id) {
                 throw new Error(wrongURLError)
@@ -517,7 +517,7 @@ async function editEvent(createNew = false) {
         }, { merge: true })
     }
     const dummies = [
-        ...Object.keys(docs).filter(p=>p!='event').map(k => doc(docs[k as keyof typeof docs] as CollectionReference, 'dummy')),
+        ...Object.keys(docs).filter(p => p != 'event').map(k => doc(docs[k as keyof typeof docs] as CollectionReference, 'dummy')),
         editedEvent.value.transfers ? doc(knownCollection(fs, 'transfers'), 'dummy') : undefined,
     ]
 

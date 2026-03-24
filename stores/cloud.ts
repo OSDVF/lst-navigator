@@ -2,7 +2,7 @@
 import { defineStore, skipHydrate } from 'pinia'
 import { FieldValue, Firestore, writeBatch, type CollectionReference } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
-import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
+import { setDoc as setDocT, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
 import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth } from 'vuefire'
 import { getMessaging, getToken } from 'firebase/messaging'
 import {
@@ -206,14 +206,14 @@ export const useCloudStore = defineStore('cloud', () => {
             userIdentifier ??= settings.userIdentifier.value
             feedbackDirtyTime.value = new Date().getTime()
 
-            setDoc(doc(feedback.col.value!, sIndex.toString()), {
+            setDocT(doc(feedback.col.value!, sIndex.toString()), {
                 [eIndex]: {
                     [userIdentifier]: data !== null ? data : deleteField(),
                 },
             }, { merge: true })
                 .then(() => { feedback.fetching.value = feedback.fetchFailed.value = false }).catch((e) => { feedback.error.value = e })
 
-            setDoc(doc(feedback.col.value!, userIdentifier), {
+            setDocT(doc(feedback.col.value!, userIdentifier), {
                 updated: feedbackDirtyTime.value,
                 nickname: settings.userNickname.value,
             }, { merge: true }).catch((e) => { feedback.error.value = e })
@@ -245,12 +245,12 @@ export const useCloudStore = defineStore('cloud', () => {
                     }
                     section[eIndex] = event
                 }
-                promises.push(setDoc(doc(feedback.col.value!, sIndex), section, {
+                promises.push(setDocT(doc(feedback.col.value!, sIndex), section, {
                     merge: true,
                 }))
             }
             feedbackDirtyTime.value = new Date().getTime()
-            promises.push(setDoc(doc(feedback.col.value!, settings.userIdentifier.value), {
+            promises.push(setDocT(doc(feedback.col.value!, settings.userIdentifier.value), {
                 updated: feedbackDirtyTime.value,
                 nickname: settings.userNickname.value,
             }, { merge: true }))
@@ -397,6 +397,54 @@ export const useCloudStore = defineStore('cloud', () => {
                 throw reason
             }
         },
+        /**
+         * Name will be the password
+         */
+        async singInParticipant(name: string, verify: string, differentEmail?: string, applications?: ReturnType<typeof useApplications>) {
+            if (!name || !verify) {
+                return false
+            }
+
+            const a = applications ?? useApplications()
+            const nameField = a.settings?.fields.name ?? config.public.applicationDefaultNameField
+            const verifyField = differentEmail ? (a.settings?.fields.phone ?? config.public.applicationDefaultPhoneField) : (a.settings?.fields.name ?? config.public.applicationDefaultNameField)
+            const nameTrimmed = name.trim()
+            const verifyTrimmed = verify.trim()
+            const response = a.applications.find(ap => {
+                const nameResponse = ap.questions.find(q => typeof nameField == 'number' ? q.id == nameField : q.title == nameField)?.responses
+                const verifyResponse = ap.questions.find(q => typeof verifyField == 'number' ? q.id == verifyField : q.title == verifyField)?.responses
+                return nameResponse?.toString().trim() == nameTrimmed && verifyResponse?.toString().trim() == verifyTrimmed
+            })
+            if (!response) {
+                return false
+            }
+
+            if (user.doc.value) {
+                //logged in
+                return updateUserInfo(response.id)
+            }
+            
+            await user.register(differentEmail ?? verify, name)
+            
+            await new Promise<void>(resolve => {
+                const stop = watch(user.info, newInfo => {
+                    if (newInfo) {
+                        stop()
+                        resolve()
+                    }
+                }, { immediate: true })
+            })
+            return updateUserInfo(response.id)
+
+            function updateUserInfo(responseId: string) {
+                return setDocT(user.doc.value!, {
+                    responseId: {
+                        ...user.info.value?.responseId,
+                        [selectedEvent.value]: responseId,
+                    },
+                } as UserInfo, { merge: true })
+            }
+        },
         async signOut() {
             uPending.value = true
             await signOut(auth!)
@@ -479,13 +527,16 @@ export const useCloudStore = defineStore('cloud', () => {
             const payload: UserInfo = {
                 name: newUser.displayName || user.info.value?.name,
                 signature: {
+                    ...user.info.value?.signature,
                     [selectedEvent.value]: settings.userNickname.value,
                 },
-                responseId: {},// do not update
+                responseId: user.info.value?.responseId ?? {},// do not update
                 signatureId: {
+                    ...user.info.value?.signatureId,
                     [selectedEvent.value]: settings.userIdentifier.value,
                 },
                 subscriptions: {
+                    ...user.info.value?.subscriptions,
                     [selectedEvent.value]: messagingToken.value,
                 },
                 email: newUser.email || user.info.value?.email,
@@ -502,7 +553,7 @@ export const useCloudStore = defineStore('cloud', () => {
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             Object.keys(payload).forEach(key => payload[<keyof UserInfo>key] === undefined ? delete payload[<keyof UserInfo>key] : {})
 
-            await setDoc(user.doc.value, payload, {
+            await setDocT(user.doc.value, payload, {
                 merge: true,
             })
         }
@@ -510,11 +561,13 @@ export const useCloudStore = defineStore('cloud', () => {
 
     watch([settings.userNickname, settings.userIdentifier], async ([nick, ident]) => {// TODO check user diff and not set always
         if (nick && user.doc.value && userAuth?.value?.uid && import.meta.client) {
-            await setDoc(user.doc.value, {
+            await setDocT(user.doc.value, {
                 signature: {
+                    ...user.info.value?.signature,
                     [selectedEvent.value]: nick,
                 },
                 signatureId: {
+                    ...user.info.value?.signatureId,
                     [selectedEvent.value]: ident,
                 },
             }, {
@@ -544,7 +597,7 @@ export const useCloudStore = defineStore('cloud', () => {
             const superAdmin = user.info.value?.permissions?.superAdmin
             if (typeof onlinePermission !== 'undefined') {
                 return {
-                    participant: true,
+                    participant: !!user.info.value?.responseId[selectedEvent.value],
                     showApplications: [UserLevel.ShowApplications.toString(), UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || superAdmin === true,
                     editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || superAdmin === true,
                     editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || superAdmin === true,
@@ -552,7 +605,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 }
             }
             return {
-                participant: true,
+                participant: superAdmin === true,
                 showApplications: superAdmin === true,
                 editSchedule: superAdmin === true,
                 editEvent: superAdmin === true,
@@ -560,7 +613,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }
         }
         return {
-            participant: true,
+            participant: false,
             showApplications: false,
             editSchedule: false,
             editEvent: false,
@@ -573,7 +626,6 @@ export const useCloudStore = defineStore('cloud', () => {
         ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + (eventDescription.value?.title ?? '') } : {}),
         [UserLevel.ScheduleAdmin]: 'Editor programu',
         [UserLevel.ShowApplications]: 'Zobrazení přihlášek',
-        [UserLevel.Participant]: 'Účastník',
         [UserLevel.Nothing]: 'Nic',
     }))
     const scheduleCollection = useCollectionT<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null), {
@@ -598,7 +650,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     watch(messagingToken, async (newToken) => {
         if (user.doc.value && userAuth?.value?.uid && import.meta.client) {
-            await setDoc(user.doc.value, {
+            await setDocT(user.doc.value, {
                 subscriptions: {
                     [selectedEvent.value]: arrayUnion(newToken),
                 },
@@ -673,7 +725,7 @@ export const useCloudStore = defineStore('cloud', () => {
                         if (newToken) {
                             messagingToken.value = newToken
                             if (subscriptionsCollection.value) {
-                                await setDoc(doc(subscriptionsCollection.value, newToken), {
+                                await setDocT(doc(subscriptionsCollection.value, newToken), {
                                     subscribed: true,
                                 } as UpdateRecordPayload<Subscriptions>, { merge: true })
                             }

@@ -5,7 +5,7 @@
             <span class="button" @click="emit('edit')">
                 <Icon name="mdi:pencil" />
             </span>
-            <FormInput v-if="event" v-model="event!.form" disabled />
+            <FormInput v-if="event" v-model="event!.form" disabled :document="event?.formDocument"/>
             <br>
             <FormDocumentInput v-if="event" v-model="event!.formDocument" disabled :form-url="event?.form" />
             <ProgressBar v-if="ui.isLoading" />
@@ -504,6 +504,7 @@ const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 're
         departure: config.public.applicationDefaultDepartureField || '',
         firstMeal: config.public.applicationDefaultFirstMealField || '',
         lastMeal: config.public.applicationDefaultLastMealField || '',
+        phone: config.public.applicationDefaultPhoneField || '',
         food: config.public.applicationDefaultFoodField || '',
         name: config.public.applicationDefaultNameField || '',
         extras: config.public.applicationDefaultExtrasField || '',
@@ -524,7 +525,10 @@ watch(applications.settings, doc => {
 
 async function save() {
     using _ = ui.loading()
-    await setDoc(eventSettingsDoc, toRaw(settings.value), { merge: true })
+    await setDoc(eventSettingsDoc, {
+        ...toRaw(settings.value),
+        responsesCollection: `applications/${cloud.selectedEvent}/responses`,
+    } as EventSettings<string>, { merge: true })
     emit('return')
 }
 
@@ -554,7 +558,7 @@ const formQuestions = computed(() => formData.value.items?.filter(i => (i.questi
 })))
 
 const mealNames = computed(() => {
-    const field = settings.value.fields.firstMeal ?? maybeInt(config.public.applicationDefaultFirstMealField)
+    const field = settings.value.fields.firstMeal ?? config.public.applicationDefaultFirstMealField
     return formData.value.items?.find(i => typeof field == 'number' ? parseInt(i.itemId!, 16) == field : i.title == field)?.questionItem?.question?.choiceQuestion?.options?.map((o, i) => ({
         id: i,
         title: o.value ?? '',

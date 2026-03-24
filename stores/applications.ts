@@ -43,6 +43,7 @@ export const useApplications = defineStore('applications', () => {
         filtered,
         filteredMapped,
         includeCancelled,
+        loadingApplications: applications.pending,
         mapFields,
         settings,
     }

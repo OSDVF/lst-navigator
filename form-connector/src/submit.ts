@@ -6,7 +6,7 @@ export function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
     const response = e.response
     const form = e.source
     const canEdit = form.canEditResponse()
-    const settings = getEventSettings(form.getId())
+    const settings = getEventSettings(form)
 
     const itemResponses = response.getItemResponses()
     // Put together the email body by appending all the
