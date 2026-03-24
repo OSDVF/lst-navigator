@@ -1,7 +1,7 @@
 <template>
     <label
         v-if="show"
-        title="URL souboru z Google Disku. Pro zadání tohoto pole je potřeba nejdříve zadat adresu samotné přihlášky.">
+        title="URL souboru s upravitelnou přihláškou na Google Disku">
         <Icon name="mdi:google-drive" /> Soubor s formulářem&ensp;
         <input
             id="formDocument" v-model.lazy="model"

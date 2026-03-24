@@ -12,7 +12,7 @@
                 <Icon name="mdi:invert-colors" /> Barevný režim
             </label>
             <span>
-                <select id="colorMode" v-model="useColorMode().store.value">
+                <select id="colorMode" v-model="colorMode">
                     <option value="dark">Tmavý</option>
                     <option value="light">Světlý</option>
                     <option value="auto">Automaticky</option>
@@ -219,7 +219,6 @@ import { setDoc } from '~/utils/trace'
 import { doc } from 'firebase/firestore'
 import { useSettings } from '@/stores/settings'
 import { useCloudStore } from '@/stores/cloud'
-import type { UserLevel } from '~/types/cloud'
 import { NuxtLink } from '#components'
 definePageMeta({
     title: 'Nastavení',
@@ -233,8 +232,8 @@ const config = app.$config.public
 const $alert = app.$alert
 const uploading = ref(false)
 const audioInputField = ref<HTMLInputElement | null>(null)
-const myPermission = computed(() => cloud.user.info?.permissions?.[cloud.selectedEvent] as UserLevel)
 const advanced = ref(false)
+const colorMode = useColorMode().store
 const deletePending = ref(false)
 const deleteResult = ref(false)
 

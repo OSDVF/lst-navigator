@@ -1,7 +1,7 @@
 <template>
     <RemoteImage
-        v-if="eventImage" :src="eventImage" @click="p.lightbox ? ui.showLightBox(eventImage) : null"
-        @load="saveCacheImage('eventImage-' + cloud.selectedEvent, $event)" />
+        v-if="eventImage" ref="img" :src="eventImage" @click="p.lightbox ? ui.showLightBox(eventImage) : null"
+        @load="saveCacheImage('eventImage-' + cloud.selectedEvent, $event); $emit('load')" />
 </template>
 
 <script setup lang="ts">
@@ -9,6 +9,7 @@ import { ref as storageRef } from 'firebase/storage'
 import { doc } from 'firebase/firestore'
 import type { EventDescription } from '~/types/cloud'
 import { useDocument as useDocumentT } from '~/utils/trace'
+import type { RemoteImage } from '#components'
 
 const p = defineProps<{
     event: string,
@@ -42,4 +43,13 @@ const eventImage = computedAsync(async () => {
     return url
 
 }, null, { lazy: true })
+
+const img = useTemplateRef<InstanceType<typeof RemoteImage>>('img')
+
+defineExpose({
+    image: computed(() => img.value?.image),
+})
+defineEmits<{
+    load: [],
+}>()
 </script>

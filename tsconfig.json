@@ -15,6 +15,7 @@
     ],
   },
   "exclude": [
-    "form-connector/**"
+    "form-connector/**",
+    "dist/**"
   ]
 }

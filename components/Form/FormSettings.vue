@@ -8,8 +8,9 @@
             <FormInput v-if="event" v-model="event!.form" disabled />
             <br>
             <FormDocumentInput v-if="event" v-model="event!.formDocument" disabled :form-url="event?.form" />
+            <ProgressBar v-if="ui.isLoading" />
 
-            <fieldset v-if="!internalSettings.secretsExist && !loading" class="p">
+            <fieldset v-if="!internalSettings.secretsExist && !ui.isLoading" class="p">
                 <legend>
                     <Icon name="mdi:link-variant" /> Propojení přihlašovacího formuláře s aplikací
                 </legend>
@@ -74,7 +75,8 @@
                 <label title="Sem přijdou notifikace o tom, že se někdo přihlásil na akci">Email pro
                     notifikace&nbsp;<input
                         id="adminEmail" v-model="settings.adminEmail" type="text"
-                        placeholder="iw@nttoknoweverything.com" name="adminEmail"></label><br>
+                        placeholder="iw@nttoknoweverything.com" name="adminEmail"
+                        @update:model-value="dirty = true"></label><br>
             </details>
 
 
@@ -91,34 +93,99 @@
                 <label>Jméno&nbsp;
                     <FormItemSelect
                         id="name" v-model="settings.fields.name" type="text"
-                        :placeholder="config.public.applicationDefaultNameField" name="name" :items="formQuestions" />
+                        :real="!!applications.settings.value?.fields.name"
+                        :placeholder="config.public.applicationDefaultNameField" name="name" :items="formQuestions"
+                        @update:model-value="dirty = true" />
                 </label><br>
                 <label
                     v-if="!Object.keys(emailCollectionTypes).includes(formData.settings!.emailCollectionType ?? '')">Email&nbsp;
                     <FormItemSelect
-                        id="email" v-model="settings.fields.email" :items="formQuestions" type="text"
-                        :placeholder="config.public.applicationDefaultEmailField" name="email" />
+                        id="email" v-model="settings.fields.email" :items="formQuestions"
+                        :real="!!applications.settings.value?.fields.email" placeholder="E-mail" name="email"
+                        @update:model-value="dirty = true" />
+                </label><br>
+                <label>Telefon&nbsp;
+                    <FormItemSelect
+                        id="name" v-model="settings.fields.phone" type="text"
+                        :real="!!applications.settings.value?.fields.phone"
+                        :placeholder="config.public.applicationDefaultPhoneField" name="phone" :items="formQuestions"
+                        @update:model-value="dirty = true" />
                 </label><br>
                 <label>Kategorie účastníka&nbsp;
                     <FormItemSelect
-                        id="category" v-model="settings.fields.category" :items="formQuestions" type="text"
-                        :placeholder="config.public.applicationDefaultCategoryField" name="category" />
+                        id="category" v-model="settings.fields.category" :items="formQuestions"
+                        :real="!!applications.settings.value?.fields.category"
+                        :placeholder="config.public.applicationDefaultCategoryField" name="category"
+                        @update:model-value="dirty = true" />
                 </label><br>
                 <label>Příjezd&nbsp;
                     <FormItemSelect
-                        id="arrival" v-model="settings.fields.arrival" :items="formQuestions" type="text"
-                        :placeholder="config.public.applicationDefaultArrivalField" name="arrival" />
+                        id="arrival" v-model="settings.fields.arrival" :items="formQuestions"
+                        :real="!!applications.settings.value?.fields.arrival"
+                        :placeholder="config.public.applicationDefaultArrivalField" name="arrival"
+                        @update:model-value="dirty = true" />
                 </label><br>
                 <label>Odjezd&nbsp;
                     <FormItemSelect
                         id="departure" v-model="settings.fields.departure" :items="formQuestions"
-                        type="text" :placeholder="config.public.applicationDefaultDepartureField" name="departure" />
+                        :real="!!applications.settings.value?.fields.departure" type="text"
+                        :placeholder="config.public.applicationDefaultDepartureField" name="departure"
+                        @update:model-value="dirty = true" />
                 </label><br>
                 <label>Další zakoupené položky&nbsp;
                     <FormItemSelect
-                        id="extras" v-model="settings.fields.extras" :items="formQuestions" type="text"
-                        :placeholder="config.public.applicationDefaultExtrasField" name="extras" />
+                        id="extras" v-model="settings.fields.extras" :items="formQuestions"
+                        :real="!!applications.settings.value?.fields.extras"
+                        :placeholder="config.public.applicationDefaultExtrasField" name="extras"
+                        @update:model-value="dirty = true" />
                 </label><br>
+                <label>První jídlo&nbsp;
+                    <FormItemSelect
+                        id="firstMeal" v-model="settings.fields.firstMeal" :items="formQuestions"
+                        :real="!!applications.settings.value?.fields.firstMeal"
+                        :placeholder="config.public.applicationDefaultFirstMealField" name="firstMeal"
+                        @update:model-value="dirty = true" />
+                </label><br>
+                <label>Poslední jídlo&nbsp;
+                    <FormItemSelect
+                        id="lastMeal" v-model="settings.fields.lastMeal" :items="formQuestions"
+                        :real="!!applications.settings.value?.fields.lastMeal"
+                        :placeholder="config.public.applicationDefaultLastMealField" name="lastMeal"
+                        @update:model-value="dirty = true" />
+                </label><br>
+                <label>Strava&nbsp;
+                    <FormItemSelect
+                        id="food" v-model="settings.fields.food" :items="formQuestions"
+                        :real="!!applications.settings.value?.fields.food"
+                        :placeholder="config.public.applicationDefaultFoodField" name="food"
+                        @update:model-value="dirty = true" />
+                </label><br>
+                <h4>Názvy jídel ve dni</h4>
+                <div
+                    v-for="(_, index) in (settings.values.mealNames?.length ? settings.values.mealNames : [''])"
+                    :key="`m${index}`">
+                    <label>
+                        {{ index + 1 }}. jídlo
+                        &nbsp;
+                        <FormItemSelect
+                            v-model="settings.values.mealNames[index]" :searchable="false"
+                            :real="!!applications.settings.value?.values.mealNames[index]" :items="mealNames"
+                            :placeholder="config.public.applicationDefaultMealNames?.split(',').map(t => t.trim())[0] ?? 'Snídaně'"
+                            @update:model-value="dirty = true" />
+                    </label>
+                    <span class="button" @click="settings.values.mealNames.splice(index, 1)">
+                        <Icon name="mdi:trash-can" />
+                    </span>
+                    <span
+                        class="button" @click="settings.values.mealNames = [
+                            ...settings.values.mealNames.slice(0, index + 1),
+                            '',
+                            ...settings.values.mealNames.slice(index + 1),
+                        ]">
+                        <Icon name="mdi:plus" />
+                    </span>
+                    <br>
+                </div>
             </details>
 
             <details class="border">
@@ -128,59 +195,65 @@
                     </h3>
                 </summary>
                 <label>Číslo účtu&nbsp;<input
-                    id="account" v-model="settings.accountNumber" type="text"
-                    name="account"></label><br>
+                    id="account" v-model="settings.accountNumber" type="text" name="account"
+                    @update:model-value="dirty = true"></label><br>
                 <label>Kód banky&nbsp;<input id="bank" v-model="settings.bankCode" type="text" name="bank"></label><br>
                 <label>Měna&nbsp;<input
                     id="currency" v-model="settings.currency" type="text" name="currency"
-                    placeholder="CZK"></label><br>
+                    placeholder="CZK" @update:model-value="dirty = true"></label><br>
                 <label>
                     <FormTemplateIcon @click="showInfo = !showInfo" />&nbsp;
                     Šablona poznámky k platbě
                     <SimpleCode
                         id="message" v-model="settings.messageTemplate" placeholder="Přihláška XY"
-                        name="message" language="html" />
+                        name="message" language="html" @update:model-value="dirty = true" />
                 </label>&nbsp;
                 <br>
                 <label>
                     <FormTemplateIcon @click="showInfo = !showInfo" />&nbsp;
                     Šablona variabilního symbolu<br>
                     <SimpleCode
-                        id="symbol"
-                        v-model="settings.symbolTemplate" placeholder="37<?= new Date(timestampUTC).getDate() ?><?= new Date(timestampUTC).getMonth() ?>" name="symbol" language="html" />
+                        id="symbol" v-model="settings.symbolTemplate"
+                        placeholder="37<?= new Date(timestampUTC).getDate() ?><?= new Date(timestampUTC).getMonth() ?>"
+                        name="symbol" language="html" @update:model-value="dirty = true" />
                 </label>
                 <p>
                     <label for="price">
-                        <Icon name="mdi:calculator" /> Výraz pro výpočet ceny (JS)
+                        <Icon name="mdi:function-variant" /> Výraz pro výpočet ceny (JS)
+                        <FormTemplateIcon @click="showInfo = !showInfo" />
                     </label>
                     <SimpleCode
                         id="price" v-model="settings.priceExpression" class="mt-1" language="js"
-                        placeholder="questionResponses.find(r => r.title == ...) // JS výraz, který vrací číslo" />
+                        placeholder="questionResponses.find(r => r.title == ...) // JS výraz, který vrací číslo"
+                        @update:model-value="dirty = true" />
                 </p>
                 <details>
                     <summary>
                         <Icon name="mdi:cash-plus" /> Dobrovolné příspěvky
                     </summary>
                     <label for="donation">
-                        <FormTemplateIcon @click="showInfo = !showInfo" />&nbsp;Výpočet dobrovolného příspěvku (JS)
+                        <Icon name="mdi:function-variant" />
+                        Výpočet dobrovolného příspěvku (JS)
+                        <FormTemplateIcon @click="showInfo = !showInfo" />
                     </label>
                     <SimpleCode
                         id="donation" v-model="settings.donationExpression" language="js"
-                        placeholder="questionResponses.find(r => r.title == ...) // JS výraz, který vrací číslo" />
+                        placeholder="questionResponses.find(r => r.title == ...) // JS výraz, který vrací číslo"
+                        @update:model-value="dirty = true" />
                     <label>
                         <FormTemplateIcon @click="showInfo = !showInfo" />&nbsp;
                         Šablona variabilního symbolu pro dobrovolné příspěvky<br>
                         <SimpleCode
                             id="donationSymbol" v-model="settings.donationSymbolTemplate"
                             placeholder="42<?= new Date(timestampUTC).getDate() ?><?= new Date(timestampUTC).getMonth() ?>"
-                            language="html" name="donationSymbol" />
+                            language="html" name="donationSymbol" @update:model-value="dirty = true" />
                     </label>
                     <label>
                         <FormTemplateIcon @click="showInfo = !showInfo" />&nbsp;Šablona poznámky pro dobrovolné
                         příspěvky<br>
                         <SimpleCode
                             id="donationMessage" v-model="settings.donationMessageTemplate" language="html"
-                            name="donationMessage" placeholder="Dar XY" />
+                            name="donationMessage" placeholder="Dar XY" @update:model-value="dirty = true" />
                     </label>
                 </details>
             </details>
@@ -197,7 +270,8 @@
                     </summary>
                     <SimpleCode
                         v-model="settings.emailHeadNew" language="html"
-                        placeholder="Ahoj, účastníku, těší nás, že přijedeš na naši akci..." />
+                        placeholder="Ahoj, účastníku, těší nás, že přijedeš na naši akci..."
+                        @update:model-value="dirty = true" />
                 </details>
                 <details>
                     <summary>Hlavička oznámení o úpravě přihlášky
@@ -205,7 +279,7 @@
                     </summary>
                     <SimpleCode
                         v-model="settings.emailHeadEdited" language="html"
-                        placeholder="Tvá přihláška byla úspěšně upravena..." />
+                        placeholder="Tvá přihláška byla úspěšně upravena..." @update:model-value="dirty = true" />
                 </details>
                 <small>
                     <Icon name="mdi:information-outline" /> Mezi hlavičku a hlavním obsah bude vložena tabulka s
@@ -218,7 +292,7 @@
                     </summary>
                     <SimpleCode
                         v-model="settings.emailBody" language="html"
-                        placeholder="Zaplatit můžeš na účet... Těšíme se na Tebe" />
+                        placeholder="Zaplatit můžeš na účet... Těšíme se na Tebe" @update:model-value="dirty = true" />
                 </details>
             </details>
 
@@ -227,11 +301,11 @@
             </p>
 
             <p>
-                <button type="button" @click="save().catch(e => error = e)">
-                    <Icon name="mdi:check-all" /> Uložit
+                <button type="button" class="large" @click="save().catch(e => error = e)">
+                    <Icon name="mdi:check-all" class="noinvert mb-0.5e" style="color:green" /> Uložit
                 </button>
-                <button @click="emit('return')">
-                    <Icon name="mdi:cancel" /> Zahodit změny
+                <button class="large" @click="emit('return')">
+                    <Icon name="mdi:cancel" class="mb-0.5e" /> Zahodit změny
                 </button>
             </p>
         </main>
@@ -245,21 +319,20 @@
         </p>
         <FormTemplateInfo
             v-if="showInfo"
-            :class="['top-0', ...(useWindowSize().width.value > 700 ? ['sticky'] : ['fixed', 'right-0', 'mw-50-vw'])]"
+            :class="['top-0', ...(windowSize.width.value > 700 ? ['sticky'] : ['fixed', 'right-0', 'mw-50-vw'])]"
             style="z-index:1;max-height:100vh;overflow-y:auto;background: white;border-radius: 8px;"
             @close="showInfo = false" />
     </SplitPage>
 </template>
 
 <script setup lang="ts">
-import { doc } from 'firebase/firestore'
 import type { ApplicationFormSecrets } from '~/form-connector/src/settings'
 import type { EventSettings } from '~/form-connector/src/types'
-import type { ApplicationForm } from '~/types/cloud'
-import { useApplicationForm } from '~/utils/applicationForm'
-import { useDocument as useDocumentT } from '~/utils/trace'
+import type { ApplicationFormSettings } from '~/types/cloud'
+import type { Responses } from '~/form-connector/src/api'
+import { doc } from 'firebase/firestore'
+import { useApplicationForm, useApplicationFormData } from '~/utils/applicationForm'
 import * as Sentry from '@sentry/nuxt'
-import type { InternalSettingsResponse } from '~/form-connector/src/api'
 
 type ServiceAccount = {
     type: 'service_account',
@@ -292,6 +365,7 @@ const { open: openFD, onChange } = useFileDialog({
     accept: '.json',
     multiple: false,
 })
+const windowSize = useWindowSize()
 onChange(async (files) => {
     try {
         if (files?.length) {
@@ -317,8 +391,8 @@ const clipboard = useClipboard({
     source: JSON.stringify(connectCode),
 })
 const copied = ref(false)
+const dirty = ref(false)
 const error = ref()
-const loading = inject<Ref<number>>('loading')!
 const event = cloud.eventsCollection.find(e => e.id == props.eventId)
 let id: string
 if (!event) {
@@ -335,15 +409,29 @@ else if (!event.formDocument) {
 
 const eventSettingsDoc = doc(useFirestore(), connectCode.remoteEventSettings)
 const applFormApi = useApplicationForm()
-const gapi = useGapi()
-const client = await gapi.client()
+const ui = useUI()
 
-const internalSettings = ref<InternalSettingsResponse>({//dummy value
+const internalSettings = ref<Responses['getInternal']>({//dummy value
     canEditResponse: false,
     secretsExist: false,
 })
+const warning = 'Opravdu chcete opustit tuto stránku? Neuložené změny budou ztraceny.'
+
+function beforeunload() {
+    if (dirty.value) {
+        return warning
+    }
+}
+
+onBeforeRouteLeave(() => {
+    if (dirty.value) {
+        return confirm(warning)
+    }
+})
+
+
 onMounted(async () => {
-    loading.value++
+    using _ = ui.loading()
     const response = await applFormApi.getInternal(id)
     if (response.ok && response.data) {
         internalSettings.value = response.data
@@ -352,9 +440,13 @@ onMounted(async () => {
         console.error(response.error)
         error.value = response.error?.message || response.error?.code || response.error?.http
     }
-    loading.value--
+    window.addEventListener('beforeunload', beforeunload)
 })
-const stop = watch(() => (internalSettings.value.secretsExist && loading.value == 0), l => {
+
+onBeforeUnmount(() => {
+    window.removeEventListener('beforeunload', beforeunload)
+})
+const stop = watch(() => (internalSettings.value.secretsExist && !ui.isLoading), l => {
     if (l) {
         nextTick(() => {
             if ((!Object.keys(emailCollectionTypes).includes(formData.value.settings?.emailCollectionType ?? '') && !settings.value.fields.email ||
@@ -371,7 +463,7 @@ const canEdit = computed({
         return internalSettings.value?.canEditResponse
     },
     set(value: boolean) {
-        loading.value++
+        ui.startLoading()
         applFormApi.setInternal(id, {
             canEditResponse: value,
         }).then(response => {
@@ -385,11 +477,11 @@ const canEdit = computed({
                 console.error(response.error)
                 error.value = response.error?.message || response.error?.code || response.error?.http
             }
-        }).finally(() => loading.value--)
+        }).finally(ui.stopLoading)
     },
 })
 
-const settings = ref<Omit<(EventSettings<string> & { fields: ApplicationForm['fields'] }), 'responsesCollection'>>({
+const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 'responsesCollection'>>({
     accountNumber: config.public.applicationDefaultAccount || '',
     adminEmail: '',
     bankCode: config.public.applicationDefaultBankCode || '',
@@ -403,11 +495,16 @@ const settings = ref<Omit<(EventSettings<string> & { fields: ApplicationForm['fi
     emailHeadNew: '',
     eventName: event?.title || '',
     extras: [],
+    values: {
+        mealNames: config.public.applicationDefaultMealNames?.split(',').map(n => n.trim()) ?? [''],
+    },
     fields: {
         arrival: config.public.applicationDefaultArrivalField || '',
         category: config.public.applicationDefaultCategoryField || '',
         departure: config.public.applicationDefaultDepartureField || '',
-        email: config.public.applicationDefaultEmailField || '',
+        firstMeal: config.public.applicationDefaultFirstMealField || '',
+        lastMeal: config.public.applicationDefaultLastMealField || '',
+        food: config.public.applicationDefaultFoodField || '',
         name: config.public.applicationDefaultNameField || '',
         extras: config.public.applicationDefaultExtrasField || '',
     },
@@ -418,24 +515,23 @@ const settings = ref<Omit<(EventSettings<string> & { fields: ApplicationForm['fi
     treatAllAsNew: false,
 })
 const showInfo = ref(false)
-
-watch(useDocumentT(eventSettingsDoc, { once: true, wait: true }), doc => {
+const applications = storeToRefs(useApplications())
+watch(applications.settings, doc => {
     if (doc) {
-        Object.assign(settings.value, toRaw(doc))
+        assignDeepIfTruish(settings.value, toRaw(doc))
     }
 }, { immediate: true })
 
 async function save() {
-    loading.value++
+    using _ = ui.loading()
     await setDoc(eventSettingsDoc, toRaw(settings.value), { merge: true })
-    loading.value--
     emit('return')
 }
 
 const synced = ref(false)
 
 async function sync() {
-    loading.value++
+    using _ = ui.loading()
 
     const response = await applFormApi.setSecrets(id, connectCode)
     if (response.ok) {
@@ -445,75 +541,25 @@ async function sync() {
         error.value = 'Nepodařilo se synchronizovat s formulářem: ' + response.error?.message
         synced.value = false
     }
-    loading.value--
 
-    // TODO google picker api
     // TODO async encryption of SA
 }
 
-const _formData = ref<gapi.client.forms.Form>({//dummy value
-    publishSettings: {
-        publishState: {
-            isAcceptingResponses: false,
-            isPublished: false,
-        },
-    },
-    items: [],
-    linkedSheetId: '',
-    settings: {
-        emailCollectionType: 'RESPONDER_INPUT',
-        quizSettings: {
-            isQuiz: false,
-        },
-    },
-    revisionId: undefined,
+const formData = await useApplicationFormData(id!, error)
+
+const formQuestions = computed(() => formData.value.items?.filter(i => (i.questionItem && i.title)).map(i => ({
+    id: parseInt(i.itemId ?? '', 16),
+    description: i.description,
+    title: i.title ?? '',
+})))
+
+const mealNames = computed(() => {
+    const field = settings.value.fields.firstMeal ?? maybeInt(config.public.applicationDefaultFirstMealField)
+    return formData.value.items?.find(i => typeof field == 'number' ? parseInt(i.itemId!, 16) == field : i.title == field)?.questionItem?.question?.choiceQuestion?.options?.map((o, i) => ({
+        id: i,
+        title: o.value ?? '',
+    }))
 })
-const wantedFields = 'settings/*,publishSettings/*,items/*,linkedSheetId,revisionId'
-async function hydrateFormData() {
-    const response = await client.forms.forms.get({
-        formId: id,
-        fields: wantedFields,
-    })
-    if ((response.status ?? 0) >= 400) {
-        error.value = response.statusText
-    }
-    else {
-        _formData.value = response.result
-    }
-}
-onMounted(hydrateFormData)
-const formData = computed({
-    get() {
-        return _formData.value
-    },
-    set(newValue: gapi.client.forms.Form) {
-        loading.value++
-        client.forms.forms.batchUpdate({
-            formId: id,
-            fields: wantedFields,
-        }, {
-            includeFormInResponse: true,
-            requests: [
-                ...(newValue.settings != _formData.value.settings ? [{
-                    updateSettings: {
-                        settings: newValue.settings,
-                        updateMask: '*',
-                    },
-                }] as gapi.client.forms.Request[] : []),
-            ],
-            writeControl: {
-                targetRevisionId: _formData.value.revisionId,
-            },
-        }).then(result => {
-            if ((result.status ?? 0) >= 400 || !result.result.form) {
-                error.value = result.statusText || 'Failed to retrieve form result'
-            } else {
-                _formData.value = result.result.form
-            }
-        }).finally(() => loading.value--)
-    },
-})
-const formQuestions = computed(() => formData.value.items?.filter(i => (i.questionItem && i.title)) as { title: string, description?: string }[] | undefined)
 </script>
 
 <style lang="scss">
@@ -521,6 +567,7 @@ const formQuestions = computed(() => formData.value.items?.filter(i => (i.questi
     .multiselect {
         display: inline-block;
         width: auto;
+        min-width: 265px;
     }
 }
 </style>

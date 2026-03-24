@@ -162,12 +162,11 @@ let previousValue = cloneDeep(editedCategory.value)
 watch(editedCategory, (value) => {
     if (!reloading.value && !isEqual(value, previousValue)) {
         const focused = document.activeElement
-        ui.startLoading()
+        using _ =  ui.loading()
         error.value = undefined
         loading.value = true
         setDoc(doc.value, value, { merge: true }).catch(e => error.value = e).finally(() => {
             loading.value = false
-            ui.stopLoading()
             if (focused instanceof HTMLElement) {
                 focused.focus()
             }
@@ -283,7 +282,7 @@ async function deleteDocAndShift(force = false) {
         reloading.value = true
         const promises: Promise<void>[] = []
         const shapshot = cloneDeep(cloud.feedbackConfig)
-        ui.startLoading()
+        using _ =  ui.loading()
         if (p.index !== shapshot.length - 1) {
             for (let i = p.index; i < shapshot.length - 1; i++) {
                 promises.push(setDoc(cloud.eventDoc('feedbackConfig', i.toString()), shapshot[i + 1]))
@@ -294,7 +293,6 @@ async function deleteDocAndShift(force = false) {
         nextTick(() => {
             reloading.value = false
             loading.value = false
-            ui.stopLoading()
         })
     }
 }

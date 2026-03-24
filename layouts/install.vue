@@ -47,6 +47,9 @@
                 </NuxtLink>
             </ClientOnly>
         </nav>
+        <ProgressBar
+            v-show="$downloadingUpdate?.value || isPageLoading.isLoading.value"
+            class="backgroundLoading" />
     </main>
 </template>
 
@@ -65,6 +68,7 @@ const pathParts = computed(() => {
     }
     return ''
 })
+const isPageLoading = useLoadingIndicator()
 const lastPart = computed(() => pathParts.value[pathParts.value.length - 1])
 const partIndex = computed(() => parseInt(lastPart.value) || 0)
 const canGoNext = computed(() => partIndex.value < config.public.installStepCount - 1)

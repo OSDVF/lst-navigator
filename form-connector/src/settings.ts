@@ -1,5 +1,6 @@
 import { useFirestore } from './firestore'
 import { findTriggers } from './triggers'
+import type Firestore from 'firestore_google-apps-script/Firestore'
 import type { Category, EventSettings, ExtraItem } from './types'
 
 export type ApplicationFormSecrets = {
@@ -13,8 +14,11 @@ export type ApplicationFormSecrets = {
 }
 
 export type EventSettingsTemplated<T = GoogleAppsScript.HTML.HtmlTemplate> = EventSettings<T>
+export type SyncState = {
+    responsesSync: number,
+}
 
-export async function getEventSettings(): Promise<Partial<EventSettingsTemplated>> {
+export function getEventSettings(formId: string, fs?: Firestore): Partial<EventSettingsTemplated & SyncState> {
     const docProps = PropertiesService.getDocumentProperties()// Document properties are fallback when firestore doesn't work
     const form = FormApp.getActiveForm()
     const eventName = docProps.getProperty('eventName') || form.getTitle()
@@ -69,13 +73,13 @@ export async function getEventSettings(): Promise<Partial<EventSettingsTemplated
     }
 
     try {
-        const remotePath = docProps.getProperty('remoteEventSettings')
-        if (!remotePath) {
+        const secrets = getSecrets(formId)
+        if (!secrets.remoteEventSettings) {
             throw new Error('Remote event settings document path not set')
         }
-        const fs = useFirestore(form.getId())
+        const fs2 = fs ?? useFirestore(formId, secrets as ApplicationFormSecrets)
 
-        const remote = fs.getDocument(remotePath).obj as EventSettings<string>
+        const remote = fs2.getDocument(secrets.remoteEventSettings).obj as EventSettings<string> & SyncState
         Object.assign(settings, remote)
         if (remote) {
             if (remote.emailBody) {
@@ -141,6 +145,6 @@ const dummyProperties = new Proxy<Record<string | symbol, any>>({}, {
 export function getSecrets(id: string): Partial<ApplicationFormSecrets> {
     return {
         ...JSON.parse(PropertiesService.getScriptProperties().getProperty(id) ?? '{}'),
-        ...(PropertiesService.getDocumentProperties()?.getProperties() ?? {}),
+        ...(PropertiesService.getDocumentProperties()?.getProperties() ?? {}),// the document properties (set for "active doc") override the script properties
     }
 }

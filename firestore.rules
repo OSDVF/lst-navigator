@@ -61,7 +61,11 @@ service cloud.firestore {
         allow read: if true;
         allow write: if isEventAdmin(event);
       }
-      match /users/{eventUser} {
+      match /groups/{eventUser} {
+        allow read: if true;
+        allow write: if true;
+      }
+      match /duties/{eventUser} {
         allow read: if true;
         allow write: if true;
       }

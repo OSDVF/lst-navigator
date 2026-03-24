@@ -1,5 +1,6 @@
 <template>
     <div>
+
         <Head>
             <Title>{{ title }}</Title>
         </Head>
@@ -44,7 +45,7 @@
             <ToastArea />
         </div>
         <ProgressBar
-            v-show="isServer || ui.isLoading || cloud.eventLoading || $downloadingUpdate?.value"
+            v-show="isServer || ui.isLoading || cloud.eventLoading || $downloadingUpdate?.value || isPageLoading.isLoading.value"
             class="backgroundLoading" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
@@ -62,30 +63,14 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
 const isServer = ref(import.meta.server)
+onMounted(() => isServer.value = false)
 
 const onFeedbackPage = computed(() => route.name?.toString().includes('feedback') ?? false)
 const installComplete = useInstallComplete()
-const keyboardVisible = ref(false)
+const keyboardVisible = useKeyboardVisible()
 provide('keyboardVisible', keyboardVisible)
-onMounted(() => {
-    isServer.value = false
-    if ('visualViewport' in window) {
-        const VIEWPORT_VS_CLIENT_HEIGHT_RATIO = 0.75
-        window.visualViewport?.addEventListener('resize', function (event) {
-            if (event.target instanceof VisualViewport &&
-                (event.target.height * event.target.scale) / window.screen.height <
-                VIEWPORT_VS_CLIENT_HEIGHT_RATIO
-            ) {
-                keyboardVisible.value = true
-                console.debug('keyboard is shown')
-            }
-            else {
-                keyboardVisible.value = false
-                console.log('keyboard is hidden')
-            }
-        })
-    }
-})
+const isPageLoading = useLoadingIndicator()
+
 
 watchEffect(() => {
     if (app.$needRefresh?.value) {

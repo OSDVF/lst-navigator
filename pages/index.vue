@@ -20,26 +20,7 @@
         <NuxtLink
             v-for="event in cloud.visibleEvents" :key="event.id" v-slot="link" :to="`/${event.id}/preview`"
             custom>
-            <div
-                class="card a p" tabindex="0"
-                @click="e => ['A', 'SPAN'].includes((e.target as HTMLElement).tagName) ? e.stopPropagation() : link.navigate()">
-                <EventImage class="noinvert" :event="event.id" />
-                <nav class="flex-wrap" :style="{ position: event.image?.data ? 'absolute' : undefined }">
-                    <div class="flex-full" style="height: 5rem;" />
-                    <div class="ml-3 mr-2 flex-full">
-                        <h2>{{ event.title }}</h2>
-                        <h3>{{ event.subtitle }}</h3>
-                    </div>
-                    <NuxtLink v-if="event.a" :to="`/${event.id}/apply`">
-                        <Icon name="mdi:form-select" size="1.8rem" />&ensp;Přihláška
-                    </NuxtLink>
-                    <NuxtLink :to="`/${event.id}/schedule`">
-                        <Icon name="mdi:calendar" size="1.8rem" />
-                        <Icon v-if="event.f" name="mdi:rss" size="1.8rem" />&ensp; Program<template v-if="event.f"> a
-                            feedback</template>
-                    </NuxtLink>
-                </nav>
-            </div>
+            <EventCard :event="event" :link="link"/>
         </NuxtLink>
         <p v-if="!cloud.visibleEvents.length">
             <Icon name="mdi:info-outline" />&ensp;Momentálně nejsou dostupné žádné události k přihlášení, prohlížení, nebo zpětné
@@ -97,7 +78,7 @@ if (import.meta.browser && router.currentRoute.value.params.event) {
     const route = useRoute()
     if (installed.value && route.params.event) {
         setTimeout(() => navigateTo({
-            path: `/${cloud.selectedEvent}/schedule/`,// timeout 0 for consistency with layout change
+            path: `/${route.params.event}/schedule/`,// timeout 0 for consistency with layout change
             replace: true,
         }), 0)
     }

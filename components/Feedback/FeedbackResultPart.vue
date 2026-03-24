@@ -77,7 +77,6 @@
 
 <script setup lang="ts">
 import { useAdmin } from '@/stores/admin'
-import { useRespondents } from '@/stores/respondents'
 import { csvExport } from '~/utils/csvExport'
 import type { Feedback, FeedbackConfig, FeedbackQuestionsCustom, FeedbackQuestionsProgram, TabulatedFeedback, UpdatePayload } from '@/types/cloud'
 
@@ -94,7 +93,7 @@ defineExpose({
 })
 
 const admin = storeToRefs(useAdmin())
-const allRespondents = useRespondents()
+const allRespondents = useFeedbackRespondents()
 
 const error = ref()
 function exportPart() {

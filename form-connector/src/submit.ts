@@ -1,19 +1,12 @@
-import path from 'path'
-import { useFirestore } from './firestore'
 import { getEventSettings } from './settings'
 import type { EmailTemplateVars } from './types'
+import { updateResponse } from './responses'
 
-type ResponseRecord = {
-    email: string,
-    edits: number,
-    edit: string,
-}
-
-export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
+export function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
     const response = e.response
     const form = e.source
     const canEdit = form.canEditResponse()
-    const settings = await getEventSettings()
+    const settings = getEventSettings(form.getId())
 
     const itemResponses = response.getItemResponses()
     // Put together the email body by appending all the
@@ -52,7 +45,7 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
         donationQrCode: false,
         editLink: response.getEditResponseUrl(),
         responseId: response.getId(),
-        timestampUTC: response.getTimestamp().toUTCString(),
+        timestampUTC: new Date().toUTCString(),
         canEdit: canEdit,
         questionResponses: itemResponses.map(r => {
             let response = r.getResponse()
@@ -145,29 +138,14 @@ export async function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit)
 
     let edited = false
     try {
-        const fs = useFirestore(e.source.getId())
-
-        if (settings.responsesCollection) {
-            const d = path.join(settings.responsesCollection, templateVars.responseId)
-            let responseRecord = fs.getDocument(d).obj as ResponseRecord | undefined
-            if (responseRecord && !settings.treatAllAsNew) {
-                responseRecord.edits = responseRecord.edits + 1
-                responseRecord.email = responseRecord.email ?? respondentAddress
-                const head = settings.emailHeadEdited ?? settings.emailHeadNew
-                if (head) {
-                    headContent = head.evaluate().getContent()
-                }
-                edited = true
-                fs.updateDocument(d, responseRecord, true)
-            } else {
-                responseRecord = { email: respondentAddress, edits: 0, edit: templateVars.editLink }
-                if (settings.emailHeadNew) {
-                    headContent = settings.emailHeadNew.evaluate().getContent()
-                }
-                fs.createDocument(d, responseRecord)
+        edited = updateResponse(form, response) ?? false
+        if (edited) {
+            const head = settings.emailHeadEdited ?? settings.emailHeadNew
+            if (head) {
+                headContent = head.evaluate().getContent()
             }
-        } else {
-            console.warn("Responses collection not set for " + form.getId())
+        } else if (settings.emailHeadNew) {
+            headContent = settings.emailHeadNew.evaluate().getContent()
         }
 
     } catch (e) {
@@ -269,3 +247,4 @@ export function test() {
         response: response!,
     } as any)
 }
+

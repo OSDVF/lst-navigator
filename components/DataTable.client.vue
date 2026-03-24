@@ -1,6 +1,8 @@
 <template>
     <div>
-        <Component :is="DataTable" v-bind="$attrs" ref="table" @error="dtError">
+        <Component
+            :is="DataTable" v-bind="$attrs" ref="table" :ajax="ajax" :columns="columns" :data="data"
+            :options="options" @error="dtError">
             <slot />
         </Component>
         <p v-if="dtErrors" class="flex align-items-start">
@@ -13,7 +15,7 @@
 </template>
 
 <script setup lang="ts" generic="T">
-import type { Api } from 'datatables.net'
+import type { Api, Config, ConfigColumns } from 'datatables.net'
 import * as Sentry from '@sentry/nuxt'
 
 import 'datatables.net-dt/css/dataTables.dataTables.min.css' //CSS
@@ -26,6 +28,26 @@ const dt = computed(() => table.value?.dt)
 defineExpose({
     dt,
 })
+
+defineProps<{
+    /**
+    * Load data for the table's content from an Ajax source
+    */
+    ajax?: Config['ajax'];
+    /**
+    * Set column specific initialisation properties.
+    */
+    columns?: ConfigColumns[] | undefined;
+    /**
+    * Data to use as the display data for the table.
+    */
+    data?: T;
+    /**
+    * DataTables options
+    */
+    options?: Config | undefined;
+}>()
+
 
 const dtErrors = ref('')
 function dtError(e: any, settings: any, techNote: string, message: string) {

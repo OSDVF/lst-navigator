@@ -11,7 +11,7 @@
                 Aplikace bude fungovat pouze online.
             </p>
             <template v-else>
-                <p v-if="$deferredPrompt?.value">
+                <p v-if="$deferredPrompt">
                     Jsem hybridní webová aplikace, kterou nainstalujete kliknutím na tlačítko <code>Instalovat</code>
                 </p>
                 <p v-else-if="$installPromptSupport()">

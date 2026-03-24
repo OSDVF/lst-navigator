@@ -1,5 +1,6 @@
 <template>
     <article role="article">
+
         <div class="eventBanner">
             <EventImage lightbox class="eventImage noinvert" :event="cloud.selectedEvent" />
         </div>
@@ -10,33 +11,41 @@
                 <Icon name="mdi:pencil" class="baseline" /> Upravit
             </button>
         </NuxtLink>
-            <NuxtLink v-if="cloud.visibleEvents.length > 1 || cloud.visibleEvents[0]?.id != cloud.selectedEvent" class="button small" style="float:right" to="/">
+            <NuxtLink
+                v-if="cloud.visibleEvents.length > 1 || cloud.visibleEvents[0]?.id != cloud.selectedEvent"
+                class="button small" style="float:right" to="/">
                 <Icon name="mdi:apps" size="1.5rem" />
                 <Icon name="mdi:arrow-left" />&ensp;Všechny události
             </NuxtLink>
         </h1>
-        <h2>{{ cloud.eventDescription?.subtitle }}</h2>
-        <h6>
-            <a
-                v-if="cloud.eventDescription?.web" :href="cloud.eventDescription.web" target="_blank"
-                rel="noopener noreferrer">
-                <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Oficiální web události <sup>
-                    <Icon mode="svg" name="mdi:open-in-new" size="1rem" />
-                </sup>
-            </a>
-            <template v-if="applicationsEnabled(cloud.eventDescription)">
-                <br>
-                <br>
-                <a :href="cloud.eventDescription!.form" target="_blank" rel="noopener noreferrer">
-                    <Icon mode="svg" name="mdi:form-select" size="1rem" />&ensp;Online přihláška <sup>
+        <p v-if="!cloud.eventDescription">
+            Událost <code>{{ cloud.selectedEvent }}</code> nenalezena.
+        </p>
+        <template v-else>
+            <h2>{{ cloud.eventDescription.subtitle }}</h2>
+            <h6>
+                <a
+                    v-if="cloud.eventDescription.web" :href="cloud.eventDescription.web" target="_blank"
+                    rel="noopener noreferrer">
+                    <Icon mode="svg" name="mdi:link" size="1rem" style="rotate:45deg" />&ensp;Oficiální web události
+                    <sup>
                         <Icon mode="svg" name="mdi:open-in-new" size="1rem" />
                     </sup>
                 </a>
-            </template>
-            &ensp;
-        </h6>
-        <!-- eslint-disable-next-line vue/no-v-html -->
-        <div class="text-invert" v-html="cloud.eventDescription?.description ?? 'Žádný popis'" />
+                <template v-if="applicationsEnabled(cloud.eventDescription)">
+                    <br>
+                    <br>
+                    <a :href="cloud.eventDescription.form" target="_blank" rel="noopener noreferrer">
+                        <Icon mode="svg" name="mdi:form-select" size="1rem" />&ensp;Online přihláška <sup>
+                            <Icon mode="svg" name="mdi:open-in-new" size="1rem" />
+                        </sup>
+                    </a>
+                </template>
+                &ensp;
+            </h6>
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="text-invert" v-html="cloud.eventDescription.description ?? 'Žádný popis'" />
+        </template>
     </article>
 </template>
 

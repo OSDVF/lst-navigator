@@ -102,7 +102,6 @@
 </template>
 
 <script setup lang="ts">
-import { useRespondents } from '@/stores/respondents'
 import type { FeedbackQuestionsCustom } from '~/types/cloud'
 
 definePageMeta({
@@ -121,7 +120,7 @@ onMounted(() => {
 
 const cloud = useCloudStore()
 const admin = useAdmin()
-const respondents = useRespondents()
+const respondents = useFeedbackRespondents()
 const zoomFactor = ref(1)
 
 const displayKindOptions = {

@@ -1,8 +1,8 @@
 import { useFirestore } from './firestore'
+import { refreshResponses } from './responses'
 import { getSecrets, type ApplicationFormSecrets } from './settings'
-import type { EventSettings } from './types'
 
-export type Action = 'setSecrets' | 'setInternal' | 'getSettings' | 'getInternal'
+export type Action = 'setSecrets' | 'setInternal' | 'getSettings' | 'getInternal' | 'refreshResponses'
 export type Actions = {
     setSecrets: {
         [formId: string]: ApplicationFormSecrets
@@ -15,6 +15,9 @@ export type Actions = {
     },
     setInternal: {
         [formId: string]: InternalSettings
+    },
+    refreshResponses: {
+        formId: string,
     }
 }
 
@@ -23,7 +26,13 @@ export type Responses = {
     setInternal: void,
     /** AppSecrets.remoteEventSettings value */
     getSettings: string,
-    getInternal: InternalSettingsResponse,
+    getInternal: {
+        secretsExist: boolean,
+    } & InternalSettings,
+    refreshResponses: {
+        new: number,
+        changed: number,
+    },
 }
 
 export type ApiResponse<T> = {
@@ -39,9 +48,6 @@ export type ApiResponse<T> = {
 export type InternalSettings = {
     canEditResponse: boolean,
 }
-export type InternalSettingsResponse = {
-    secretsExist: boolean,
-} & InternalSettings
 
 export function doGet(e: GoogleAppsScript.Events.DoGet) {
     try {
@@ -200,7 +206,7 @@ function processRequest(action: Action, body: Record<string, ApplicationFormSecr
                         console.log(e.message)
                     }
                 }
-                return createResonse<InternalSettingsResponse>({
+                return createResonse<Responses['getInternal']>({
                     ok: true,
                     data: {
                         secretsExist: typeof fsOrError != 'string',
@@ -241,6 +247,33 @@ function processRequest(action: Action, body: Record<string, ApplicationFormSecr
                 }
             }
             break
+        case 'refreshResponses':
+            if (typeof body.formId == 'string' && body.formId) {
+                const form = FormApp.openById(body.formId)
+                let fsOrError
+                try {
+                    fsOrError = useFirestore(body.formId)
+                } catch (e) {
+                    if (e instanceof Error) {
+                        fsOrError = e.message
+                        console.log(e.message)
+                    }
+                }
+                return createResonse<Responses['refreshResponses']>({
+                    ok: true,
+                    data: refreshResponses(form)
+                })
+            } else {
+                return createResonse({
+                    ok: false,
+                    error: {
+                        code: 'Bad Request',
+                        http: 400,
+                        message: 'Action body must be formatted as {formId: string}',
+
+                    },
+                })
+            }
         default:
             return createResonse({
                 ok: false,

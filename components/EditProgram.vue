@@ -103,7 +103,8 @@ const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? p
 const locations = computed(() => cloud.days[selectedDayIndex.value]?.locations ?? [])
 
 const dayNight = ['DAY', 'NIGHT']
-const windowDark = computed(() => useColorMode().state.value == 'dark')
+const colorMode = useColorMode()
+const windowDark = computed(() => colorMode.state.value == 'dark')
 
 const props = defineProps<{
     value: ScheduleItem,

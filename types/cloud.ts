@@ -3,29 +3,37 @@ import type { FirebaseDate } from '~/form-connector/src/types'
 
 export type Application = {
     id: string,
-    state: ApplicationState,
-    paid: boolean,
-    remaining: number,
-} & {
-    [field in keyof ApplicationForm['fields']]: string;
+    confiramtionSent?: boolean,
+    state?: ApplicationState,
+    paid?: boolean,
+    remaining?: number,
 }
 
-export type ApplicationForm = {
-    responderUrl: string,
-    documentUrl: string,
+export type ApplicationFormSettings = {
+    values: {
+        /**
+         * ordered by time of day.
+         * breakfast, lunch,...
+         */
+        mealNames: string[]
+    },
     fields: {
-        arrival?: string,
-        departure?: string,
-        email?: string,
-        category?: string,
-        extras?: string,
-        name?: string,
-        [field: string]: string | undefined
+        arrival?: string | number,
+        departure?: string | number,
+        firstMeal?: string | number,
+        lastMeal?: string | number,
+        phone?: string | number,
+        category?: string | number,
+        food?: string | number,
+        extras?: string | number,
+        name?: string | number,
+        /** If the type is `string`, the field is searched by title. When `number`, it is searched by id. */
+        [field: string]: string | number | undefined
     }
 }
 
 export enum ApplicationState {
-    NEW, CONFIRMED, REJECTED
+    NEW = 0, CONFIRMED = 1, REJECTED = 2, CANCELLED = 3
 }
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' |
@@ -93,8 +101,8 @@ export type ScheduleDay = {
 
 export type ApplicationsSubCollection = 'responses'
 export const ApplicationsSubCollectionList: ApplicationsSubCollection[] = ['responses']
-export type EventSubcollection = 'notes' | 'feedback' | 'feedbackConfig' | 'groups' | 'services' | 'subscriptions' | 'schedule' | 'users'
-export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'feedbackConfig', 'groups', 'services', 'subscriptions', 'schedule', 'users']
+export type EventSubcollection = 'notes' | 'feedback' | 'feedbackConfig' | 'groups' | 'duties' | 'subscriptions' | 'schedule'
+export const EventSubcollectionsList: EventSubcollection[] = ['notes', 'feedback', 'feedbackConfig', 'groups', 'duties', 'subscriptions', 'schedule']
 export type EventDocs = {
     [K in EventSubcollection]: CollectionReference
 } & {
@@ -147,8 +155,13 @@ export type EventDescription<T = string> = {
 }
 
 
-
+/**
+ * `superAdmin` is global, other permissions are per-event
+ */
 export type Permissions = {
+    /** Can view groups, duties and own application*/
+    participant: boolean,
+    showApplications: boolean,
     superAdmin: boolean,
     /**
      * Also has access to the administrator section and can edit feedback results
@@ -162,15 +175,21 @@ export type Permissions = {
 
 export enum UserLevel {
     Nothing = 0,
+    /// Show groups and own application
+    Participant = 1,
+    /// Show applications
+    ShowApplications = 2,
     /// Can edit schedule of one event
-    ScheduleAdmin = 1,
+    ScheduleAdmin = 3,
     /// Can edit schedule and users of one event
-    Admin = 2,
+    Admin = 4,
     /// Can manage all events
-    SuperAdmin = 3
+    SuperAdmin = 5
 }
 
 export const userLevelToIcon = {
+    [UserLevel.Participant]: 'hail',
+    [UserLevel.ShowApplications]: 'vote-outline',
     [UserLevel.SuperAdmin]: 'shield-lock-open',
     [UserLevel.ScheduleAdmin]: 'calendar-check',
     [UserLevel.Admin]: 'account-lock-open',
@@ -180,6 +199,10 @@ export const userLevelToIcon = {
 export type UserInfo = {
     permissions: { [key: 'superAdmin' | string]: boolean | UserLevel }
     subscriptions: {
+        [eventId: string]: string
+    },
+    /** Application responses IDs for different events */
+    responseId: {
         [eventId: string]: string
     },
     signature: {

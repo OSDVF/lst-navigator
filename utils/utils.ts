@@ -233,9 +233,66 @@ export function maybe<T, U, V = undefined>(t: T | undefined, y: (_: T) => U, n?:
     if (t) { return y(t) } else { return n?.() }
 }
 
+export function maybeInt(str?: string, radix?: number) : typeof str | number {
+    if(!str) {
+        return str
+    }
+    const p = parseInt(str, radix)
+    if(isNaN(p)) {
+        return str
+    }
+    return p
+}
+
 export function boolToNum(val?: boolean | number): number {
     if (typeof val == 'boolean') {
         return val ? 1 : 0
     }
     return val ?? 0
+}
+
+export function useKeyboardVisible() {
+    const keyboardVisible = ref(false)
+    onMounted(() => {
+        if ('visualViewport' in window) {
+            const VIEWPORT_VS_CLIENT_HEIGHT_RATIO = 0.75
+            window.visualViewport?.addEventListener('resize', function (event) {
+                if (event.target instanceof VisualViewport &&
+                    (event.target.height * event.target.scale) / window.screen.height <
+                    VIEWPORT_VS_CLIENT_HEIGHT_RATIO
+                ) {
+                    keyboardVisible.value = true
+                    console.debug('keyboard is shown')
+                }
+                else {
+                    keyboardVisible.value = false
+                    console.log('keyboard is hidden')
+                }
+            })
+        }
+    })
+    return keyboardVisible
+}
+export function maybeIndex(number: -1 | number): number | undefined {
+    if (number == -1) {
+        return undefined
+    }
+    return number
+}
+
+export function assignDeepIfTruish<T extends object, U>(target: T, source: U): T & U {
+    for (const key in source) {
+        if(!source[key]) {
+            continue
+        }
+        const t = target[key as unknown as keyof T]
+        if (typeof t == 'object' && t != null) {
+            assignDeepIfTruish(t, source[key])
+            target[key as unknown as keyof T] = t
+        } else {
+            target[key as unknown as keyof T] = source[key] as any
+        }
+        
+    }
+    return target as T & U
 }

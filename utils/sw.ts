@@ -51,19 +51,19 @@ self.addEventListener('fetch', async (event) => {
             event,
             request,
         }) ?? fetch(request)
+        if (swConfig.logWrites) {
+            console.log('SW responding to ', request.url)
+        }
         event.respondWith(responsePromise)
         const resp = await responsePromise
 
         comChannel.postMessage(resp.status)
+        return resp
     } catch (e) {
         console.error(e)
         throw e
     }
 })
-
-// Service worker lifecycle
-self.skipWaiting()
-clientsClaim()
 
 comChannel.addEventListener('message', (ev) => {
     if (ev.data === 'install') {
@@ -97,68 +97,16 @@ async function onUpdate() {
             console.log('Updating to ', clients[0]?.url)
             if (clients.length === 1) {
                 console.log('Navigating to ', updateUrl)
-                await clients[0].navigate(updateUrl + `?redirect=${encodeURIComponent(clients[0].url)}`)
+                clients[0].navigate(updateUrl + `?redirect=${encodeURIComponent(clients[0].url)}`)
             } else {
                 console.log('Opening new window to ', updateUrl)
-                await self.clients.openWindow(updateUrl)
+                self.clients.openWindow(updateUrl)
             }
         }
     } catch (e) {
         console.error(e)
     }
 }
-
-isSupported().then((supported) => {
-    if (!supported || !('messagingSenderId' in swConfig.firebase) || !('notifications_title' in swConfig.messaging)) {
-        return
-    }
-    const app = firebase.initializeApp(swConfig.firebase as firebase.FirebaseOptions)
-    const messagingInstance = getMessaging(app)
-    onBackgroundMessage(messagingInstance, async (payload: MessagePayload) => {
-        if (await idb.get('doNotifications') !== 'false') {
-            console.log('[SW] Received message ', payload)
-            const payloadData = payload.data as NotificationPayload | undefined
-
-            const eventTime = new Date()
-            if (payloadData) {
-                const [year, month, day] = payloadData.date.split('-').map((x: string) => parseInt(x, 10))
-                eventTime.setFullYear(year)
-                eventTime.setMonth(month - 1)
-                eventTime.setDate(day)
-                eventTime.setMinutes(payloadData.time % 100)
-                eventTime.setHours(Math.floor(payloadData.time / 100))
-            }
-
-            if (new Date().getTime() - eventTime.getTime() > 1000 * 60 * 10) { // 10 minutes timeout
-                return// discard old messages
-            }
-            self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.notifications_title ?? 'Notification',
-                {
-                    title: swConfig.messaging.notifications_title,
-                    body: swConfig.messaging.notifications_body,
-                    image: swConfig.messaging.notifications_image,
-                    icon: swConfig.messaging.notifications_icon,
-                    ...payload.notification,
-                })
-
-            self.clients.matchAll({ type: 'window' }).then((clients) => {
-                let foundMatchingClient = false
-                for (let i = 0; i < clients.length; i++) {
-                    const client = clients[i]
-                    if (client.url === payloadData?.url) {
-                        foundMatchingClient = true
-                        return client.focus()
-                    }
-                }
-                if (!foundMatchingClient && self.clients.openWindow) {
-                    self.clients.openWindow(payloadData?.url ?? '/')
-                }
-            })
-        } else {
-            console.log('[SW] Not showing message ', payload)
-        }
-    })
-})
 
 addEventListener('message', async (event: MessageEvent) => {
     if (event.data) {
@@ -240,9 +188,66 @@ const dependencies = new Route(({ request }) => {
 router.registerRoute(dependencies)
 
 const fallbackRoute = new Route(
-    (options) => (swConfig.hostnames.includes(options.url.hostname) || location.hostname == options.url.hostname)
-        && options.request.destination !== 'document', // do not cache app's documents as this is a SPA
+    (options) => ((swConfig.hostnames.includes(options.url.hostname) || location.hostname == options.url.hostname)
+        && options.request.destination !== 'document'), // do not cache app's documents as this is a SPA
     new StaleWhileRevalidate(),
+    'GET',
 )
 
 router.registerRoute(fallbackRoute)
+
+// Service worker lifecycle
+self.skipWaiting()
+clientsClaim()
+
+isSupported().then((supported) => {
+    if (!supported || !('messagingSenderId' in swConfig.firebase) || !('notifications_title' in swConfig.messaging)) {
+        return
+    }
+    const app = firebase.initializeApp(swConfig.firebase as firebase.FirebaseOptions)
+    const messagingInstance = getMessaging(app)
+    onBackgroundMessage(messagingInstance, async (payload: MessagePayload) => {
+        if (await idb.get('doNotifications') !== 'false') {
+            console.log('[SW] Received message ', payload)
+            const payloadData = payload.data as NotificationPayload | undefined
+
+            const eventTime = new Date()
+            if (payloadData) {
+                const [year, month, day] = payloadData.date.split('-').map((x: string) => parseInt(x, 10))
+                eventTime.setFullYear(year)
+                eventTime.setMonth(month - 1)
+                eventTime.setDate(day)
+                eventTime.setMinutes(payloadData.time % 100)
+                eventTime.setHours(Math.floor(payloadData.time / 100))
+            }
+
+            if (new Date().getTime() - eventTime.getTime() > 1000 * 60 * 10) { // 10 minutes timeout
+                return// discard old messages
+            }
+            self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.notifications_title ?? 'Notification',
+                {
+                    title: swConfig.messaging.notifications_title,
+                    body: swConfig.messaging.notifications_body,
+                    image: swConfig.messaging.notifications_image,
+                    icon: swConfig.messaging.notifications_icon,
+                    ...payload.notification,
+                })
+
+            self.clients.matchAll({ type: 'window' }).then((clients) => {
+                let foundMatchingClient = false
+                for (let i = 0; i < clients.length; i++) {
+                    const client = clients[i]
+                    if (client.url === payloadData?.url) {
+                        foundMatchingClient = true
+                        return client.focus()
+                    }
+                }
+                if (!foundMatchingClient && self.clients.openWindow) {
+                    self.clients.openWindow(payloadData?.url ?? '/')
+                }
+            })
+        } else {
+            console.log('[SW] Not showing message ', payload)
+        }
+    })
+})

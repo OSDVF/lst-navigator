@@ -22,7 +22,9 @@
                             event.title }}</option>
                     </select>
                 </label>
-                <div id="topNav" class="flex" />
+                <div id="topNav" class="flex">
+                    <SettingsLink id="topSettingsLink" class="flex align-items-center visible-if-only absolute" />
+                </div>
             </nav>
             <main>
                 <slot />
@@ -35,8 +37,8 @@
                     {{ cloud.feedback.error || 'Nepodařilo se uložit úpravy.' }}
                 </nav>
             </div>
-            <div id="additionalNav" class="flex-full" />
-            <nav role="navigation">
+            <div v-show="!keyboardVisible" id="additionalNav" class="flex-full" />
+            <nav v-show="!keyboardVisible" role="navigation">
                 <NuxtLink :to="`/${cloud.selectedEvent}/admin/feedback`">
                     <span>
                         <Icon name="mdi:rss" size="1.8rem" />
@@ -47,12 +49,14 @@
                     Zpětná vazba
                 </NuxtLink>
                 <NuxtLink
-                    v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/events`"
-                    no-prefetch>
-                    <Icon name="mdi:tag-edit" size="1.8rem" />
-                    Akce
+                    v-if="cloud.resolvedPermissions.showApplications"
+                    :to="`/${cloud.selectedEvent}/admin/people`">
+                    <Icon name="mdi:tag-faces" size="1.8rem" />
+                    Účastníci
                 </NuxtLink>
-                <NuxtLink v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/users`">
+                <NuxtLink
+                    v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/users`"
+                    title="Správa registrovaných uživatelských účtů">
                     <Icon name="mdi:person-edit" size="1.8rem" />
                     Uživatelé
                 </NuxtLink>
@@ -60,7 +64,12 @@
                     <Icon name="mdi:calendar-arrow-left" size="1.8rem" />
                     Program
                 </NuxtLink>
-                <SettingsLink />
+                <NuxtLink
+                    v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/events`"
+                    no-prefetch>
+                    <Icon name="mdi:tag-edit" size="1.8rem" />
+                    Správa akcí
+                </NuxtLink>
             </nav>
             <ToastArea />
         </div>
@@ -79,9 +88,12 @@ import type { RouteLocationRaw } from 'vue-router'
 
 const ui = useUI()
 const cloud = useCloudStore()
-const {$config, $downloadingUpdate} = useNuxtApp()
+const { $config, $downloadingUpdate } = useNuxtApp()
 const route = useRoute()
 const gapi = useGapi()
+
+const keyboardVisible = useKeyboardVisible()
+provide('keyboardVisible', keyboardVisible)
 
 const title = computed(() => {
     if (route.meta.title) {
@@ -91,3 +103,21 @@ const title = computed(() => {
 })
 
 </script>
+
+<style lang="scss">
+#topSettingsLink {
+    gap: 5px;
+    right: 10px;
+    top: 7px;
+
+    @media (max-width: 450px) {
+        display: none;
+    }
+
+    @media (max-width: 650px) {
+        &>span {
+            display: none;
+        }
+    }
+}
+</style>

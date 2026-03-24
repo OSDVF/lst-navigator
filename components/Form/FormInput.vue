@@ -1,6 +1,6 @@
 <template>
     <label for="form" title="URL Google Formuláře nebo jakýkoliv odkaz">
-        <Icon name="mdi:form-select" style="color: #7346ba" /> Přihláška
+        <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> Přihláška
     </label>
     <input
         id="form" v-model.lazy="model" :disabled="props.disabled" type="url" name="form"

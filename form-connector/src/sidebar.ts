@@ -4,7 +4,7 @@ export function sidebar() {
     const ui = FormApp.getUi()
     const sidebar = HtmlService.createTemplateFromFile('Sidebar')
     const customQR = HtmlService.createTemplateFromFile('CustomQR')
-    const settings = getEventSettings()
+    const settings = getEventSettings(FormApp.getActiveForm().getId())
 
     Object.assign(sidebar, settings)
     Object.assign(customQR, settings)

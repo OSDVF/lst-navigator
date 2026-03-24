@@ -218,7 +218,6 @@
             </button>
             <hr>
         </form>
-        <ProgressBar v-show='loading' />
         <LazyDataTable
             ref='table' :data='eventsIndexed' :options='{
                 responsive: true,
@@ -239,7 +238,7 @@
 
 <script setup lang='ts'>
 import { slugify } from '@vueuse/motion'
-import { doc, collection, arrayUnion, type DocumentData, getDoc, deleteField } from 'firebase/firestore'
+import { doc, collection, arrayUnion, type DocumentData, getDoc, deleteField, type CollectionReference } from 'firebase/firestore'
 import { getDocCacheOr, getDocs, setDoc, deleteDoc } from '~/utils/trace'
 import { useFileDialog } from '@vueuse/core'
 import { ref as storageRef } from 'firebase/storage'
@@ -256,7 +255,7 @@ import { captureException } from '@sentry/nuxt'
 import { GoogleAuthProvider } from 'firebase/auth'
 
 definePageMeta({
-    title: 'Akce',
+    title: 'Správa akcí',
     layout: 'admin',
     middleware: ['auth'],
 })
@@ -266,6 +265,7 @@ const cloud = useCloudStore()
 const error = ref()
 const gapi = useGapi()
 const lang = useLang()
+const ui = useUI()
 enum Actions {
     Nothing, New, Edit, ConnectForm
 }
@@ -308,17 +308,6 @@ const customOrder = computed({
         }
     },
 })
-
-let _loading = 0
-const loading = computed({
-    get() {
-        return _loading
-    },
-    set(val: number) {
-        _loading = Math.max(0, val)
-    },
-})
-provide('loading', loading)
 
 const sanitizeTitleAndId = computed({
     get() {
@@ -455,7 +444,7 @@ async function normalizeForms() {
 }
 
 async function editEvent(createNew = false) {
-    loading.value++
+    using _ = ui.loading()
     if (files.value?.length) {
         await uploadImage()
         if (remoteImage.metadata.value) {
@@ -466,40 +455,23 @@ async function editEvent(createNew = false) {
         }
     }
     if (!fs) {
-        loading.value--
         return
     }
     const docs = eventDocs(fs, editedEvent.value.identifier)
     if (createNew) {
-        if ((await getDocCacheOr(docs.event)).exists()) {
-            alert('Akce s tímto názvem již existuje')
-            loading.value--
-            return
-        }
-        if (!((await getDocs(docs.notes)).empty)) {
-            alert('Dokument \'notes\' k akci s tímto názvem již existuje')
-            loading.value--
-            return
-        }
-        if (!(await getDocs(docs.feedback)).empty) {
-            alert('Dokument \'feedback\' k akci s tímto názvem již existuje')
-            loading.value--
-            return
-        }
-        if (!(await getDocs(docs.subscriptions)).empty) {
-            alert('Dokument \'subscriptions\' k akci s tímto názvem již existuje')
-            loading.value--
-            return
-        }
-        if (!(await getDocs(docs.schedule)).empty) {
-            alert('Dokument \'schedule\' k akci s tímto názvem již existuje')
-            loading.value--
-            return
-        }
-        if (!(await getDocs(docs.users)).empty) {
-            alert('Dokument \'users\' k akci s tímto názvem již existuje')
-            loading.value--
-            return
+        for (const key in docs) {
+            if (key == 'event') {
+                if ((await getDocCacheOr(docs.event)).exists()) {
+                    alert('Akce s tímto názvem již existuje')
+                    return
+                }
+                continue
+            }
+            const doc = docs[key as keyof typeof docs]
+            if (!((await getDocs(doc as CollectionReference)).empty)) {
+                alert(`Kolekce '${key}'  k akci ${editedEvent.value.identifier} již existuje`)
+                return
+            }
         }
     }
 
@@ -530,7 +502,6 @@ async function editEvent(createNew = false) {
         transfers: editedEvent.value.transfers,
         web: editedEvent.value.web,
     } as EventDescription<void>, { merge: true })
-    loading.value--
 
     for (let i = new Date(editedEvent.value.start); i <= end; i.setDate(i.getDate() + 1)) {
         const day = doc(docs.schedule, toFirebaseMonthDay(i))
@@ -546,11 +517,7 @@ async function editEvent(createNew = false) {
         }, { merge: true })
     }
     const dummies = [
-        doc(docs.feedback, 'dummy'),
-        doc(docs.notes, 'dummy'),
-        doc(docs.subscriptions, 'dummy'),
-        doc(docs.users, 'dummy'),
-        doc(docs.feedbackConfig, 'dummy'),
+        ...Object.keys(docs).filter(p=>p!='event').map(k => doc(docs[k as keyof typeof docs] as CollectionReference, 'dummy')),
         editedEvent.value.transfers ? doc(knownCollection(fs, 'transfers'), 'dummy') : undefined,
     ]
 
@@ -560,7 +527,6 @@ async function editEvent(createNew = false) {
     dummies.map(d => d && deleteDoc(d))
 
     action.value = Actions.Nothing
-    loading.value--
 }
 
 const eventsIndexed = computed(() => {
@@ -607,8 +573,6 @@ async function startEditingSelected() {
         }
         const selectedEvent = cloud.eventsCollection.find(e => e.id === selectedData[0][0])
         if (selectedEvent) {
-            loading.value++
-            loading.value--
             action.value = Actions.Edit
             editedEvent.value = {
                 applicationsEnd: selectedEvent.applicationsEnd ?? '',
@@ -637,7 +601,7 @@ async function startEditingSelected() {
     }
 }
 
-function getSelectedEvent(silent = false): EventDescription<DocumentData> & { id: string } | undefined {
+function getSelectedEvent(silent = false): EventDescription<void> & { id: string } | undefined {
     if (!table.value?.dt) {
         if (!silent) {
             alert('Tabulka nenačtena')

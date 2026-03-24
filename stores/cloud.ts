@@ -1,6 +1,6 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { FieldValue, Firestore, writeBatch, type CollectionReference, type DocumentData } from 'firebase/firestore'
+import { FieldValue, Firestore, writeBatch, type CollectionReference } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
 import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth } from 'vuefire'
@@ -14,20 +14,23 @@ import {
 import { useSettings } from '@/stores/settings'
 import { useLocalStorage } from '@vueuse/core'
 import { UserLevel } from '@/types/cloud'
-import type { KnownCollectionName } from '@/utils/db'
-import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem, UpdatePayload } from '@/types/cloud'
-import type { WatchCallback } from 'vue'
 import * as Sentry from '@sentry/nuxt'
 import union from 'lodash.union'
 import merge from 'lodash.merge'
 import { scopes } from './gapi'
 
+import type { KnownCollectionName } from '@/utils/db'
+import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, FeedbackSections, ScheduleDay, Subscriptions, UserInfo, Permissions, EventDocs, UpdateRecordPayload, ScheduleItem, UpdatePayload } from '@/types/cloud'
+import type { WatchCallback } from 'vue'
+import type { RuntimeConfig } from 'nuxt/schema'
+import type { Router } from '#vue-router'
+
 /**
  * Compile time check that this collection really exists (is checked by the server)
  * @__NO_SIDE_EFFECTS__
  */
-export function knownCollection(firestore: Firestore, name: KnownCollectionName) {
-    return collection(firestore, name)
+export function knownCollection(firestore: Firestore, name: KnownCollectionName, ...pathSegments: string[]) {
+    return collection(firestore, name, ...pathSegments)
 }
 
 export const defaultQuestions = [
@@ -56,7 +59,7 @@ export function eventSubCollection(fs: Firestore, event: string, document: Event
     if (!(fs instanceof Firestore && typeof document === 'string' && typeof event === 'string' && segments.every((s) => typeof s === 'string'))) {
         throw new Error(`Invalid arguments ${fs} ${event}, ${document}, ${segments.join(', ')}`)
     }
-    return collection(fs, 'events', event, document, ...segments)
+    return knownCollection(fs, 'events', event, document, ...segments)
 }
 
 /// Get references of all documents and collections corresponding to a specific event
@@ -64,13 +67,12 @@ export function eventDocs(fs: Firestore, name: string): EventDocs {
     return {
         event: doc(knownCollection(fs, 'events'), name),
         groups: eventSubCollection(fs, name, 'groups'),
-        services: eventSubCollection(fs, name, 'services'),
+        duties: eventSubCollection(fs, name, 'duties'),
         notes: eventSubCollection(fs, name, 'notes'),
         feedback: eventSubCollection(fs, name, 'feedback'),
         feedbackConfig: eventSubCollection(fs, name, 'feedbackConfig'),
         schedule: eventSubCollection(fs, name, 'schedule'),
         subscriptions: eventSubCollection(fs, name, 'subscriptions'),
-        users: eventSubCollection(fs, name, 'users'),
     }
 }
 
@@ -89,7 +91,7 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     const router = useRouter()
-    const selectedEvent = computed(() => router.currentRoute.value.params.event as string || config.public.defaultEvent)
+    const selectedEvent = useSelectedEvent(router, config)
 
     function eventDoc(...path: (string | EventSubcollection)[]) {
         return doc(knownCollection(firestore!, 'events'), selectedEvent.value, ...path)
@@ -113,6 +115,8 @@ export const useCloudStore = defineStore('cloud', () => {
     }
 
     const subscriptionsCollection = currentEventCollection('subscriptions')
+    const groups = skipHydrate(useCollectionT(currentEventCollection('groups'), { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
+    const duties = skipHydrate(useCollectionT(currentEventCollection('duties'), { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
 
     //
     // Feedback
@@ -120,7 +124,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const fc = currentEventCollection('feedback')
     const feedbackDirtyTime = skipHydrate(useLocalStorage('feedbackDirtyTime', new Date(0).getTime(), { initOnMounted: true }))
     const feedbackRepliesRaw = skipHydrate(useCollectionT(fc, { snapshotListenOptions: { includeMetadataChanges: false }, once: !!import.meta.server }))
-    const feedbackConfig = useSorted(useCollectionT<FeedbackConfig>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'feedbackConfig') : null)), (a, b) => parseInt(a.id) - parseInt(b.id))
+    const feedbackConfig = useSorted(useCollectionT<FeedbackConfig>(currentEventCollection('feedbackConfig')), (a, b) => parseInt(a.id) - parseInt(b.id))
     const feedback = {
         col: fc,
         dirtyTime: feedbackDirtyTime,
@@ -329,6 +333,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 superAdmin: true,
             },
             lastTimezone: new Date().getTimezoneOffset(),
+            responseId: {},
             signature: {
                 [selectedEvent.value]: 'Debug User',
             },
@@ -454,7 +459,6 @@ export const useCloudStore = defineStore('cloud', () => {
         },
     }
 
-
     async function onSignIn(newUser: User) {
         if (user.doc.value) {// do not ask if the user is already being asked in different browser tab
             if (user.info.value) {
@@ -472,11 +476,12 @@ export const useCloudStore = defineStore('cloud', () => {
             }
 
             const now = new Date()
-            const payload: Partial<UserInfo> = {
+            const payload: UserInfo = {
                 name: newUser.displayName || user.info.value?.name,
                 signature: {
                     [selectedEvent.value]: settings.userNickname.value,
                 },
+                responseId: {},// do not update
                 signatureId: {
                     [selectedEvent.value]: settings.userIdentifier.value,
                 },
@@ -491,7 +496,7 @@ export const useCloudStore = defineStore('cloud', () => {
                     ? {
                         [selectedEvent.value]: UserLevel.Nothing,
                     }
-                    : undefined,
+                    : undefined!,
             }
             // remove undefined values
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -527,6 +532,8 @@ export const useCloudStore = defineStore('cloud', () => {
     const resolvedPermissions = computed<Permissions>(() => {
         if (config.public.debugUser) {
             return {
+                participant: true,
+                showApplications: true,
                 editSchedule: true,
                 editEvent: true,
                 superAdmin: true,
@@ -537,18 +544,24 @@ export const useCloudStore = defineStore('cloud', () => {
             const superAdmin = user.info.value?.permissions?.superAdmin
             if (typeof onlinePermission !== 'undefined') {
                 return {
+                    participant: true,
+                    showApplications: [UserLevel.ShowApplications.toString(), UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || superAdmin === true,
                     editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || superAdmin === true,
                     editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || superAdmin === true,
                     superAdmin: superAdmin === true,
                 }
             }
             return {
+                participant: true,
+                showApplications: superAdmin === true,
                 editSchedule: superAdmin === true,
                 editEvent: superAdmin === true,
                 superAdmin: superAdmin === true,
             }
         }
         return {
+            participant: true,
+            showApplications: false,
             editSchedule: false,
             editEvent: false,
             superAdmin: false,
@@ -559,6 +572,8 @@ export const useCloudStore = defineStore('cloud', () => {
         ...(resolvedPermissions.value.superAdmin ? { [UserLevel.SuperAdmin]: 'SuperAdmin' } : {}), // super admin can make others super admins
         ...(resolvedPermissions.value.editEvent ? { [UserLevel.Admin]: 'Správce ' + (eventDescription.value?.title ?? '') } : {}),
         [UserLevel.ScheduleAdmin]: 'Editor programu',
+        [UserLevel.ShowApplications]: 'Zobrazení přihlášek',
+        [UserLevel.Participant]: 'Účastník',
         [UserLevel.Nothing]: 'Nic',
     }))
     const scheduleCollection = useCollectionT<ScheduleDay>(computed(() => firestore ? eventSubCollection(firestore, selectedEvent.value, 'schedule') : null), {
@@ -669,9 +684,9 @@ export const useCloudStore = defineStore('cloud', () => {
         }).catch(e => { console.error(e); if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) } })
     }
 
-    const eventsCollection = useCollectionT<EventDescription<DocumentData>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const eventsCollection = useCollectionT<EventDescription<void>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server })
     const visibleEvents = computed(() => {
-        const events: (EventDescription<DocumentData> & { id: string, a: boolean, f: boolean })[] = []
+        const events: (EventDescription<void> & { id: string, a: boolean, f: boolean })[] = []
         for (const e of eventsCollection.value) {
             const s = shouldShowEvent(e)
             if (s ?? config.public.showEventsWithoutInteractions) {
@@ -686,18 +701,22 @@ export const useCloudStore = defineStore('cloud', () => {
         }
         return events.sort((a, b) => toJSDate(a.order ?? a.start).getTime() - toJSDate(b.order ?? b.start).getTime())
     })
+    const participantSectionVisible = computed(() => (eventDescription.value?.formDocument && resolvedPermissions.value.participant) || (!eventDescription.value?.formDocument && (groups.value.length || duties.value.length)))
     return {
         currentEventCollection,
         days,
+        duties,
         eventDescription,
         eventDoc,
         eventLoading: skipHydrate(eventDescription.pending),
         eventsCollection,
         feedback: skipHydrate(feedback),
         feedbackConfig: feedbackConfig,
+        groups,
         networkError: skipHydrate(eventDescription.error),
         notesCollection: skipHydrate(notesCollection),
         offlineFeedback: skipHydrate(computed(() => offlineFeedback.value[selectedEvent.value])),
+        participantSectionVisible,
         permissionNames,
         probe,
         resolvedPermissions,
@@ -759,3 +778,8 @@ export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null,
 }
 
 export const retrySignInText = 'Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?'
+export function useSelectedEvent(router?: Router, config?: RuntimeConfig) {
+    const router2 = router ?? useRouter()
+    const config2 = config ?? useRuntimeConfig()
+    return computed(() => router2.currentRoute.value.params.event as string || config2.public.defaultEvent)
+}
