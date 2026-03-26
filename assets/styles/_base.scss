@@ -26,8 +26,9 @@
 
         .vel-modal,
         .noinvert,
-        .ck-editor__main, .dt-button-background {
+        .ck-editor__main, .dt-button-background, .dataTable {
             filter: invert(100%);
+            color: white;
         }
         .dt-input {
             --dt-html-background: #dddddd

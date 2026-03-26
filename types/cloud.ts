@@ -163,7 +163,7 @@ export type Permissions = {
      */
     editEvent: boolean,
     /**
-     * Can edit schedule on this event and has access to feedback results
+     * Can edit schedule on this event and has access to feedback results. Can edit user applications.
      */
     editSchedule: boolean,
 }

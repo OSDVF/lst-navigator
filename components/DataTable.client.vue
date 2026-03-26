@@ -90,11 +90,6 @@ onMounted(() => {
 
 <style lang="scss">
 .dataTable {
-    .icon {
-        width: 1.5rem;
-        height: 1.5rem;
-    }
-
     &.collapsed:not(.compact) {
         .dtr-control {
             white-space: nowrap;
@@ -111,7 +106,7 @@ onMounted(() => {
     vertical-align: middle;
 }
 
-.dt-button-collection,
+.dt-button,
 .dataTable {
     .icon {
         background: black;
@@ -122,7 +117,8 @@ onMounted(() => {
     }
 }
 
-.dt-button-collection {
+.dt-button-collection,
+.dt-button {
     width: auto !important;
 
     .icon {
@@ -130,10 +126,6 @@ onMounted(() => {
         height: 1rem;
         transform: translateY(3px);
     }
-}
-
-.dt-info {
-    margin-bottom: .35rem;
 }
 
 .fancy {
@@ -150,7 +142,12 @@ onMounted(() => {
         border-right: 1px solid #7f7f7f19
     }
 
-    @media (max-width: 500px) {
+    .dt-info {
+        margin-bottom: .35rem;
+        font-size: small;
+    }
+
+    @media (max-width: 700px) {
 
         div.dt-buttons>.dt-button,
         div.dt-buttons>div.dt-button-split .dt-button {

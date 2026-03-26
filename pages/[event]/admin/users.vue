@@ -19,7 +19,7 @@
                 {},
                 {},
                 {
-                    render: (data: UserLevel) => data ? useIconEl((userLevelToIcon)[data], cloudStore.permissionNames[data]) : ''
+                    render: (data: UserLevel) => data ? useIconEl((userLevelToIcon)[data], cloud.permissionNames[data]) : ''
                 }
             ]" @select="selectionChanged" @deselect="selectionChanged">
             <thead>
@@ -35,7 +35,7 @@
             </thead>
         </LazyDataTable>
         <ProgressBar v-if="usersPending" />
-        <template v-if="cloudStore.resolvedPermissions.editEvent">
+        <template v-if="cloud.resolvedPermissions.editEvent">
             <div v-show="someSelection">
                 Akce:&ensp;
                 <button @click="changePermissionsVisible = true">
@@ -45,7 +45,7 @@
                     v-show="changePermissionsVisible"
                     @submit.prevent="changePermissions(); changePermissionsVisible = false">
                     <select v-model="targetPermission" required>
-                        <option v-for="(name, type) in cloudStore.permissionNames" :key="type" :value="type">
+                        <option v-for="(name, type) in cloud.permissionNames" :key="type" :value="type">
                             {{ name }}
                         </option>
                     </select>
@@ -77,8 +77,8 @@ definePageMeta({
 })
 
 const permissionError = ref()
-const cloudStore = useCloudStore()
-const firestore = cloudStore.probe && useFirestore()
+const cloud = useCloudStore()
+const firestore = cloud.probe && useFirestore()
 const users = useCollectionT<UserInfo>(firestore ? knownCollection(firestore, 'users') : null,
     {
         maxRefDepth: 0,
@@ -92,15 +92,15 @@ const usersIndexed = computed(() => {
     const result = []
     if (users.data.value) {
         for (const user of users.data.value as (UserInfo & { id: string })[]) { // firestore documents have an added property 'id'
-            const effectiveSignature = user.signature?.[cloudStore.selectedEvent] || user.signatureId?.[cloudStore.selectedEvent] || ''
+            const effectiveSignature = user.signature?.[cloud.selectedEvent] || user.signatureId?.[cloud.selectedEvent] || ''
             const values: [string, [string, string], string, string, string, string, UserLevel | boolean, string] = [
                 user.photoURL ?? '',
                 [user.email ?? user.id, user.id],
                 user.name ?? '',
                 effectiveSignature,
                 new Date(user.lastLogin).toLocaleString(),
-                maybe(cloudStore.feedback.online?.[effectiveSignature]?.updated, d => new Date(d as number).toLocaleString(), () => 'Nikdy'),
-                user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloudStore.selectedEvent] ?? UserLevel.Nothing,
+                maybe(cloud.feedback.online?.[effectiveSignature]?.updated, d => new Date(d as number).toLocaleString(), () => 'Nikdy'),
+                user.permissions?.superAdmin === true ? UserLevel.SuperAdmin : user.permissions?.[cloud.selectedEvent] ?? UserLevel.Nothing,
                 user.id,
             ]
             result.push(values)
@@ -116,7 +116,7 @@ const someSelection = ref(false)
 function selectionChanged() {
     if (table.value) {
         const selected = table.value.dt.rows({ selected: true }).data().length > 0
-        if (cloudStore.resolvedPermissions.editEvent) {
+        if (cloud.resolvedPermissions.editEvent) {
             someSelection.value = selected
         } else if (selected) {
             table.value.dt.rows().deselect()
@@ -138,7 +138,7 @@ function changePermissions() {
                         superAdmin: true,
                     }
                     : {
-                        [cloudStore.selectedEvent]: parseInt(targetPermission.value?.toString() ?? '0'),
+                        [cloud.selectedEvent]: parseInt(targetPermission.value?.toString() ?? '0'),
                         superAdmin: false,
                     },
             } as Partial<UpdatePayload<UserInfo>>, {

@@ -19,14 +19,33 @@
                         buttons: [
                             {
                                 extend: 'savedStates',
+                                text: 'Zobrazení',
                                 buttons: [
-                                    'createState',
-                                    'removeAllStates',
+                                    { extend: 'createState', text: 'Uložit zobrazení' },
+                                    { extend: 'removeAllStates', text: 'Smazat uložená zobrazení' },
                                     { extend: 'spacer', style: 'bar' }
                                 ]
                             }, {
-                                extend: 'ccSearchClear',
-                                text: 'Zrušit filtrování'
+                                extend: 'collection',
+                                text: 'Akce',
+                                className: 'selected-only disabled',
+                                buttons: [
+                                    {
+                                        text: useIconEl('edit') + ' Upravit',
+                                        action: openEditLink
+                                    }, {
+                                        text: useIconEl('cancel') + ' Zrušit',
+                                        action() {
+                                            const id = selection?.[0].id
+                                            if (!id) {
+                                                return
+                                            }
+                                            setDocT(doc(knownCollection(firestore, 'applications'), cloud.selectedEvent, 'responses', id), {
+                                                state: ApplicationState.CANCELLED,
+                                            } as Application, { merge: true })
+                                        }
+                                    }
+                                ],
                             }, {
                                 extend: 'collection',
                                 text: 'Ubytovací list',
@@ -34,13 +53,13 @@
                                 buttons: [
                                     {
                                         text: 'Vybrat výchozí sloupce',
-                                        action(_, dt) {
+                                        action(_: any, dt: Api<any>) {
                                             dt.columns('.print').visible(true)
                                             dt.columns(':not(.print, .always-visible)').visible(false)
                                         }
                                     }, {
                                         text: 'Zobrazit všechny sloupce',
-                                        action: (_, dt) => dt.columns().visible(true),
+                                        action: (_: any, dt: Api<any>) => dt.columns().visible(true),
                                     }, {
                                         extend: 'print',
                                         autoPrint: false,
@@ -53,7 +72,7 @@
                                 ]
                             }, {
                                 extend: 'collection',
-                                text: '🗒️ Přihlášky',
+                                text: '<span class=\'noinvert\'>🗒️</span> Data formuláře',
                                 autoClose: true,
                                 buttons: [
                                     {
@@ -66,10 +85,21 @@
                         ],
                         info: {
                             empty: 'Nic',
-                            callback(_, start, end, _max, total, _pre) {
+                            callback(_: any, start: number, end: number, _max: number, total: number, _pre: any) {
                                 return `Položky ${start} až ${end} z ${total}`
                             },
                         }
+                    },
+                    topEnd: {
+                        search: {
+                            text: '',
+                            processing: true,
+                            placeholder: 'Hledat'
+                        },
+                        buttons: [{
+                            extend: 'ccSearchClear',
+                            text: useIconEl('filter-off', 'Zrušit filtrování')
+                        }]
                     },
                     bottomStart: null,
                 },
@@ -92,21 +122,14 @@
                 ...Object.entries(applications.settings?.fields ?? {}).filter(k => !complexColumns.find(c => c.data == k[0])).map(([key, val]) => ({
                     data: key,
                     title: typeof val == 'number' ? availableQuestions[val]?.title ?? val : val,
+                    columnControl: ((typeof val == 'number' ? availableQuestions[val] : Object.values(availableQuestions).find(a => a.title == val))?.values.size ?? 0) < 5 ? searchList : undefined,
                 })),
                 { data: null, title: 'Celkem', render: (row: typeof data[0]) => (row.paid + row.remaining) || '', visible: false, className: 'print' },
                 { data: 'paid', title: 'Převodem', render: (data) => data || '', className: 'print' },
                 { data: 'remaining', title: 'Zbývá', render: (data) => data || '', className: 'print' },
                 {
                     data: 'confirmationSent', title: '📧', render: (data: boolean) => data ? '✔' : '<span class=\'muted\' title=\'Neodeslán\'>❌</span>',
-                    columnControl: [
-                        [
-                            'order',
-                            'searchDropdown',
-                            'spacer',
-                            { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
-                            'showAll'
-                        ]
-                    ],
+                    columnControl: searchList,
                     visible: false,
                 },
                 {
@@ -117,6 +140,7 @@
                         [ApplicationState.REJECTED]: 'Odmítnutá'
                     }[data]),
                     visible: false,
+                    columnControl: searchList,
                 },
                 {
                     data: 'editTimestamp', title: 'Upraveno', render: (data: number) => new Date(data).toLocaleString(),
@@ -124,12 +148,13 @@
                 },
                 { data: 'edits', title: 'Počet úprav', visible: false, },
                 { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false, }
-            ] as Columns).map(c => ({ render: ellipsis, ...c }))" />
+            ] as Columns).map(c => ({ render: ellipsis, ...c }))" @select="selectionChanged"
+            @deselect="selectionChanged" />
         <Teleport v-if="!!table?.dt" to=".dt-buttons">
-            <label class="nowrap"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
+            <label class="nowrap ml-1"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
         </Teleport>
 
-        <p v-if="refreshResult.ok">
+        <p v-if="refreshResult.ok" class="mb-5">
             <template v-if="refreshResult.data">
                 Nové přihlášky: {{ refreshResult.data.new }} <br>
                 Změněné přihlášky: {{ refreshResult.data.changed }}
@@ -147,9 +172,10 @@
 <script lang="ts" setup>
 import type { Api, ConfigColumns } from 'datatables.net-dt'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
-import { ApplicationState, SpecialApplicationFields } from '~/types/cloud'
+import { ApplicationState, SpecialApplicationFields, type Application } from '~/types/cloud'
 import mapValues from 'lodash.mapvalues'
 import { deleteField, doc, updateDoc } from 'firebase/firestore'
+import { setDoc as setDocT } from '~/utils/trace'
 
 type Columns = ({ data: keyof typeof data.value[0], title: string } & ConfigColumns)[]
 
@@ -161,9 +187,10 @@ const app = useNuxtApp()
 const applications = useApplications()
 const api = useApplicationForm()
 const cloud = useCloudStore()
+const firestore = useFirestore()
 const ui = useUI()
 const windowSize = useWindowSize()
-const responsive = useLocalStorage('responsive', true)
+const responsive = useLocalStorage('responsive', false)
 const showTable = ref(true)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
@@ -171,13 +198,14 @@ const layoutRowHeight = ref(30)
 const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
 
 const availableQuestions = computed(() => {
-    const result: Record<number, { title: string }> = {}
+    const result: Record<number, { title: string, values: Set<string> }> = {}
     for (const a of applications.filtered) {
         for (const q of a.questions) {
             if (q.id in result) {
+                result[q.id].values.add(q.responses?.toString())
                 continue
             }
-            result[q.id] = { title: q.title }
+            result[q.id] = { title: q.title, values: new Set<string>([q.responses?.toString()]) }
         }
     }
     return result
@@ -235,6 +263,25 @@ async function reload<T>(between?: () => PromiseLike<T>) {
     }
     nextTick(() => showTable.value = true)
 }
+
+const selection = ref<Exclude<typeof table.value, null>['dt']>()
+function selectionChanged() {
+    if (table.value) {
+        selection.value = table.value.dt.rows({ selected: true }).data()
+        if (selection.value.length) {
+            $('.selected-only').removeClass('disabled')
+        } else {
+            $('.selected-only').addClass('disabled')
+        }
+    }
+}
+function openEditLink() {
+    const link = selection.value?.[0].editLink
+    if (link) {
+        window.open(link, '_blank', 'noopener,noreferrer')
+    }
+}
+
 const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: any) => data))
 const date = computed(() => app.$DataTable.value?.render.date() ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
 const complexColumns = computed(() => [
@@ -286,7 +333,7 @@ const questionControlColumns = computed(() => {
             buttons: toAdd.length ? [{
                 text: useIconEl('check-all') + ' Všechny',
                 action() {
-                    updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`),
+                    updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`),
                         Object.fromEntries(toAdd.map(k => ([
                             `fields.${availableQuestions.value[k as any].title}`, parseInt(k),
                         ])))).then(() => reload())
@@ -294,7 +341,7 @@ const questionControlColumns = computed(() => {
             }].concat(toAdd.map((id: any) => ({
                 text: availableQuestions.value[id].title,
                 action() {
-                    updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`), {
+                    updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`), {
                         [`fields.${availableQuestions.value[id].title}`]: parseInt(id),
                     }).then(() => reload())
                 },
@@ -310,7 +357,7 @@ const questionControlColumns = computed(() => {
             buttons: toRemove.length ? [{
                 text: useIconEl('remove') + ' Všechny',
                 action() {
-                    reload(() => updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`),
+                    reload(() => updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`),
                         Object.fromEntries(toRemove.map(k => ([
                             `fields.${availableQuestions.value[k as any].title}`, deleteField(),
                         ])))))
@@ -319,7 +366,7 @@ const questionControlColumns = computed(() => {
                 text: availableQuestions.value[id].title,
                 action() {
                     const entry = Object.entries(applications.settings?.fields ?? {}).find(([_, v]) => typeof v == 'number' && v == parseInt(id) || v == availableQuestions.value[id].title)
-                    reload(() => updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`), {
+                    reload(() => updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`), {
                         [`fields.${entry?.[0] ?? availableQuestions.value[id].title}`]: deleteField(),
                     }))
                 },
@@ -334,5 +381,14 @@ const questionControlColumns = computed(() => {
     ]
 })
 watch([responsive, complexColumns, questionControlColumns], () => reload())
+const searchList = [
+    [
+        'order',
+        'searchList',
+        'spacer',
+        { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
+        'showAll',
+    ],
+]
 
 </script>
