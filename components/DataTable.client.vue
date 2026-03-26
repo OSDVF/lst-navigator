@@ -112,6 +112,14 @@ onMounted(() => {
     }
 }
 
+.dt-button {
+    vertical-align: middle;
+}
+
+.dt-info {
+    margin-bottom: .35rem;
+}
+
 .fancy {
 
     table.dataTable th.dt-right div.dt-column-header,
@@ -124,6 +132,14 @@ onMounted(() => {
 
     tr:not(:last-child) td {
         border-right: 1px solid #7f7f7f19
+    }
+
+    @media (max-width: 500px) {
+
+        div.dt-buttons>.dt-button,
+        div.dt-buttons>div.dt-button-split .dt-button {
+            padding: 0 .3rem;
+        }
     }
 }
 </style>

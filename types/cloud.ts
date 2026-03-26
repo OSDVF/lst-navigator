@@ -5,7 +5,7 @@ export type Application = {
     id: string,
     confirmationSent?: boolean,
     state?: ApplicationState,
-    paid?: boolean,
+    paid?: number,
     remaining?: number,
 }
 

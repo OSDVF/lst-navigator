@@ -30,7 +30,7 @@
                 <slot />
             </main>
         </ErrorSolver>
-        <div class="navigation">
+        <div class="navigation" ref="navigation">
             <div class="flex-full">
                 <ProgressBar v-if="cloud.feedback.fetching" />
                 <nav v-if="cloud.feedback.fetchFailed" class="p-1">
@@ -94,6 +94,8 @@ const gapi = useGapi()
 
 const keyboardVisible = useKeyboardVisible()
 provide('keyboardVisible', keyboardVisible)
+const navigation = useTemplateRef<HTMLDivElement>('navigation')
+provide('navigation', navigation)
 
 const title = computed(() => {
     if (route.meta.title) {

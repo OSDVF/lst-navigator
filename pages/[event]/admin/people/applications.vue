@@ -1,8 +1,8 @@
 <template>
     <div>
         <ProgressBar v-if="applications.loadingApplications" />
-        <LazyDataTable
-            v-else ref="table" class="display compact fancy" :options="{
+        <DataTable
+            v-else-if="showTable" ref="table" class="display compact fancy" :options="{
                 deferRender: true,
                 responsive, colReorder: true, buttons: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: [
@@ -11,30 +11,66 @@
                         'searchDropdown',
                         'spacer',
                         { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
+                        'showAll'
                     ]
                 ],
                 layout: {
                     topStart: {
-                        buttons: [{
-                            extend: 'savedStates',
-                            buttons: [
-                                'createState',
-                                'removeAllStates',
-                                { extend: 'spacer', style: 'bar' }
-                            ]
-                        }, 'ccSearchClear'
+                        buttons: [
+                            {
+                                extend: 'savedStates',
+                                buttons: [
+                                    'createState',
+                                    'removeAllStates',
+                                    { extend: 'spacer', style: 'bar' }
+                                ]
+                            },
+                            {
+                                extend: 'ccSearchClear',
+                                text: 'Zrušit filtrování'
+                            },
+                            {
+                                extend: 'collection',
+                                text: 'Ubytovací list',
+                                buttons: [
+                                    {
+                                        text: 'Vybrat výchozí sloupce',
+                                        action(_, dt) {
+                                            dt.columns('.print').visible(true)
+                                            dt.columns(':not(.print, .always-visible)').visible(false)
+                                        }
+                                    },
+                                    {
+                                        text: 'Zobrazit všechny sloupce',
+                                        action: (_, dt) => dt.columns().visible(true),
+                                    },
+                                    {
+                                        extend: 'print',
+                                        autoPrint: false,
+                                        text: '🖨️ Tisk',
+                                        title: '',
+                                        exportOptions: {
+                                            columns: ':visible:not(.always-visible)',
+                                        },
+                                    }
+                                ]
+                            }
                         ],
-                    }
+                        info: {
+                            empty: 'Nic',
+                            callback(_, start, end, _max, total, _pre) {
+                                return `Položky ${start} až ${end} z ${total}`
+                            },
+                        }
+                    },
+                    bottomStart: null,
                 },
                 ordering: {
                     indicators: false,
                     handler: false
                 },
-                select: {
-                    style: 'os',
-                    selector: 'td:first-child'
-                },
-                scrollY: (windowSize.height.value - 400) as any,
+                select: 'os',
+                scrollY: scrollY as any,
             }" :data="data" :columns="([
                 {
                     data: null,
@@ -47,8 +83,9 @@
                     data: key,
                     title: val,
                 })),
-                { data: 'editTimestamp', title: 'Upraveno', render: (data: number) => new Date(data).toLocaleString() },
-                { data: 'edits', title: 'Počet úprav' },
+                { data: null, title: 'Celkem', render: (row: typeof data[0]) => (row.paid + row.remaining) || '', visible: false, className: 'print' },
+                { data: 'paid', title: 'Převodem', render: (data) => data || '', className: 'print' },
+                { data: 'remaining', title: 'Zbývá', render: (data) => data || '', className: 'print' },
                 {
                     data: 'confirmationSent', title: '📧', render: (data: boolean) => data ? '✔' : '<span class=\'muted\' title=\'Neodeslán\'>❌</span>',
                     columnControl: [
@@ -57,8 +94,10 @@
                             'searchDropdown',
                             'spacer',
                             { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
+                            'showAll'
                         ]
                     ],
+                    visible: false,
                 },
                 {
                     data: 'state', title: 'Stav', render: (data: ApplicationState) => ({
@@ -66,18 +105,23 @@
                         [ApplicationState.CANCELLED]: 'Zrušená',
                         [ApplicationState.CONFIRMED]: 'Přijatá',
                         [ApplicationState.REJECTED]: 'Odmítnutá'
-                    }[data])
+                    }[data]),
+                    visible: false,
                 },
-                { data: 'paid', title: 'Zaplaceno' },
-                { data: 'remaining', title: 'Zbývá' },
+                {
+                    data: 'editTimestamp', title: 'Upraveno', render: (data: number) => new Date(data).toLocaleString(),
+                    visible: false,
+                },
+                { data: 'edits', title: 'Počet úprav', visible: false, },
+                { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false, }
             ] as Columns).map(c => ({ render: ellipsis, ...c }))" />
-        <button type="button" @click="refresh">
-            <Icon name="mdi:cog-refresh" /> &nbsp;
-            Aktualizovat data z formuláře
-        </button>
-
-        <label><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
-        <button v-if="reloadPage" @click="reload">Pro použití znovu načtěte stránku</button>
+        <Teleport v-if="!!table?.dt" to=".dt-buttons">
+            <button type="button" class="dt-button" @click="refresh">
+                <Icon name="mdi:cog-refresh" /> &nbsp;
+                Aktualizovat data z formuláře
+            </button>
+            <label class="nowrap"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
+        </Teleport>
 
         <p v-if="refreshResult.ok">
             <template v-if="refreshResult.data">
@@ -113,7 +157,11 @@ const cloud = useCloudStore()
 const ui = useUI()
 const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', true)
-const reloadPage = ref(false)
+const showTable = ref(true)
+const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
+const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
+const layoutRowHeight = ref(30)
+const scrollY = computed(()=>(windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
 
 const refreshResult = ref<ApiResponse<Responses['refreshResponses']>>({
     ok: false,
@@ -154,11 +202,18 @@ watch(() => applications.loadingApplications, l => {
     }
 }, { immediate: true })
 onMounted(() => table.value?.dt?.responsive.recalc())
-watch(responsive, () => {
-    reloadPage.value = true
+watch(responsive, reload)
+watch([() => table.value?.dt, scrollY], () => {
+    const layoutRow = document.querySelector('.dt-layout-row')
+    const scrollBody = document.querySelector('.dt-scroll-body') as HTMLDivElement
+    if (layoutRow && scrollBody) {
+        layoutRowHeight.value = layoutRow.scrollHeight
+        scrollBody.style.maxHeight = `${scrollY.value}px`
+    }
 })
 function reload() {
-    location.reload()
+    showTable.value = false
+    nextTick(() => showTable.value = true)
 }
 const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: any) => data))
 const date = computed(() => app.$DataTable.value?.render.date() ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
@@ -166,32 +221,38 @@ const complexColumns = computed(() => [
     {
         data: 'index',
         title: '#',
+        className: 'print',
         columnControl: [
             [
                 'order',
                 'searchDropdown',
                 'spacer',
                 { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
+                'showAll',
             ],
         ],
     },
     {
         data: 'email',
         title: 'E-mail',
+        className: 'print',
     },
     {
         data: 'name',
-        title: 'Jméno',
+        title: 'Jméno a příjmení',
         render: ellipsis.value,
+        className: 'print',
     }, {
         data: 'arrival',
         title: 'Příjezd',
         render: date.value,
+        className: 'print',
     },
     {
         data: 'departure',
         title: 'Odjezd',
         render: date.value,
+        className: 'print',
     },
 ])
 

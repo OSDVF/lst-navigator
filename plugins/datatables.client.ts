@@ -44,6 +44,20 @@ export default defineNuxtPlugin(nuxt => {
                         window.jQuery = $
                         window.$ = $
                         await append(nuxt.vueApp)
+                        const cc = (<any>DataTable.ColumnControl)
+                        cc.content.showAll = {
+                            defaults: {
+                                text: 'Zobrazit všechny',
+                                icon: 'orderRemove',
+                            },
+                            init: function (config: any) {
+                                const btn = new cc.Button()
+                                    .text(config.text)
+                                    .icon(config.icon)
+                                return btn.element()
+                            },
+                        }
+
                         loaded.value = true
                     })()
                 }
