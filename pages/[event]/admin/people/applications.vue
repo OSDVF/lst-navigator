@@ -52,7 +52,7 @@
                                 autoClose: true,
                                 buttons: [
                                     {
-                                        text: 'Vybrat výchozí sloupce',
+                                        text: 'Zobrazit pouze základní sloupce',
                                         action(_: any, dt: Api<any>) {
                                             dt.columns('.print').visible(true)
                                             dt.columns(':not(.print, .always-visible)').visible(false)
@@ -63,7 +63,7 @@
                                     }, {
                                         extend: 'print',
                                         autoPrint: false,
-                                        text: '🖨️ Tisk',
+                                        text: '<span class=\'noinvert\'>🖨️</span> Tisk',
                                         title: '',
                                         exportOptions: {
                                             columns: ':visible:not(.always-visible)',
@@ -111,47 +111,11 @@
                     style: 'os',
                 },
                 scrollY: scrollY as any,
-            }" :data="data" :columns="([
-                {
-                    data: null,
-                    columnControl: [],
-                    className: 'always-visible',
-                    render: $DataTable.value?.render.select(),
-                },
-                ...complexColumns,
-                ...Object.entries(applications.settings?.fields ?? {}).filter(k => !complexColumns.find(c => c.data == k[0])).map(([key, val]) => ({
-                    data: key,
-                    title: typeof val == 'number' ? availableQuestions[val]?.title ?? val : val,
-                    columnControl: ((typeof val == 'number' ? availableQuestions[val] : Object.values(availableQuestions).find(a => a.title == val))?.values.size ?? 0) < 5 ? searchList : undefined,
-                })),
-                { data: null, title: 'Celkem', render: (row: typeof data[0]) => (row.paid + row.remaining) || '', visible: false, className: 'print' },
-                { data: 'paid', title: 'Převodem', render: (data) => data || '', className: 'print' },
-                { data: 'remaining', title: 'Zbývá', render: (data) => data || '', className: 'print' },
-                {
-                    data: 'confirmationSent', title: '📧', render: (data: boolean) => data ? '✔' : '<span class=\'muted\' title=\'Neodeslán\'>❌</span>',
-                    columnControl: searchList,
-                    visible: false,
-                },
-                {
-                    data: 'state', title: 'Stav', render: (data: ApplicationState) => ({
-                        [ApplicationState.NEW]: 'Nová',
-                        [ApplicationState.CANCELLED]: 'Zrušená',
-                        [ApplicationState.CONFIRMED]: 'Přijatá',
-                        [ApplicationState.REJECTED]: 'Odmítnutá'
-                    }[data]),
-                    visible: false,
-                    columnControl: searchList,
-                },
-                {
-                    data: 'editTimestamp', title: 'Upraveno', render: (data: number) => new Date(data).toLocaleString(),
-                    visible: false,
-                },
-                { data: 'edits', title: 'Počet úprav', visible: false, },
-                { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false, }
-            ] as Columns).map(c => ({ render: ellipsis, ...c }))" @select="selectionChanged"
-            @deselect="selectionChanged" />
+            }" :data="data" :columns="columns" @select="selectionChanged" @deselect="selectionChanged" />
         <Teleport v-if="!!table?.dt" to=".dt-buttons">
             <label class="nowrap ml-1"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
+            <label class="nowrap ml-1"><input v-model="expandMultiple" type="checkbox"> Zaškrtávací políčka
+                zvlášť</label>
         </Teleport>
 
         <p v-if="refreshResult.ok" class="mb-5">
@@ -177,8 +141,6 @@ import mapValues from 'lodash.mapvalues'
 import { deleteField, doc, updateDoc } from 'firebase/firestore'
 import { setDoc as setDocT } from '~/utils/trace'
 
-type Columns = ({ data: keyof typeof data.value[0], title: string } & ConfigColumns)[]
-
 definePageMeta({
     title: 'Přijaté přihlášky',
 })
@@ -191,6 +153,7 @@ const firestore = useFirestore()
 const ui = useUI()
 const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', false)
+const expandMultiple = useLocalStorage('expandMultiple', true)
 const showTable = ref(true)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
@@ -198,14 +161,27 @@ const layoutRowHeight = ref(30)
 const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
 
 const availableQuestions = computed(() => {
-    const result: Record<number, { title: string, values: Set<string> }> = {}
+    const result: Record<number, { title: string, values: Set<string>, multi: boolean, }> = {}
     for (const a of applications.filtered) {
         for (const q of a.questions) {
             if (q.id in result) {
+                if (Array.isArray(q.responses)) {
+                    result[q.id].multi = true
+                    if (expandMultiple.value) {
+                        q.responses.map(r => result[q.id].values.add(r?.toString()))
+                        continue
+                    }
+                }
                 result[q.id].values.add(q.responses?.toString())
                 continue
             }
-            result[q.id] = { title: q.title, values: new Set<string>([q.responses?.toString()]) }
+            result[q.id] = {
+                title: q.title,
+                values: new Set<string>([...((Array.isArray(q.responses) && expandMultiple.value)
+                    ? q.responses.map(r => r?.toString()) :
+                    [q.responses?.toString()])]),
+                multi: Array.isArray(q.responses),
+            }
         }
     }
     return result
@@ -214,16 +190,32 @@ const refreshResult = ref<ApiResponse<Responses['refreshResponses']>>({
     ok: false,
 })
 const table = useTemplateRef<{ dt: Api<typeof data.value> }>('table')
-const data = computed(() => applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp).map((a, i) => ({
-    index: i,
-    paid: 0,
-    remaining: 0,
-    confirmationSent: false,
-    state: ApplicationState.NEW,
-    ...mapValues(applications.settings?.fields, () => null),//blank values
-    ...Object.fromEntries(Object.keys(a.mapped ?? {}).filter(k => typeof k == 'string').map(k => [k, a.mapped![k]?.responses.toString() ?? null])),
-    ...a.record,
-})))
+const data = computed(() => applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp).map((a, i) => {
+    const mappedTitles = Object.keys(a.mapped ?? {}).filter(k => typeof k == 'string')
+    const mappedEntries: [string, string | string[] | boolean | null][] = []
+    for (const t of mappedTitles) {
+        const responses = a.mapped![t]?.responses
+        if (Array.isArray(responses)) {
+            if (expandMultiple.value) {
+                for (const sub of responses) {
+                    mappedEntries.push([sub.toString(), true])
+                }
+            } else {
+                mappedEntries.push([t, responses as string[] ?? null])
+            }
+        } else {
+            mappedEntries.push([t, responses?.toString() ?? null])
+        }
+    }
+    return {
+        index: i,
+        confirmationSent: false,
+        state: ApplicationState.NEW,
+        ...mapValues(applications.settings?.fields, () => null), //fallback blank values
+        ...Object.fromEntries(mappedEntries),
+        ...a.record,
+    }
+}))
 
 async function refresh() {
     if (!cloud.eventDescription?.formDocument) {
@@ -380,7 +372,6 @@ const questionControlColumns = computed(() => {
         },
     ]
 })
-watch([responsive, complexColumns, questionControlColumns], () => reload())
 const searchList = [
     [
         'order',
@@ -390,5 +381,72 @@ const searchList = [
         'showAll',
     ],
 ]
+const columns = computed(() => {
+    const fieldSettings = Object.keys(applications.settings?.fields ?? {})?.filter(k => !complexColumns.value.find(c => c.data == k))
+    const fieldColumns: ConfigColumns[] = []
+    for (const key of fieldSettings) {
+        const val = applications.settings!.fields[key]!
+        const q = typeof val == 'number' ? availableQuestions.value[val] : Object.values(availableQuestions.value).find(a => a.title == val)
+        if (q?.multi && expandMultiple.value) {
+            q.values.forEach(v =>
+                fieldColumns.push({
+                    data: v,
+                    className: 'multi',
+                    title: ellipsis.value(v, 'display'),
+                    columnControl: searchList,
+                    render: (data: boolean) => data ? '✔' : '',
+                }),
+            )
+        }
+        else {
+            fieldColumns.push({
+                data: key,
+                title: q?.title ?? val.toString(),
+                columnControl: (q?.values.size ?? 0) < 5 ? searchList : undefined,
+                render: q?.multi ? (data: string[], type: string, row: string[]) => data?.map(d => ellipsis.value(d, type, row)).join(',<br>') : ellipsis.value ?? '',
+            })
+        }
+    }
+
+    return ([
+        // Select box
+        {
+            data: null,
+            columnControl: [],
+            className: 'always-visible',
+            render: app.$DataTable.value?.render.select(),
+        },
+        // Special form fields
+        ...complexColumns.value,
+        // Form fields
+        ...fieldColumns,
+        { data: null, title: 'Celkem', render: (row: typeof data.value[0]) => ((row.paid ?? 0) + (row.remaining ?? 0)) || '', visible: false, className: 'print' },
+        { data: 'paid', title: 'Převodem', render: (data?: string) => data || '', className: 'print' },
+        { data: 'remaining', title: 'Zbývá', render: (data?: string) => data || '', className: 'print' },
+        {
+            data: 'confirmationSent', title: '📧', render: (data: boolean) => data ? '✔' : '<span class=\'muted\' title=\'Neodeslán\'>❌</span>',
+            columnControl: searchList,
+            visible: false,
+        },
+        {
+            data: 'state', title: 'Stav', render: (data: ApplicationState) => ({
+                [ApplicationState.NEW]: 'Nová',
+                [ApplicationState.CANCELLED]: 'Zrušená',
+                [ApplicationState.CONFIRMED]: 'Přijatá',
+                [ApplicationState.REJECTED]: 'Odmítnutá',
+            }[data]),
+            visible: false,
+            columnControl: searchList,
+        },
+        {
+            data: 'editTimestamp', title: 'Upraveno', render: (data: number) => new Date(data).toLocaleString(),
+            visible: false,
+        },
+        { data: 'edits', title: 'Počet úprav', visible: false },
+        { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false },
+    ]).map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
+})
+
+watch([responsive, columns], () => reload())
 
 </script>

@@ -115,6 +115,17 @@ onMounted(() => {
         mask-size: 100% 100%;
         mask-image: var(--icon);
     }
+
+    .multi {
+        .dt-column-title {
+            writing-mode: vertical-rl;
+            max-height: 50px;
+            max-width: 50px;
+            text-overflow: clip;
+            word-break: break-all;
+            overflow: hidden;
+        }
+    }
 }
 
 .dt-button-collection,
