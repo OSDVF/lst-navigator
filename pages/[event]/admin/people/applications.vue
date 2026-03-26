@@ -24,14 +24,13 @@
                                     'removeAllStates',
                                     { extend: 'spacer', style: 'bar' }
                                 ]
-                            },
-                            {
+                            }, {
                                 extend: 'ccSearchClear',
                                 text: 'Zrušit filtrování'
-                            },
-                            {
+                            }, {
                                 extend: 'collection',
                                 text: 'Ubytovací list',
+                                autoClose: true,
                                 buttons: [
                                     {
                                         text: 'Vybrat výchozí sloupce',
@@ -39,12 +38,10 @@
                                             dt.columns('.print').visible(true)
                                             dt.columns(':not(.print, .always-visible)').visible(false)
                                         }
-                                    },
-                                    {
+                                    }, {
                                         text: 'Zobrazit všechny sloupce',
                                         action: (_, dt) => dt.columns().visible(true),
-                                    },
-                                    {
+                                    }, {
                                         extend: 'print',
                                         autoPrint: false,
                                         text: '🖨️ Tisk',
@@ -53,6 +50,17 @@
                                             columns: ':visible:not(.always-visible)',
                                         },
                                     }
+                                ]
+                            }, {
+                                extend: 'collection',
+                                text: '🗒️ Přihlášky',
+                                autoClose: true,
+                                buttons: [
+                                    {
+                                        text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
+                                        titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
+                                        action: refresh,
+                                    }, ...questionControlColumns
                                 ]
                             }
                         ],
@@ -69,7 +77,9 @@
                     indicators: false,
                     handler: false
                 },
-                select: 'os',
+                select: {
+                    style: 'os',
+                },
                 scrollY: scrollY as any,
             }" :data="data" :columns="([
                 {
@@ -81,7 +91,7 @@
                 ...complexColumns,
                 ...Object.entries(applications.settings?.fields ?? {}).filter(k => !complexColumns.find(c => c.data == k[0])).map(([key, val]) => ({
                     data: key,
-                    title: val,
+                    title: typeof val == 'number' ? availableQuestions[val]?.title ?? val : val,
                 })),
                 { data: null, title: 'Celkem', render: (row: typeof data[0]) => (row.paid + row.remaining) || '', visible: false, className: 'print' },
                 { data: 'paid', title: 'Převodem', render: (data) => data || '', className: 'print' },
@@ -116,10 +126,6 @@
                 { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false, }
             ] as Columns).map(c => ({ render: ellipsis, ...c }))" />
         <Teleport v-if="!!table?.dt" to=".dt-buttons">
-            <button type="button" class="dt-button" @click="refresh">
-                <Icon name="mdi:cog-refresh" /> &nbsp;
-                Aktualizovat data z formuláře
-            </button>
             <label class="nowrap"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
         </Teleport>
 
@@ -141,8 +147,9 @@
 <script lang="ts" setup>
 import type { Api, ConfigColumns } from 'datatables.net-dt'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
-import { ApplicationState } from '~/types/cloud'
+import { ApplicationState, SpecialApplicationFields } from '~/types/cloud'
 import mapValues from 'lodash.mapvalues'
+import { deleteField, doc, updateDoc } from 'firebase/firestore'
 
 type Columns = ({ data: keyof typeof data.value[0], title: string } & ConfigColumns)[]
 
@@ -161,13 +168,24 @@ const showTable = ref(true)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
 const layoutRowHeight = ref(30)
-const scrollY = computed(()=>(windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
+const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
 
+const availableQuestions = computed(() => {
+    const result: Record<number, { title: string }> = {}
+    for (const a of applications.filtered) {
+        for (const q of a.questions) {
+            if (q.id in result) {
+                continue
+            }
+            result[q.id] = { title: q.title }
+        }
+    }
+    return result
+})
 const refreshResult = ref<ApiResponse<Responses['refreshResponses']>>({
     ok: false,
 })
 const table = useTemplateRef<{ dt: Api<typeof data.value> }>('table')
-
 const data = computed(() => applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp).map((a, i) => ({
     index: i,
     paid: 0,
@@ -202,7 +220,6 @@ watch(() => applications.loadingApplications, l => {
     }
 }, { immediate: true })
 onMounted(() => table.value?.dt?.responsive.recalc())
-watch(responsive, reload)
 watch([() => table.value?.dt, scrollY], () => {
     const layoutRow = document.querySelector('.dt-layout-row')
     const scrollBody = document.querySelector('.dt-scroll-body') as HTMLDivElement
@@ -211,8 +228,11 @@ watch([() => table.value?.dt, scrollY], () => {
         scrollBody.style.maxHeight = `${scrollY.value}px`
     }
 })
-function reload() {
+async function reload<T>(between?: () => PromiseLike<T>) {
     showTable.value = false
+    if (between) {
+        await between()
+    }
     nextTick(() => showTable.value = true)
 }
 const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: any) => data))
@@ -255,5 +275,64 @@ const complexColumns = computed(() => [
         className: 'print',
     },
 ])
+
+const questionControlColumns = computed(() => {
+    const toAdd = Object.keys(availableQuestions.value).filter((a: any) => !Object.values(applications.settings?.fields ?? {}).some(f => typeof f == 'number' && f == a || f == availableQuestions.value[a].title))
+    const toRemove = Object.keys(availableQuestions.value).filter((a: any) => Object.entries(applications.settings?.fields ?? {}).some(([k, v]) => (typeof v == 'number' && v == a) || (v == availableQuestions.value[a].title && !SpecialApplicationFields.includes(k as any))))
+    return [
+        {
+            text: useIconEl('add') + ' Přidat otázku jako sloupec',
+            extend: 'collection',
+            buttons: toAdd.length ? [{
+                text: useIconEl('check-all') + ' Všechny',
+                action() {
+                    updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`),
+                        Object.fromEntries(toAdd.map(k => ([
+                            `fields.${availableQuestions.value[k as any].title}`, parseInt(k),
+                        ])))).then(() => reload())
+                },
+            }].concat(toAdd.map((id: any) => ({
+                text: availableQuestions.value[id].title,
+                action() {
+                    updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`), {
+                        [`fields.${availableQuestions.value[id].title}`]: parseInt(id),
+                    }).then(() => reload())
+                },
+            }))) : [{
+                text: '&ensp;V tabulce jsou již všechny otázky z přihlášky&ensp;',
+                extend: 'spacer',
+                style: 'empty',
+            }],
+        }, {
+            text: useIconEl('remove') + ' Odebrat sloupec',
+            titleAttr: 'Odebere natrvalo sloupec pro všechny uživatele',
+            extend: 'collection',
+            buttons: toRemove.length ? [{
+                text: useIconEl('remove') + ' Všechny',
+                action() {
+                    reload(() => updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`),
+                        Object.fromEntries(toRemove.map(k => ([
+                            `fields.${availableQuestions.value[k as any].title}`, deleteField(),
+                        ])))))
+                },
+            }].concat(toRemove.map((id: any) => ({
+                text: availableQuestions.value[id].title,
+                action() {
+                    const entry = Object.entries(applications.settings?.fields ?? {}).find(([_, v]) => typeof v == 'number' && v == parseInt(id) || v == availableQuestions.value[id].title)
+                    reload(() => updateDoc(doc(useFirestore(), `applications/${cloud.selectedEvent}`), {
+                        [`fields.${entry?.[0] ?? availableQuestions.value[id].title}`]: deleteField(),
+                    }))
+                },
+            }))) : [
+                {
+                    text: '&ensp;Zatím žádné dodatečné sloupce nebyly přidány&ensp;',
+                    extend: 'spacer',
+                    style: 'empty',
+                },
+            ],
+        },
+    ]
+})
+watch([responsive, complexColumns, questionControlColumns], () => reload())
 
 </script>

@@ -296,3 +296,7 @@ export function assignDeepIfTruish<T extends object, U>(target: T, source: U): T
     }
     return target as T & U
 }
+
+export function useIconEl(name: string, title?: string) {
+    return `<span tabindex='0' title='${title}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${name}.svg);'></span>`
+}

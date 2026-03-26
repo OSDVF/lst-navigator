@@ -91,13 +91,8 @@ onMounted(() => {
 <style lang="scss">
 .dataTable {
     .icon {
-        background: black;
-        display: inline-block;
         width: 1.5rem;
         height: 1.5rem;
-        mask-repeat: no-repeat;
-        mask-size: 100% 100%;
-        mask-image: var(--icon);
     }
 
     &.collapsed:not(.compact) {
@@ -114,6 +109,27 @@ onMounted(() => {
 
 .dt-button {
     vertical-align: middle;
+}
+
+.dt-button-collection,
+.dataTable {
+    .icon {
+        background: black;
+        display: inline-block;
+        mask-repeat: no-repeat;
+        mask-size: 100% 100%;
+        mask-image: var(--icon);
+    }
+}
+
+.dt-button-collection {
+    width: auto !important;
+
+    .icon {
+        width: 1rem;
+        height: 1rem;
+        transform: translateY(3px);
+    }
 }
 
 .dt-info {

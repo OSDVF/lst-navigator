@@ -9,6 +9,7 @@ export type Application = {
     remaining?: number,
 }
 
+export const SpecialApplicationFields = ['arrival', 'departure', 'firstMeal', 'lastMeal', 'phone', 'category', 'food', 'extras', 'name'] as const
 export type ApplicationFormSettings = {
     values: {
         /**
@@ -17,17 +18,11 @@ export type ApplicationFormSettings = {
          */
         mealNames: string[]
     },
-    fields: {
-        arrival?: string | number,
-        departure?: string | number,
-        firstMeal?: string | number,
-        lastMeal?: string | number,
-        phone?: string | number,
-        category?: string | number,
-        food?: string | number,
-        extras?: string | number,
-        name?: string | number,
-        /** If the type is `string`, the field is searched by title. When `number`, it is searched by id. */
+    /** If the type is `string`, the field is searched by title. When `number`, it is searched by id. */
+    fields:
+    {
+        [key in typeof SpecialApplicationFields[number]]?: string | number
+    } & {
         [field: string]: string | number | undefined
     }
 }

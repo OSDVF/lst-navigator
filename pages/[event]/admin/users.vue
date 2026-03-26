@@ -19,7 +19,7 @@
                 {},
                 {},
                 {
-                    render: (data: UserLevel) => data ? `<span tabindex='0' title='${cloudStore.permissionNames[data]}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${(userLevelToIcon)[data]}.svg);'></span>` : ''
+                    render: (data: UserLevel) => data ? useIconEl((userLevelToIcon)[data], cloudStore.permissionNames[data]) : ''
                 }
             ]" @select="selectionChanged" @deselect="selectionChanged">
             <thead>

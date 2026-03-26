@@ -5,7 +5,7 @@
             <span class="button" @click="emit('edit')">
                 <Icon name="mdi:pencil" />
             </span>
-            <FormInput v-if="event" v-model="event!.form" disabled :document="event?.formDocument"/>
+            <FormInput v-if="event" v-model="event!.form" disabled :document="event?.formDocument" />
             <br>
             <FormDocumentInput v-if="event" v-model="event!.formDocument" disabled :form-url="event?.form" />
             <ProgressBar v-if="ui.isLoading" />
@@ -330,6 +330,7 @@ import type { ApplicationFormSecrets } from '~/form-connector/src/settings'
 import type { EventSettings } from '~/form-connector/src/types'
 import type { ApplicationFormSettings } from '~/types/cloud'
 import type { Responses } from '~/form-connector/src/api'
+import { setDoc as setDocT } from '~/utils/trace'
 import { doc } from 'firebase/firestore'
 import { useApplicationForm, useApplicationFormData } from '~/utils/applicationForm'
 import * as Sentry from '@sentry/nuxt'
@@ -525,7 +526,7 @@ watch(applications.settings, doc => {
 
 async function save() {
     using _ = ui.loading()
-    await setDoc(eventSettingsDoc, {
+    await setDocT(eventSettingsDoc, {
         ...toRaw(settings.value),
         responsesCollection: `applications/${cloud.selectedEvent}/responses`,
     } as EventSettings<string>, { merge: true })
