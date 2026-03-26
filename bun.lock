@@ -9,10 +9,6 @@
         "@pinia/nuxt": "^0.9.0",
         "@sentry/nuxt": "^8.51.0",
         "@types/lodash.pickby": "^4.6.9",
-        "datatables.net-dt": "^2.2.1",
-        "datatables.net-responsive-dt": "^3.0.3",
-        "datatables.net-select": "^3.0.0",
-        "datatables.net-select-dt": "^3.0.0",
         "datatables.net-vue3": "^3.0.4",
         "detect-browser": "^5.3.0",
         "elliptic": "^6.6.1",
@@ -74,6 +70,18 @@
         "array.prototype.tosorted": "^1.1.4",
         "ckeditor5": "^47.6.1",
         "cssnano": "^5.1.15",
+        "datatables.net-buttons-dt": "~3.2.3",
+        "datatables.net-colreorder-dt": "^2.1.2",
+        "datatables.net-columncontrol-dt": "^1.2.1",
+        "datatables.net-dt": "^2.3.7",
+        "datatables.net-fixedcolumns-dt": "^5.0.5",
+        "datatables.net-keytable-dt": "^2.12.2",
+        "datatables.net-plugins": "^2.3.6",
+        "datatables.net-responsive-dt": "^3.0.8",
+        "datatables.net-scroller-dt": "^2.4.3",
+        "datatables.net-searchbuilder-dt": "^1.8.4",
+        "datatables.net-select-dt": "^3.1.3",
+        "datatables.net-staterestore-dt": "^1.4.3",
         "eslint": "^9.19.0",
         "export-to-csv": "^1.4.0",
         "fake-indexeddb": "^4.0.2",
@@ -1725,17 +1733,51 @@
 
     "data-view-byte-offset": ["data-view-byte-offset@1.0.1", "", { "dependencies": { "call-bound": "^1.0.2", "es-errors": "^1.3.0", "is-data-view": "^1.0.1" } }, "sha512-BS8PfmtDGnrgYdOonGZQdLZslWIeCGFP9tpan0hi1Co2Zr2NKADsvGYA8XxuG/4UWgJ6Cjtv+YJnB6MM69QGlQ=="],
 
-    "datatables.net": ["datatables.net@2.2.1", "", { "dependencies": { "jquery": ">=1.7" } }, "sha512-Hz7f+a77xGdroAzej88aobT5nkQIJ2Oy1JI7yh2cl0QAXQSJDXOKkOLknu+nphVP8CP8w9MtLCmwMst/F8niiQ=="],
+    "datatables.net": ["datatables.net@2.3.7", "", { "dependencies": { "jquery": ">=1.7" } }, "sha512-AvsjG/Nkp6OxeyBKYZauemuzQCPogE1kOtKwG4sYjvdqGCSLiGaJagQwXv4YxG+ts5vaJr6qKGG9ec3g6vTo3w=="],
 
-    "datatables.net-dt": ["datatables.net-dt@2.2.1", "", { "dependencies": { "datatables.net": "2.2.1", "jquery": ">=1.7" } }, "sha512-ca2hFyyuwkLnZxa8hGuSP5oD+r9gQitOrbXRwuT0bPSnIR5qx39KTHbK7QayUjl2iXTUdYah7PnQT8A80RuTXw=="],
+    "datatables.net-buttons": ["datatables.net-buttons@3.2.6", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-rLqkB3xLIAYwVLt+lUSxybo/1WqveTAxhQm6wj6yvXlJiWq+oJ8MKW6H1q90QrXbNp0fGngnfD0cmpMZnNnnNw=="],
 
-    "datatables.net-responsive": ["datatables.net-responsive@3.0.3", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-/VU5U3P+l3GSdo92Mclt5YlrETNkfIZZU1MOk0aHNt0VqQOE0dORhx5Nwa8pYVsBuQBYzzyROZLru6UivEWv3Q=="],
+    "datatables.net-buttons-dt": ["datatables.net-buttons-dt@3.2.6", "", { "dependencies": { "datatables.net-buttons": "3.2.6", "datatables.net-dt": "^2", "jquery": ">=1.7" } }, "sha512-hYsnMOXz+dcUlQnjj19gOUyEq64VzbhWouQfjZ2rhGf3YPdohQus9nSSDBgmmS6/lt4bhDaRZ3YKYPeIbKunOQ=="],
 
-    "datatables.net-responsive-dt": ["datatables.net-responsive-dt@3.0.3", "", { "dependencies": { "datatables.net-dt": "^2", "datatables.net-responsive": "3.0.3", "jquery": ">=1.7" } }, "sha512-9Q3Ka8JFzLWfzAVpEePkIehQqjo0JkZiqh8r63wGzmnd/H10LmMNsTQIL5CxoKHFVMuUiWHSW3TS4Xga5E4bOg=="],
+    "datatables.net-colreorder": ["datatables.net-colreorder@2.1.2", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-lIsUyOt2nBm4sD2cSzDKZcIVrGgrZkh90Z2f03s8p7DYcZSfXMHAhFBrDYf9/eAK6wJnODN8EDMsrtPHfgoSXA=="],
 
-    "datatables.net-select": ["datatables.net-select@3.0.0", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-g01Q5ISjiAtoKz/DvOcf3qFqhwRt0mDhy5buivFxEgpiIDOkLFhtvYEjtUctrLX7PT2yVJfsQY5cPFM/5spjKQ=="],
+    "datatables.net-colreorder-dt": ["datatables.net-colreorder-dt@2.1.2", "", { "dependencies": { "datatables.net-colreorder": "2.1.2", "datatables.net-dt": "^2", "jquery": ">=1.7" } }, "sha512-Q4O/nHyXdN9Sd3y8DMN6jlrb+1yzjUT4U3urwUWwVScUjPTpwELy5M3B/foENGEa7VjsP0JitiLrgOZc6Lnp5g=="],
 
-    "datatables.net-select-dt": ["datatables.net-select-dt@3.0.0", "", { "dependencies": { "datatables.net-dt": "^2", "datatables.net-select": "3.0.0", "jquery": ">=1.7" } }, "sha512-3DkuDQN+2l4g600emm5zpDkUQ+qYnjSoAuHxuFm1pdmXWU3ga71vEc0gJa2VhH2vVbhXaCuhf16lxXMpj4Qn8A=="],
+    "datatables.net-columncontrol": ["datatables.net-columncontrol@1.2.1", "", { "dependencies": { "datatables.net": "^2.3.2" } }, "sha512-NWh5CykZ1y+LiuKUHuDGKPM7glbj7nop7vk7htTrN8OqmEPlUZImUK9JJKJqMvs3qY0LzxQ4o8kX8Qu/eMNSaA=="],
+
+    "datatables.net-columncontrol-dt": ["datatables.net-columncontrol-dt@1.2.1", "", { "dependencies": { "datatables.net-columncontrol": "1.2.1", "datatables.net-dt": "^2.3.2" } }, "sha512-lugQtfvd951ipZcYqBXVC9D3kur2YEPV57LDEXEtbXtKqcDZOxuL53NTBq8q3sK7tyUK6FlWRPiLSz9POuOzkQ=="],
+
+    "datatables.net-dt": ["datatables.net-dt@2.3.7", "", { "dependencies": { "datatables.net": "2.3.7", "jquery": ">=1.7" } }, "sha512-OXXIliY5MXnI+284Gt73F+fEdnW2u5y9jiptlvjDDb3YlyqXU4E/YZUB262a068sM/+qakb6RixN1SWn18uF2g=="],
+
+    "datatables.net-fixedcolumns": ["datatables.net-fixedcolumns@5.0.5", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-/oCQzRCT6+sM+5zlvAEj1WamVHHtSOLOi8gruTpppj5ewXDRbst1VbJZaS1sKGS2XXZOK+uCWHkh8H3kdZBzWw=="],
+
+    "datatables.net-fixedcolumns-dt": ["datatables.net-fixedcolumns-dt@5.0.5", "", { "dependencies": { "datatables.net-dt": "^2", "datatables.net-fixedcolumns": "5.0.5", "jquery": ">=1.7" } }, "sha512-wToTxNsfKiKucTYSengwBJdZuTlRXG4a6d/YnJ3iUhQYFJ81gcOWAgeCEBI6ZlZwJGH7ob2zdBsFOwOLoOFhAw=="],
+
+    "datatables.net-keytable": ["datatables.net-keytable@2.12.2", "", { "dependencies": { "datatables.net": "1.11 - 2", "jquery": ">=1.7" } }, "sha512-Fehm0/0gICdRRPBmzwFKnQaq27OXQZqcNG7ZbicZmSbu1FFO2MzDOuWzw5lD3w7mut/eZPWYm052hX45dmMIwg=="],
+
+    "datatables.net-keytable-dt": ["datatables.net-keytable-dt@2.12.2", "", { "dependencies": { "datatables.net-dt": "1.11 - 2", "datatables.net-keytable": "2.12.2", "jquery": ">=1.7" } }, "sha512-TNum8l9T6k2AoTiOqeuLUDWS8wLqBNGqZQSjvHxI4IkB9IFHAYY0vIi7HZ5rvoLcbei7lLNRlYAb1hdK6MT9Aw=="],
+
+    "datatables.net-plugins": ["datatables.net-plugins@2.3.6", "", { "dependencies": { "@types/jquery": "^3.5.16", "datatables.net": "^2.0.8" } }, "sha512-x32KOhw1apu8bLD7GP1/SS86waVEv59DxosLHmXbsRdf7GxXvSULHfo73XKp4gQaD8Q3f7ReM+kRM5r6lK3hGg=="],
+
+    "datatables.net-responsive": ["datatables.net-responsive@3.0.8", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-htslaX9g/9HFrJeyFQKEe/XJWpawPxpvy+M6vc/NkKQIrKhbxSoPc3phPqmlnZth6b9hgawqWDT0e0lwf5p+KA=="],
+
+    "datatables.net-responsive-dt": ["datatables.net-responsive-dt@3.0.8", "", { "dependencies": { "datatables.net-dt": "^2", "datatables.net-responsive": "3.0.8", "jquery": ">=1.7" } }, "sha512-Nq5q1UZZJwWjZJf1SedZKmfnOKRrx00TaAsCN7CLx9c6cmouFQ6AqLf7Lcs1eV30oRTt1e2rcQtu3BNjGwjnHw=="],
+
+    "datatables.net-scroller": ["datatables.net-scroller@2.4.3", "", { "dependencies": { "datatables.net": "1.11 - 2", "jquery": ">=1.7" } }, "sha512-ce6Qa7ObGQmLJYvm6eMglf54L+01/Omn3N1pw7SiQjGYv8AKRRp1ex+U0NWmx3QaWp0iEeTnBaM4G6ay4juYZg=="],
+
+    "datatables.net-scroller-dt": ["datatables.net-scroller-dt@2.4.3", "", { "dependencies": { "datatables.net-dt": "1.11 - 2", "datatables.net-scroller": "2.4.3", "jquery": ">=1.7" } }, "sha512-DDeQRPKHdv1I/5NGifpfW58bonq+bWFEBHNIsPOZW13ILzFimqOVnilS8nz6KtBY2NnX6K7Rj0bifZkvjh23KQ=="],
+
+    "datatables.net-searchbuilder": ["datatables.net-searchbuilder@1.8.4", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-rK+5sZU5wwphVRGqFB0ahJ75+yL5jBznnLrRKnGZ03fBDlhQo9TM9k8FKU1vK6NyWHj2fPes+mS/0s7LkP8cMw=="],
+
+    "datatables.net-searchbuilder-dt": ["datatables.net-searchbuilder-dt@1.8.4", "", { "dependencies": { "datatables.net-dt": "^2", "datatables.net-searchbuilder": "1.8.4", "jquery": ">=1.7" } }, "sha512-5Ol+g5QXttO8Qqh9KpRASXxfSQUK8d1q28M0gpRR4o3lkNuF5c4h/GyvHCsNY0o8uPjnJabeehx2kRl8Jhh5Ww=="],
+
+    "datatables.net-select": ["datatables.net-select@3.1.3", "", { "dependencies": { "datatables.net": "^2", "jquery": ">=1.7" } }, "sha512-IzikFqvYshnuPZVRi/xBvPcSMBNqzhzh9VGO0DtzsOU4w5uBLN/z9dOqAEUUJk1v6qkMOnBMg5NE/35cbdhPeQ=="],
+
+    "datatables.net-select-dt": ["datatables.net-select-dt@3.1.3", "", { "dependencies": { "datatables.net-dt": "^2", "datatables.net-select": "3.1.3", "jquery": ">=1.7" } }, "sha512-g/3gCXmYhyR0j0qq5gqGzJLZbCSVRFd2HGHyUYtfJwjaFyubEYKvB3G+1+uX1sYpeqhHPcSrAKzi1D/2mW1v+Q=="],
+
+    "datatables.net-staterestore": ["datatables.net-staterestore@1.4.3", "", { "dependencies": { "datatables.net": "1.11 - 2", "jquery": ">=1.7" } }, "sha512-XSkCHwi+MZ8C5ZbZ1qlvIdIOs8YEJX4BVOk3GUMoSIta6xD4UsKTDV0SxfJWRYsNnDQwvCibQD0yJhK4Vk4xTw=="],
+
+    "datatables.net-staterestore-dt": ["datatables.net-staterestore-dt@1.4.3", "", { "dependencies": { "datatables.net-dt": "1.11 - 2", "datatables.net-staterestore": "1.4.3", "jquery": ">=1.7" } }, "sha512-ZrwUg1DKQUUFEdsJ6/Id05GJYNBoIYXvMwJhyKWG4wORlxT32bf3CzdRr9I3c2iWFDDMRJzrdKM/THZFVG8LNQ=="],
 
     "datatables.net-vue3": ["datatables.net-vue3@3.0.4", "", { "peerDependencies": { "datatables.net": "^2", "vue": "^3.0.5" } }, "sha512-m7b7+zdH07d6J+Dz97KNs2PMezxZk+RgB4Or9i0J/SAXA/kaBRpQLTpr9Pyg8fh66/r4FQxnIkHhPTbW78Ep5A=="],
 
@@ -2313,7 +2355,7 @@
 
     "jose": ["jose@4.15.9", "", {}, "sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA=="],
 
-    "jquery": ["jquery@3.7.1", "", {}, "sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg=="],
+    "jquery": ["jquery@4.0.0", "", {}, "sha512-TXCHVR3Lb6TZdtw1l3RTLf8RBWVGexdxL6AC8/e0xZKEpBflBsjh9/8LXw+dkNFuOyW9B7iB3O1sP7hS0Kiacg=="],
 
     "js-tokens": ["js-tokens@9.0.1", "", {}, "sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ=="],
 

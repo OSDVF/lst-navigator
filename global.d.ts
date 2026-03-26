@@ -2,6 +2,7 @@ import type { PwaInjection } from '@vite-pwa/nuxt'
 import { idb } from '@composi/idb/types'
 import type { IdTokenResponse, StsTokenManager } from './types/auth'
 import type { JSONSchema7 } from 'json-schema'
+import type DataTable from 'datatables.net-dt'
 
 // define environment variables here
 declare namespace NodeJS {
@@ -15,8 +16,10 @@ declare function definePageMeta(pageMeta: any): void // Supress typescipt warnin
 
 declare global {
   const crypto: Crypto
+  const DataTable: DataTable<any>
   interface Global {
     crypto: Crypto;
+    DataTable: DataTable<any>
   }
 
   interface ImportMeta {
@@ -24,6 +27,10 @@ declare global {
   }
 
   interface WindowEventMap { 'beforeinstallprompt': BeforeInstallPromptEvent; }
+  interface Window {
+    $: JQueryStatic
+    jQuery: JQueryStatic
+  }
 
   /**
    * The BeforeInstallPromptEvent is fired at the Window.onbeforeinstallprompt handler

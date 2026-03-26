@@ -12,6 +12,17 @@
       "@types/google.picker",
       "@types/gapi.auth2",
       "@types/gapi.client.forms-v1",
+      "datatables.net-buttons-dt",
+      "datatables.net-colreorder-dt",
+      "datatables.net-columncontrol-dt",
+      "datatables.net-fixedcolumns-dt",
+      "datatables.net-responsive-dt",
+      "datatables.net-scroller-dt",
+      "datatables.net-searchbuilder-dt",
+      "datatables.net-select-dt",
+      "datatables.net-staterestore-dt",
+      "datatables.net-keytable-dt",
+      "datatables.net-plugins/dataRender/ellipsis.d.ts"
     ],
   },
   "exclude": [

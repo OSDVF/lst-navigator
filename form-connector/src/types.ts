@@ -1,4 +1,5 @@
 /**
+ * ISO 8601
  * YYYYY-MM-D
  */
 export type FirebaseDate = string

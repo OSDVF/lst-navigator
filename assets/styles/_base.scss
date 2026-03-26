@@ -26,11 +26,14 @@
 
         .vel-modal,
         .noinvert,
-        .ck-editor__main {
+        .ck-editor__main, .dt-button-background {
             filter: invert(100%);
         }
         .dt-input {
             --dt-html-background: #dddddd
+        }
+        div.dt-button-collection {
+            background: white;
         }
         table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
             border-left-color: black !important

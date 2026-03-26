@@ -21,6 +21,8 @@ import * as Sentry from '@sentry/nuxt'
 import 'datatables.net-dt/css/dataTables.dataTables.min.css' //CSS
 import 'datatables.net-select-dt/css/select.dataTables.min.css' //CSS
 import 'datatables.net-responsive-dt/css/responsive.dataTables.min.css' //CSS
+import 'datatables.net-buttons-dt/css/buttons.dataTables.min.css' //CSS
+import 'datatables.net-staterestore-dt/css/stateRestore.dataTables.min.css' //CSS
 
 const table = ref<{ dt: Api<T> }>()
 const dt = computed(() => table.value?.dt)
@@ -74,17 +76,10 @@ watch(dt, (newDt, old) => {
 
 onMounted(() => {
     const dtModule = import('datatables.net-vue3')
-    const dtCore = import('datatables.net')
-    const selectModule = import('datatables.net-select')
-    const responsiveModule = import('datatables.net-responsive')
+    const dt = useNuxtApp().$loadDataTables()
     dtModule.then(async (module) => {
         const $ = await import('jquery')
-        const Core = await dtCore
-        const Select = await selectModule
-        const Responsive = await responsiveModule
-        module.default.use(Core.default)
-        module.default.use(Select.default)
-        module.default.use(Responsive.default)
+        module.default.use(await dt)
         DataTable.value = module.default
         if (!import.meta.dev) {
             $.fn.dataTable.ext.errMode = 'none'
@@ -105,7 +100,7 @@ onMounted(() => {
         mask-image: var(--icon);
     }
 
-    &.collapsed {
+    &.collapsed:not(.compact) {
         .dtr-control {
             white-space: nowrap;
 
@@ -114,6 +109,21 @@ onMounted(() => {
                 top: -6px
             }
         }
+    }
+}
+
+.fancy {
+
+    table.dataTable th.dt-right div.dt-column-header,
+    table.dataTable th.dt-right div.dt-column-footer,
+    table.dataTable td.dt-right div.dt-column-header,
+    table.dataTable td.dt-right div.dt-column-footer,
+    table.dataTable td.dt-type-numeric div.dt-column-header {
+        flex-direction: row;
+    }
+
+    tr:not(:last-child) td {
+        border-right: 1px solid #7f7f7f19
     }
 }
 </style>
