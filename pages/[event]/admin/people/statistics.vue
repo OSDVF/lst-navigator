@@ -1,65 +1,80 @@
 <template>
     <div>
-        <article class="pb-0">
-            <h3 class="mb-0">Statistiky</h3>
+        <article>
+            <h3>Statistiky</h3>
+            <div class="legend pb-1">
+                <label class="info">Přihlášky přijány od: <span>{{ cloud.eventDescription?.applicationsStart ?? 'vždy'
+                }}</span>
+                    do
+                    <span>{{ cloud.eventDescription?.applicationsEnd ?? 'vždy' }}</span></label>
+                <label class="info">
+                    <input v-model="applications.includeCancelled" type="checkbox">
+                    Počítat i se zrušenými
+                </label>
+                <label class="info">Člověko×noci: <span>{{
+                    applications.filteredMapped?.map(
+                        a => maybe(toJSDate(a.mapped?.departure?.responses as string)?.getTime(),
+                                   departure => maybe(toJSDate(a.mapped?.arrival?.responses as string)?.getTime(),
+                                                      arrival => Math.floor((departure - arrival) / (1000 * 3600 * 24))) ?? 0) ?? 0)
+                        .reduceRight((a, b) => a + b, 0)}}
+                </span>
+                </label>
+                <label class="info">{{ "\u{1F9D1}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}" }} <span>
+                    {{ applications.filtered.length }}</span></label>
+                <label class="info">Zrušené: <span>
+                    {{applications.applications.filter(a => a.state == ApplicationState.CANCELLED).length}}
+                </span></label>
+                <label class="info">Odeslané emaily: <span>{{ applications.filtered.length - noEmailSent.length
+                }}</span>
+                    &nbsp;
+                    <button
+                        v-if="noEmailSent.length" title="Odeslat potvrzovací emaily zbývajícím"
+                        @click="sendWhereNotSent">💌</button>
+                </label>
+            </div>
+            <table class="borders collapse cell-p-1 col-stripes">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>{{ "\u{1F9D1}\u{200D}\u{1F4BC}" }}</th>
+                        <th v-for="(stat, key) in statisticsKeys" :key="`h${key}`" :colspan="stat.length">
+                            {{ key }}
+                        </th>
+                    </tr>
+                    <tr>
+                        <th />
+                        <th />
+                        <template v-for="(stat, key) in statisticsKeys" :key="`h${key}`">
+                            <th v-for="key2 in stat" :key="`h${key}${key2}`">{{ key2 == 'any' ? 'Celkem' : key2 }}</th>
+                        </template>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="day in statistics" :key="day.date.getTime()" class="info">
+                        <td>{{ day.date.getDate() }}.{{ day.date.getMonth() + 1 }}.</td>
+                        <td>{{ day.people }}</td>
+                        <template v-for="(stat, key) in day.statistics" :key="`${day.date.getTime()}${key}`">
+                            <td v-for="val in stat" :key="`${day.date.getTime()}${key}${val}`">{{ val || '' }}</td>
+                        </template>
+                    </tr>
+                </tbody>
+            </table>
+            <h3>Délka pobytu</h3>
+            <table class="borders collapse cell-p-1 col-stripes">
+                <thead>
+                    <tr>
+                        <th>Délka pobytu</th>
+                        <td v-for="(_, key) in stayPeriods" :key="`s${key}`">{{ key }}</td>
+                    </tr>
+                </thead>
+                <thead>
+                    <tr>
+                        <th>Počet lidí</th>
+                        <td v-for="(value, key) in stayPeriods" :key="`sv${key}`">{{ value }}</td>
+                    </tr>
+                </thead>
+            </table>
         </article>
-        <article class="legend">
-            <label class="info">Přihlášky přijány od: <span>{{ cloud.eventDescription?.applicationsStart ?? 'vždy'
-            }}</span>
-                do
-                <span>{{ cloud.eventDescription?.applicationsEnd ?? 'vždy' }}</span></label>
-            <label class="info">
-                <input v-model="applications.includeCancelled" type="checkbox">
-                Počítat i se zrušenými
-            </label>
-            <label class="info">Člověko×noci: <span>{{
-                applications.filteredMapped?.map(
-                    a => maybe(toJSDate(a.mapped?.departure?.responses as string)?.getTime(),
-                               departure => maybe(toJSDate(a.mapped?.arrival?.responses as string)?.getTime(),
-                                                  arrival => Math.floor((departure - arrival) / (1000 * 3600 * 24))) ?? 0) ?? 0)
-                    .reduceRight((a, b) => a + b, 0)}}
-            </span>
-            </label>
-            <label class="info">{{ "\u{1F9D1}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}" }} <span>
-                {{ applications.filtered.length }}</span></label>
-            <label class="info">Zrušené: <span>
-                {{applications.applications.filter(a => a.state == ApplicationState.CANCELLED).length}}
-            </span></label>
-            <label class="info">Odeslané emaily: <span>{{ applications.filtered.length - noEmailSent.length }}</span>
-                &nbsp;
-                <button
-                    v-if="noEmailSent.length" title="Odeslat potvrzovací emaily zbývajícím"
-                    @click="sendWhereNotSent">💌</button>
-            </label>
-        </article>
-
-        <table class="borders collapse cell-p-1 col-stripes">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>{{ "\u{1F9D1}\u{200D}\u{1F4BC}" }}</th>
-                    <th v-for="(stat, key) in statisticsKeys" :key="`h${key}`" :colspan="stat.length">
-                        {{ key }}
-                    </th>
-                </tr>
-                <tr>
-                    <th />
-                    <th />
-                    <template v-for="(stat, key) in statisticsKeys" :key="`h${key}`">
-                        <th v-for="key2 in stat" :key="`h${key}${key2}`">{{ key2 == 'any' ? 'Celkem' : key2 }}</th>
-                    </template>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="day in statistics" :key="day.date.getTime()" class="info">
-                    <td>{{ day.date.getDate() }}.{{ day.date.getMonth() + 1 }}.</td>
-                    <td>{{ day.people }}</td>
-                    <template v-for="(stat, key) in day.statistics" :key="`${day.date.getTime()}${key}`">
-                        <td v-for="val in stat" :key="`${day.date.getTime()}${key}${val}`">{{ val || '' }}</td>
-                    </template>
-                </tr>
-            </tbody>
-        </table>
         <p v-if="error" class="error"><code>{{ error }}</code></p>
     </div>
 </template>
@@ -85,6 +100,19 @@ const foodTypes = computed(() => {
         }
     }
     return [...types.values()]
+})
+
+const stayPeriods = computed(() => {
+    const periods: number[] = []
+    for (const a of applications.filteredMapped) {
+        const departure = toJSDate(a.mapped?.departure?.responses as string ?? cloud.eventDescription?.end)
+        const arrival = toJSDate(a.mapped?.arrival?.responses as string ?? cloud.eventDescription?.start)
+        if (arrival && departure) {
+            const period = (departure.getTime() - arrival.getTime()) / (3600 * 1000 * 24)
+            periods[period] = (periods[period] ?? 0) + 1
+        }
+    }
+    return periods
 })
 
 type Statistics = {
