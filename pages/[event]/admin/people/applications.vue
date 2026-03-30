@@ -30,7 +30,7 @@
                                     { extend: 'removeAllStates', text: 'Smazat uložená zobrazení' },
                                     { extend: 'spacer', style: 'bar' }
                                 ]
-                            }, {
+                            }, ...(cloud.resolvedPermissions.editSchedule ? [{
                                 extend: 'collection',
                                 text: 'Účastník',
                                 className: 'selected-only disabled',
@@ -48,7 +48,7 @@
                                         autoClose: true,
                                     }
                                 ],
-                            }, {
+                            }] : []), {
                                 extend: 'collection',
                                 text: 'Ubytovací list',
                                 autoClose: true,
@@ -109,7 +109,8 @@
                 scrollY: scrollY as any,
             }" :data="data" :columns="columns" @select="selectionChanged" @deselect="selectionChanged" />
         <Teleport v-if="!!table?.dt" to=".dt-buttons">
-            <label><input v-model="applications.includeCancelled" type="checkbox"> Počítat i se zrušenými</label>
+            <label class="nowrap ml-1"><input v-model="applications.includeCancelled" type="checkbox"> Počítat i se
+                zrušenými</label>
             <label class="nowrap ml-1"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
             <label class="nowrap ml-1"><input v-model="expandMultiple" type="checkbox"> Zaškrtávací políčka
                 zvlášť</label>

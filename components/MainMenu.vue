@@ -14,7 +14,7 @@
         <span class="text">Program</span>
     </NuxtLink>
     <NuxtLink
-        v-if="cloud.eventDescription?.formDocument"
+        v-if="cloud.participantSectionVisible"
         :to="`/${cloud.selectedEvent}/participant`">
         <Icon name="mdi:hail" size="1.8rem" />
         <span class="text">Účastník</span>

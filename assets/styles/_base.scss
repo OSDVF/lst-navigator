@@ -36,9 +36,6 @@
         div.dt-button-collection {
             background: white;
         }
-        table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
-            border-left-color: black !important
-        }
 
         textarea {
             filter: invert(100%);

@@ -206,7 +206,7 @@ export type UserInfo = {
         [eventId: string]: string
     },
     /** Application responses IDs for different events */
-    responseId: {
+    responseId?: {
         [eventId: string]: string
     },
     signature: {

@@ -30,7 +30,7 @@
                 <slot />
             </main>
         </ErrorSolver>
-        <div class="navigation" ref="navigation">
+        <div ref="navigation" class="navigation">
             <div class="flex-full">
                 <ProgressBar v-if="cloud.feedback.fetching" />
                 <nav v-if="cloud.feedback.fetchFailed" class="p-1">
@@ -39,7 +39,7 @@
             </div>
             <div v-show="!keyboardVisible" id="additionalNav" class="flex-full" />
             <nav v-show="!keyboardVisible" role="navigation">
-                <NuxtLink :to="`/${cloud.selectedEvent}/admin/feedback`">
+                <NuxtLink v-if="cloud.resolvedPermissions.editSchedule" :to="`/${cloud.selectedEvent}/admin/feedback`">
                     <span>
                         <Icon name="mdi:rss" size="1.8rem" />
                         <Icon

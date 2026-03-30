@@ -132,7 +132,11 @@ onMounted(() => {
     .icon {
         width: 1.5rem;
         height: 1.5rem;
+        .dark & {
+            background: white;
+        }
     }
+
     td .icon {
         width: 1rem;
         height: 1rem;
@@ -169,11 +173,18 @@ onMounted(() => {
         font-size: small;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 768px) {
 
         div.dt-buttons>.dt-button,
         div.dt-buttons>div.dt-button-split .dt-button {
-            padding: 0 .3rem;
+            padding: .08rem .3rem;
+        }
+
+        div.dt-container div.dt-layout-row:not(.dt-layout-table) div.dt-layout-cell {
+            display: flex;
+            .dt-buttons {
+                margin-left: .5rem;
+            }
         }
     }
 }

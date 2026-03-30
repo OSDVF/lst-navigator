@@ -549,7 +549,7 @@ export const useCloudStore = defineStore('cloud', () => {
             const superAdmin = user.info.value?.permissions?.superAdmin
             if (typeof onlinePermission !== 'undefined') {
                 return {
-                    participant: !!user.info.value?.responseId[selectedEvent.value],
+                    participant: !!user.info.value?.responseId?.[selectedEvent.value],
                     showApplications: [UserLevel.ShowApplications.toString(), UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || superAdmin === true,
                     editSchedule: [UserLevel.ScheduleAdmin.toString(), UserLevel.Admin.toString()].includes(onlinePermission.toString()) || superAdmin === true,
                     editEvent: onlinePermission.toString() === UserLevel.Admin.toString() || superAdmin === true,
@@ -705,7 +705,7 @@ export const useCloudStore = defineStore('cloud', () => {
         }
         return events.sort((a, b) => toJSDate(a.order ?? a.start).getTime() - toJSDate(b.order ?? b.start).getTime())
     })
-    const participantSectionVisible = computed(() => (eventDescription.value?.formDocument && resolvedPermissions.value.participant) || (!eventDescription.value?.formDocument && (groups.value.length || duties.value.length)))
+    const participantSectionVisible = computed(() => eventDescription.value?.formDocument || (!eventDescription.value?.formDocument && (groups.value.length || duties.value.length)))
     return {
         currentEventCollection,
         days,
