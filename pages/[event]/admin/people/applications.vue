@@ -14,8 +14,19 @@
                         'showAll'
                     ]
                 ],
-                createdRow(row: HTMLTableRowElement, d: typeof data[number]) {
+                createdRow(this: { api(): Exclude<typeof table, null>['dt'] }, row: HTMLTableRowElement, d: typeof data[number], _i: number, cells: HTMLTableCellElement[]) {
                     row.classList.add(ApplicationStateUI[d.state].class)
+
+                    if (!isEmpty(d.overlays)) {
+                        // eslint-disable-next-line vue/this-in-template
+                        const visibleCols = this.api().columns(':visible')
+                        Object.keys(d.overlays).map(o => maybe(maybeIndex(visibleCols.dataSrc().indexOf(o)), i => {
+                            cells[i].classList.add('overlayed')
+                            cells[i].title ||= 'Hodnota upravena pro zobrazení. Původní hodnota: ' + d.original?.[o as keyof typeof d.original]
+                        }
+                        ))
+                    }
+                    cells.map(c => c.title ||= `${ApplicationStateUI[d.state].name} přihláška`)//cannot use for because Vue cripples local variables
                 },
                 layout: {
                     topStart: {
@@ -30,13 +41,17 @@
                                     { extend: 'removeAllStates', text: 'Smazat uložená zobrazení' },
                                     { extend: 'spacer', style: 'bar' }
                                 ]
-                            }, ...(cloud.resolvedPermissions.editSchedule ? [{
+                            }, ...(cloud.resolvedPermissions.editSchedule ? editMode ? [{
+                                text: useIconEl('edit') + ' Upravit',
+                                className: 'selected-only disabled',
+                                action: editOverlay,
+                            }] : [{
                                 extend: 'collection',
                                 text: 'Účastník',
                                 className: 'selected-only disabled',
                                 buttons: [
                                     {
-                                        text: useIconEl('edit') + ' Upravit',
+                                        text: useIconEl('edit') + ' Upravit údaje',
                                         action: openEditLink
                                     }, {
                                         text: useIconEl('account-question') + ' Změnit stav',
@@ -105,15 +120,22 @@
                 },
                 select: {
                     style: 'os',
+                    items: editMode ? 'cell' : 'row',
+                    keys: true,
                 },
                 scrollY: scrollY as any,
             }" :data="data" :columns="columns" @select="selectionChanged" @deselect="selectionChanged" />
-        <Teleport v-if="!!table?.dt" to=".dt-buttons">
-            <label class="nowrap ml-1"><input v-model="applications.includeCancelled" type="checkbox"> Počítat i se
-                zrušenými</label>
-            <label class="nowrap ml-1"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
-            <label class="nowrap ml-1"><input v-model="expandMultiple" type="checkbox"> Zaškrtávací políčka
-                zvlášť</label>
+        <Teleport v-if="!!table?.dt && mounted" to=".dt-buttons">
+            <label
+                title="Přepne tabulku do módu, kdy můžete upravovat kolonky, ale reálná data z přihlášek zůstanou uložená původní"
+                :class="'ml-1 inline-block' + (editMode ? ' strong' : '')"><input v-model="editMode" type="checkbox">
+                Mód úprav</label>
+            <label class="ml-1 inline-block"><input v-model="applications.includeCancelled" type="checkbox">
+                Zobrazit i zrušené</label>
+            <label class="ml-1 inline-block"><input v-model="responsive" type="checkbox">
+                Rozbalovací řádky</label>
+            <label class="ml-1 inline-block"><input v-model="expandMultiple" type="checkbox">
+                Zaškrtávací políčka zvlášť</label>
         </Teleport>
 
         <p v-if="refreshResult.ok" class="mb-5">
@@ -132,7 +154,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Api, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
+import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
 import { type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
 import { SpecialApplicationFields } from '~/types/cloud'
@@ -140,11 +162,14 @@ import { deleteField, doc, updateDoc } from 'firebase/firestore'
 import { setDoc as setDocT } from '~/utils/trace'
 import mapValues from 'lodash.mapvalues'
 import isEqual from 'lodash.isequal'
+import isEmpty from 'lodash.isempty'
 
 definePageMeta({
     title: 'Přijaté přihlášky',
 })
 
+const mounted = ref(false)
+onMounted(() => mounted.value = true)
 const app = useNuxtApp()
 const applications = useApplications()
 const api = useApplicationForm()
@@ -154,6 +179,7 @@ const ui = useUI()
 const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', false)
 const expandMultiple = useLocalStorage('expandMultiple', true)
+const editMode = useLocalStorage('editMode', false)
 const showTable = ref(true)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
@@ -190,33 +216,40 @@ const refreshResult = ref<ApiResponse<Responses['refreshResponses']>>({
     ok: false,
 })
 const table = useTemplateRef<{ dt: Api<typeof data.value> }>('table')
-const data = computed(() => applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp).map((a, i) => {
-    const mappedTitles = Object.keys(a.mapped ?? {}).filter(k => typeof k == 'string')
-    const mappedEntries: [string, string | string[] | boolean | null][] = []
-    for (const t of mappedTitles) {
-        const responses = a.mapped![t]?.responses
-        if (Array.isArray(responses)) {
-            if (expandMultiple.value) {
-                for (const sub of responses) {
-                    mappedEntries.push([sub.toString(), true])
+const data = computed(() => applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp)
+    .filter(a => applications.includeCancelled ? true : ![ApplicationState.CANCELLED, ApplicationState.REJECTED].includes(a.record.state ?? ApplicationState.NEW))
+    .map((a, i) => {
+        const mappedTitles = Object.keys(a.mapped ?? {}).filter(k => typeof k == 'string')
+        const mappedEntries: [string, string | string[] | boolean | null][] = []
+        for (const t of mappedTitles) {
+            const responses = a.mapped![t]?.responses
+            if (Array.isArray(responses)) {
+                if (expandMultiple.value) {
+                    for (const sub of responses) {
+                        mappedEntries.push([sub.toString(), true])
+                    }
+                } else {
+                    mappedEntries.push([t, responses as string[] ?? null])
                 }
             } else {
-                mappedEntries.push([t, responses as string[] ?? null])
+                mappedEntries.push([t, responses?.toString() ?? null])
             }
-        } else {
-            mappedEntries.push([t, responses?.toString() ?? null])
         }
-    }
-    return {
-        index: i,
-        confirmationSent: false,
-        state: ApplicationState.NEW,
-        ...mapValues(applications.settings?.fields, () => null), //fallback blank values
-        ...Object.fromEntries(mappedEntries),
-        ...a.record,
-        id: a.record.id,// is non-enumerable so must be listed explicitly
-    }
-}))
+        const original = {
+            ...mapValues(applications.settings?.fields, () => null), //fallback blank values
+            ...Object.fromEntries(mappedEntries),
+            ...a.record,
+        }
+        return {
+            index: i,
+            confirmationSent: false,
+            state: ApplicationState.NEW,
+            original: isEmpty(a.record.overlays) ? undefined : original,
+            ...original,
+            ...a.record.overlays,
+            id: a.record.id,// is non-enumerable so must be listed explicitly
+        }
+    }))
 
 async function refresh() {
     if (!cloud.eventDescription?.formDocument) {
@@ -257,11 +290,11 @@ async function reload<T>(between?: () => PromiseLike<T>) {
     nextTick(() => showTable.value = true)
 }
 
-const selection = ref<Exclude<typeof table.value, null>['dt']>()
+const selection = ref<ApiRowsMethods<typeof data.value> | ApiCellsMethods<typeof data.value>>()
 function selectionChanged() {
     if (table.value) {
-        selection.value = table.value.dt.rows({ selected: true }).data()
-        if (selection.value.length) {
+        selection.value = editMode.value ? table.value.dt.cells({ selected: true }) : table.value.dt.rows({ selected: true })
+        if (selection.value!.length) {
             $('.selected-only').removeClass('disabled')
         } else {
             $('.selected-only').addClass('disabled')
@@ -275,12 +308,41 @@ function openEditLink() {
     }
 }
 
+function responseDoc(id: string) {
+    return doc(knownCollection(firestore, 'applications'), cloud.selectedEvent, 'responses', id)
+}
+async function editOverlay() {
+    if ((selection.value?.data()?.length ?? 2) > 1) {
+        alert('Vyberte jednu buňku')
+        return
+    }
+    const ids = selection.value!.indexes()
+    const row = table.value?.dt.row(ids[0].row).data() as unknown as typeof data.value[number]//DT has bad return type definition
+    const col = table.value?.dt.column(ids[0].column).dataSrc()
+    if (typeof col != 'string' || !row) {
+        alert('Tuto buňku nelze upravit')
+        return
+    }
+    const d = responseDoc(row.id)
+    const p = prompt('Zadejte hodnotu pro přepsání, nebo hodnotu smažte pro vrácení hodnoty z přihlášky', selection.value!.data()?.[0])
+    if (p == '') {
+        await updateDoc(d, {
+            [`overlays.${col}`]: deleteField(),
+        })
+    } else if (p) {
+        using _ = ui.loading()
+        await updateDoc(d, {
+            [`overlays.${col}`]: p,
+        })
+    }
+}
+
 function changeState(state: ApplicationState) {
-    const id = selection.value?.[0].id
+    const id = selection.value?.data()?.[0].id
     if (!id) {
         return
     }
-    setDocT(doc(knownCollection(firestore, 'applications'), cloud.selectedEvent, 'responses', id), {
+    setDocT(responseDoc(id), {
         state,
     } as ResponseRecord, { merge: true })
 }
@@ -305,7 +367,7 @@ const complexColumns = computed(() => [
     {
         data: 'email',
         title: 'E-mail',
-        className: 'print',
+        className: 'print email',
     },
     {
         data: 'name',
@@ -442,14 +504,7 @@ const columns = computed(() => {
         }
     }
 
-    return ([
-        // Select box
-        {
-            data: null,
-            columnControl: [],
-            className: 'always-visible',
-            render: app.$DataTable.value?.render.select(),
-        },
+    return [
         // Special form fields
         ...complexColumns.value,
         // Form fields
@@ -473,9 +528,43 @@ const columns = computed(() => {
         },
         { data: 'edits', title: 'Počet úprav', visible: false },
         { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false },
-    ]).map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
+    ].map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
 
-watch([responsive, columns], (newVal, oldVal) => newVal.every((n, i) => isEqual(n, oldVal[i])) ? null : reload())
+watch([responsive, columns, editMode], (newVal, oldVal) => newVal.every((n, i) => isEqual(n, oldVal[i])) ? null : reload())
 
 </script>
+
+<style lang="scss">
+.confirmed td {
+    background: #00800038
+}
+
+.rejected td {
+    background: #ff000023
+}
+
+.cancelled {
+    color: gray;
+}
+
+.cancelled,
+.rejected {
+    td.email {
+        text-decoration: line-through;
+    }
+}
+
+td.overlayed {
+    position: relative;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+
+        background: #00ffff40;
+    }
+}
+</style>

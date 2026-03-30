@@ -5,6 +5,8 @@ export type Application = {
     id: string,
     paid?: number,
     remaining?: number,
+    /** Cells in applications table can be 'overlayed' with custom content by the manager */
+    overlays?: ApplicationFields,
 }
 
 /** These fields have special meaning - the system will process their contents differently and rely on them */
@@ -33,13 +35,15 @@ export type ApplicationFormSettings = {
         eventFirstMeal: number,
         eventLastMeal: number,
     },
-    /** If the type is `string`, the field is searched by title. When `number`, it is searched by id. */
     fields:
     {
         [key in typeof SpecialApplicationFields[number]]?: string | number
-    } & {
-        [field: string]: string | number | undefined
-    }
+    } & ApplicationFields
+}
+
+/** If the type is `string`, the field is searched by title. When `number`, it is searched by id. */
+export type ApplicationFields = {
+    [field: string]: string | number | undefined
 }
 
 

@@ -4,16 +4,18 @@
     <div v-else-if="cloud.resolvedPermissions.showApplications">
         <NuxtPage />
         <LazyClientOnly>
-            <Teleport to="#additionalNav">
+            <Teleport v-if="mounted" to="#additionalNav">
                 <nav class="eventItemNav">
-                    <NuxtLink :to="`/${cloud.selectedEvent}/admin/people/applications`">
-                        <Icon name="mdi:vote-outline" />
-                        Přihlášky
-                    </NuxtLink>
-                    <NuxtLink :to="`/${cloud.selectedEvent}/admin/people/statistics`">
-                        <Icon name="mdi:information-slab-circle-outline" />
-                        Statistiky
-                    </NuxtLink>
+                    <template v-if="cloud.eventDescription?.formDocument">
+                        <NuxtLink :to="`/${cloud.selectedEvent}/admin/people/applications`">
+                            <Icon name="mdi:vote-outline" />
+                            Přihlášky
+                        </NuxtLink>
+                        <NuxtLink :to="`/${cloud.selectedEvent}/admin/people/statistics`">
+                            <Icon name="mdi:information-slab-circle-outline" />
+                            Statistiky
+                        </NuxtLink>
+                    </template>
                     <NuxtLink :to="`/${cloud.selectedEvent}/admin/people/groups`">
                         <Icon name="mdi:group" />
                         Skupinky
@@ -37,9 +39,13 @@ import path from 'path'
 definePageMeta({
     title: 'Účastníci',
     layout: 'admin',
-    middleware: ['auth', (to) => {
+    middleware: ['auth', (to, from) => {
         const parts = to.name?.toString().split('-')
+        console.log(parts, to, from)
         if (parts?.length == 3 && parts[2] == 'people') {
+            if(to.fullPath == from.fullPath) {
+                return location.replace(path.join(to.path, 'applications'))
+            }
             return navigateTo(path.join(to.path, 'applications'), {
                 replace: true,
             })
@@ -48,4 +54,6 @@ definePageMeta({
 })
 
 const cloud = useCloudStore()
+const mounted = ref(false)
+onMounted(() => mounted.value = true)
 </script>
