@@ -3,20 +3,35 @@ import type { FirebaseDate } from '~/form-connector/src/types'
 
 export type Application = {
     id: string,
-    confirmationSent?: boolean,
-    state?: ApplicationState,
     paid?: number,
     remaining?: number,
 }
 
-export const SpecialApplicationFields = ['arrival', 'departure', 'firstMeal', 'lastMeal', 'phone', 'category', 'food', 'extras', 'name'] as const
+/** These fields have special meaning - the system will process their contents differently and rely on them */
+export const SpecialApplicationFields = [
+    /** Will be assigned to the start of event if not set */
+    'arrival',
+    /** Will be assigned to the start of event if not set */
+    'departure',
+    'firstMeal', 'lastMeal',
+    /** Will have `tel:` link displayed */
+    'phone', 'category',
+    /** Type of food that the participant wants to order for the whole event */
+    'food',
+    'town',
+    'extras',
+    'name'] as const
+
+export type SpecialApplicationFields = typeof SpecialApplicationFields[number]
 export type ApplicationFormSettings = {
     values: {
         /**
          * ordered by time of day.
          * breakfast, lunch,...
          */
-        mealNames: string[]
+        mealNames: string[],
+        eventFirstMeal: number,
+        eventLastMeal: number,
     },
     /** If the type is `string`, the field is searched by title. When `number`, it is searched by id. */
     fields:
@@ -27,9 +42,6 @@ export type ApplicationFormSettings = {
     }
 }
 
-export enum ApplicationState {
-    NEW = 0, CONFIRMED = 1, REJECTED = 2, CANCELLED = 3
-}
 
 export type FeedbackType = 'basic' | 'complicated' | 'parallel' | 'select' |
     /**

@@ -4,6 +4,10 @@ import { getEventSettings, getSecrets, type ApplicationFormSecrets, type EventSe
 import type Firestore from "firestore_google-apps-script/Firestore"
 import isEqual from "lodash.isequal"
 
+export enum ApplicationState {
+    NEW = 0, CONFIRMED = 1, REJECTED = 2, CANCELLED = 3
+}
+
 export type QuestionResponse = {
     id: number,
     title: string,
@@ -11,6 +15,7 @@ export type QuestionResponse = {
 }
 
 export type ResponseRecord = {
+    confirmationSent?: boolean,
     email: string,
     /**
      * Will be negative when deleted
@@ -21,9 +26,10 @@ export type ResponseRecord = {
     oldQuestions?: QuestionResponse[],
     questions: QuestionResponse[],
     timestamp: number,
+    state?: ApplicationState,
 }
 
-export function updateResponse(form: GoogleAppsScript.Forms.Form, response: GoogleAppsScript.Forms.FormResponse): boolean | undefined {
+export function updateResponse(form: GoogleAppsScript.Forms.Form, response: GoogleAppsScript.Forms.FormResponse, dry = false): boolean | undefined {
     const formId = form.getId()
     const secrets = getSecrets(formId)
     const fs = useFirestore(formId, secrets as ApplicationFormSecrets)
@@ -33,15 +39,17 @@ export function updateResponse(form: GoogleAppsScript.Forms.Form, response: Goog
 
     if (settings.responsesCollection) {
         if (responsesSyncDirty(settings, resps)) {// todo maybe find the most recent?
-            refreshResponsesData(form, fs, settings, response)
+            refreshResponsesData(form, fs, settings, response, dry)
         } else {
             const respDocPath = path.join(settings.responsesCollection!, response.getId())
             const responseRecord = fs.getDocument(respDocPath).obj as ResponseRecord | undefined
-            const result = updateResponseData(fs, settings, response, responseRecord)
+            const result = updateResponseData(fs, settings, response, responseRecord, dry)
 
-            fs.updateDocument(secrets.remoteEventSettings!, {
-                responsesSync: new Date().getTime(),
-            } as SyncState, true)
+            if (!dry) {
+                fs.updateDocument(secrets.remoteEventSettings!, {
+                    responsesSync: new Date().getTime(),
+                } as SyncState, true)
+            }
 
             return result
         }
@@ -54,14 +62,14 @@ function responsesSyncDirty(settings: Partial<EventSettingsTemplated<GoogleAppsS
     return (settings.responsesSync ?? 0) < (resps.findLast(r => r.getTimestamp())?.getTimestamp().getTime() ?? 0)
 }
 
-export function refreshResponses(form: GoogleAppsScript.Forms.Form, force: boolean = false) {
+export function refreshResponses(form: GoogleAppsScript.Forms.Form, force: boolean = false, dry = false) {
     const formId = form.getId()
     const secrets = getSecrets(formId)
     const fs = useFirestore(formId, secrets as ApplicationFormSecrets)
     const settings = getEventSettings(form, fs)
 
     if (force || responsesSyncDirty(settings, form.getResponses())) {
-        return refreshResponsesData(form, fs, settings)
+        return refreshResponsesData(form, fs, settings, undefined, dry)
     } else {
         return {
             new: 0,
@@ -78,7 +86,7 @@ function extractQuestionResponses(response: GoogleAppsScript.Forms.FormResponse)
     }))
 }
 
-function updateResponseData(fs: Firestore, settings: Awaited<ReturnType<typeof getEventSettings>>, response: GoogleAppsScript.Forms.FormResponse, responseRecord?: ResponseRecord) {
+function updateResponseData(fs: Firestore, settings: Awaited<ReturnType<typeof getEventSettings>>, response: GoogleAppsScript.Forms.FormResponse, responseRecord?: ResponseRecord, dry = false) {
     const respondentAddress = response.getRespondentEmail()
     const respDocPath = path.join(settings.responsesCollection!, response.getId())
     if (responseRecord && !settings.treatAllAsNew) {
@@ -88,17 +96,19 @@ function updateResponseData(fs: Firestore, settings: Awaited<ReturnType<typeof g
             return false
         }
 
-        responseRecord.questions = newResponses
-        responseRecord.edits = responseRecord.edits + 1
-        responseRecord.editTimestamp = response.getTimestamp()?.getTime() ?? new Date().getTime()
-        responseRecord.email = responseRecord.email ?? respondentAddress
-        if (!responseRecord.oldQuestions && responseRecord.questions) {
-            responseRecord.oldQuestions = responseRecord.questions
-        }
+        if (!dry) {
+            responseRecord.questions = newResponses
+            responseRecord.edits = responseRecord.edits + 1
+            responseRecord.editTimestamp = response.getTimestamp()?.getTime() ?? new Date().getTime()
+            responseRecord.email = responseRecord.email ?? respondentAddress
+            if (!responseRecord.oldQuestions && responseRecord.questions) {
+                responseRecord.oldQuestions = responseRecord.questions
+            }
 
-        fs.updateDocument(respDocPath, responseRecord, true)
+            fs.updateDocument(respDocPath, responseRecord, true)
+        }
         return true
-    } else {
+    } else if (!dry) {
         responseRecord = {
             email: respondentAddress,
             edits: 0,
@@ -108,11 +118,11 @@ function updateResponseData(fs: Firestore, settings: Awaited<ReturnType<typeof g
             timestamp: response.getTimestamp()?.getTime() ?? new Date().getTime(),
         }
         fs.createDocument(respDocPath, responseRecord)
-        return false
     }
+    return false
 }
 
-function refreshResponsesData(form: GoogleAppsScript.Forms.Form, fs: Firestore, settings: Awaited<ReturnType<typeof getEventSettings>>, response?: GoogleAppsScript.Forms.FormResponse) {
+function refreshResponsesData(form: GoogleAppsScript.Forms.Form, fs: Firestore, settings: Awaited<ReturnType<typeof getEventSettings>>, response?: GoogleAppsScript.Forms.FormResponse, dry = false) {
     const formResponses = [...form.getResponses(), ...(response ? [response] : [])]
     let changed = 0
     let added = 0
@@ -124,34 +134,38 @@ function refreshResponsesData(form: GoogleAppsScript.Forms.Form, fs: Firestore, 
             const i = formResponses.findIndex(r => r.getId() == path.basename(s.path!))
             if (i == -1) {
                 if (record.edits >= 0) {//not yet marked as deleted
-                    if (record.edits == 0) {
-                        record.edits = -1
-                    }
-                    else {
-                        record.edits = Math.min(record.edits, -record.edits)
+                    if (!dry) {
+                        if (record.edits == 0) {
+                            record.edits = -1
+                        }
+                        else {
+                            record.edits = Math.min(record.edits, -record.edits)
+                        }
+                        fs.updateDocument(s.path!, record, true)
                     }
                     changed++
-                    fs.updateDocument(s.path!, record, true)
                 }
             }
             else {
                 const response = formResponses[i]!
-                if (updateResponseData(fs, settings, response, record)) {
+                if (updateResponseData(fs, settings, response, record, dry)) {
                     changed++
                 }
-                formResponses.splice(i)
+                formResponses.splice(i, 1)
             }
         }
         for (const r of formResponses) { // create records for not stored responses
-            if (!updateResponseData(fs, settings, r)) {
+            if (!updateResponseData(fs, settings, r, undefined, dry)) {
                 added++
             }
         }
     } finally {
-        const secrets = getSecrets(form.getId())
-        fs.updateDocument(secrets.remoteEventSettings!, {
-            responsesSync: new Date().getTime(),
-        } as SyncState, true)
+        if (!dry) {
+            const secrets = getSecrets(form.getId())
+            fs.updateDocument(secrets.remoteEventSettings!, {
+                responsesSync: new Date().getTime(),
+            } as SyncState, true)
+        }
     }
     return {
         changed,

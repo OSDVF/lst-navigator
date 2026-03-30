@@ -397,54 +397,6 @@ export const useCloudStore = defineStore('cloud', () => {
                 throw reason
             }
         },
-        /**
-         * Name will be the password
-         */
-        async singInParticipant(name: string, verify: string, differentEmail?: string, applications?: ReturnType<typeof useApplications>) {
-            if (!name || !verify) {
-                return false
-            }
-
-            const a = applications ?? useApplications()
-            const nameField = a.settings?.fields.name ?? config.public.applicationDefaultNameField
-            const verifyField = differentEmail ? (a.settings?.fields.phone ?? config.public.applicationDefaultPhoneField) : (a.settings?.fields.name ?? config.public.applicationDefaultNameField)
-            const nameTrimmed = name.trim()
-            const verifyTrimmed = verify.trim()
-            const response = a.applications.find(ap => {
-                const nameResponse = ap.questions.find(q => typeof nameField == 'number' ? q.id == nameField : q.title == nameField)?.responses
-                const verifyResponse = ap.questions.find(q => typeof verifyField == 'number' ? q.id == verifyField : q.title == verifyField)?.responses
-                return nameResponse?.toString().trim() == nameTrimmed && verifyResponse?.toString().trim() == verifyTrimmed
-            })
-            if (!response) {
-                return false
-            }
-
-            if (user.doc.value) {
-                //logged in
-                return updateUserInfo(response.id)
-            }
-            
-            await user.register(differentEmail ?? verify, name)
-            
-            await new Promise<void>(resolve => {
-                const stop = watch(user.info, newInfo => {
-                    if (newInfo) {
-                        stop()
-                        resolve()
-                    }
-                }, { immediate: true })
-            })
-            return updateUserInfo(response.id)
-
-            function updateUserInfo(responseId: string) {
-                return setDocT(user.doc.value!, {
-                    responseId: {
-                        ...user.info.value?.responseId,
-                        [selectedEvent.value]: responseId,
-                    },
-                } as UserInfo, { merge: true })
-            }
-        },
         async signOut() {
             uPending.value = true
             await signOut(auth!)

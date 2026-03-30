@@ -1,49 +1,70 @@
 <template>
-    <div class="legend">
-        <h3>Statistiky</h3>
-        <label class="info">Přihlášky přijány od: <span>{{ cloud.eventDescription?.applicationsStart ?? 'vždy' }}</span>
-            do
-            <span>{{ cloud.eventDescription?.applicationsEnd ?? 'vždy' }}</span></label>
-        <label class="info">Počítat i se zrušenými:
-            <input v-model="applications.includeCancelled" type="checkbox"></label>
-        <label class="info">Člověko×noci: <span>{{
-            applications.filteredMapped?.map(a => maybe(toJSDate(a.mapped?.departure?.responses as
-                                                            string)?.getTime(),
-                                                        departure => maybe(toJSDate(a.mapped?.arrival?.responses as string)?.getTime(), arrival => Math.floor(
-                                                            (departure - arrival) / (1000 * 3600 * 24)), () => 0), () => 0))
-                .reduceRight((a, b) => a + b, 0)}}
-        </span>
-        </label>
-
-        <label class="info">{{ "\u{1F9D1}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}" }} <span>
-            {{ applications.filtered.length }}</span></label>
-
-        <label class="info">Zrušené: <span>
-            {{applications.applications.filter(a => a.state == ApplicationState.CANCELLED).length}}
-        </span></label>
-
-        <label class="info">Odeslané emaily: <span>{{ applications.filtered.length - noEmailSent.length }}</span>
-            <button
-                v-if="noEmailSent.length" title="Odeslat potvrzovací emaily zbývajícím"
-                @click="sendWhereNotSent">💌</button>
-        </label>
-
-        <label v-for="day in statistics" :key="day.date.getTime()" class="info">
-            {{ day.date.getDate() }}.{{ day.date.getMonth() + 1 }}. {{ day.people }} {{ "\u{1F9D1}\u{200D}\u{1F4BC}" }}
-            &nbsp;
-            <span v-for="(stat, key, i) in day.statistics" :key="key">
-                {{ key }}: {{ stat }}
-                <small>
-                    {{ }}
-                </small>
-                {{ i == Object.keys(day.statistics).length - 1 ? ',' : '' }}
+    <div>
+        <article class="pb-0">
+            <h3 class="mb-0">Statistiky</h3>
+        </article>
+        <article class="legend">
+            <label class="info">Přihlášky přijány od: <span>{{ cloud.eventDescription?.applicationsStart ?? 'vždy'
+            }}</span>
+                do
+                <span>{{ cloud.eventDescription?.applicationsEnd ?? 'vždy' }}</span></label>
+            <label class="info">
+                <input v-model="applications.includeCancelled" type="checkbox">
+                Počítat i se zrušenými
+            </label>
+            <label class="info">Člověko×noci: <span>{{
+                applications.filteredMapped?.map(
+                    a => maybe(toJSDate(a.mapped?.departure?.responses as string)?.getTime(),
+                               departure => maybe(toJSDate(a.mapped?.arrival?.responses as string)?.getTime(),
+                                                  arrival => Math.floor((departure - arrival) / (1000 * 3600 * 24))) ?? 0) ?? 0)
+                    .reduceRight((a, b) => a + b, 0)}}
             </span>
-        </label>
+            </label>
+            <label class="info">{{ "\u{1F9D1}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}" }} <span>
+                {{ applications.filtered.length }}</span></label>
+            <label class="info">Zrušené: <span>
+                {{applications.applications.filter(a => a.state == ApplicationState.CANCELLED).length}}
+            </span></label>
+            <label class="info">Odeslané emaily: <span>{{ applications.filtered.length - noEmailSent.length }}</span>
+                &nbsp;
+                <button
+                    v-if="noEmailSent.length" title="Odeslat potvrzovací emaily zbývajícím"
+                    @click="sendWhereNotSent">💌</button>
+            </label>
+        </article>
+
+        <table class="borders collapse cell-p-1 col-stripes">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>{{ "\u{1F9D1}\u{200D}\u{1F4BC}" }}</th>
+                    <th v-for="(stat, key) in statisticsKeys" :key="`h${key}`" :colspan="stat.length">
+                        {{ key }}
+                    </th>
+                </tr>
+                <tr>
+                    <th />
+                    <th />
+                    <template v-for="(stat, key) in statisticsKeys" :key="`h${key}`">
+                        <th v-for="key2 in stat" :key="`h${key}${key2}`">{{ key2 == 'any' ? 'Celkem' : key2 }}</th>
+                    </template>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="day in statistics" :key="day.date.getTime()" class="info">
+                    <td>{{ day.date.getDate() }}.{{ day.date.getMonth() + 1 }}.</td>
+                    <td>{{ day.people }}</td>
+                    <template v-for="(stat, key) in day.statistics" :key="`${day.date.getTime()}${key}`">
+                        <td v-for="val in stat" :key="`${day.date.getTime()}${key}${val}`">{{ val || '' }}</td>
+                    </template>
+                </tr>
+            </tbody>
+        </table>
         <p v-if="error" class="error"><code>{{ error }}</code></p>
     </div>
 </template>
 <script lang="ts" setup>
-import { ApplicationState } from '~/types/cloud'
+import { ApplicationState } from '~/form-connector/src/responses'
 
 definePageMeta({
     title: 'Statistiky',
@@ -55,7 +76,16 @@ const error = ref()
 const cloud = useCloudStore()
 const applications = useApplications()
 const config = useRuntimeConfig()
-const formData = await useApplicationFormData(extractFormIdFromURL(cloud.eventDescription!.formDocument!)!, error)
+const foodTypes = computed(() => {
+    const types = new Set<string>(['any'])
+    for (const a of applications.filteredMapped) {
+        const r = a.mapped?.food?.responses
+        if (r) {
+            types.add(r as string)
+        }
+    }
+    return [...types.values()]
+})
 
 type Statistics = {
     date: Date,
@@ -63,12 +93,10 @@ type Statistics = {
      * How many people this day
      */
     people: number,
-    meals: {
-        [foodType: string]: number,
-        all: number,
-    }[]
     statistics: {
+        /** e. g. food type */
         [name: string]: {
+            any: number,
             /** count of responses with that value */
             [value: string]: number
         }
@@ -81,52 +109,61 @@ function sendWhereNotSent() {
 
 }
 
+const statisticsKeys = computed(() => {
+    const keys: Record<keyof Statistics['statistics'], string[]> = {}
+    if (!applications.settings) {
+        return keys
+    }
+    const mealNames = applications.settings.values.mealNames
+    for (const n of mealNames) {
+        keys[n] = foodTypes.value
+    }
+
+    return keys
+})
+
 const statistics = computed(() => {
     if (!applications.filteredMapped || !cloud.eventDescription || !applications.settings) { return [] }
 
     const days: Record<number, Statistics> = {}
-    const foodField = applications.settings?.fields.food ?? config.public.applicationDefaultFoodField
-    const foodTypes = formData.value.items?.find(i => typeof foodField == 'number' ? parseInt(i.itemId!, 16) == foodField : i.title == foodField)?.questionItem?.question?.choiceQuestion?.options
     const mealNames = applications.settings.values.mealNames
+    const eventFirstMeal = parseInt(config.public.applicationDefaultEventFirstMealIndex) || 0
+    const eventLastMeal = parseInt(config.public.applicationDefaultEventLastMealIndex) || (mealNames.length - 1)
 
     for (const a of applications.filteredMapped) {
-        const departure = toJSDate(a.mapped?.departure?.responses as string ?? cloud.eventDescription.end)
         const arrival = toJSDate(a.mapped?.arrival?.responses as string ?? cloud.eventDescription.start)
+        const departure = toJSDate(a.mapped?.departure?.responses as string ?? cloud.eventDescription.end)
         const [firstMeal, lastMeal] = maybe(mealNames, n => [
-            maybeIndex(n.findIndex(n => n == a.mapped?.firstMeal?.responses)) ?? 0,
-            maybeIndex(n.findIndex(n => n == a.mapped?.lastMeal?.responses)) ?? mealNames.length - 1,
+            maybeIndex(n.findIndex(n => n == a.mapped?.firstMeal?.responses)) ?? eventFirstMeal,
+            maybeIndex(n.findIndex(n => n == a.mapped?.lastMeal?.responses)) ?? eventLastMeal,
         ]) ?? [0, mealNames.length - 1]
+        const foodType = a.mapped?.food?.responses.toString() ?? foodTypes.value[0] ?? 'Jiné'
 
-        for (let day: Date = arrival; day <= departure; day.setDate(day.getDate() + 1)) {
-            const current = days[day.getTime()]
-            if (typeof current === 'undefined') {
+        for (let day: Date = new Date(arrival); day <= departure; day.setDate(day.getDate() + 1)) {
+            const dayKey = day.getTime()
+            if (typeof days[dayKey] === 'undefined') {
                 const newStat: Statistics = {
-                    date: day,
+                    date: new Date(dayKey),
                     people: 1,
-                    meals: Array(mealNames.length ?? 0).fill(
-                        Object.fromEntries(foodTypes?.map(o => [o.value ?? '', 0]) ?? []),
-                    ),
-                    statistics: {},
+                    statistics: Object.fromEntries(mealNames.map(
+                        n => [n, Object.fromEntries([['any', 0]].concat(foodTypes.value.map(o => [o ?? 'Jiné', 0])))],
+                    )),
                 }
-                addStatistics(firstMeal, lastMeal, newStat)
-                days[day.getTime()] = newStat
+                days[dayKey] = newStat
+                addStatistics(+day === +arrival ? firstMeal : 0, +day === +departure ? lastMeal : (mealNames.length - 1), foodType, dayKey)
             } else {
-                days[day.getTime()].people++
-                addStatistics(firstMeal, lastMeal, days[day.getTime()])
+                days[dayKey].people++
+                addStatistics(+day === +arrival ? firstMeal : 0, +day === +departure ? lastMeal : (mealNames.length - 1), foodType, dayKey)
             }
         }
     }
     //return as array sorted by date
     return Object.entries(days).sort((a, b) => parseInt(a[0]) - parseInt(b[0])).map(a => a[1])
 
-    function addStatistics(firstMeal: number, lastMeal: number, stat: Statistics) {
+    function addStatistics(firstMeal: number, lastMeal: number, type: string, key: number) {
         for (let i = firstMeal; i <= lastMeal; i++) {
-            stat.meals[i].all++
-            for (const t of foodTypes ?? []) {
-                if (t.value) {
-                    stat.meals[i][t.value]++
-                }
-            }
+            days[key].statistics[mealNames[i]][type]++
+            days[key].statistics[mealNames[i]].any++
         }
     }
 })
@@ -145,9 +182,21 @@ $halfGray: rgba(128, 128, 128, 0.432);
     margin-bottom: .5rem;
 }
 
-.info {
-    border-left: 2px solid rgba(128, 128, 128, 0.451);
+.info:not(:first-child) {
+    border-left: 2px solid #80808073;
     padding-left: .5rem;
     margin-right: .5rem;
 }
-</style>
+
+table.borders {
+
+    td,
+    th {
+        border: 1px solid #79797982
+    }
+}
+
+table.collapse {
+    border-collapse: collapse;
+}
+</style>´

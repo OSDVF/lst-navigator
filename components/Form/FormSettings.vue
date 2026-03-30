@@ -498,6 +498,8 @@ const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 're
     extras: [],
     values: {
         mealNames: config.public.applicationDefaultMealNames?.split(',').map(n => n.trim()) ?? [''],
+        eventFirstMeal: parseInt(config.public.applicationDefaultEventFirstMealIndex) || 0,
+        eventLastMeal: parseInt(config.public.applicationDefaultEventLastMealIndex) || 0,
     },
     fields: {
         arrival: config.public.applicationDefaultArrivalField || '',

@@ -81,7 +81,7 @@ const applications = useApplications()
 const cloud = useCloudStore()
 
 async function logIn() {
-    const result = await cloud.user.singInParticipant(name.value, verify.value, verifyBy.value == 'email' ? undefined : differentEmail.value, applications)
+    const result = await applications.singInParticipant(name.value, verify.value, verifyBy.value == 'email' ? undefined : differentEmail.value, applications)
     if(!result) {
         alert('Nepodařilo se najít přihlášku s těmito údaji')
     }

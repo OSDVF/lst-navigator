@@ -1,20 +1,32 @@
 import { useFirestore } from './firestore'
-import { refreshResponses } from './responses'
-import { getSecrets, type ApplicationFormSecrets } from './settings'
+import { refreshResponses, type ResponseRecord } from './responses'
+import { getEventSettings, getSecrets, type ApplicationFormSecrets, type SyncState } from './settings'
 
-export type Action = 'setSecrets' | 'setInternal' | 'getSettings' | 'getInternal' | 'refreshResponses'
+export type Action = keyof Actions
 export type Actions = {
-    setSecrets: {
-        [formId: string]: ApplicationFormSecrets
-    },
     getSettings: {
         formId: string,
     },
     getInternal: {
         formId: string,
     },
+    sendPendingEmails: {
+        formId: string,
+        /**
+         * Response IDs to filter
+         */
+        responseIds?:string[]
+    },
+    sendRespondentEmail: {
+        formId: string,
+        responseId: string,
+        overrideAddress: string,
+    },
     setInternal: {
         [formId: string]: InternalSettings
+    },
+    setSecrets: {
+        [formId: string]: ApplicationFormSecrets
     },
     refreshResponses: {
         formId: string,
@@ -23,8 +35,6 @@ export type Actions = {
 }
 
 export type Responses = {
-    setSecrets: void,
-    setInternal: void,
     /** AppSecrets.remoteEventSettings value */
     getSettings: string,
     getInternal: {
@@ -34,6 +44,11 @@ export type Responses = {
         new: number,
         changed: number,
     },
+    sendRespondentEmail: void,
+    /** Returns email adresses */
+    sendPendingEmails: string[],
+    setSecrets: void,
+    setInternal: void,
 }
 
 export type ApiResponse<T> = {
@@ -148,6 +163,10 @@ function processRequest(action: Action, body: any) {
             return _setInternal(body)
         case 'refreshResponses':
             return _refreshResponses(body)
+        case 'sendPendingEmails':
+            return _sendPendingEmails(body)
+        case 'sendRespondentEmail':
+            return _sendRespondentEmail(body)
         default:
             return createResonse({
                 ok: false,
@@ -259,6 +278,34 @@ function _refreshResponses(body: Record<string, string | boolean>) {
             },
         })
     }
+}
+
+function _sendPendingEmails(body: Actions['sendPendingEmails']) {
+    if (typeof body.formId != 'string') {
+        console.warn("Unexpected body: ", body)
+        return createResonse({
+            ok: false,
+            error: {
+                code: 'Bad Request',
+                http: 400,
+                message: 'Action body must be formatted as {formId: string}',
+            },
+        })
+    }
+    const form = FormApp.openById(body.formId)
+    const fs = useFirestore(body.formId)
+    const settings = getEventSettings(form, fs)
+    if(!settings.responsesCollection) {
+        throw Error('Responses collection not set for ' + body.formId)
+    }
+    const documents = fs.getDocuments(settings.responsesCollection, Array.isArray(body.responseIds) ? body.responseIds : undefined)
+    for(const doc of documents) {
+        const record = doc.obj as ResponseRecord
+    }
+}
+
+function _sendRespondentEmail(body: Actions['sendRespondentEmail']) {
+
 }
 
 function _setInternal(body: Record<string, InternalSettings>) {

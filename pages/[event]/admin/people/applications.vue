@@ -1,7 +1,7 @@
 <template>
     <div>
         <ProgressBar v-if="applications.loadingApplications" />
-        <DataTable
+        <LazyDataTable
             v-else-if="showTable" ref="table" class="display compact fancy" :options="{
                 deferRender: true,
                 responsive, colReorder: true, buttons: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
@@ -14,6 +14,9 @@
                         'showAll'
                     ]
                 ],
+                createdRow(row: HTMLTableRowElement, d: typeof data[number]) {
+                    row.classList.add(ApplicationStateUI[d.state].class)
+                },
                 layout: {
                     topStart: {
                         buttons: [
@@ -21,29 +24,28 @@
                                 extend: 'savedStates',
                                 text: 'Zobrazení',
                                 buttons: [
+                                    ...visibilityButtons,
+                                    { extend: 'spacer', style: 'bar' },
                                     { extend: 'createState', text: 'Uložit zobrazení' },
                                     { extend: 'removeAllStates', text: 'Smazat uložená zobrazení' },
                                     { extend: 'spacer', style: 'bar' }
                                 ]
                             }, {
                                 extend: 'collection',
-                                text: 'Akce',
+                                text: 'Účastník',
                                 className: 'selected-only disabled',
                                 buttons: [
                                     {
                                         text: useIconEl('edit') + ' Upravit',
                                         action: openEditLink
                                     }, {
-                                        text: useIconEl('cancel') + ' Zrušit',
-                                        action() {
-                                            const id = selection?.[0].id
-                                            if (!id) {
-                                                return
-                                            }
-                                            setDocT(doc(knownCollection(firestore, 'applications'), cloud.selectedEvent, 'responses', id), {
-                                                state: ApplicationState.CANCELLED,
-                                            } as Application, { merge: true })
-                                        }
+                                        text: useIconEl('account-question') + ' Změnit stav',
+                                        extend: 'collection',
+                                        buttons: Object.entries(ApplicationStateUI).map(([key, val]) => ({
+                                            text: useIconEl(val.icon) + ' ' + val.name,
+                                            action: () => changeState(parseInt(key) as ApplicationState)
+                                        })),
+                                        autoClose: true,
                                     }
                                 ],
                             }, {
@@ -52,15 +54,6 @@
                                 autoClose: true,
                                 buttons: [
                                     {
-                                        text: 'Zobrazit pouze základní sloupce',
-                                        action(_: any, dt: Api<any>) {
-                                            dt.columns('.print').visible(true)
-                                            dt.columns(':not(.print, .always-visible)').visible(false)
-                                        }
-                                    }, {
-                                        text: 'Zobrazit všechny sloupce',
-                                        action: (_: any, dt: Api<any>) => dt.columns().visible(true),
-                                    }, {
                                         extend: 'print',
                                         autoPrint: false,
                                         text: '<span class=\'noinvert\'>🖨️</span> Tisk',
@@ -68,7 +61,10 @@
                                         exportOptions: {
                                             columns: ':visible:not(.always-visible)',
                                         },
-                                    }
+                                    }, {
+                                        extend: 'spacer', style: 'bar'
+                                    },
+                                    ...visibilityButtons,
                                 ]
                             }, {
                                 extend: 'collection',
@@ -113,6 +109,7 @@
                 scrollY: scrollY as any,
             }" :data="data" :columns="columns" @select="selectionChanged" @deselect="selectionChanged" />
         <Teleport v-if="!!table?.dt" to=".dt-buttons">
+            <label><input v-model="applications.includeCancelled" type="checkbox"> Počítat i se zrušenými</label>
             <label class="nowrap ml-1"><input v-model="responsive" type="checkbox"> Rozbalovací řádky</label>
             <label class="nowrap ml-1"><input v-model="expandMultiple" type="checkbox"> Zaškrtávací políčka
                 zvlášť</label>
@@ -134,12 +131,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { Api, ConfigColumns } from 'datatables.net-dt'
+import type { Api, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
-import { ApplicationState, SpecialApplicationFields, type Application } from '~/types/cloud'
-import mapValues from 'lodash.mapvalues'
+import { type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
+import { SpecialApplicationFields } from '~/types/cloud'
 import { deleteField, doc, updateDoc } from 'firebase/firestore'
 import { setDoc as setDocT } from '~/utils/trace'
+import mapValues from 'lodash.mapvalues'
+import isEqual from 'lodash.isequal'
 
 definePageMeta({
     title: 'Přijaté přihlášky',
@@ -214,6 +213,7 @@ const data = computed(() => applications.filteredMapped.toSorted((a, b) => a.rec
         ...mapValues(applications.settings?.fields, () => null), //fallback blank values
         ...Object.fromEntries(mappedEntries),
         ...a.record,
+        id: a.record.id,// is non-enumerable so must be listed explicitly
     }
 }))
 
@@ -274,6 +274,16 @@ function openEditLink() {
     }
 }
 
+function changeState(state: ApplicationState) {
+    const id = selection.value?.[0].id
+    if (!id) {
+        return
+    }
+    setDocT(doc(knownCollection(firestore, 'applications'), cloud.selectedEvent, 'responses', id), {
+        state,
+    } as ResponseRecord, { merge: true })
+}
+
 const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: any) => data))
 const date = computed(() => app.$DataTable.value?.render.date() ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
 const complexColumns = computed(() => [
@@ -299,7 +309,10 @@ const complexColumns = computed(() => [
     {
         data: 'name',
         title: 'Jméno a příjmení',
-        render: ellipsis.value,
+        className: 'print',
+    }, {
+        data: 'town',
+        title: 'Město',
         className: 'print',
     }, {
         data: 'arrival',
@@ -312,6 +325,12 @@ const complexColumns = computed(() => [
         title: 'Odjezd',
         render: date.value,
         className: 'print',
+    },
+    {
+        data: 'phone',
+        title: 'Telefon',
+        render: (number: string) => `${number} <a class="only-hover-visible" href="tel:${number}">${useIconEl('phone')}</a>`,
+        className: 'hover-visible-trigger',
     },
 ])
 
@@ -381,6 +400,20 @@ const searchList = [
         'showAll',
     ],
 ]
+const visibilityButtons: ButtonConfig[] = [
+    {
+        text: useIconEl('collapse-all') + ' Zobrazit pouze základní sloupce',
+        titleAttr: 'Zobrazí pouze sloupce, které jsou ve výchozím nastavení potřeba do ubytovacího listu',
+        action(_: any, dt: Api<any>) {
+            dt.columns('.print').visible(true)
+            dt.columns(':not(.print, .always-visible)').visible(false)
+        },
+    }, {
+        text: useIconEl('table-of-contents') + ' Zobrazit všechny sloupce',
+        action: (_: any, dt: Api<any>) => dt.columns().visible(true),
+    },
+]
+
 const columns = computed(() => {
     const fieldSettings = Object.keys(applications.settings?.fields ?? {})?.filter(k => !complexColumns.value.find(c => c.data == k))
     const fieldColumns: ConfigColumns[] = []
@@ -429,12 +462,7 @@ const columns = computed(() => {
             visible: false,
         },
         {
-            data: 'state', title: 'Stav', render: (data: ApplicationState) => ({
-                [ApplicationState.NEW]: 'Nová',
-                [ApplicationState.CANCELLED]: 'Zrušená',
-                [ApplicationState.CONFIRMED]: 'Přijatá',
-                [ApplicationState.REJECTED]: 'Odmítnutá',
-            }[data]),
+            data: 'state', title: 'Stav', render: (data: ApplicationState) => ApplicationStateUI[data].name,
             visible: false,
             columnControl: searchList,
         },
@@ -447,6 +475,6 @@ const columns = computed(() => {
     ]).map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
 
-watch([responsive, columns], () => reload())
+watch([responsive, columns], (newVal, oldVal) => newVal.every((n, i) => isEqual(n, oldVal[i])) ? null : reload())
 
 </script>

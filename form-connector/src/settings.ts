@@ -138,9 +138,9 @@ const dummyProperties = new Proxy<Record<string | symbol, any>>({}, {
     },
 })
 
-export function getSecrets(id: string): Partial<ApplicationFormSecrets> {
+export function getSecrets(formId: string): Partial<ApplicationFormSecrets> {
     return {
-        ...JSON.parse(PropertiesService.getScriptProperties().getProperty(id) ?? '{}'),
+        ...JSON.parse(PropertiesService.getScriptProperties().getProperty(formId) ?? '{}'),
         ...(PropertiesService.getDocumentProperties()?.getProperties() ?? {}),// the document properties (set for "active doc") override the script properties
     }
 }

@@ -85,6 +85,14 @@ $sides: (
     padding: #{$value}rem !important;
   }
 
+  table.cell-p-#{$i} {
+
+    td,
+    th {
+      padding: #{calc($value / 2)}rem
+    }
+  }
+
   @each $side in $sides {
     .m#{string.slice($side, 0, 1)}-#{$i} {
       margin-#{$side}: #{$value}rem !important;
@@ -154,6 +162,24 @@ $sides: (
 
 .scroll-y {
   overflow-y: auto;
+}
+
+$stripes: #67676723;
+
+.stripes {
+  tr:nth-child(even) {
+    background-color: $stripes
+  }
+}
+
+.col-stripes {
+
+  td,
+  th {
+    &:not([colspan]):nth-child(even) {
+      background-color: $stripes
+    }
+  }
 }
 
 .min-h-2_5 {
@@ -239,6 +265,27 @@ $sides: (
 
 .visible-if-only:not(:only-child) {
   display: none;
+}
+
+.only-hover-visible {
+  opacity: 0;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.hover-visible-trigger {
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    .only-hover-visible {
+      opacity: 1;
+    }
+  }
 }
 
 .sticky {

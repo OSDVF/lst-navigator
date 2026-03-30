@@ -2,6 +2,7 @@
 import fs from 'fs'
 import prismjs from 'vite-plugin-prismjs'
 import firebaseConfig from './firebase.json'
+import { maybeInt } from './utils/utils'
 
 import {
     installStepCount,
@@ -228,7 +229,7 @@ const config = defineNuxtConfig({
             contentSecurityPolicy: {
                 'img-src': false,//TODO include origins used by events
                 'script-src': false,
-                'frame-ancestors' : [
+                'frame-ancestors': [
                     '\'self\'', 'https://www.google.com',
                 ],
             },
@@ -359,8 +360,11 @@ const config = defineNuxtConfig({
             applicationDefaultCategoryField: process.env.APPLICATION_DEFAULT_CATEGORY_FIELD,
             applicationDefaultPhoneField: process.env.APPLICATION_DEFAULT_PHONE_FIELD,
             applicationDefaultFirstMealField: process.env.APPLICATION_DEFAULT_FIRST_MEAL_FIELD,
+            applicationDefaultEventFirstMealIndex: process.env.APPLICATION_DEFAULT_EVENT_FIRST_MEAL_INDEX || '0',
             applicationDefaultLastMealField: process.env.APPLICATION_DEFAULT_LAST_MEAL_FIELD,
+            applicationDefaultEventLastMealIndex: process.env.APPLICATION_DEFAULT_EVENT_LAST_MEAL_INDEX || (process.env.APPLICATION_DEFAULT_MEAL_NAMES?.split(',')?.length ?? 0).toString(),
             applicationDefaultFoodField: process.env.APPLICATION_DEFAULT_FOOD_FIELD,
+            applicationDefaultTownField: process.env.APPLICATION_DEFAULT_TOWN_FIELD,
             applicationDefaultMealNames: process.env.APPLICATION_DEFAULT_MEAL_NAMES,
             applicationFormApi: process.env.APPLICATION_FORM_API,
             title: process.env.VITE_APP_SHORT_NAME,

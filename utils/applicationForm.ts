@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/nuxt'
+
 import type { ApplicationFormSecrets } from '~/form-connector/src/settings'
 import type { Action, Actions, ApiResponse, InternalSettings, Responses } from '~/form-connector/src/api'
 
@@ -82,53 +84,60 @@ export async function useApplicationFormData(id: string, error?: MaybeRef) {
     })
 
     const wantedFields = 'settings/*,publishSettings/*,items/*,linkedSheetId,revisionId'
-    onMounted(hydrateFormData)
 
-    const gapi = useGapi()
-    const client = await gapi.client()
-    async function hydrateFormData() {
-        using _ = ui.loading()
-        const response = await client.forms.forms.get({
-            formId: id,
-            fields: wantedFields,
-        })
-        if ((response.status ?? 0) >= 400 && errorRef) {
-            errorRef.value = response.statusText
-        }
-        else {
-            _formData.value = response.result
-        }
-    }
-    const formData = computed({
-        get() {
-            return _formData.value
-        },
-        set(newValue: gapi.client.forms.Form) {
-            ui.startLoading()
-            client.forms.forms.batchUpdate({
+    try {
+        const gapi = useGapi()
+        const client = await gapi.client()
+
+        onMounted(hydrateFormData)
+        async function hydrateFormData() {
+            using _ = ui.loading()
+            const response = await client.forms.forms.get({
                 formId: id,
                 fields: wantedFields,
-            }, {
-                includeFormInResponse: true,
-                requests: [
-                    ...(newValue.settings != _formData.value.settings ? [{
-                        updateSettings: {
-                            settings: newValue.settings,
-                            updateMask: '*',
-                        },
-                    }] as gapi.client.forms.Request[] : []),
-                ],
-                writeControl: {
-                    targetRevisionId: _formData.value.revisionId,
-                },
-            }).then(result => {
-                if ((result.status ?? 0) >= 400 || !result.result.form) {
-                    errorRef.value = result.statusText || 'Failed to retrieve form result'
-                } else {
-                    _formData.value = result.result.form
-                }
-            }).finally(ui.startLoading)
-        },
-    })
-    return formData
+            })
+            if ((response.status ?? 0) >= 400 && errorRef) {
+                errorRef.value = response.statusText
+            }
+            else {
+                _formData.value = response.result
+            }
+        }
+        const formData = computed({
+            get() {
+                return _formData.value
+            },
+            set(newValue: gapi.client.forms.Form) {
+                ui.startLoading()
+                client.forms.forms.batchUpdate({
+                    formId: id,
+                    fields: wantedFields,
+                }, {
+                    includeFormInResponse: true,
+                    requests: [
+                        ...(newValue.settings != _formData.value.settings ? [{
+                            updateSettings: {
+                                settings: newValue.settings,
+                                updateMask: '*',
+                            },
+                        }] as gapi.client.forms.Request[] : []),
+                    ],
+                    writeControl: {
+                        targetRevisionId: _formData.value.revisionId,
+                    },
+                }).then(result => {
+                    if ((result.status ?? 0) >= 400 || !result.result.form) {
+                        errorRef.value = result.statusText || 'Failed to retrieve form result'
+                    } else {
+                        _formData.value = result.result.form
+                    }
+                }).finally(ui.startLoading)
+            },
+        })
+        return formData
+    } catch (e) {
+        console.error(e)
+        Sentry.captureException(e)
+        return _formData
+    }
 }

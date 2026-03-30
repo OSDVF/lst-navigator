@@ -36,7 +36,8 @@ main .average-rating {
     z-index: 2; // to also show above image fade overlay on /info
 }
 
-.mono, .mono span {
+.mono,
+.mono span {
     font-family: c.$code-font;
 }
 
@@ -44,12 +45,15 @@ main .average-rating {
     flex-basis: 100%;
     flex-grow: 1;
     background: #ffffff84;
+
     .transp & {
         backdrop-filter: c.$blurred-background;
         background: rgba(c.$link-background, 0.2);
     }
+
     text-align: center;
-    transition: transform .2s ease, margin-top .2s ease;
+    transition: transform .2s ease,
+    margin-top .2s ease;
     $errorBannerHeight: 2.5rem;
 
     transform: translateY($errorBannerHeight);
@@ -134,7 +138,10 @@ details {
     }
 
     &>summary {
-        h1,h2,h3 {
+
+        h1,
+        h2,
+        h3 {
             display: inline-block;
             margin-top: 0;
             margin-bottom: 0;
@@ -251,7 +258,7 @@ fieldset {
     &:hover,
     &:focus,
     &:focus-within {
-        & > * > .fieldset-edit {
+        &>*>.fieldset-edit {
             display: block;
         }
     }
@@ -292,10 +299,12 @@ textarea,
         position: absolute;
         opacity: 0.5;
     }
+
     &.disabled {
         opacity: .5
     }
 }
+
 @function transitions($a) {
     @return "#{$a}.slide-left-enter-active, #{$a}.slide-left-leave-active, #{$a}.slide-right-enter-active, #{$a}.slide-right-leave-active";
 }

@@ -128,6 +128,17 @@ onMounted(() => {
     }
 }
 
+.dataTable {
+    .icon {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+    td .icon {
+        width: 1rem;
+        height: 1rem;
+    }
+}
+
 .dt-button-collection,
 .dt-button {
     width: auto !important;

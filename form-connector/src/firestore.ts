@@ -3,8 +3,8 @@ import type Firestore from 'firestore_google-apps-script/Firestore'
 import { getSecrets, type ApplicationFormSecrets } from './settings'
 
 let fs : undefined | Firestore
-export function useFirestore(id: string, settings?: ApplicationFormSecrets) {
-    const appSettings = settings ?? getSecrets(id)
+export function useFirestore(formId: string, settings?: ApplicationFormSecrets) {
+    const appSettings = settings ?? getSecrets(formId)
 
     if(!appSettings.email) {
         throw new Error("Email not set in settings")

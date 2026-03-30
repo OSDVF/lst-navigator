@@ -3,11 +3,36 @@ import type { EmailTemplateVars } from './types'
 import { updateResponse } from './responses'
 
 export function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
-    const response = e.response
-    const form = e.source
-    const canEdit = form.canEditResponse()
-    const settings = getEventSettings(form)
+    const settings = getEventSettings(e.source)
+    const content = resolveEmailContent(settings, e.source, e.response)
 
+    if (settings.adminEmail) {
+        MailApp.sendEmail({
+            to: settings.adminEmail,
+            subject: content.edited ? `Úprava přihlášky ${content.respondentAddress}` : `Přihláška na ${settings.eventName} - ${content.respondentAddress}`,
+            htmlBody: content.htmlBody,
+            inlineImages: content.inlineImages,
+        })
+    }
+
+    sendRespondentEmail(settings, content)
+}
+
+export function sendRespondentEmail(settings: ReturnType<typeof getEventSettings>, content: ReturnType<typeof resolveEmailContent>) {
+    if (content.respondentAddress) {
+        MailApp.sendEmail({
+            to: content.respondentAddress,
+            subject: content.edited ? `${settings.eventName} - Úprava přihlášky` : `Přihláška na ${settings.eventName}`,
+            htmlBody: content.htmlBody,
+            inlineImages: content.inlineImages,
+        })
+        return true
+    }
+    return false
+}
+
+export function resolveEmailContent(settings: ReturnType<typeof getEventSettings>, form: GoogleAppsScript.Forms.Form, response: GoogleAppsScript.Forms.FormResponse, generateQRCodes = true, dry = false) {
+    const canEdit = form.canEditResponse()
     const itemResponses = response.getItemResponses()
     // Put together the email body by appending all the
     // questions & responses to the emailContent variable.
@@ -62,6 +87,23 @@ export function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
         qrCode: false,
         price: 0,
     }
+    if (settings.symbolTemplate) {
+        Object.assign(settings.symbolTemplate, templateVars)
+        templateVars.vs = parseInt(settings.symbolTemplate?.evaluate().getContent())
+    }
+    if (settings.donationSymbolTemplate) {
+        Object.assign(settings.donationSymbolTemplate, templateVars)
+        templateVars.donationSymbol = parseInt(settings.donationSymbolTemplate?.evaluate().getContent())
+    }
+    if (settings.messageTemplate) {
+        Object.assign(settings.messageTemplate, templateVars)
+        templateVars.message = settings.messageTemplate?.evaluate().getContent()
+    }
+    if (settings.donationMessageTemplate) {
+        Object.assign(settings.donationMessageTemplate, templateVars)
+        templateVars.donationMessage = settings.donationMessageTemplate?.evaluate().getContent()
+    }
+
     {
         // prevent eval from accessing global scope variables
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -82,46 +124,32 @@ export function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
             templateVars.donation = eval(`(function(){return ${settings.donationExpression}})()`)
         }
     }
-    if (settings.symbolTemplate) {
-        Object.assign(settings.symbolTemplate, templateVars)
-        templateVars.vs = parseInt(settings.symbolTemplate?.evaluate().getContent())
-    }
-    if (settings.messageTemplate) {
-        Object.assign(settings.messageTemplate, templateVars)
-        templateVars.message = settings.messageTemplate?.evaluate().getContent()
-    }
-    if (settings.donationMessageTemplate) {
-        Object.assign(settings.donationMessageTemplate, templateVars)
-        templateVars.donationMessage = settings.donationMessageTemplate?.evaluate().getContent()
-    }
-    if (settings.donationSymbolTemplate) {
-        Object.assign(settings.donationSymbolTemplate, templateVars)
-        templateVars.donationSymbol = parseInt(settings.donationSymbolTemplate?.evaluate().getContent())
-    }
 
     const inlineImages: Record<string, GoogleAppsScript.Base.Blob> = {}
-    function addQRCode(amount: number, message?: string, vs?: number) {
-        try {
-            const qrRequest = UrlFetchApp.fetch(`https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=400&accountNumber=${settings.accountNumber}&bankCode=${settings.bankCode}&amount=${amount}&currency=${settings.currency}&message=${encodeURIComponent(message ?? '')}&vs=${vs ?? ''}`)
-            const code = qrRequest.getResponseCode()
-            if (code == 200) {
-                const qrBlob = qrRequest.getBlob()
-                const imageId = `qrCode${Date.now().toString(36).substring(3)}`
-                qrBlob.setName(imageId)
-                inlineImages[imageId] = qrBlob
-                return imageId
-            } else {
-                console.warn('QR code generate response: ', code, qrRequest.getContentText(), qrRequest.getHeaders())
+    if (generateQRCodes) {
+        function addQRCode(amount: number, message?: string, vs?: number) {
+            try {
+                const qrRequest = UrlFetchApp.fetch(`https://api.paylibo.com/paylibo/generator/czech/image?compress=false&size=400&accountNumber=${settings.accountNumber}&bankCode=${settings.bankCode}&amount=${amount}&currency=${settings.currency}&message=${encodeURIComponent(message ?? '')}&vs=${vs ?? ''}`)
+                const code = qrRequest.getResponseCode()
+                if (code == 200) {
+                    const qrBlob = qrRequest.getBlob()
+                    const imageId = `qrCode${Date.now().toString(36).substring(3)}`
+                    qrBlob.setName(imageId)
+                    inlineImages[imageId] = qrBlob
+                    return imageId
+                } else {
+                    console.warn('QR code generate response: ', code, qrRequest.getContentText(), qrRequest.getHeaders())
+                }
+            } catch (e) {
+                console.error(e)
             }
-        } catch (e) {
-            console.error(e)
         }
-    }
-    if (templateVars.price) {
-        templateVars.qrCode = addQRCode(templateVars.price, templateVars.message, templateVars.vs) ?? false
-    }
-    if (templateVars.donation) {
-        templateVars.donationQrCode = addQRCode(templateVars.donation, templateVars.donationMessage, templateVars.donationSymbol) ?? false
+        if (templateVars.price) {
+            templateVars.qrCode = addQRCode(templateVars.price, templateVars.message, templateVars.vs) ?? false
+        }
+        if (templateVars.donation) {
+            templateVars.donationQrCode = addQRCode(templateVars.donation, templateVars.donationMessage, templateVars.donationSymbol) ?? false
+        }
     }
 
     let headContent = ''
@@ -138,7 +166,7 @@ export function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
 
     let edited = false
     try {
-        edited = updateResponse(form, response) ?? false
+        edited = updateResponse(form, response, dry) ?? false
         if (edited) {
             const head = settings.emailHeadEdited ?? settings.emailHeadNew
             if (head) {
@@ -155,24 +183,13 @@ export function onSubmitForm(e: GoogleAppsScript.Events.FormsOnFormSubmit) {
         headContent = settings.emailHeadNew.evaluate().getContent()
     }
 
-    const emailContent = headContent + table.getContent() + (settings.emailBody ? settings.emailBody.evaluate().getContent() : '')
+    const htmlBody = headContent + table.getContent() + (settings.emailBody ? settings.emailBody.evaluate().getContent() : '')
 
-    if (settings.adminEmail) {
-        MailApp.sendEmail({
-            to: settings.adminEmail,
-            subject: edited ? `Úprava přihlášky ${respondentAddress}` : `Přihláška na ${settings.eventName} - ${respondentAddress}`,
-            htmlBody: emailContent,
-            inlineImages,
-        })
-    }
-
-    if (respondentAddress) {
-        MailApp.sendEmail({
-            to: respondentAddress,
-            subject: edited ? `${settings.eventName} - Úprava přihlášky` : `Přihláška na ${settings.eventName}`,
-            htmlBody: emailContent,
-            inlineImages,
-        })
+    return {
+        respondentAddress,
+        htmlBody,
+        edited,
+        inlineImages,
     }
 }
 

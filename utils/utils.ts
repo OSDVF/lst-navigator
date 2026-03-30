@@ -233,12 +233,12 @@ export function maybe<T, U, V = undefined>(t: T | undefined, y: (_: T) => U, n?:
     if (t) { return y(t) } else { return n?.() }
 }
 
-export function maybeInt(str?: string, radix?: number) : typeof str | number {
-    if(!str) {
+export function maybeInt(str?: string, radix?: number): typeof str | number {
+    if (!str) {
         return str
     }
     const p = parseInt(str, radix)
-    if(isNaN(p)) {
+    if (isNaN(p)) {
         return str
     }
     return p
@@ -282,7 +282,7 @@ export function maybeIndex(number: -1 | number): number | undefined {
 
 export function assignDeepIfTruish<T extends object, U>(target: T, source: U): T & U {
     for (const key in source) {
-        if(!source[key]) {
+        if (!source[key]) {
             continue
         }
         const t = target[key as unknown as keyof T]
@@ -292,11 +292,11 @@ export function assignDeepIfTruish<T extends object, U>(target: T, source: U): T
         } else {
             target[key as unknown as keyof T] = source[key] as any
         }
-        
+
     }
     return target as T & U
 }
 
 export function useIconEl(name: string, title?: string) {
-    return `<span tabindex='0' title='${title}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${name}.svg);'></span>`
+    return `<span tabindex='0' title='${title ?? ''}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${name}.svg);'></span>`
 }
