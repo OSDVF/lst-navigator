@@ -2,7 +2,6 @@
 import fs from 'fs'
 import prismjs from 'vite-plugin-prismjs'
 import firebaseConfig from './firebase.json'
-import { maybeInt } from './utils/utils'
 
 import {
     installStepCount,

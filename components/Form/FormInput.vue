@@ -78,7 +78,9 @@ async function hydrateFormData() {
     if (!formId) {
         return
     }
-    const result = await gapi.client.forms.forms.get({
+    const gapi = useGapi()
+    const client = await gapi.client()
+    const result = await client.forms.forms.get({
         formId,
         fields: 'info/*',
     })

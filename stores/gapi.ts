@@ -36,8 +36,8 @@ export const useGapi = defineStore('gapi', () => {
             }
             // re-auth with correct scopes
             await cloud.user.signIn(undefined, undefined, undefined, undefined, true)
-            return true
         }
+        return true
     }
 
     function load(): Promise<typeof gapi.client> {
