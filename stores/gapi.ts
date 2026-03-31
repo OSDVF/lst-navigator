@@ -101,7 +101,12 @@ export const useGapi = defineStore('gapi', () => {
 })
 
 export function extractFormIdFromURL(documentUrl: string) {
-    const url = new URL(documentUrl)//https://docs.google.com/forms/d/1W.../edit
+    let url
+    try {
+        url = new URL(documentUrl)//https://docs.google.com/forms/d/1W.../edit
+    } catch {
+        return undefined
+    }
     const [_, _forms, paramName, ...params] = url.pathname.split('/')
     const idParamIndex = paramName == 'u' ? 2 : 0
     const documentId = params[idParamIndex]

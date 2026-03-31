@@ -3,30 +3,33 @@
         <label for="form" title="URL Google Formuláře nebo jakýkoliv odkaz">
             <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> Přihláška
         </label>
-        <NuxtLink
-            v-if="formData?.info?.title"
-            style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
-            class="inline-block dotted-underline" target="_blank" :href="model" title="Otevřít v nové záložce">{{ formData.info.title }}
-            <sup>
-                <Icon name="mdi:open-in-new" />
-            </sup>
-        </NuxtLink>
+        <template v-if="formData?.info?.title">
+            <NuxtLink
+                style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
+                class="inline-block dotted-underline" target="_blank" :href="model" title="Otevřít v nové záložce">{{
+                                                                                                                       formData.info.title }}
+                <sup>
+                    <Icon name="mdi:open-in-new" />
+                </sup>
+            </NuxtLink>
+            <span class="button" title="Vymazat" @click="model = ''">
+                <Icon name="mdi:close" />
+            </span>
+        </template>
         <input
             v-else id="form" v-model.lazy="model" :disabled="props.disabled" type="url" name="form"
             :placeholder="applicationFormShortUrlPrefix">
-        
+
         <button v-if="!disabled" type="button" @click="usePicker">
             <Icon name="mdi:folder-google-drive" /> Vybrat z Disku
         </button>
-        
+
         <Icon
             v-if="isFormDoc"
             title="Byla zadána adresa souboru na Google Disku. Uživatelům bude zobrazen odkaz na vyplnění přihlášky."
             name="mdi:google-drive" />
-        
-        <button
-            v-if="isFormDoc && !cloud.user.hasAdminScopes" type="button"
-            @click="useGapi().adminReauth()">
+
+        <button v-if="isFormDoc && !cloud.user.hasAdminScopes" type="button" @click="useGapi().adminReauth()">
             <Icon name="mdi:google" /> Udělit oprávnění
         </button>
         <sup v-else-if="!formData?.info?.title">
@@ -52,7 +55,7 @@ const isFormDoc = computed(() => model.value?.startsWith(applicationFormDocument
 async function usePicker() {
     const gapi = useGapi()
     const builder = await gapi.buildPicker()
-    if(!builder) {
+    if (!builder) {
         return
     }
     const view = new google.picker.DocsView(google.picker.ViewId.FORMS)
@@ -72,6 +75,7 @@ async function usePicker() {
 }
 async function hydrateFormData() {
     if (!model.value || !cloud.user.adminAuth?.accessToken) {
+        formData.value = undefined
         return
     }
     const formId = extractFormIdFromURL(model.value) ?? maybe(props.document, d => extractFormIdFromURL(d))

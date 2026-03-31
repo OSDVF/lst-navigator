@@ -1,7 +1,5 @@
 <template>
-    <label
-        v-if="show"
-        title="URL souboru s upravitelnou přihláškou na Google Disku">
+    <label v-if="show" title="URL souboru s upravitelnou přihláškou na Google Disku">
         <Icon name="mdi:google-drive" /> Soubor s formulářem&ensp;
         <input
             id="formDocument" v-model.lazy="model"
@@ -22,5 +20,7 @@
 <script setup lang="ts">
 const { formUrl, disabled } = defineProps<{ formUrl?: string, disabled?: boolean }>()
 const model = defineModel<string>()
-const show = computed(() => (formUrl && !formUrl.startsWith(applicationFormDocumentPrefix)) || model.value)
+const dirty = ref(false)
+watch(model, () => dirty.value = true)
+const show = computed(() => (formUrl && !formUrl.startsWith(applicationFormDocumentPrefix)) || model.value || dirty.value)
 </script>

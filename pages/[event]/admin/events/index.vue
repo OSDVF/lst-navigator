@@ -22,7 +22,7 @@
             </button>
         </template>
         <button
-            v-if="isSelection && getSelectedEvent()?.id != cloud.selectedEvent"
+            v-if="isSelection && getSelectedEvent(true)?.id != cloud.selectedEvent"
             @click="maybe(getSelectedEvent(), e => $router.push(`/${e.id}/admin/events`))">
             <Icon name="mdi:home-edit" /> Přepnout na událost
         </button>
@@ -381,9 +381,13 @@ function uploadImage() {
 
 async function normalizeForms() {
     try {
-        const formUrlIsDoc = typeof extractFormIdFromURL(editedEvent.value.form) != 'undefined'
+        if(!editedEvent.value.form) {
+            editedEvent.value.formDocument = ''
+            return
+        }
         const formDocUrlIsDoc = editedEvent.value.formDocument.startsWith(applicationFormDocumentPrefix)
-        if (!editedEvent.value.form && !editedEvent.value.formDocument && !formUrlIsDoc && !formDocUrlIsDoc) {
+        const formUrlIsDoc = typeof extractFormIdFromURL(editedEvent.value.form) != 'undefined'
+        if (!editedEvent.value.formDocument && !formUrlIsDoc && !formDocUrlIsDoc) {
             return
         }
         if (cloud.user.auth?.providerData[0].providerId != GoogleAuthProvider.PROVIDER_ID && !gapi.loading) {
