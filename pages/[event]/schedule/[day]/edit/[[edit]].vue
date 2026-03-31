@@ -1,10 +1,7 @@
 <template>
     <div class="pl-1 pr-1">
         <div class="more">
-            <ImportForm
-                :truncate-default="false" :truncate-option="false"
-                @import="importJson"
-                @error="e => error = e">
+            <ImportForm :truncate-default="false" :truncate-option="false" @import="importJson" @error="e => error = e">
                 Importovat program</ImportForm>
             <p v-if="error" class="error"><code>{{ error }}</code></p>
             <button title="Exportovat program" @click='exportItem'>
@@ -96,10 +93,10 @@ const selectedEditIndex = computed(() => {
     }
     return undefined
 })
-const program = computed(() => cloud.days[selectedDayIndex.value].program)
+const program = computed(() => cloud.days[selectedDayIndex.value]?.program)
 const editing = computed(() => typeof selectedEditIndex.value !== 'undefined')
 const title = computed(() => editing.value ? `Upravit program #${selectedDayIndex.value}#${selectedEditIndex.value}` : 'Nový program')
-const autoOrder = useLocalStorage('autoOrder', false, {initOnMounted: true})
+const autoOrder = useLocalStorage('autoOrder', false, { initOnMounted: true })
 const loading = ref(false)
 const error = ref()
 
@@ -124,6 +121,18 @@ function beforeunload() {
 const admin = useAdmin()
 const form = ref()
 onMounted(() => {
+    if (!cloud.user.loading && program.value) {
+        load()
+    } else {
+        const stop = watch([() => cloud.user.loading, program], ([l, v]) => {
+            if (!l && v) {
+                load()
+                stop()
+            }
+        })
+    }
+})
+function load() {
     if (!cloud.resolvedPermissions.editSchedule) {
         alert('Nedostatečná oprávnění')
         router.replace(`/${cloud.selectedEvent}/schedule/${selectedDayIndex.value}/${selectedEditIndex.value}`)
@@ -140,7 +149,7 @@ onMounted(() => {
         Object.assign(editedEvent.value, toRaw({ ...program.value[selectedEditIndex.value!] }))
     }
     window.addEventListener('beforeunload', beforeunload)
-})
+}
 
 onBeforeUnmount(() => {
     window.removeEventListener('beforeunload', beforeunload)
@@ -179,8 +188,8 @@ function exportItem() {
 }
 
 function importJson(json: Partial<ScheduleDay>) {
-    if(json.program) {
-        if(json.program[0]) {
+    if (json.program) {
+        if (json.program[0]) {
             Object.assign(editedEvent.value, json.program[0])
             return
         }

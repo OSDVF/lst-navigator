@@ -28,6 +28,8 @@
         .noinvert,
         .ck-editor__main, .dt-button-background, .dataTable {
             filter: invert(100%);
+        }
+        .dataTable {
             color: white;
         }
         .dt-input {

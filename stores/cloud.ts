@@ -292,7 +292,7 @@ export const useCloudStore = defineStore('cloud', () => {
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
     const ud = computed(() => userAuth.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
     const uPending = ref(false)
-    const uInfo = useDocumentT<UserInfo>(ud)
+    const uInfo = useDocumentT<UserInfo>(ud, { wait: true })
 
     function displayUserError(reason: any) {
         let reasonPretty = typeof reason === 'object' ? JSON.stringify(reason) : reason
@@ -333,6 +333,7 @@ export const useCloudStore = defineStore('cloud', () => {
             photoURL: debugUser.photoURL ?? undefined,
         }) : uInfo,
         error: ref(),
+        loading: uInfo.pending,
         pendingPopup: ref(false),
         pendingAction: computed(() => uPending.value),
         signature: computed(() => uInfo.value?.signature[selectedEvent.value] ?? settings.userNickname.value),
