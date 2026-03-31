@@ -91,6 +91,7 @@ export const useGapi = defineStore('gapi', () => {
     }
 
     return {
+        adminReauth,
         buildPicker,
         error,
         loaded,

@@ -7,7 +7,7 @@
             <Icon name='mdi:plus' /> Nová
         </button>
         <template
-            v-if="isSelection && (cloud.resolvedPermissions.superAdmin || boolToNum(cloud.user.info?.permissions?.[getSelectedEvent()?.id ?? '']) >= UserLevel.Admin) && action == Actions.Nothing">
+            v-if="isSelection && (cloud.resolvedPermissions.superAdmin || boolToNum(cloud.user.info?.permissions?.[getSelectedEvent(true)?.id ?? '']) >= UserLevel.Admin) && action == Actions.Nothing">
             <button @click='startEditingSelected'>
                 <Icon name='mdi:pencil' /> Upravit
             </button>

@@ -88,8 +88,13 @@ export async function useApplicationFormData(id: string, error?: MaybeRef) {
     try {
         const gapi = useGapi()
         const client = await gapi.client()
+        const instance = getCurrentInstance()
+        if(instance && !instance.isMounted) {
+            onMounted(hydrateFormData)
+        } else {
+            hydrateFormData()
+        }
 
-        onMounted(hydrateFormData)
         async function hydrateFormData() {
             using _ = ui.loading()
             const response = await client.forms.forms.get({

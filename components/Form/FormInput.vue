@@ -26,7 +26,7 @@
         
         <button
             v-if="isFormDoc && !cloud.user.hasAdminScopes" type="button"
-            @click="cloud.user.signIn(undefined, undefined, undefined, undefined, true)">
+            @click="useGapi().adminReauth()">
             <Icon name="mdi:google" /> Udělit oprávnění
         </button>
         <sup v-else-if="!formData?.info?.title">
