@@ -95,7 +95,7 @@
                         <Icon name="mdi:account-question" /> Zapomenuté heslo
                     </NuxtLink>
                 </form>
-                <template v-else>
+                <template v-else-if="!google">
                     &nbsp;
                     <NuxtLink
                         v-if="!p.email"
@@ -106,6 +106,7 @@
                     </NuxtLink>
                     &nbsp;
                 </template>
+                <template v-if="google">&ensp;</template>
 
                 <form
                     v-if="p.change"
@@ -142,6 +143,7 @@ const prettyError = ref()
 const previousCode = ref()
 const p = defineProps<{
     email?: boolean,
+    google?: boolean,
     register?: boolean,
     participant?: boolean,
     lost?: boolean,

@@ -41,7 +41,6 @@ definePageMeta({
     layout: 'admin',
     middleware: ['auth', (to, from) => {
         const parts = to.name?.toString().split('-')
-        console.log(parts, to, from)
         if (parts?.length == 3 && parts[2] == 'people') {
             if(to.fullPath == from.fullPath) {
                 return location.replace(path.join(to.path, 'applications'))

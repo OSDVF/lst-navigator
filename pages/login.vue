@@ -7,7 +7,8 @@
             class="large" :email="!user && typeof $route.query.email !== 'undefined'"
             :register="!user && typeof $route.query.register !== 'undefined'"
             :change="!!user && typeof $route.query.change !== 'undefined'"
-            :lost="!user && typeof $route.query.lost !== 'undefined'" />
+            :lost="!user && typeof $route.query.lost !== 'undefined'"
+            :google="typeof $route.query.google !== 'undefined'" />
     </article>
 </template>
 

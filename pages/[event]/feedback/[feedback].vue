@@ -187,7 +187,7 @@ const currentPart = computed(() => {
             function addScheduleItem(scheduleItem: ScheduleItem, index: number | string) {
                 entries.push({
                     ...scheduleItem,
-                    data: fromUpdatePayload(cloud.offlineFeedback?.[scheduleIndex]?.[index]?.[settings.userIdentifier.value], {}),
+                    data: fromUpdatePayload(cloud.offlineFeedback?.[scheduleIndex]?.[index]?.[cloud.user.signatureId], {}),
                     secondaryIndex: index,
                     selectOptions: getParallelEvents(scheduleItem),
                 })
@@ -231,7 +231,7 @@ const currentPart = computed(() => {
                     selectOptions: individualQuest.questions,
                     questions: individualQuest.questions,
                     data: fromUpdatePayload(
-                        cloud.offlineFeedback?.[config.title]?.[individualQuest.name]?.[settings.userIdentifier.value] ?? cloud.offlineFeedback?.[individualQuest.name]?.[0]?.[settings.userIdentifier.value], {},
+                        cloud.offlineFeedback?.[config.title]?.[individualQuest.name]?.[cloud.user.signatureId] ?? cloud.offlineFeedback?.[individualQuest.name]?.[0]?.[cloud.user.signatureId], {},
                     ),
                 }],
             })

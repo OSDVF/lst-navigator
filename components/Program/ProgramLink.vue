@@ -117,7 +117,7 @@ onUnmounted(() => {
 })
 
 const feedback = computed(() => {
-    const feedback = fromUpdatePayload(cloud.offlineFeedback?.[p.day]?.[p.index]?.[settings.userIdentifier.value], {})
+    const feedback = fromUpdatePayload(cloud.offlineFeedback?.[p.day]?.[p.index]?.[cloud.user.signatureId], {})
     if (!feedback) { return undefined }
     switch (p.entry.feedbackType as FeedbackType) {
     case 'basic':

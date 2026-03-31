@@ -1,10 +1,10 @@
 <template>
     <span>
         <Multiselect
-            v-if="p.items" :id="id ?? uid" v-bind="$attrs" ref="multiselect" v-model="realModel"
+            v-if="p.items?.length" :id="id ?? uid" v-bind="$attrs" ref="multiselect" v-model="realModel"
             select-label="Vybrat" deselect-label="Zrušit" selected-label="Vybráno" allow-empty
             :options="p.items.map(i => byId ? i.id : i.title)" :searchable="p.searchable ?? true"
-            :placeholder="model ?? placeholder" @select="dirty = true">
+            :placeholder="realModel ?? placeholder" @select="dirty = true">
             <template #singleLabel="props">
                 <slot name="singleLabel" :option="props.option" :text="getBy(props.option)?.title">
                     {{ getBy(props.option)?.title }}

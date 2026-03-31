@@ -59,14 +59,25 @@
                     </h3>
                 </summary>
                 <p>
-                    <label>
+                    <small v-if="!formData.revisionId" class="error"><Icon name="mdi:alert" /> Nelze upravovat, protože není přihlášen uživatel s Google účtem a právy na editaci formuláře. <br><br></small>
+                    <label class="inline-block">
+                        <Icon name="mdi:vote-outline" /> Publikovaný&nbsp;
+                        <input id="publish" v-model="formData.publishSettings!.publishState!.isPublished" type="checkbox" name="publish" :disabled="!formData.revisionId">
+                    </label>
+                    <br>
+                    <label class="inline-block">
+                        <Icon name="mdi:vote-outline" /> Přijímá odpovědi&nbsp;
+                        <input id="isAcceptingResponses" v-model="formData.publishSettings!.publishState!.isAcceptingResponses" type="checkbox" name="isAcceptingResponses" :disabled="!formData.revisionId">
+                    </label>
+                    <br>
+                    <label class="inline-block">
                         <Icon name="mdi:human-edit" /> Účastníci mohou upravovat přihlášky&nbsp;
                         <input id="edit" v-model="canEdit" type="checkbox" name="edit">
                     </label>
                     <br>
-                    <label>
+                    <label class="inline-block">
                         <Icon name="mdi:email" /> Fromulář sbírá emaily&nbsp;
-                        <select id="emails" v-model="formData.settings!.emailCollectionType" name="emails">
+                        <select id="emails" v-model="formData.settings!.emailCollectionType" name="emails" :disabled="!formData.revisionId">
                             <option v-for="(desc, key) in emailCollectionTypes" :key="key" :value="key">{{ desc }}
                             </option>
                         </select>
@@ -185,6 +196,27 @@
                         <Icon name="mdi:plus" />
                     </span>
                     <br>
+                </div>
+                <div v-if="settings.values.mealNames?.length">
+                    <h4>Rozvrh jídel</h4>
+                    <label title="První jídlo, které bude možné vybrat pokud někdo přijede už na první den akce">První jídlo na akci&nbsp;
+                        <FormItemSelect
+                            id="eventFirstMeal" v-model="settings.values.eventFirstMeal" :items="settings.values.mealNames.map((m, i) => ({
+                                id: i,
+                                title: m
+                            }))" :real="typeof applications.settings.value?.values.eventFirstMeal == 'number'"
+                            :placeholder="settings.values.mealNames[parseInt(config.public.applicationDefaultEventFirstMealIndex) || 0]"
+                            name="eventFirstMeal" by-id @update:model-value="dirty = true" />
+                    </label><br>
+                    <label title="Poslední jídlo, které bude možné vybrat pokud někdo odjede až poslední den akce">Poslední jídlo na akci&nbsp;
+                        <FormItemSelect
+                            id="eventLstMeal" v-model="settings.values.eventLastMeal" :items="settings.values.mealNames.map((m, i) => ({
+                                id: i,
+                                title: m
+                            }))" :real="typeof applications.settings.value?.values.eventLastMeal == 'number'"
+                            :placeholder="settings.values.mealNames[parseInt(config.public.applicationDefaultEventLastMealIndex) || 0]"
+                            name="eventLastMeal" by-id @update:model-value="dirty = true" />
+                    </label><br>
                 </div>
             </details>
 

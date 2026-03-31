@@ -14,7 +14,7 @@
 
                 <p>Naskenujte kód v zařízení, {{ here ? 'ze' : 'do' }} kterého si přejete načíst uživatelská data.
                     Data {{ here ? 'v tomto' : 'cílovém' }} zařízení jimi budou přepsána.</p>
-                <p class="muted">Toto zařízení: <code>{{ settings.userIdentifier.value }}</code></p>
+                <p class="muted">Toto zařízení: <code>{{ cloud.user.signatureId }}</code></p>
                 <p v-if="error">
                     <code>{{ error }}</code>
                 </p>
@@ -26,7 +26,7 @@
                 <br>
                 <br>
                 <button
-                    type="button" @click="setDocT(transfersDoc(settings.userIdentifier.value), {
+                    type="button" @click="setDocT(transfersDoc(cloud.user.signatureId), {
                         status: TransferStatus.Confirmed,
                     } as Transfer, { merge: true })">
                     <Icon name="mdi:upload" /> Přenést
@@ -83,7 +83,7 @@ const settings = useSettings()
 const transfers = useTransfers()
 
 const here = computed(() => router.currentRoute.value.params.transfer === 'here')
-const transfer = computed(() => transfers.value.find(t => t.id == settings.userIdentifier.value))
+const transfer = computed(() => transfers.value.find(t => t.id == cloud.user.signatureId))
 
 const adminOtherUIDRaw = ref('')
 const adminOtherUID = computed(() => adminOtherUIDRaw.value.trim())
@@ -108,20 +108,20 @@ const validUID = computedAsync<boolean>(async () => {
 }, false)
 
 async function start() {
-    await setDocT(transfersDoc(settings.userIdentifier.value), {
+    await setDocT(transfersDoc(cloud.user.signatureId), {
         status: TransferStatus.Request,
     } as Transfer)
 }
 
 async function end() {
-    await setDocT(transfersDoc(settings.userIdentifier.value), {
+    await setDocT(transfersDoc(cloud.user.signatureId), {
         status: TransferStatus.None,
     } as Transfer)
 }
 
 watch([canvas, router.currentRoute], async ([newCanvas, newTarget]) => {
     if (newCanvas) {
-        qrcode.toCanvas(newCanvas, new URL(`/${cloud.selectedEvent}/transfer/${newTarget.params.transfer}/${settings.userIdentifier.value}`, location.origin).toString(), { errorCorrectionLevel: 'H' }, (e) => {
+        qrcode.toCanvas(newCanvas, new URL(`/${cloud.selectedEvent}/transfer/${newTarget.params.transfer}/${cloud.user.signatureId}`, location.origin).toString(), { errorCorrectionLevel: 'H' }, (e) => {
             if (e) {
                 console.error(error)
                 error.value = e
@@ -134,7 +134,7 @@ watch([canvas, router.currentRoute], async ([newCanvas, newTarget]) => {
 watch(transfer, async (newTransfer) => {
     if (here.value) {
         // Transfer to this device
-        const doc = transfersDoc(settings.userIdentifier.value)
+        const doc = transfersDoc(cloud.user.signatureId)
         if (newTransfer?.remote && newTransfer.status == TransferStatus.Confirmed) {
             settings.setUserIdentifier(newTransfer.remote)
             // TODO wait for the hydration

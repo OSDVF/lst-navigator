@@ -1,8 +1,8 @@
 <template>
     <article>
-        <template v-if="cloud.user.info?.responseId[cloud.selectedEvent]">
+        <template v-if="cloud.user.info?.responseId?.[cloud.selectedEvent]">
             <div
-                v-for="field in applications.applications.find(a => a.id == cloud.user.info?.responseId[cloud.selectedEvent])?.questions"
+                v-for="field in applications.applications.find(a => a.id == cloud.user.info?.responseId![cloud.selectedEvent])?.questions"
                 :key="field.id" :for="field.id.toString()">
                 <fieldset v-if="Array.isArray(field.responses)" disabled>
                     <legend>{{ field.title }}</legend>

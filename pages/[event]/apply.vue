@@ -15,12 +15,6 @@
             Pokud je to chyba, kontaktujte organizátory <code>{{ $config.public.organizerEmail }}</code> nebo technickou
             podporu <code>{{ $config.public.supportEmail }}</code>.
         </span>
-        <p>
-            <NuxtLink to="/" replace>
-                <Icon name="mdi:apps" />
-                <Icon name="mdi:arrow-left" /> Zpět na seznam událostí
-            </NuxtLink>
-        </p>
     </article>
 </template>
 

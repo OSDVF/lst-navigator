@@ -19,8 +19,8 @@
         </NuxtLink><br>
         <NuxtLink
             :to="{
+                name: 'privacy',
                 params: {
-                    name: 'privacy',
                     event: $route.params.event
                 }
             }">
@@ -28,3 +28,14 @@
         </NuxtLink>
     </article>
 </template>
+
+<script lang="ts" setup>
+definePageMeta({
+    layout: 'front-page',
+})
+const route = useRoute()
+if(route.params.event) {
+    setPageLayout('default')
+}
+
+</script>

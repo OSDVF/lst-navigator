@@ -1,11 +1,18 @@
 <template>
     <div style="transition: opacity .2s, transform .2s;">
+
         <Head>
             <Title>{{ title }}</Title>
         </Head>
         <ErrorSolver>
             <main>
                 <slot />
+                <p v-if="!['front-page', 'event-preview'].includes($route.name?.toString() ?? '')" class="article">
+                    <NuxtLink to="/" replace>
+                        <Icon name="mdi:apps" />
+                        <Icon name="mdi:arrow-left" /> Zpět na seznam událostí
+                    </NuxtLink>
+                </p>
             </main>
         </ErrorSolver>
         <ProgressBar

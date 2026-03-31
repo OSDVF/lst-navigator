@@ -24,6 +24,7 @@ import type { EventDescription, EventSubcollection, FeedbackConfig, Feedback, Fe
 import type { WatchCallback } from 'vue'
 import type { RuntimeConfig } from 'nuxt/schema'
 import type { Router } from '#vue-router'
+import { FirebaseError } from 'firebase/app'
 
 /**
  * Compile time check that this collection really exists (is checked by the server)
@@ -177,7 +178,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 }
 
                 batch.set(doc(feedback.col.value!, partIndex), part, { merge: true })
-                batch.delete(doc(feedback.col.value!, settings.userIdentifier.value))
+                batch.delete(doc(feedback.col.value!, user.signatureId.value))
 
                 console.debug(`Remove user ${partIndex}/${uid}`)
             }
@@ -199,23 +200,23 @@ export const useCloudStore = defineStore('cloud', () => {
                     ...offlineFeedback.value[selectedEvent.value],
                     [sIndex]: {
                         ...offlineFeedback.value[selectedEvent.value]?.[sIndex],
-                        [eIndex]: { [settings.userIdentifier.value]: data },
+                        [eIndex]: { [user.signatureId.value]: data },
                     },
                 }
             }
-            userIdentifier ??= settings.userIdentifier.value
+            userIdentifier ??= user.signatureId.value
             feedbackDirtyTime.value = new Date().getTime()
 
             setDocT(doc(feedback.col.value!, sIndex.toString()), {
                 [eIndex]: {
-                    [userIdentifier]: data !== null ? data : deleteField(),
+                    [user.signatureId.value]: data !== null ? data : deleteField(),
                 },
             }, { merge: true })
                 .then(() => { feedback.fetching.value = feedback.fetchFailed.value = false }).catch((e) => { feedback.error.value = e })
 
             setDocT(doc(feedback.col.value!, userIdentifier), {
                 updated: feedbackDirtyTime.value,
-                nickname: settings.userNickname.value,
+                nickname: user.signatureId.value,
             }, { merge: true }).catch((e) => { feedback.error.value = e })
 
             setTimeout(() => {
@@ -224,7 +225,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }, 5000)
         },
         saveAgain(force = true) {
-            if (!force && !feedback.error.value && !feedback.fetchFailed.value && feedback.online.value?.[settings.userIdentifier.value]?.updated === feedbackDirtyTime.value) {
+            if (!force && !feedback.error.value && !feedback.fetchFailed.value && feedback.online.value?.[user.signatureId.value]?.updated === feedbackDirtyTime.value) {
                 return Promise.resolve()
             }
 
@@ -250,9 +251,9 @@ export const useCloudStore = defineStore('cloud', () => {
                 }))
             }
             feedbackDirtyTime.value = new Date().getTime()
-            promises.push(setDocT(doc(feedback.col.value!, settings.userIdentifier.value), {
+            promises.push(setDocT(doc(feedback.col.value!, user.signatureId.value), {
                 updated: feedbackDirtyTime.value,
-                nickname: settings.userNickname.value,
+                nickname: user.signature.value,
             }, { merge: true }))
 
 
@@ -265,46 +266,31 @@ export const useCloudStore = defineStore('cloud', () => {
         },
     }
 
-    watch(settings.userIdentifier, (newId) => {
-        if (newId) {
-            feedback.dirtyTime.value = 0// force refresh from remote
-            feedback.hydrate(feedback.online.value)
-            const nick = feedback.online.value[newId]
-            if (typeof nick !== 'undefined' && typeof nick.nickname == 'string') {
-                settings.userNickname.value = nick.nickname
-            }
-        } else {// clear feedback if user is not logged in
-            if (offlineFeedback.value[selectedEvent.value]) { offlineFeedback.value[selectedEvent.value] = {} }
-        }
-    })
-
     //
     // User auth
     //
     const userAuth = config.public.debugUser ? ref(debugUser) : (config.public.ssrAuthEnabled || import.meta.client) ? useCurrentUser() : ref()
-    if (userAuth.value) {
-        watch(userAuth, async (newUser: User) => {
-            if (newUser) {
-                if (!wasAuthenticated.value) {
-                    wasAuthenticated.value = true
-                    if (config.public.debugUser) {
-                        onSignIn(newUser)
-                    } else if (typeof newUser.metadata.lastSignInTime != 'undefined') {
-                        // is already registered
-                        watch(uInfo, () => onSignIn(newUser), { once: true })
-                    } else {
-                        // logs in for the first time
-                        onSignIn(newUser)
-                    }
+    watch(userAuth, async (newUser: User) => {
+        if (newUser) {
+            if (!wasAuthenticated.value) {
+                wasAuthenticated.value = true
+                if (config.public.debugUser) {
+                    onSignIn(newUser)
+                } else if (typeof newUser.metadata.lastSignInTime != 'undefined') {
+                    // is already registered
+                    watch(uInfo, () => onSignIn(newUser), { once: true })
+                } else {
+                    // logs in for the first time
+                    onSignIn(newUser)
                 }
-            } else {
-                wasAuthenticated.value = false
             }
-        })
-    }
+        } else {
+            wasAuthenticated.value = false
+        }
+    })
 
     const usersCollection = firestore ? knownCollection(firestore, 'users') : null
-    const ud = computed(() => userAuth?.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
+    const ud = computed(() => userAuth.value?.uid && usersCollection ? doc(usersCollection, userAuth.value.uid) : null)
     const uPending = ref(false)
     const uInfo = useDocumentT<UserInfo>(ud)
 
@@ -349,7 +335,9 @@ export const useCloudStore = defineStore('cloud', () => {
         error: ref(),
         pendingPopup: ref(false),
         pendingAction: computed(() => uPending.value),
-        adminAuth: useLocalStorage<{ accessToken: string, expirationTime: number, scopes: string[] }>('adminAuth', {
+        signature: computed(() => uInfo.value?.signature[selectedEvent.value] ?? settings.userNickname.value),
+        signatureId: computed(() => uInfo.value?.signatureId[selectedEvent.value] ?? settings.userIdentifier.value),
+        adminAuth: useLocalStorage<{ accessToken: string, expirationTime: number, scopes: string[] } | null>('adminAuth', {
             accessToken: '',
             expirationTime: 0,
             scopes: [],
@@ -361,8 +349,8 @@ export const useCloudStore = defineStore('cloud', () => {
             settings.setUserIdentifier(settings.generateUID())
         },
         hasAdminScopes: computed((() => {
-            const currentScopes = user.adminAuth.value.scopes
-            return user.isGoogleSignedIn.value && user.adminAuth.value.expirationTime > new Date().getTime() && scopes.every(s => currentScopes.includes(s))
+            const currentScopes = user.adminAuth.value?.scopes
+            return user.isGoogleSignedIn.value && (user.adminAuth.value?.expirationTime ?? 0) > new Date().getTime() && scopes.every(s => currentScopes?.includes(s))
         }) as (() => boolean)),
         hydrateFromCredential(result: UserCredential) {
             const credential = GoogleAuthProvider.credentialFromResult(result)
@@ -400,6 +388,7 @@ export const useCloudStore = defineStore('cloud', () => {
         async signOut() {
             uPending.value = true
             await signOut(auth!)
+            user.info.value = null
             user.adminAuth.value = undefined
             wasAuthenticated.value = false
             uPending.value = false
@@ -442,13 +431,16 @@ export const useCloudStore = defineStore('cloud', () => {
                 user.pendingPopup.value = false
                 uPending.value = false
                 return true
-            } catch (reason: any) {
+            } catch (reason: any | FirebaseError) {
                 displayUserError(reason)
                 let nextResult = false
                 if (!email || !password) {
                     if (secondAttempt === true) {
                         alert('Přihlášení se nepodařilo provést')
-                    } else if (useRedirect !== true && confirm(retrySignInText)) {
+                    } else if (reason instanceof FirebaseError && reason.code == 'auth/user-mismatch') {
+                        alert('Přihlašte se po stejným účtem, jako jste již přihlášeni')
+                    }
+                    else if (useRedirect !== true && confirm(retrySignInText)) {
                         nextResult = await user.signIn(true, true, email, password, admin)
                     }
                 }
@@ -459,17 +451,23 @@ export const useCloudStore = defineStore('cloud', () => {
         },
     }
 
+    watch(user.signatureId, (newId) => {
+        if (newId) {
+            feedback.dirtyTime.value = 0// force refresh from remote
+            feedback.hydrate(feedback.online.value)
+            const nick = feedback.online.value[newId]
+            if (!userAuth.value && typeof nick !== 'undefined' && typeof nick.nickname == 'string') {
+                settings.userNickname.value = nick.nickname
+            }
+        } else {// clear feedback if user is not logged in
+            if (offlineFeedback.value[selectedEvent.value]) { offlineFeedback.value[selectedEvent.value] = {} }
+        }
+    })
+
     async function onSignIn(newUser: User) {
         if (user.doc.value) {// do not ask if the user is already being asked in different browser tab
-            if (user.info.value) {
-                const signatureId = user.info.value.signatureId?.[selectedEvent.value]
-                if (signatureId) {
-                    settings.setUserIdentifier(signatureId)
-                    settings.userNickname.value = user.info.value!.signature[selectedEvent.value] || settings.userNickname.value
-                }
-            }
 
-            if (newUser.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
+            if (!user.info.value?.signature && newUser.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID && !newUser.displayName) {
                 updateCurrentUserProfile({
                     displayName: settings.userNickname.value,
                 })
@@ -479,13 +477,13 @@ export const useCloudStore = defineStore('cloud', () => {
             const payload: UserInfo = {
                 name: newUser.displayName || user.info.value?.name,
                 signature: {
-                    ...user.info.value?.signature,
                     [selectedEvent.value]: settings.userNickname.value,
+                    ...user.info.value?.signature,
                 },
                 responseId: user.info.value?.responseId ?? {},// do not update
                 signatureId: {
-                    ...user.info.value?.signatureId,
                     [selectedEvent.value]: settings.userIdentifier.value,
+                    ...user.info.value?.signatureId,
                 },
                 subscriptions: {
                     ...user.info.value?.subscriptions,
@@ -495,11 +493,10 @@ export const useCloudStore = defineStore('cloud', () => {
                 photoURL: newUser.photoURL || user.info.value?.photoURL,
                 lastLogin: now.getTime(),
                 lastTimezone: now.getTimezoneOffset(),
-                permissions: !user.info.value?.permissions?.[selectedEvent.value]
-                    ? {
-                        [selectedEvent.value]: UserLevel.Nothing,
-                    }
-                    : undefined!,
+                permissions: {
+                    [selectedEvent.value]: UserLevel.Nothing,
+                    ...user.info.value?.permissions,
+                },
             }
             // remove undefined values
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
@@ -510,29 +507,6 @@ export const useCloudStore = defineStore('cloud', () => {
             })
         }
     }
-
-    watch([settings.userNickname, settings.userIdentifier], async ([nick, ident]) => {// TODO check user diff and not set always
-        if (nick && user.doc.value && userAuth?.value?.uid && import.meta.client) {
-            await setDocT(user.doc.value, {
-                signature: {
-                    ...user.info.value?.signature,
-                    [selectedEvent.value]: nick,
-                },
-                signatureId: {
-                    ...user.info.value?.signatureId,
-                    [selectedEvent.value]: ident,
-                },
-            }, {
-                merge: true,
-            })
-
-            if (userAuth.value.providerData[0].providerId !== GoogleAuthProvider.PROVIDER_ID) {
-                updateCurrentUserProfile({
-                    displayName: nick,
-                })
-            }
-        }
-    })
 
     const resolvedPermissions = computed<Permissions>(() => {
         if (config.public.debugUser) {
@@ -615,7 +589,7 @@ export const useCloudStore = defineStore('cloud', () => {
     let hydrationDebounce: null | NodeJS.Timeout = null
     function hydrateOfflineFeedback(onlineFeedback?: any) {
         hydrationDebounce = null
-        const now = new Date(onlineFeedback?.[settings.userIdentifier.value]?.updated ?? 0).getTime()
+        const now = new Date(onlineFeedback?.[user.signatureId.value]?.updated ?? 0).getTime()
         if (now > feedback.dirtyTime.value) {
             let off = toRaw(offlineFeedback.value?.[selectedEvent.value])
             if (!off) {
@@ -625,13 +599,13 @@ export const useCloudStore = defineStore('cloud', () => {
                 const sPart = onlineFeedback[sIndex]
                 for (const eIndex in sPart) {
                     const ePart = sPart[eIndex]
-                    const uPart = ePart[settings.userIdentifier.value]
+                    const uPart = ePart[user.signatureId.value]
                     if (uPart) {
                         let offSPart = off[sIndex]
                         if (!offSPart) { offSPart = {} }
                         let offEPart = offSPart[eIndex]
                         if (!offEPart) { offEPart = {} }
-                        offEPart[settings.userIdentifier.value] = uPart
+                        offEPart[user.signatureId.value] = uPart
                         offSPart[eIndex] = offEPart
                         off[sIndex] = offSPart
                     }

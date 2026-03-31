@@ -52,6 +52,9 @@ const isFormDoc = computed(() => model.value?.startsWith(applicationFormDocument
 async function usePicker() {
     const gapi = useGapi()
     const builder = await gapi.buildPicker()
+    if(!builder) {
+        return
+    }
     const view = new google.picker.DocsView(google.picker.ViewId.FORMS)
     view.setMode(google.picker.DocsViewMode.LIST)
     const picker = builder
@@ -68,7 +71,7 @@ async function usePicker() {
     picker.setVisible(true)
 }
 async function hydrateFormData() {
-    if (!model.value || !cloud.user.adminAuth) {
+    if (!model.value || !cloud.user.adminAuth?.accessToken) {
         return
     }
     const formId = extractFormIdFromURL(model.value) ?? maybe(props.document, d => extractFormIdFromURL(d))

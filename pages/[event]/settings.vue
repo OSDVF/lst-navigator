@@ -276,7 +276,7 @@ async function syncNotes() {
             if (key.startsWith('note.')) {
                 const value = localStorage.getItem(key)
                 const indexes = key.split('.')
-                await setDoc(doc(cloud.notesCollection, settings.userIdentifier.value), {
+                await setDoc(doc(cloud.notesCollection, cloud.user.signatureId), {
                     [indexes[1]]: {
                         [indexes[2]]: value,
                     },

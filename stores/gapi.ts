@@ -1,4 +1,5 @@
 import { captureException } from '@sentry/nuxt'
+import { GoogleAuthProvider } from 'firebase/auth'
 import { skipHydrate } from 'pinia'
 
 export const applicationFormDocumentPrefix = 'https://docs.google.com/forms/d'
@@ -24,6 +25,21 @@ export const useGapi = defineStore('gapi', () => {
         load()
     }
 
+    async function adminReauth() {
+        if (!cloud.user.hasAdminScopes) {
+            if (cloud.user.auth?.providerData[0].providerId != GoogleAuthProvider.PROVIDER_ID) {
+                if (confirm(`Tato funkce je dostupná pouze s přihlášením přes Google účet. Chcete se od účtu ${cloud.user.info?.email} odhlásit a přihlásit k jinému?`)) {
+                    await cloud.user.signOut()
+                    navigateTo('/login?google&redirect=' + useRoute().fullPath)
+                }
+                return false
+            }
+            // re-auth with correct scopes
+            await cloud.user.signIn(undefined, undefined, undefined, undefined, true)
+            return true
+        }
+    }
+
     function load(): Promise<typeof gapi.client> {
         if (loaded.value) {
             return Promise.resolve(gapi.client)
@@ -33,13 +49,13 @@ export const useGapi = defineStore('gapi', () => {
         return new Promise<typeof gapi.client>((resolve, reject) => gapi.load('client:auth2', {
             callback: async () => {
                 try {
-                    watch(() => cloud.user.adminAuth.accessToken, token => gapi.client.setToken(token ? {
+                    watch(() => cloud.user.adminAuth?.accessToken, token => gapi.client.setToken(token ? {
                         access_token: token,
                     } : null), { immediate: true })
                     gapi.client.setApiKey(config.public.vuefire!.config!.apiKey!)
-                    if (!cloud.user.hasAdminScopes) {
-                        // re-auth with correct scopes
-                        await cloud.user.signIn(undefined, undefined, undefined, undefined, true)
+                    if (!await adminReauth()) {
+                        reject()
+                        return
                     }
 
                     await gapi.client.load('https://forms.googleapis.com/$discovery/rest?version=v1')
@@ -62,9 +78,11 @@ export const useGapi = defineStore('gapi', () => {
 
     async function buildPicker() {
         await pickerLoaded
-        if (!cloud.user.hasAdminScopes) {
-            // re-auth with correct scopes
-            await cloud.user.signIn(undefined, undefined, undefined, undefined, true)
+        if (!await adminReauth()) {
+            return
+        }
+        if (!cloud.user.adminAuth?.accessToken) {
+            return
         }
         return new google.picker.PickerBuilder()
             .setOAuthToken(cloud.user.adminAuth.accessToken)

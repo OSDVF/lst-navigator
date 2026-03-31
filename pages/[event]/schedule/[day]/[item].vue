@@ -34,7 +34,7 @@
             <small>Odpovídáš jako <NuxtLink
                 class="dotted-underline" :to="`/${cloud.selectedEvent}/settings`"
                 title="Jméno je možné nastavit v nastavení">
-                {{ settings?.userNickname || 'anonym' }}</NuxtLink></small>
+                {{ cloud.user.signature || 'anonym' }}</NuxtLink></small>
             <FeedbackForm
                 :data="currentFeedbackValue" :type="scheduleItemData?.feedbackType"
                 :complicated-questions="scheduleItemData?.questions" :select-options="getParallelEvents(scheduleItemData)"
@@ -122,11 +122,11 @@ const noteError = ref()
 const fetchingNote = ref(false)
 const couldNotFetchNote = ref(false)
 
-const currentFeedbackValue = computed(() => cloud.offlineFeedback?.[dayIndex]?.[scheduleItemIndex]?.[settings.userIdentifier.value] as Feedback | undefined)
+const currentFeedbackValue = computed(() => cloud.offlineFeedback?.[dayIndex]?.[scheduleItemIndex]?.[cloud.user.signatureId] as Feedback | undefined)
 const movingOrTrainsitioning = inject('trainsitioning', ref(false))
 const permitSwipe = inject('permitSwipe', ref(false))
 
-const notesDocument = useDocumentT<any>(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, settings.userIdentifier.value) : null), { once: !!import.meta.server })//TODO server vs client vs browser
+const notesDocument = useDocumentT<any>(computed(() => cloud.notesCollection ? doc(cloud.notesCollection, cloud.user.signatureId) : null), { once: !!import.meta.server })//TODO server vs client vs browser
 const offlineNote = useLocalStorage(`note.${dayIndex}.${scheduleItemIndex}`, { time: new Date().getTime(), note: '' }, {initOnMounted: true})
 let noteSaving: NodeJS.Timeout | null
 
@@ -149,7 +149,7 @@ const noteModel = computed<string>({
             noteSaving = setTimeout(() => {
                 if (cloud.notesCollection) {
                     fetchingNote.value = true
-                    setDoc(doc(cloud.notesCollection, settings.userIdentifier.value), {
+                    setDoc(doc(cloud.notesCollection, cloud.user.signatureId), {
                         [dayIndex]: {
                             [scheduleItemIndex]: newValue,
                         },

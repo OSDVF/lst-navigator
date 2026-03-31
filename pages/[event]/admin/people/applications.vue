@@ -35,6 +35,7 @@
                                 extend: 'savedStates',
                                 text: 'Zobrazení',
                                 buttons: [
+                                    'colvis',
                                     ...visibilityButtons,
                                     { extend: 'spacer', style: 'bar' },
                                     { extend: 'createState', text: 'Uložit zobrazení' },
@@ -175,6 +176,7 @@ const applications = useApplications()
 const api = useApplicationForm()
 const cloud = useCloudStore()
 const firestore = useFirestore()
+const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const ui = useUI()
 const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', false)
@@ -274,7 +276,7 @@ watch(() => applications.loadingApplications, l => {
     }
 }, { immediate: true })
 onMounted(() => table.value?.dt?.responsive.recalc())
-watch([() => table.value?.dt, scrollY], () => {
+watch([() => table.value?.dt, scrollY, keyboardVisible], () => {
     const layoutRow = document.querySelector('.dt-layout-row')
     const scrollBody = document.querySelector('.dt-scroll-body') as HTMLDivElement
     if (layoutRow && scrollBody) {
@@ -302,7 +304,7 @@ function selectionChanged() {
     }
 }
 function openEditLink() {
-    const link = selection.value?.[0].editLink
+    const link = selection.value?.data()?.[0].editLink
     if (link) {
         window.open(link, '_blank', 'noopener,noreferrer')
     }
