@@ -132,6 +132,7 @@ onMounted(() => {
     .icon {
         width: 1.5rem;
         height: 1.5rem;
+
         .dark & {
             background: white;
         }
@@ -140,6 +141,11 @@ onMounted(() => {
     td .icon {
         width: 1rem;
         height: 1rem;
+    }
+}
+.datatable {
+    div.dt-button-collection .dt-button-active::after {
+        right: 0em;
     }
 }
 
@@ -182,6 +188,7 @@ onMounted(() => {
 
         div.dt-container div.dt-layout-row:not(.dt-layout-table) div.dt-layout-cell {
             display: flex;
+
             .dt-buttons {
                 margin-left: .5rem;
             }

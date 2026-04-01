@@ -1,9 +1,10 @@
 import type { App } from 'vue'
 import $ from 'jquery'
+import type { Api } from 'datatables.net-dt'
 
 async function append(app: App) {
-    await addScript('https://cdn.datatables.net/v/dt/dt-2.3.7/b-3.2.6/b-print-3.2.6/cr-2.1.2/cc-1.2.1/date-1.6.3/kt-2.12.2/r-3.0.8/sc-2.4.3/sl-3.1.3/sr-1.4.3/datatables.min.js', app, 'sha384-ed/LaayRS6Lvyk0hUnrWjNnm4MWJ4x9Y9mwTtooJ/jDG7X+u7oTYrC0Wad2GOkKv')
-    await addStyle('https://cdn.datatables.net/v/dt/dt-2.3.7/b-3.2.6/b-print-3.2.6/cr-2.1.2/cc-1.2.1/date-1.6.3/kt-2.12.2/r-3.0.8/sc-2.4.3/sl-3.1.3/sr-1.4.3/datatables.min.css', app, 'sha384-Nq6NX05Z+tBT43ZJmT80lANQf6SMKdLSOh4ksPKE2W4HwVIsY3TFwOr/mYJ5rMXn')
+    await addScript('https://cdn.datatables.net/v/dt/dt-2.3.7/b-3.2.6/b-colvis-3.2.6/b-print-3.2.6/cc-1.2.1/date-1.6.3/kt-2.12.2/r-3.0.8/sc-2.4.3/sl-3.1.3/sr-1.4.3/datatables.min.js', app, 'sha384-XScxrXBNiQe9Nf5jZ3FJFfOa2SYM5ONY1/9IOYlpd0jLB8dJhYewM2HgZnNhnebx')
+    await addStyle('https://cdn.datatables.net/v/dt/dt-2.3.7/b-3.2.6/b-colvis-3.2.6/b-print-3.2.6/cc-1.2.1/date-1.6.3/kt-2.12.2/r-3.0.8/sc-2.4.3/sl-3.1.3/sr-1.4.3/datatables.min.css', app, 'sha384-4v2ypONDhaKZfwQcEhdriPFf5mdfGcB/MnQh3dVYzTaW1TNVULLIJ0PPtSJmolVA')
     await addScript('https://cdn.datatables.net/plug-ins/2.3.7/dataRender/ellipsis.js', app)
 }
 
@@ -51,9 +52,13 @@ export default defineNuxtPlugin(nuxt => {
                                 icon: 'orderRemove',
                             },
                             init: function (config: any) {
-                                const btn = new cc.Button()
+                                const dt = this.dt()
+                                const btn = new cc.Button(dt, this)
                                     .text(config.text)
                                     .icon(config.icon)
+                                    .handler(function () {
+                                        dt.columns().visible(true)
+                                    })
                                 return btn.element()
                             },
                         }

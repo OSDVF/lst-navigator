@@ -8,9 +8,9 @@
                 columnControl: [
                     'order',
                     [
-                        'searchDropdown',
+                        { extend: 'searchDropdown', text: 'Hledat' },
                         'spacer',
-                        { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
+                        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
                         'showAll'
                     ]
                 ],
@@ -35,7 +35,7 @@
                                 extend: 'savedStates',
                                 text: 'Zobrazení',
                                 buttons: [
-                                    'colvis',
+                                    { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
                                     ...visibilityButtons,
                                     { extend: 'spacer', style: 'bar' },
                                     { extend: 'createState', text: 'Uložit zobrazení' },
@@ -182,7 +182,7 @@ const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', false)
 const expandMultiple = useLocalStorage('expandMultiple', true)
 const editMode = useLocalStorage('editMode', false)
-const showTable = ref(true)
+const showTable = ref(false)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
 const layoutRowHeight = ref(30)
@@ -361,7 +361,7 @@ const complexColumns = computed(() => [
                 'order',
                 'searchDropdown',
                 'spacer',
-                { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
+                { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
                 'showAll',
             ],
         ],
@@ -461,7 +461,7 @@ const searchList = [
         'order',
         'searchList',
         'spacer',
-        { extend: 'colVisDropdown', columns: ':not(.always-visible)' },
+        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
         'showAll',
     ],
 ]
@@ -533,7 +533,12 @@ const columns = computed(() => {
     ].map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
 
-watch([responsive, columns, editMode], (newVal, oldVal) => newVal.every((n, i) => isEqual(n, oldVal[i])) ? null : reload())
+watchDebounced([responsive, columns, editMode], (newVal, oldVal) => newVal.every((n, i) => isEqual(n, oldVal[i])) ? null : reload())
+onMounted(() => setTimeout(() => {
+    if(!showTable.value) {
+        showTable.value = true
+    }
+}, 1000))
 
 </script>
 
