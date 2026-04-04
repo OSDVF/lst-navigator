@@ -5,22 +5,13 @@
             v-else-if="showTable" ref="table" class="display compact fancy" :options="{
                 deferRender: true,
                 responsive, colReorder: true, buttons: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
-                columnControl: [
-                    'order',
-                    [
-                        { extend: 'searchDropdown', text: 'Hledat' },
-                        'spacer',
-                        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
-                        'showAll'
-                    ]
-                ],
+                columnControl: columnControl,
                 createdRow(this: { api(): Exclude<typeof table, null>['dt'] }, row: HTMLTableRowElement, d: typeof data[number], _i: number, cells: HTMLTableCellElement[]) {
                     row.classList.add(ApplicationStateUI[d.state].class)
 
                     if (!isEmpty(d.overlays)) {
                         // eslint-disable-next-line vue/this-in-template
-                        const visibleCols = this.api().columns(':visible')
-                        Object.keys(d.overlays).map(o => maybe(maybeIndex(visibleCols.dataSrc().indexOf(o)), i => {
+                        Object.keys(d.overlays).map(o => maybe(maybeIndex(this.api().columns().dataSrc().indexOf(o)), i => {
                             cells[i].classList.add('overlayed')
                             cells[i].title ||= 'Hodnota upravena pro zobrazení. Původní hodnota: ' + d.original?.[o as keyof typeof d.original]
                         }
@@ -137,6 +128,8 @@
                 Rozbalovací řádky</label>
             <label class="ml-1 inline-block"><input v-model="expandMultiple" type="checkbox">
                 Zaškrtávací políčka zvlášť</label>
+            <label class="ml-1 inline-block"><input v-model="czechDates" type="checkbox">
+                České datumy</label>
         </Teleport>
 
         <p v-if="refreshResult.ok" class="mb-5">
@@ -162,8 +155,8 @@ import { SpecialApplicationFields } from '~/types/cloud'
 import { deleteField, doc, updateDoc } from 'firebase/firestore'
 import { setDoc as setDocT } from '~/utils/trace'
 import mapValues from 'lodash.mapvalues'
-import isEqual from 'lodash.isequal'
 import isEmpty from 'lodash.isempty'
+import isMatchWith from 'lodash.ismatchwith'
 
 definePageMeta({
     title: 'Přijaté přihlášky',
@@ -181,12 +174,23 @@ const ui = useUI()
 const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', false)
 const expandMultiple = useLocalStorage('expandMultiple', true)
+const czechDates = useLocalStorage('czechDates', false)
 const editMode = useLocalStorage('editMode', false)
 const showTable = ref(false)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
 const layoutRowHeight = ref(30)
 const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
+
+const columnControl = computed(() => windowSize.width.value > 700 ? [
+    'order',
+    [
+        { extend: 'searchDropdown', text: 'Hledat' },
+        'spacer',
+        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
+        'showAll',
+    ],
+] : undefined)
 
 const availableQuestions = computed(() => {
     const result: Record<number, { title: string, values: Set<string>, multi: boolean, }> = {}
@@ -350,13 +354,13 @@ function changeState(state: ApplicationState) {
 }
 
 const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: any) => data))
-const date = computed(() => app.$DataTable.value?.render.date() ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
+const date = computed(() => app.$DataTable.value?.render.date(czechDates.value ? 'MM. DD.' : 'YYYY-MM-DD') ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
 const complexColumns = computed(() => [
     {
         data: 'index',
         title: '#',
         className: 'print',
-        columnControl: [
+        columnControl: windowSize.width.value > 700 ? [
             [
                 'order',
                 'searchDropdown',
@@ -364,6 +368,8 @@ const complexColumns = computed(() => [
                 { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
                 'showAll',
             ],
+        ] : [
+            'order',
         ],
     },
     {
@@ -394,10 +400,14 @@ const complexColumns = computed(() => [
     {
         data: 'phone',
         title: 'Telefon',
-        render: (number: string) => `${number} <a class="only-hover-visible" href="tel:${number}">${useIconEl('phone')}</a>`,
+        render: renderPhone,
         className: 'hover-visible-trigger',
     },
 ])
+
+function renderPhone(number: string) {
+    return `${number} <a class="only-hover-visible" href="tel:${number}">${useIconEl('phone')}</a>`
+}
 
 const questionControlColumns = computed(() => {
     const toAdd = Object.keys(availableQuestions.value).filter((a: any) => !Object.values(applications.settings?.fields ?? {}).some(f => typeof f == 'number' && f == a || f == availableQuestions.value[a].title))
@@ -456,7 +466,7 @@ const questionControlColumns = computed(() => {
         },
     ]
 })
-const searchList = [
+const searchList = windowSize.width.value > 700 ? [
     [
         'order',
         'searchList',
@@ -464,21 +474,31 @@ const searchList = [
         { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
         'showAll',
     ],
-]
+] : undefined
+
 const visibilityButtons: ButtonConfig[] = [
     {
         text: useIconEl('collapse-all') + ' Zobrazit pouze základní sloupce',
         titleAttr: 'Zobrazí pouze sloupce, které jsou ve výchozím nastavení potřeba do ubytovacího listu',
-        action(_: any, dt: Api<any>) {
-            dt.columns('.print').visible(true)
-            dt.columns(':not(.print, .always-visible)').visible(false)
-        },
+        action: basicColumns,
     }, {
         text: useIconEl('table-of-contents') + ' Zobrazit všechny sloupce',
-        action: (_: any, dt: Api<any>) => dt.columns().visible(true),
+        action: allVisible,
     },
 ]
-
+function allVisible(_: any, dt: Api<any>) {
+    dt.columns().visible(true)
+}
+function basicColumns(_: any, dt: Api<any>) {
+    dt.columns('.print').visible(true)
+    dt.columns(':not(.print, .always-visible)').visible(false)
+}
+function renderBool(data: boolean) {
+    return data ? '✔' : ''
+}
+function renderMultiBool(data: string[], type: string, row: string[]) {
+    data?.map(d => ellipsis.value(d, type, row)).join(',<br>')
+}
 const columns = computed(() => {
     const fieldSettings = Object.keys(applications.settings?.fields ?? {})?.filter(k => !complexColumns.value.find(c => c.data == k))
     const fieldColumns: ConfigColumns[] = []
@@ -492,7 +512,7 @@ const columns = computed(() => {
                     className: 'multi',
                     title: ellipsis.value(v, 'display'),
                     columnControl: searchList,
-                    render: (data: boolean) => data ? '✔' : '',
+                    render: renderBool,
                 }),
             )
         }
@@ -501,7 +521,7 @@ const columns = computed(() => {
                 data: key,
                 title: q?.title ?? val.toString(),
                 columnControl: (q?.values.size ?? 0) < 5 ? searchList : undefined,
-                render: q?.multi ? (data: string[], type: string, row: string[]) => data?.map(d => ellipsis.value(d, type, row)).join(',<br>') : ellipsis.value ?? '',
+                render: q?.multi ? renderMultiBool : ellipsis.value ?? '',
             })
         }
     }
@@ -511,31 +531,45 @@ const columns = computed(() => {
         ...complexColumns.value,
         // Form fields
         ...fieldColumns,
-        { data: null, title: 'Celkem', render: (row: typeof data.value[0]) => ((row.paid ?? 0) + (row.remaining ?? 0)) || '', visible: false, className: 'print' },
-        { data: 'paid', title: 'Převodem', render: (data?: string) => data || '', className: 'print' },
-        { data: 'remaining', title: 'Zbývá', render: (data?: string) => data || '', className: 'print' },
+        { data: null, title: 'Celkem', render: computeTotal, visible: false, className: 'print' },
+        { data: 'paid', title: 'Převodem', render: renderUndefined, className: 'print' },
+        { data: 'remaining', title: 'Zbývá', render: renderUndefined, className: 'print' },
         {
-            data: 'confirmationSent', title: '📧', render: (data: boolean) => data ? '✔' : '<span class=\'muted\' title=\'Neodeslán\'>❌</span>',
+            data: 'confirmationSent', title: '📧', render: renderSent,
             columnControl: searchList,
             visible: false,
         },
         {
-            data: 'state', title: 'Stav', render: (data: ApplicationState) => ApplicationStateUI[data].name,
+            data: 'state', title: 'Stav', render: renderState,
             visible: false,
             columnControl: searchList,
         },
         {
-            data: 'editTimestamp', title: 'Upraveno', render: (data: number) => new Date(data).toLocaleString(),
+            data: 'editTimestamp', title: 'Upraveno', render: date.value,
             visible: false,
         },
         { data: 'edits', title: 'Počet úprav', visible: false },
         { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false },
     ].map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
+function renderState(data: ApplicationState) {
+    return ApplicationStateUI[data].name
+}
+function renderSent(data: boolean) {
+    return data ? '✔' : '<span class=\'muted\' title=\'Neodeslán\'>❌</span>'
+}
 
-watchDebounced([responsive, columns, editMode], (newVal, oldVal) => newVal.every((n, i) => isEqual(n, oldVal[i])) ? null : reload())
+function renderUndefined(data?: string) {
+    return data || ''
+}
+
+function computeTotal(row: typeof data.value[0]) {
+    return ((parseInt(row.paid as any) ?? 0) + parseInt(row.remaining ?? 0 as any)) || ''
+}
+
+watchDebounced([responsive, columns, editMode, czechDates], (newVal, oldVal) => isMatchWith(oldVal, newVal, (val) => typeof val == 'function' ? true : undefined) ? null : reload(), { debounce: 500 })
 onMounted(() => setTimeout(() => {
-    if(!showTable.value) {
+    if (!showTable.value) {
         showTable.value = true
     }
 }, 1000))

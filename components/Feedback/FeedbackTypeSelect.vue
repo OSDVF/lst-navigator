@@ -22,7 +22,10 @@
                     <Icon :name="type == 'complicated' ? 'mdi:chat-question-outline' : 'mdi:arrow-right'" />
                     {{ index + 1 }}
                 </label>&ensp;
-                <input :id="`question${index}`" v-model.lazy="questions![index]" type="text" name="questions[]" required>
+                <input
+                    :id="`question${index}`" :value="questionsOrBlank[index]"
+                    type="text"
+                    name="questions[]" required @change="questions = [...questionsOrBlank.slice(0, index), ($event.target as HTMLInputElement).value, ...questionsOrBlank.slice(index + 1)]">
                 <span :disabled="p.disabled" class="button" title="Odebrat" @click="questions!.splice(index, 1)">
                     <Icon name="mdi:trash-can" />
                 </span>
@@ -85,7 +88,7 @@ const e = defineEmits<{
 
 const questions = computed({
     get() {
-        return p.questions
+        return p.questions ?? []
     },
     set(value: string[] | undefined) {
         if (Array.isArray(value)) {

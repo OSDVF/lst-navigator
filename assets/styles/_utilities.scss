@@ -135,6 +135,10 @@ $sides: (
   text-overflow: ellipsis;
   max-width: 100%;
 
+  .dark & {
+    color: black
+  }
+
   &:hover {
     outline: 1px auto;
   }

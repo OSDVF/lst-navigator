@@ -4,15 +4,15 @@
             <Icon name="mdi:timeline-alert" />&ensp; Titulek*
         </label>&ensp;
         <input
-            id="title" v-model="editingItem.title" type="text" name="title" placeholder="např. Večerní program"
-            required>
+            id="title" v-model="editingItem.title" v-autowidth type="text" name="title"
+            placeholder="např. Večerní program" required>
 
         <p>
             <label for="subtitle">
                 <Icon name="mdi:timeline-text-outline" />&ensp; Podtitulek
             </label>&ensp;
             <input
-                id="subtitle" v-model="editingItem.subtitle" type="text" name="subtitle"
+                id="subtitle" v-model="editingItem.subtitle" v-autowidth type="text" name="subtitle"
                 placeholder="např. Hra v týmech">
             <br>
             <small>Názvy paralelních programů oddělte v <strong>podtitulku</strong> čárkou: <em>Frisbee (Tom), Relax
