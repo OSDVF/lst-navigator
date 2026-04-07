@@ -26,7 +26,7 @@
 
         .vel-modal,
         .noinvert,
-        .ck-editor__main, .dt-button-background, .dataTable {
+        .ck-editor__main, .dt-button-background, div.dtcc-dropdown, .dataTable {
             filter: invert(100%);
         }
         .dataTable {
@@ -90,7 +90,7 @@
     }
 }
 
-body {
+body, :root {
     margin: 0;
 }
 

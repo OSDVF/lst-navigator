@@ -18,12 +18,6 @@
 import type { Api, Config, ConfigColumns } from 'datatables.net'
 import * as Sentry from '@sentry/nuxt'
 
-import 'datatables.net-dt/css/dataTables.dataTables.min.css' //CSS
-import 'datatables.net-select-dt/css/select.dataTables.min.css' //CSS
-import 'datatables.net-responsive-dt/css/responsive.dataTables.min.css' //CSS
-import 'datatables.net-buttons-dt/css/buttons.dataTables.min.css' //CSS
-import 'datatables.net-staterestore-dt/css/stateRestore.dataTables.min.css' //CSS
-
 const table = ref<{ dt: Api<T> }>()
 const dt = computed(() => table.value?.dt)
 
@@ -143,6 +137,7 @@ onMounted(() => {
         height: 1rem;
     }
 }
+
 .datatable {
     div.dt-button-collection .dt-button-active::after {
         right: 0em;
@@ -178,7 +173,10 @@ onMounted(() => {
         margin-bottom: .35rem;
         font-size: small;
     }
+}
 
+.fancy,
+.hamburger {
     @media (max-width: 768px) {
 
         div.dt-buttons>.dt-button,

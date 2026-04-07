@@ -43,6 +43,8 @@
 </template>
 
 <script lang="ts" setup>
+import * as Sentry from '@sentry/nuxt'
+
 const model = defineModel<string>()
 const props = defineProps<{
     disabled?: boolean,
@@ -92,6 +94,9 @@ async function hydrateFormData() {
         formData.value = result.result
     }
 }
-onMounted(hydrateFormData)
+onMounted(()=>hydrateFormData().catch(e => {
+    console.error('Failed to load form data', e)
+    Sentry.captureException(e)
+}))
 watch(model, hydrateFormData)
 </script>

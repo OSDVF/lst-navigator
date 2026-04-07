@@ -16,6 +16,7 @@ import * as Sentry from '@sentry/nuxt'
 import qrcode from 'qrcode'
 definePageMeta({
     layout: 'front-page',
+    name: 'qr',
 })
 const route = useRoute()
 if (route.params.event) {

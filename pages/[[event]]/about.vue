@@ -14,7 +14,13 @@
             Případné chyby hlaste na {{ $config.public.supportEmail }}.
         </p>
 
-        <NuxtLink to="/qr">
+        <NuxtLink
+            :to="{
+                name: 'qr',
+                params: {
+                    event: $route.params.event
+                }
+            }">
             <Icon name="mdi:qrcode" /> Sdílet aplikaci QR kódem
         </NuxtLink><br>
         <NuxtLink
@@ -34,7 +40,7 @@ definePageMeta({
     layout: 'front-page',
 })
 const route = useRoute()
-if(route.params.event) {
+if (route.params.event) {
     setPageLayout('default')
 }
 

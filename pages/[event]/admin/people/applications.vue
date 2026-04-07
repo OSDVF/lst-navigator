@@ -4,8 +4,9 @@
         <LazyDataTable
             v-else-if="showTable" ref="table" class="display compact fancy" :options="{
                 deferRender: true,
-                responsive, colReorder: true, buttons: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
+                responsive, colReorder: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: columnControl,
+                initComplete,
                 createdRow(this: { api(): Exclude<typeof table, null>['dt'] }, row: HTMLTableRowElement, d: typeof data[number], _i: number, cells: HTMLTableCellElement[]) {
                     row.classList.add(ApplicationStateUI[d.state].class)
 
@@ -21,71 +22,7 @@
                 },
                 layout: {
                     topStart: {
-                        buttons: [
-                            {
-                                extend: 'savedStates',
-                                text: 'Zobrazení',
-                                buttons: [
-                                    { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
-                                    ...visibilityButtons,
-                                    { extend: 'spacer', style: 'bar' },
-                                    { extend: 'createState', text: 'Uložit zobrazení' },
-                                    { extend: 'removeAllStates', text: 'Smazat uložená zobrazení' },
-                                    { extend: 'spacer', style: 'bar' }
-                                ]
-                            }, ...(cloud.resolvedPermissions.editSchedule ? editMode ? [{
-                                text: useIconEl('edit') + ' Upravit',
-                                className: 'selected-only disabled',
-                                action: editOverlay,
-                            }] : [{
-                                extend: 'collection',
-                                text: 'Účastník',
-                                className: 'selected-only disabled',
-                                buttons: [
-                                    {
-                                        text: useIconEl('edit') + ' Upravit údaje',
-                                        action: openEditLink
-                                    }, {
-                                        text: useIconEl('account-question') + ' Změnit stav',
-                                        extend: 'collection',
-                                        buttons: Object.entries(ApplicationStateUI).map(([key, val]) => ({
-                                            text: useIconEl(val.icon) + ' ' + val.name,
-                                            action: () => changeState(parseInt(key) as ApplicationState)
-                                        })),
-                                        autoClose: true,
-                                    }
-                                ],
-                            }] : []), {
-                                extend: 'collection',
-                                text: 'Ubytovací list',
-                                autoClose: true,
-                                buttons: [
-                                    {
-                                        extend: 'print',
-                                        autoPrint: false,
-                                        text: '<span class=\'noinvert\'>🖨️</span> Tisk',
-                                        title: '',
-                                        exportOptions: {
-                                            columns: ':visible:not(.always-visible)',
-                                        },
-                                    }, {
-                                        extend: 'spacer', style: 'bar'
-                                    },
-                                    ...visibilityButtons,
-                                ]
-                            }, {
-                                extend: 'collection',
-                                text: '<span class=\'noinvert\'>🗒️</span> Data formuláře',
-                                autoClose: true,
-                                buttons: [
-                                    {
-                                        text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
-                                        titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
-                                        action: refresh,
-                                    }, ...questionControlColumns
-                                ]
-                            }
-                        ],
+                        buttons: windowSize.width.value >= 700 ? buttons : undefined,
                         info: {
                             empty: 'Nic',
                             callback(_: any, start: number, end: number, _max: number, total: number, _pre: any) {
@@ -117,19 +54,23 @@
                 },
                 scrollY: scrollY as any,
             }" :data="data" :columns="columns" @select="selectionChanged" @deselect="selectionChanged" />
-        <Teleport v-if="!!table?.dt && mounted" to=".dt-buttons">
-            <label
-                title="Přepne tabulku do módu, kdy můžete upravovat kolonky, ale reálná data z přihlášek zůstanou uložená původní"
-                :class="'ml-1 inline-block' + (editMode ? ' strong' : '')"><input v-model="editMode" type="checkbox">
-                Mód úprav</label>
-            <label class="ml-1 inline-block"><input v-model="applications.includeCancelled" type="checkbox">
-                Zobrazit i zrušené</label>
-            <label class="ml-1 inline-block"><input v-model="responsive" type="checkbox">
-                Rozbalovací řádky</label>
-            <label class="ml-1 inline-block"><input v-model="expandMultiple" type="checkbox">
-                Zaškrtávací políčka zvlášť</label>
-            <label class="ml-1 inline-block"><input v-model="czechDates" type="checkbox">
-                České datumy</label>
+        <Teleport v-if="mounted" to="#topNav">
+            <div ref="dtButtons" class="dtButtons">
+                <label
+                    title="Přepne tabulku do módu, kdy můžete upravovat kolonky, ale reálná data z přihlášek zůstanou uložená původní"
+                    :class="'ml-1 inline-block' + (editMode ? ' strong' : '')"><input
+                        v-model="editMode"
+                        type="checkbox">
+                    Mód úprav</label>
+                <label class="ml-1 inline-block"><input v-model="applications.includeCancelled" type="checkbox">
+                    Zobrazit i zrušené</label>
+                <label class="ml-1 inline-block"><input v-model="responsive" type="checkbox">
+                    Rozbalovací řádky</label>
+                <label class="ml-1 inline-block"><input v-model="expandMultiple" type="checkbox">
+                    Zaškrtávací políčka zvlášť</label>
+                <label class="ml-1 inline-block"><input v-model="czechDates" type="checkbox">
+                    České datumy</label>
+            </div>
         </Teleport>
 
         <p v-if="refreshResult.ok" class="mb-5">
@@ -148,7 +89,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
+import type { Api, ApiButton, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
 import { type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
 import { SpecialApplicationFields } from '~/types/cloud'
@@ -157,6 +98,12 @@ import { setDoc as setDocT } from '~/utils/trace'
 import mapValues from 'lodash.mapvalues'
 import isEmpty from 'lodash.isempty'
 import isMatchWith from 'lodash.ismatchwith'
+
+declare module 'datatables.net' {
+    interface ApiButtonMethods<T> extends Omit<Api<T>, 'trigger'> {
+        collectionRebuild(config: ButtonConfig[]): ApiButtons<T>
+    }
+}
 
 definePageMeta({
     title: 'Přijaté přihlášky',
@@ -168,6 +115,7 @@ const app = useNuxtApp()
 const applications = useApplications()
 const api = useApplicationForm()
 const cloud = useCloudStore()
+const dtButtons = useTemplateRef<HTMLDivElement>('dtButtons')
 const firestore = useFirestore()
 const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const ui = useUI()
@@ -280,6 +228,7 @@ watch(() => applications.loadingApplications, l => {
     }
 }, { immediate: true })
 onMounted(() => table.value?.dt?.responsive.recalc())
+const loadedDt = ref(false)
 watch([() => table.value?.dt, scrollY, keyboardVisible], () => {
     const layoutRow = document.querySelector('.dt-layout-row')
     const scrollBody = document.querySelector('.dt-scroll-body') as HTMLDivElement
@@ -288,7 +237,13 @@ watch([() => table.value?.dt, scrollY, keyboardVisible], () => {
         scrollBody.style.maxHeight = `${scrollY.value}px`
     }
 })
+function initComplete() {
+    setTimeout(() => loadedDt.value = true, 500)
+}
 async function reload<T>(between?: () => PromiseLike<T>) {
+    if (!table.value) {
+        return
+    }
     showTable.value = false
     if (between) {
         await between()
@@ -300,7 +255,7 @@ const selection = ref<ApiRowsMethods<typeof data.value> | ApiCellsMethods<typeof
 function selectionChanged() {
     if (table.value) {
         selection.value = editMode.value ? table.value.dt.cells({ selected: true }) : table.value.dt.rows({ selected: true })
-        if (selection.value!.length) {
+        if (selection.value[0].length) {
             $('.selected-only').removeClass('disabled')
         } else {
             $('.selected-only').addClass('disabled')
@@ -314,10 +269,29 @@ function openEditLink() {
     }
 }
 
+function copySelected() {
+    if (editMode.value) {
+        const cells = table.value?.dt.cells({ selected: true }).data().toArray().filter(c => !!c).map(c => `"${c.toString().replaceAll('"', '""')}"`)
+        if (cells && cells.length) {
+            const text = cells.length > 1 ? cells.join(',') : cells[0]
+            navigator.clipboard.writeText(text)
+        }
+    } else {
+        const rows = table.value?.dt.rows({ selected: true })
+        if (rows && rows.length) {
+            let text = ''
+            rows.every(function (rowIdx) {
+                text += this.cells(rowIdx, ':visible').data().map(c => `"${(c ?? '').toString().replaceAll('"', '""')}"`).join(',') + '\n'
+            })
+            navigator.clipboard.writeText(text)
+        }
+    }
+}
+
 function responseDoc(id: string) {
     return doc(knownCollection(firestore, 'applications'), cloud.selectedEvent, 'responses', id)
 }
-async function editOverlay() {
+async function editOverlay(this: ApiButton<typeof data.value>) {
     if ((selection.value?.data()?.length ?? 2) > 1) {
         alert('Vyberte jednu buňku')
         return
@@ -353,8 +327,8 @@ function changeState(state: ApplicationState) {
     } as ResponseRecord, { merge: true })
 }
 
-const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: any) => data))
-const date = computed(() => app.$DataTable.value?.render.date(czechDates.value ? 'MM. DD.' : 'YYYY-MM-DD') ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
+const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20))
+const date = computed(() => app.$DataTable.value?.render.date(czechDates.value ? 'DD. MM.' : 'YYYY-MM-DD') ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
 const complexColumns = computed(() => [
     {
         data: 'index',
@@ -466,16 +440,6 @@ const questionControlColumns = computed(() => {
         },
     ]
 })
-const searchList = windowSize.width.value > 700 ? [
-    [
-        'order',
-        'searchList',
-        'spacer',
-        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
-        'showAll',
-    ],
-] : undefined
-
 const visibilityButtons: ButtonConfig[] = [
     {
         text: useIconEl('collapse-all') + ' Zobrazit pouze základní sloupce',
@@ -493,6 +457,117 @@ function basicColumns(_: any, dt: Api<any>) {
     dt.columns('.print').visible(true)
     dt.columns(':not(.print, .always-visible)').visible(false)
 }
+const buttons = computed(() => [
+    {
+        extend: 'savedStates',
+        text: 'Zobrazení',
+        buttons: [
+            { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
+            ...visibilityButtons,
+            { extend: 'spacer', style: 'bar' },
+            { extend: 'createState', text: 'Uložit zobrazení' },
+            { extend: 'removeAllStates', text: 'Smazat uložená zobrazení' },
+            { extend: 'spacer', style: 'bar' },
+        ],
+    }, ...(cloud.resolvedPermissions.editSchedule ? editMode.value ? [{
+        text: useIconEl('edit'),
+        titleAttr: 'Upravit hodnotu pro zobrazení (neovlivní původní data v přihlášce)',
+        className: 'selected-only disabled',
+        action: editOverlay,
+    }] : [{
+        extend: 'collection',
+        text: 'Účastník',
+        className: 'selected-only disabled',
+        buttons: [
+            {
+                text: useIconEl('edit') + ' Upravit údaje',
+                action: openEditLink,
+            }, {
+                text: useIconEl('account-question') + ' Změnit stav',
+                extend: 'collection',
+                buttons: Object.entries(ApplicationStateUI).map(([key, val]) => ({
+                    text: useIconEl(val.icon) + ' ' + val.name,
+                    action: () => changeState(parseInt(key) as ApplicationState),
+                })),
+                autoClose: true,
+            },
+        ],
+    }] : []), {
+        text: useIconEl('content-copy'),
+        className: 'selected-only disabled',
+        titleAttr: 'Zkopíruje všechny vybrané buňky do schránky. Pokud je vybráno více buněk v jednom řádku, budou sloučeny do jedné buňky oddělené čárkou.',
+        action: copySelected,
+    }, {
+        extend: 'print',
+        text: 'Ubytovací list',
+        autoClose: true,
+        autoPrint: false,
+        title: '',
+        exportOptions: {
+            columns: ':visible:not(.always-visible)',
+        },
+        split: [
+            {
+                extend: 'print',
+                autoPrint: false,
+                text: '<span class=\'noinvert\'>🖨️</span> Tisk',
+                title: '',
+                exportOptions: {
+                    columns: ':visible:not(.always-visible)',
+                },
+            }, {
+                extend: 'spacer', style: 'bar',
+            },
+            ...visibilityButtons,
+        ],
+    }, {
+        extend: 'collection',
+        text: '<span class=\'noinvert\'>🗒️</span> Data formuláře',
+        autoClose: true,
+        buttons: [
+            {
+                text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
+                titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
+                action: refresh,
+            }, ...questionControlColumns.value,
+        ],
+    },
+])
+watchDebounced([buttons, showTable, windowSize], (newVal, oldVal) => {
+    if (oldVal && isMatchWith(oldVal, newVal, val => typeof val == 'function' ? true : undefined)) {
+        return
+    }
+    if (table.value && showTable.value && dtButtons.value) {
+        const large = windowSize.width.value >= 700
+        if (oldVal?.[1] || large) {
+            for (const b of table.value.dt.buttons(large ? undefined : 1, null).toArray()) {
+                table.value.dt.button(b.node).remove()
+            }
+        }
+        nextTick(() => {
+            if (oldVal?.[1] || large) {
+                for (const button of buttons.value) {
+                    table.value!.dt.button(large ? undefined : 1, null).add(null as any, button as any)
+                }
+            }
+            else {
+                new app.$DataTable.value!.Buttons(table.value!.dt, { buttons: buttons.value })
+                table.value!.dt.buttons(1, null).container().appendTo(dtButtons.value!)
+            }
+        })
+    }
+}, { debounce: 500, immediate: true })
+const searchList = windowSize.width.value > 700 ? [
+    [
+        'order',
+        'searchList',
+        'spacer',
+        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
+        'showAll',
+    ],
+] : undefined
+
+
 function renderBool(data: boolean) {
     return data ? '✔' : ''
 }
@@ -567,7 +642,14 @@ function computeTotal(row: typeof data.value[0]) {
     return ((parseInt(row.paid as any) ?? 0) + parseInt(row.remaining ?? 0 as any)) || ''
 }
 
-watchDebounced([responsive, columns, editMode, czechDates], (newVal, oldVal) => isMatchWith(oldVal, newVal, (val) => typeof val == 'function' ? true : undefined) ? null : reload(), { debounce: 500 })
+watchDebounced([responsive, columns, czechDates], (newVal, oldVal) => (!loadedDt.value || !app.$DataTable || isMatchWith(oldVal, newVal, (val) => typeof val == 'function' ? true : undefined)) ? null : reload(), { debounce: 500 })
+watchDebounced(editMode, val => {
+    if (table.value) {
+        table.value.dt.cells().deselect()
+        table.value.dt.rows().deselect()
+        table.value.dt.select.items(val ? 'cell' : 'row')
+    }
+}, { debounce: 500 })
 onMounted(() => setTimeout(() => {
     if (!showTable.value) {
         showTable.value = true
@@ -606,6 +688,14 @@ td.overlayed {
         z-index: -1;
 
         background: #00ffff40;
+    }
+}
+
+.dtButtons {
+    @media screen and (max-width: 700px) {
+        display: flex;
+        gap: .8rem;
+        flex-wrap: wrap;
     }
 }
 </style>

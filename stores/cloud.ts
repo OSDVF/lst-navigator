@@ -680,7 +680,8 @@ export const useCloudStore = defineStore('cloud', () => {
         }
         return events.sort((a, b) => toJSDate(a.order ?? a.start).getTime() - toJSDate(b.order ?? b.start).getTime())
     })
-    const participantSectionVisible = computed(() => eventDescription.value?.formDocument || (!eventDescription.value?.formDocument && (groups.value.length || duties.value.length)))
+    const participantSectionVisible = computed(() => (eventDescription.value?.participantSection ?? true)
+        && (eventDescription.value?.formDocument || (!eventDescription.value?.formDocument && (groups.value.length || duties.value.length))))
     return {
         currentEventCollection,
         days,

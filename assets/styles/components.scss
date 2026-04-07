@@ -218,7 +218,7 @@ details.border {
 
     &:hover,
     &:focus {
-        background: #0001;
+        background: #04040449;
     }
 }
 
@@ -265,6 +265,81 @@ fieldset {
 
     &>legend>input:focus~.fieldset-edit {
         display: none;
+    }
+}
+
+.hamburger {
+    @include c.blur;
+    display: flex;
+    align-items: center;
+    position: relative;
+    min-height: 2.5rem;
+    z-index: 5;
+
+    #topNav div.dt-buttons {
+
+        .dt-button:not(.dt-button-split-drop) {
+            border: none;
+            background: none;
+        }
+        .dt-button-split-drop {
+            background: none;
+            border-right: none;
+            border-top: none;
+            border-bottom: none;
+        }
+    }
+
+    div.dt-button-collection {
+        z-index: 5;
+        position: fixed;
+        margin-top: 0 !important;
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+
+    .dt-button-background {
+        display: none !important;
+    }
+
+    &>.button {
+        display: none
+    }
+
+    &>div {
+        display: flex;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    @media screen and (max-width: 700px) {
+        &>.button {
+            display: block
+        }
+
+        &.open {
+            position: sticky;
+            top: 0;
+            right: 0;
+            left: 0;
+            z-index: 10;
+            flex-direction: column;
+            align-items: stretch;
+
+            &>div {
+                display: block;
+            }
+
+            &>.button {
+                position: absolute;
+                left: 0;
+                top: 4px
+            }
+        }
+
+        &>div {
+            display: none;
+        }
     }
 }
 

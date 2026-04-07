@@ -147,6 +147,7 @@ export type EventDescription<T = string> = {
     formDocument?: string,
     /** Date according to which the event should be ordered (instead of event start date) */
     order?: FirebaseDate,
+    participantSection?: boolean,
     image?: {
         type: 'cloud' | 'external',
         data: string, // storage / external url

@@ -13,7 +13,8 @@
                 <Icon name="mdi:form-select" size="2rem" />&ensp;Přihláška
             </NuxtLink>
             <NuxtLink :to="`/${cloud.eventDescription.value.id}/schedule`">
-                <Icon name="mdi:calendar" size="2rem" />&ensp; Program
+                <Icon name="mdi:calendar" size="2rem" /><Icon v-if="feedbackEnabled(cloud.eventDescription.value)" name="mdi:rss" size="1.8rem" />&ensp; Program <template v-if="feedbackEnabled(cloud.eventDescription.value)"> &
+                    feedback</template>
             </NuxtLink>
         </nav>
     </article>

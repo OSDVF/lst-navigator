@@ -145,6 +145,11 @@
                 </div>
             </details>
 
+            <label for="participantSection" title="Uživatelé mohou zobrazit stav své přihlášky, skupinky a služby">
+                <Icon name="mdi:hail" /> Účastnická sekce
+            </label>
+            <input id="participantSection" v-model="editedEvent.participantSection" type="checkbox" name="participantSection">
+
             <label for="transfers">
                 <Icon name="mdi:leak" /> Povolit přenosy uživatelských dat
             </label>
@@ -284,6 +289,7 @@ const editedEvent = ref({
     formDocument: '',
     feedbackEnd: '',
     order: '',
+    participantSection: true,
     identifier: '',
     imageIdentifier: {
         type: 'cloud',
@@ -498,6 +504,7 @@ async function editEvent(createNew = false) {
         formDocument: editedEvent.value.formDocument || deleteField(),
         feedbackEnd: toFirebaseDate(new Date(editedEvent.value.feedbackEnd)) || deleteField(),
         order: toFirebaseDate(new Date(editedEvent.value.order)) || deleteField(),
+        participantSection: editedEvent.value.participantSection,
         description: editedEvent.value.description,
         image: editedEvent.value.imageIdentifier,
         showFrom: toFirebaseDate(new Date(editedEvent.value.showFrom)) || deleteField(),
@@ -590,6 +597,7 @@ async function startEditingSelected() {
                 formDocument: selectedEvent.formDocument ?? '',
                 feedbackEnd: selectedEvent.feedbackEnd ?? '',
                 order: selectedEvent.order ?? '',
+                participantSection: selectedEvent.participantSection ?? false,
                 imageIdentifier: selectedEvent.image || {
                     type: 'cloud',
                     data: '',

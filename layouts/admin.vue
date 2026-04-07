@@ -5,9 +5,14 @@
             <Title>{{ title }}</Title>
         </Head>
         <ErrorSolver>
-            <nav class="flex justify-content-center flex-grow">
-                <label class="m-auto p-1 text-right">
-                    <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
+            <nav :class="{ open, hamburger: true }">
+                <Icon
+                    v-show="topNavHasChildren" name="mdi:menu" size="2rem" class="button" tabindex="0"
+                    @click="open = !open" />
+                <label id="eventSelect" class="p-1 text-right">
+                    <span class="visible-md mr-1">
+                        <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
+                    </span>
                     <select
                         :value="cloud.eventDescription?.id ?? $config.public.defaultEvent" @change="e => $router.push({
                             name: $route.name,
@@ -22,11 +27,10 @@
                             event.title }}</option>
                     </select>
                 </label>
-                <div id="topNav" class="flex">
-                    <SettingsLink id="topSettingsLink" class="flex align-items-center visible-if-only absolute" />
-                </div>
+                <SettingsLink id="topSettingsLink" class="flex align-items-center" />
+                <div id="topNav" ref="topNav" class="flex justify-content-center flex-grow" />
             </nav>
-            <main>
+            <main @click="open = false">
                 <slot />
             </main>
         </ErrorSolver>
@@ -46,29 +50,29 @@
                             name="mdi:pencil" class="absolute" style="transform: translateX(-100%) translateY(50%);"
                             size="1.2rem" />
                     </span>
-                    Zpětná vazba
+                    <span class="text">Zpětná vazba</span>
                 </NuxtLink>
                 <NuxtLink
                     v-if="cloud.resolvedPermissions.showApplications"
                     :to="`/${cloud.selectedEvent}/admin/people`">
                     <Icon name="mdi:tag-faces" size="1.8rem" />
-                    Účastníci
+                    <span class="text">Účastníci</span>
                 </NuxtLink>
                 <NuxtLink
                     v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/users`"
                     title="Správa registrovaných uživatelských účtů">
                     <Icon name="mdi:person-edit" size="1.8rem" />
-                    Uživatelé
+                    <span class="text">Uživatelé</span>
                 </NuxtLink>
                 <NuxtLink :to="`/${cloud.selectedEvent}/schedule`">
                     <Icon name="mdi:calendar-arrow-left" size="1.8rem" />
-                    Program
+                    <span class="text">Program</span>
                 </NuxtLink>
                 <NuxtLink
                     v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/events`"
                     no-prefetch>
                     <Icon name="mdi:tag-edit" size="1.8rem" />
-                    Správa akcí
+                    <span class="text">Správa akcí</span>
                 </NuxtLink>
             </nav>
             <ToastArea />
@@ -91,6 +95,36 @@ const cloud = useCloudStore()
 const { $config, $downloadingUpdate } = useNuxtApp()
 const route = useRoute()
 const gapi = useGapi()
+const open = ref(false)
+const topNav = useTemplateRef<HTMLDivElement>('topNav')
+const topNavHasChildren = ref(false)
+watch(topNav, (newTopNav, oldTopNav) => {
+    if (oldTopNav) {
+        // Disconnect old observer if any (though watch cleanup handles it)
+    }
+    if (newTopNav) {
+        checkTopNav()
+        if ('MutationObserver' in window) {
+            const observer = new MutationObserver(() => checkTopNav())
+            observer.observe(newTopNav, { childList: true })
+            return () => observer.disconnect()
+        } else {
+            newTopNav.addEventListener('DOMSubtreeModified', checkTopNav)
+            return () => newTopNav.removeEventListener('DOMSubtreeModified', checkTopNav)
+        }
+    }
+}, { immediate: true })
+
+function checkTopNav() {
+    if (topNav.value) {
+        topNavHasChildren.value = topNav.value.children.length > 0
+    }
+}
+
+onBeforeRouteUpdate(() => {
+    open.value = false
+    checkTopNav()
+})
 
 const keyboardVisible = useKeyboardVisible()
 provide('keyboardVisible', keyboardVisible)
@@ -110,15 +144,32 @@ const title = computed(() => {
 #topSettingsLink {
     gap: 5px;
     right: 10px;
-    top: 7px;
 
-    @media (max-width: 450px) {
-        display: none;
-    }
 
-    @media (max-width: 650px) {
+    @media (max-width: 600px) {
         &>span {
             display: none;
+        }
+    }
+
+    @media (max-width: 700px) {
+        position: absolute;
+    }
+}
+
+#eventSelect {
+    margin: auto;
+
+    @media (max-width: 700px) {
+        margin: none;
+        left: 50%;
+        transform: translateX(-50%);
+        position: absolute;
+
+        .hamburger.open & {
+            position: static;
+            transform: none;
+            margin: auto;
         }
     }
 }

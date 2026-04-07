@@ -48,7 +48,6 @@ const config = defineNuxtConfig({
                 { name: 'viewport', content: 'width=device-width, initial-scale=1, user-scalable=no, interactive-widget=resizes-content' },
                 { name: 'msapplication-TileColor', content: process.env.MASK_COLOR ?? defaultMaskColor },
                 { name: 'apple-mobile-web-app-capable', content: 'yes' },
-                { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
                 { name: 'apple-mobile-web-app-title', content: process.env.APP_SHORT_NAME },
                 { name: 'application-name', content: process.env.APP_SHORT_NAME },
                 { name: 'description', content: process.env.APP_DESCRIPTION },

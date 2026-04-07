@@ -1,6 +1,6 @@
 <template>
     <article>
-        <h1>
+        <h2>
             <NuxtLink :to="router.currentRoute.value.fullPath">
                 <Icon name="mdi:rss" /> Zpětná vazba <span class="muted">&ndash; část {{ feedbackPartIndex + 1 }}</span>
             </NuxtLink>
@@ -20,7 +20,7 @@
                     </button>
                 </NuxtLink>
             </template>
-        </h1>
+        </h2>
         <NuxtLink v-if="feedbackPartIndex > 0" :to="`/${cloud.selectedEvent}/feedback/${feedbackPartIndex - 1}`">
             <Icon name="mdi:chevron-left" /> Vrátit se na předchozí část&ensp;
         </NuxtLink>
@@ -39,9 +39,9 @@
 
         Tvé odpovědi jsou okamžitě uloženy a můžeš se k nim na tomto zařízení kdykoliv vrátit. {{
             cloud.eventDescription?.feedbackInfo }}
-        <h1>{{ currentPart?.title }}</h1>
+        <h2>{{ currentPart?.title }}</h2>
         <div v-for="(subPart, sIndex) in currentPart?.subparts" :key="`s${sIndex}`" class="mb-5 mt-2">
-            <h3 v-if="subPart.title" class="mb-1">{{ subPart.title }}</h3>
+            <h4 v-if="subPart.title" class="mb-1">{{ subPart.title }}</h4>
             <fieldset v-for="(entry, eIndex) in subPart.entries" :key="`e${sIndex}${eIndex}`">
                 <legend v-if="entry.title">
                     <h3>{{ entry.title }}<NuxtLink
@@ -144,7 +144,6 @@ import { getParallelEvents } from '@/utils/utils'
 import type { FeedbackConfig, ScheduleItem, Feedback } from '@/types/cloud'
 const router = useRouter()
 const cloud = useCloudStore()
-const settings = useSettings()
 const feedbackPartIndex = parseInt(router.currentRoute.value.params.feedback as string) || 0
 
 definePageMeta({

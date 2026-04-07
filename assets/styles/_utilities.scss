@@ -267,6 +267,15 @@ $stripes: #67676723;
   border-radius: .5rem;
 }
 
+.visible-md {
+  display: none;
+
+  @media screen and (min-width:700px) {
+    display: unset
+  }
+
+}
+
 .visible-if-only:not(:only-child) {
   display: none;
 }
