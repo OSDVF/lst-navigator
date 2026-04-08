@@ -30,7 +30,7 @@
                 <SettingsLink id="topSettingsLink" class="flex align-items-center" />
                 <div id="topNav" ref="topNav" class="flex justify-content-center flex-grow" />
             </nav>
-            <main @click="open = false">
+            <main @dblclick="open = false">
                 <slot />
             </main>
         </ErrorSolver>

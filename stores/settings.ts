@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nuxt'
-import { defineStore, skipHydrate } from 'pinia'
+import { skipHydrate } from 'pinia'
 import { useIDBKeyval } from '@vueuse/integrations/useIDBKeyval'
 import { useLocalStorage } from '@vueuse/core'
 

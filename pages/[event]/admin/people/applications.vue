@@ -21,27 +21,7 @@
                     cells.map(c => c.title ||= `${ApplicationStateUI[d.state].name} přihláška`)//cannot use for because Vue cripples local variables
                 },
                 layout: {
-                    topStart: {
-                        buttons: windowSize.width.value >= 700 ? buttons : undefined,
-                        info: {
-                            empty: 'Nic',
-                            callback(_: any, start: number, end: number, _max: number, total: number, _pre: any) {
-                                return `Položky ${start} až ${end} z ${total}`
-                            },
-                        }
-                    },
-                    topEnd: {
-                        search: {
-                            text: '',
-                            processing: true,
-                            placeholder: 'Hledat'
-                        },
-                        buttons: [{
-                            extend: 'ccSearchClear',
-                            text: useIconEl('filter-off', 'Zrušit filtrování')
-                        }]
-                    },
-                    bottomStart: null,
+                    topEnd: null,
                 },
                 ordering: {
                     indicators: false,
@@ -56,6 +36,16 @@
             }" :data="data" :columns="columns" @select="selectionChanged" @deselect="selectionChanged" />
         <Teleport v-if="mounted" to="#topNav">
             <div ref="dtButtons" class="dtButtons">
+                <span>
+                    <input
+                        v-model="searchDebounced" type="search" placeholder="Hledat..." class="dt-search dt-input"
+                        @input="isSearching = true">
+                    <button
+                        class="dt-button" :disabled="!isSearching"
+                        @click="table?.dt.columns().columnControl.searchClear(); searchDebounced = ''; table?.dt.draw()">
+                        <Icon name="mdi:filter-off" />
+                    </button>
+                </span>
                 <label
                     title="Přepne tabulku do módu, kdy můžete upravovat kolonky, ale reálná data z přihlášek zůstanou uložená původní"
                     :class="'ml-1 inline-block' + (editMode ? ' strong' : '')"><input
@@ -66,7 +56,10 @@
                     Zobrazit i zrušené</label>
                 <label class="ml-1 inline-block"><input v-model="responsive" type="checkbox">
                     Rozbalovací řádky</label>
-                <label class="ml-1 inline-block"><input v-model="expandMultiple" type="checkbox">
+                <label
+                    class="ml-1 inline-block"
+                    title="Otázky z formuláře, které obsahovaly zaškrtávací políčka, budou zobrazeny jako více sloupců"><input
+                        v-model="expandMultiple" type="checkbox">
                     Zaškrtávací políčka zvlášť</label>
                 <label class="ml-1 inline-block"><input v-model="czechDates" type="checkbox">
                     České datumy</label>
@@ -128,7 +121,16 @@ const showTable = ref(false)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
 const layoutRowHeight = ref(30)
+const isSearching = ref(false)
+const search = ref('')
+const searchDebounced = refDebounced(search, 500)
 const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
+
+watch(searchDebounced, val => {
+    if (table.value) {
+        table.value.dt?.search(val).draw()
+    }
+})
 
 const columnControl = computed(() => windowSize.width.value > 700 ? [
     'order',
@@ -236,6 +238,26 @@ watch([() => table.value?.dt, scrollY, keyboardVisible], () => {
         layoutRowHeight.value = layoutRow.scrollHeight
         scrollBody.style.maxHeight = `${scrollY.value}px`
     }
+    if (table.value?.dt) {
+        table.value.dt.on('draw', () => {
+            //extract filterf from column control extension
+            const glob = !!table.value!.dt.search()
+            // No point in wasting clock cycles if we already know it will be enabled
+            if (!glob) {
+                isSearching.value = false
+                table.value!.dt.columns().every(function () {
+                    if (this.search.fixed('dtcc') ||
+                        this.search.fixed('dtcc-list')
+                    ) {
+                        isSearching.value = true
+                    }
+                })
+            } else {
+                isSearching.value = true
+            }
+
+        })
+    }
 })
 function initComplete() {
     setTimeout(() => loadedDt.value = true, 500)
@@ -327,7 +349,7 @@ function changeState(state: ApplicationState) {
     } as ResponseRecord, { merge: true })
 }
 
-const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20))
+const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: string) => data))
 const date = computed(() => app.$DataTable.value?.render.date(czechDates.value ? 'DD. MM.' : 'YYYY-MM-DD') ?? ((response: string) => toJSDate(response)?.toLocaleDateString() ?? response))
 const complexColumns = computed(() => [
     {
@@ -533,26 +555,25 @@ const buttons = computed(() => [
         ],
     },
 ])
-watchDebounced([buttons, showTable, windowSize], (newVal, oldVal) => {
+watchDebounced([buttons, showTable, windowSize.width], (newVal, oldVal) => {
     if (oldVal && isMatchWith(oldVal, newVal, val => typeof val == 'function' ? true : undefined)) {
         return
     }
     if (table.value && showTable.value && dtButtons.value) {
-        const large = windowSize.width.value >= 700
-        if (oldVal?.[1] || large) {
-            for (const b of table.value.dt.buttons(large ? undefined : 1, null).toArray()) {
+        if (oldVal?.[1]) {
+            for (const b of table.value.dt.buttons().toArray()) {
                 table.value.dt.button(b.node).remove()
             }
         }
         nextTick(() => {
-            if (oldVal?.[1] || large) {
+            if (oldVal?.[1]) {
                 for (const button of buttons.value) {
-                    table.value!.dt.button(large ? undefined : 1, null).add(null as any, button as any)
+                    table.value!.dt.button().add(null as any, button as any)
                 }
             }
             else {
                 new app.$DataTable.value!.Buttons(table.value!.dt, { buttons: buttons.value })
-                table.value!.dt.buttons(1, null).container().appendTo(dtButtons.value!)
+                table.value!.dt.buttons().container().appendTo(dtButtons.value!)
             }
         })
     }
