@@ -2,7 +2,7 @@
     <div>
         <ProgressBar v-if="applications.loadingApplications" />
         <LazyDataTable
-            v-else-if="showTable" ref="table" class="display compact fancy" :options="{
+            v-else-if="showTable" id="applications" ref="table" class="display compact fancy" :options="{
                 deferRender: true,
                 responsive, colReorder: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: columnControl,
@@ -83,6 +83,7 @@
 
 <script lang="ts" setup>
 import type { Api, ApiButton, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
+import type StateRestore from 'datatables.net-staterestore/types/StateRestore'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
 import { type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
 import { SpecialApplicationFields } from '~/types/cloud'
@@ -137,7 +138,7 @@ const columnControl = computed(() => windowSize.width.value > 700 ? [
     [
         { extend: 'searchDropdown', text: 'Hledat' },
         'spacer',
-        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
+        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible, .undescribed)' },
         'showAll',
     ],
 ] : undefined)
@@ -168,44 +169,48 @@ const availableQuestions = computed(() => {
     }
     return result
 })
+const toAdd = computed(() => Object.keys(availableQuestions.value).filter((k: any) => !Object.values(applications.settings?.fields ?? {}).some(f => typeof f == 'number' && f == parseInt(k) || f == availableQuestions.value[k].title)))
 const refreshResult = ref<ApiResponse<Responses['refreshResponses']>>({
     ok: false,
 })
 const table = useTemplateRef<{ dt: Api<typeof data.value> }>('table')
-const data = computed(() => applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp)
-    .filter(a => applications.includeCancelled ? true : ![ApplicationState.CANCELLED, ApplicationState.REJECTED].includes(a.record.state ?? ApplicationState.NEW))
-    .map((a, i) => {
-        const mappedTitles = Object.keys(a.mapped ?? {}).filter(k => typeof k == 'string')
-        const mappedEntries: [string, string | string[] | boolean | null][] = []
-        for (const t of mappedTitles) {
-            const responses = a.mapped![t]?.responses
-            if (Array.isArray(responses)) {
-                if (expandMultiple.value) {
-                    for (const sub of responses) {
-                        mappedEntries.push([sub.toString(), true])
+const data = computed(() => {
+    return applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp)
+        .filter(a => applications.includeCancelled ? true : ![ApplicationState.CANCELLED, ApplicationState.REJECTED].includes(a.record.state ?? ApplicationState.NEW))
+        .map((a, i) => {
+            const mappedTitles = Object.keys(a.mapped ?? {}).filter(k => typeof k == 'string')
+            const mappedEntries: [string, string | string[] | boolean | null][] = []
+            for (const t of mappedTitles) {
+                const responses = a.mapped![t]?.responses
+                if (Array.isArray(responses)) {
+                    if (expandMultiple.value) {
+                        for (const sub of responses) {
+                            mappedEntries.push([sub.toString(), true])
+                        }
+                    } else {
+                        mappedEntries.push([t, responses as string[] ?? null])
                     }
                 } else {
-                    mappedEntries.push([t, responses as string[] ?? null])
+                    mappedEntries.push([t, responses?.toString() ?? null])
                 }
-            } else {
-                mappedEntries.push([t, responses?.toString() ?? null])
             }
-        }
-        const original = {
-            ...mapValues(applications.settings?.fields, () => null), //fallback blank values
-            ...Object.fromEntries(mappedEntries),
-            ...a.record,
-        }
-        return {
-            index: i,
-            confirmationSent: false,
-            state: ApplicationState.NEW,
-            original: isEmpty(a.record.overlays) ? undefined : original,
-            ...original,
-            ...a.record.overlays,
-            id: a.record.id,// is non-enumerable so must be listed explicitly
-        }
-    }))
+            const original = {
+                ...Object.fromEntries(toAdd.value.map(k => [k, a.record.questions.find(q => q.id == parseInt(k))?.responses.toString() ?? null])),// arbitrary questions
+                ...mapValues(applications.settings?.fields, () => null), // fallback blank values
+                ...Object.fromEntries(mappedEntries),
+                ...a.record,
+            }
+            return {
+                index: i,
+                confirmationSent: false,
+                state: ApplicationState.NEW,
+                original: isEmpty(a.record.overlays) ? undefined : original,
+                ...original,
+                ...a.record.overlays,
+                id: a.record.id, // is non-enumerable so must be listed explicitly
+            }
+        })
+})
 
 async function refresh() {
     if (!cloud.eventDescription?.formDocument) {
@@ -231,15 +236,15 @@ watch(() => applications.loadingApplications, l => {
 }, { immediate: true })
 onMounted(() => table.value?.dt?.responsive.recalc())
 const loadedDt = ref(false)
-watch([() => table.value?.dt, scrollY, keyboardVisible], () => {
+watch([() => table.value?.dt, scrollY, keyboardVisible], (_, [oldDt]) => {
     const layoutRow = document.querySelector('.dt-layout-row')
     const scrollBody = document.querySelector('.dt-scroll-body') as HTMLDivElement
     if (layoutRow && scrollBody) {
         layoutRowHeight.value = layoutRow.scrollHeight
         scrollBody.style.maxHeight = `${scrollY.value}px`
     }
-    if (table.value?.dt) {
-        table.value.dt.on('draw', () => {
+    if (table.value?.dt && !oldDt) {
+        table.value.dt.on('draw.dt', () => {
             //extract filterf from column control extension
             const glob = !!table.value!.dt.search()
             // No point in wasting clock cycles if we already know it will be enabled
@@ -255,7 +260,17 @@ watch([() => table.value?.dt, scrollY, keyboardVisible], () => {
             } else {
                 isSearching.value = true
             }
-
+        })
+        table.value.dt.on('stateRestore-change', () => {
+            nextTick(() => table.value!.dt.button('SaveStateRestore:name').text('Zobrazení'))
+        })
+        table.value.dt.columns().every(function () {
+            this.header().addEventListener('dblclick', () => {
+                const val = prompt('Zadejte nový název sloupce')
+                if (val) {
+                    this.title(val)
+                }
+            })
         })
     }
 })
@@ -361,7 +376,7 @@ const complexColumns = computed(() => [
                 'order',
                 'searchDropdown',
                 'spacer',
-                { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
+                { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible, .undescribed)' },
                 'showAll',
             ],
         ] : [
@@ -406,26 +421,20 @@ function renderPhone(number: string) {
 }
 
 const questionControlColumns = computed(() => {
-    const toAdd = Object.keys(availableQuestions.value).filter((a: any) => !Object.values(applications.settings?.fields ?? {}).some(f => typeof f == 'number' && f == a || f == availableQuestions.value[a].title))
     const toRemove = Object.keys(availableQuestions.value).filter((a: any) => Object.entries(applications.settings?.fields ?? {}).some(([k, v]) => (typeof v == 'number' && v == a) || (v == availableQuestions.value[a].title && !SpecialApplicationFields.includes(k as any))))
     return [
         {
             text: useIconEl('add') + ' Přidat otázku jako sloupec',
             extend: 'collection',
-            buttons: toAdd.length ? [{
+            buttons: toAdd.value.length ? [{
                 text: useIconEl('check-all') + ' Všechny',
                 action() {
-                    updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`),
-                        Object.fromEntries(toAdd.map(k => ([
-                            `fields.${availableQuestions.value[k as any].title}`, parseInt(k),
-                        ])))).then(() => reload())
+                    table.value?.dt.columns('.undescribed').visible(true)
                 },
-            }].concat(toAdd.map((id: any) => ({
+            }].concat(toAdd.value.map((id: any) => ({
                 text: availableQuestions.value[id].title,
                 action() {
-                    updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`), {
-                        [`fields.${availableQuestions.value[id].title}`]: parseInt(id),
-                    }).then(() => reload())
+                    table.value?.dt.column(`${id}:name`).visible(true)
                 },
             }))) : [{
                 text: '&ensp;V tabulce jsou již všechny otázky z přihlášky&ensp;',
@@ -439,18 +448,13 @@ const questionControlColumns = computed(() => {
             buttons: toRemove.length ? [{
                 text: useIconEl('remove') + ' Všechny',
                 action() {
-                    reload(() => updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`),
-                        Object.fromEntries(toRemove.map(k => ([
-                            `fields.${availableQuestions.value[k as any].title}`, deleteField(),
-                        ])))))
+                    table.value?.dt.columns('.undescribed').visible(false)
+
                 },
             }].concat(toRemove.map((id: any) => ({
                 text: availableQuestions.value[id].title,
                 action() {
-                    const entry = Object.entries(applications.settings?.fields ?? {}).find(([_, v]) => typeof v == 'number' && v == parseInt(id) || v == availableQuestions.value[id].title)
-                    reload(() => updateDoc(doc(firestore, `applications/${cloud.selectedEvent}`), {
-                        [`fields.${entry?.[0] ?? availableQuestions.value[id].title}`]: deleteField(),
-                    }))
+                    table.value?.dt.column(`${id}:name`).visible(true)
                 },
             }))) : [
                 {
@@ -479,6 +483,7 @@ function basicColumns(_: any, dt: Api<any>) {
     dt.columns('.print').visible(true)
     dt.columns(':not(.print, .always-visible)').visible(false)
 }
+const statesWokeUp = ref(false)
 const buttons = computed(() => [
     {
         extend: 'savedStates',
@@ -487,9 +492,28 @@ const buttons = computed(() => [
             { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
             ...visibilityButtons,
             { extend: 'spacer', style: 'bar' },
-            { extend: 'createState', text: 'Uložit zobrazení' },
-            { extend: 'removeAllStates', text: 'Smazat uložená zobrazení' },
+            {
+                extend: 'createState', text: 'Uložit zobrazení', action: function (e, dt, node, config, cb) {
+                    statesWokeUp.value = true
+                    app.$DataTable.value!.ext.buttons.createState.action?.(e, dt, node, config, cb)
+                } as ButtonConfig['action'],
+            },
+            {
+                extend: 'removeAllStates', text: 'Smazat uložená zobrazení', action: function (e, dt, node, config, cb) {
+                    statesWokeUp.value = true
+                    app.$DataTable.value!.ext.buttons.removeAllStates.action?.(e, dt, node, config, cb)
+                } as ButtonConfig['action'],
+            },
             { extend: 'spacer', style: 'bar' },
+            //Workaround for states buttons do not load at first run
+            ...((!statesWokeUp.value ? (table.value?.dt?.stateRestore?.states() as any)?.toArray()?.map((s: StateRestore) => ({
+                text: s.s.identifier,
+                split: ['updateState', 'renameState', 'removeState'],
+                _stateRestore: s,
+                action() {
+                    table.value!.dt.stateRestore.state(s.s.identifier)!.load()
+                },
+            })) : undefined) ?? []),
         ],
     }, ...(cloud.resolvedPermissions.editSchedule ? editMode.value ? [{
         text: useIconEl('edit'),
@@ -555,8 +579,8 @@ const buttons = computed(() => [
         ],
     },
 ])
-watchDebounced([buttons, showTable, windowSize.width], (newVal, oldVal) => {
-    if (oldVal && isMatchWith(oldVal, newVal, val => typeof val == 'function' ? true : undefined)) {
+watchDebounced([buttons, showTable, windowSize.width, loadedDt], (newVal, oldVal) => {
+    if (oldVal && isMatchWith(newVal, oldVal, val => typeof val == 'function' ? true : undefined)) {
         return
     }
     if (table.value && showTable.value && dtButtons.value) {
@@ -566,7 +590,7 @@ watchDebounced([buttons, showTable, windowSize.width], (newVal, oldVal) => {
             }
         }
         nextTick(() => {
-            if (oldVal?.[1]) {
+            if (oldVal?.[1] && dtButtons.value?.querySelector('.dt-buttons')) {
                 for (const button of buttons.value) {
                     table.value!.dt.button().add(null as any, button as any)
                 }
@@ -583,7 +607,7 @@ const searchList = windowSize.width.value > 700 ? [
         'order',
         'searchList',
         'spacer',
-        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible)' },
+        { extend: 'colVisDropdown', text: 'Sloupce', columns: ':not(.always-visible, .undescribed)' },
         'showAll',
     ],
 ] : undefined
@@ -627,6 +651,9 @@ const columns = computed(() => {
         ...complexColumns.value,
         // Form fields
         ...fieldColumns,
+        ...toAdd.value.map((k: any) => ({
+            data: k, title: availableQuestions.value[k].title, visible: false, className: 'undescribed', name: k,
+        })),// undescribed questions columns
         { data: null, title: 'Celkem', render: computeTotal, visible: false, className: 'print' },
         { data: 'paid', title: 'Převodem', render: renderUndefined, className: 'print' },
         { data: 'remaining', title: 'Zbývá', render: renderUndefined, className: 'print' },

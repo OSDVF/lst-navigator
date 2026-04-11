@@ -26,10 +26,10 @@
 
         .vel-modal,
         .noinvert,
-        .ck-editor__main, .dt-button-background, div.dtcc-dropdown, .dataTable {
+        .ck-editor__main, .dt-button-background, div.dtcc-dropdown, .dataTable, .dtsr-background, .dtsr-confirmation {
             filter: invert(100%);
         }
-        .dataTable {
+        .dataTable, .dtsr-confirmation {
             color: white;
         }
         .dt-input {

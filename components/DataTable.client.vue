@@ -138,7 +138,8 @@ onMounted(() => {
     }
 }
 
-.datatable {
+.datatable,
+nav {
     div.dt-button-collection .dt-button-active::after {
         right: 0em;
     }

@@ -103,6 +103,7 @@ if (import.meta.browser && router.currentRoute.value.params.event) {
         display: flex;
         align-items: stretch;
         justify-content: center;
+        flex-grow: 1;
 
         &:not(:hover) {
             color: inherit;
