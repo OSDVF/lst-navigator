@@ -94,7 +94,8 @@
                     </abbr>
                 </label>&ensp;
                 <TagsSelect
-                    id="tags" v-model="editedEvent.tags" :options="allTags"
+                    id="tags" v-model="editedEvent.tags" :allow-empty="!filterTags.length || cloud.resolvedPermissions.superAdmin"
+                    :options="allTags"
                     @tag="(tag: string) => { allTags = [...allTags, tag]; editedEvent.tags.push(tag) }" />
             </div>
             <br>
@@ -611,7 +612,7 @@ function selectionChanged() {
     if (table.value?.dt) {
         const data = table.value.dt.rows({ selected: true }).data()
         isSelection.value = data.length > 0
-        selectedTitle.value = isSelection.value ? cloud.eventsCollection.find(e=>e.id == data[0][0])?.title : undefined
+        selectedTitle.value = isSelection.value ? cloud.eventsCollection.find(e => e.id == data[0][0])?.title : undefined
     }
 
 }
