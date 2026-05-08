@@ -29,7 +29,7 @@
             </template>
             <template v-else>
                 <div v-for="respondent in tabulated.respondents" :key="respondent" class="th">
-                    {{ respondent }}
+                    <span :title="respondent">{{ admin.anonymize.value ? respondent : getRespondentName(respondent, cloud) }}</span>
                     <button
                         title="Smazat respondentovy odpovědi v této kategorii"
                         @click.exact="deleteRespondentSection(respondent)"
@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 import { useAdmin } from '@/stores/admin'
-import { csvExport } from '~/utils/csvExport'
+import { csvExportFeedback } from '~/utils/csvExport'
 import type { Feedback, FeedbackConfig, FeedbackQuestionsCustom, FeedbackQuestionsProgram, TabulatedFeedback, UpdatePayload } from '@/types/cloud'
 
 const props = defineProps<{
@@ -97,7 +97,7 @@ const allRespondents = useFeedbackRespondents()
 
 const error = ref()
 function exportPart() {
-    csvExport(`${cloud.selectedEvent}-${props.sectionKey}`, error, { [props.sectionKey]: props.feedbackSection }, cloud)
+    csvExportFeedback(`${cloud.selectedEvent}-${props.sectionKey}`, error, { [props.sectionKey]: props.feedbackSection }, cloud)
 }
 const scrollX = ref(0)
 const syncHeader = ref<HTMLElement>()

@@ -6,7 +6,7 @@
         <LazyClientOnly>
             <Teleport v-if="mounted" to="#additionalNav">
                 <nav class="eventItemNav">
-                    <template v-if="cloud.eventDescription?.formDocument || cloud.eventDescription?.participantSection || cloud.groups.length || cloud.duties.length">
+                    <template v-if="cloud.eventDescription?.formDocument || cloud.eventDescription?.participantSection || applications.applications.length  || cloud.groups.length || cloud.duties.length">
                         <NuxtLink :to="`/${cloud.selectedEvent}/admin/people/applications`">
                             <Icon name="mdi:vote-outline" />
                             Přihlášky
@@ -53,6 +53,7 @@ definePageMeta({
 })
 
 const cloud = useCloudStore()
+const applications = useApplications()
 const mounted = ref(false)
 onMounted(() => mounted.value = true)
 </script>

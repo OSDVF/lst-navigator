@@ -226,6 +226,14 @@ export function feedbackEnabled<T>(event: EventDescription<T> | undefined | null
     return now >= toJSDate(event.start).getTime() && now <= toJSDate(event.feedbackEnd || event.end).getTime()
 }
 
+export function getRespondentName(key: string, cloud: ReturnType<typeof useCloudStore>) : string {
+    const respondentInfo = cloud.feedback.online[key]
+    if(typeof respondentInfo !== 'undefined' && typeof respondentInfo.nickname == 'string') {
+        return respondentInfo.nickname || key
+    }
+    return key
+}
+
 export function maybe<T, U, V>(t: T | undefined, y: (_: T) => U, n: (() => V)): U | V
 export function maybe<T, U>(t: T | undefined, y: (_: T) => U): U | undefined
 // spaceship operator. Do something on t if it is not undefined
@@ -297,6 +305,6 @@ export function assignDeepIfTruish<T extends object, U>(target: T, source: U): T
     return target as T & U
 }
 
-export function useIconEl(name: string, title?: string) {
-    return `<span tabindex='0' title='${title ?? ''}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${name}.svg);'></span>`
+export function useIconEl(name: string, title?: string, style?: string) {
+    return `<span tabindex='0' title='${title ?? ''}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${name}.svg);${style ?? ''}'></span>`
 }

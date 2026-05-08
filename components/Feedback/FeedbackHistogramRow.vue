@@ -40,7 +40,7 @@
         <table>
             <tbody>
                 <tr v-for="detailReply in repliesWithDetails" :key="`d${detailReply.i}`">
-                    <td v-if="!admin.anonymize.value">{{ detailReply.i }}</td>
+                    <td v-if="!admin.anonymize.value" :title="detailReply.i">{{ getRespondentName(detailReply.i, cloud) }}</td>
                     <td>{{ detailReply.r.detail }}</td>
                 </tr>
             </tbody>
@@ -71,6 +71,7 @@ const props = defineProps<{
 
 const repliesValues = computed(() => Object.values(props.replies))
 const admin = storeToRefs(useAdmin())
+const cloud = useCloudStore()
 
 const repliesWithDetails = computed(() => {
     return Object.entries(props.replies).map(([i, r]) => ({ i, r })).filter(({ r }) => r.detail)
