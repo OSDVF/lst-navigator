@@ -73,7 +73,7 @@ const isPageLoading = useLoadingIndicator()
 
 
 watchEffect(() => {
-    if (app.$needRefresh?.value) {
+    if (app.$needRefresh?.value || app.$pwa?.needRefresh) {
         router.push({
             path: '/update',
             query: {

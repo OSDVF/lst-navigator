@@ -99,7 +99,7 @@
 import { setDoc, useCollection as useCollectionT } from '~/utils/trace'
 import { knownCollection, useCloudStore } from '~/stores/cloud'
 import { collection } from 'firebase/firestore'
-import { csvExport } from '~/utils/csvExport'
+import { csvExportFeedback } from '~/utils/csvExport'
 import type { EventSubcollection, FeedbackConfig } from '@/types/cloud'
 import { useAdmin } from '~/stores/admin'
 import { download } from '~/utils/utils'
@@ -133,7 +133,7 @@ function resize() {
 }
 
 function csvExportAll() {
-    csvExport(cloud.selectedEvent, error, cloud.feedback.online, cloud)
+    csvExportFeedback(cloud.selectedEvent, error, cloud.feedback.online, cloud)
 }
 
 const configCategoriesOrDefault = computed<FeedbackConfig[]>(() => {

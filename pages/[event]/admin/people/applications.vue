@@ -92,6 +92,7 @@ import { setDoc as setDocT } from '~/utils/trace'
 import mapValues from 'lodash.mapvalues'
 import isEmpty from 'lodash.isempty'
 import isMatchWith from 'lodash.ismatchwith'
+import pickBy from 'lodash.pickby'
 
 declare module 'datatables.net' {
     interface ApiButtonMethods<T> extends Omit<Api<T>, 'trigger'> {
@@ -543,6 +544,16 @@ const buttons = computed(() => [
         className: 'selected-only disabled',
         titleAttr: 'Zkopíruje všechny vybrané buňky do schránky. Pokud je vybráno více buněk v jednom řádku, budou sloučeny do jedné buňky oddělené čárkou.',
         action: copySelected,
+        split: [{
+            text: useIconEl('checkbox-multiple-marked-outline') + ' Vše',
+            titleAttr: 'Vybrat všechny',
+            action: selectAll,
+        }, {
+            text: useIconEl('checkbox-blank-off-outline') + ' Zrušit',
+            titleAttr: 'Zrušit výběr',
+            action: deselect,
+        },
+        ],
     }, {
         extend: 'print',
         text: 'Ubytovací list',
@@ -576,9 +587,55 @@ const buttons = computed(() => [
                 titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
                 action: refresh,
             }, ...questionControlColumns.value,
+            {
+                text: 'Export',
+                extend: 'collection',
+                buttons: [{
+                    text: useIconEl('code-braces') + ' JSON',
+                    action: exportJson,
+                }, {
+                    text: useIconEl('file-document-arrow-right') + ' CSV',
+                    action: exportCSV,
+                },
+                ],
+            },
         ],
     },
 ])
+
+function selectAll() {
+    table.value?.dt.rows().select()
+}
+
+function deselect() {
+    table.value?.dt.rows().deselect()
+}
+
+function selectedMapped(pickKeys?: (val: typeof data.value[number], key: string) => boolean) {
+    const selected = selection.value?.data() ?? table.value?.dt.rows().data()
+    return selected?.toArray().map((o: typeof data.value[number]) => pickBy(o, pickKeys ?? ((_, key) => {
+        const a = applications.filtered.find(a => a.id == o.id)!
+        return key in a
+    })))
+}
+
+function exportFileName(extension: string) {
+    return `${cloud.selectedEvent}-applications-${new Date().toLocaleString(navigator.language, { timeStyle: 'short', dateStyle: 'short' }).replace(':', '-')}.${extension}`
+}
+
+function exportJson() {
+    const m = selectedMapped()
+    download(exportFileName('json'), JSON.stringify(toRaw(m)))
+}
+
+function exportCSV() {
+    const m = selectedMapped(val => ['string', 'number', 'boolean'].includes(typeof val))
+    const cols = table.value?.dt.columns()
+    const dataSrcs = cols?.dataSrc() ?? []
+    const titles = cols?.titles() ?? []
+    csvExport(exportFileName('csv'), (m as any) ?? [], cols?.[0].map((i: number) => ({ key: dataSrcs[i], displayLabel: titles[i] })))
+}
+
 watchDebounced([buttons, showTable, windowSize.width, loadedDt], (newVal, oldVal) => {
     if (oldVal && isMatchWith(newVal, oldVal, val => typeof val == 'function' ? true : undefined)) {
         return

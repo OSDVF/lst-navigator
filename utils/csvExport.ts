@@ -1,6 +1,7 @@
 import merge from 'lodash.merge'
 import { useCloudStore } from '~/stores/cloud'
 import type * as ExportToCsv from 'export-to-csv'
+import type { AcceptedData } from '../node_modules/export-to-csv/output/lib/types.d.ts'
 import type { FieldValue } from 'firebase/firestore'
 import type { Feedback, FeedbackSections } from '~/types/cloud'
 
@@ -13,7 +14,19 @@ function sanitize(str: string | FieldValue) {
 }
 
 let exportToCsv: null | typeof ExportToCsv = null
-export async function csvExport(name: string, error: Ref<string | unknown>, sections: FeedbackSections, cloud?: ReturnType<typeof useCloudStore>) {
+export async function csvExport(name: string, obj: Record<string | number, AcceptedData>[], headers?: ExportToCsv.ColumnHeader[]) {
+    if (!exportToCsv) {
+        exportToCsv = await import('export-to-csv')
+    }
+
+    const csvConfig = exportToCsv.mkConfig({
+        filename: `${name}-${new Date().toLocaleString(navigator.language)}`,
+        columnHeaders: headers ?? Object.keys(obj[0]!),
+    })
+
+    exportToCsv.download(csvConfig)(exportToCsv.generateCsv(csvConfig)(obj))
+}
+export async function csvExportFeedback(name: string, error: Ref<string | unknown>, sections: FeedbackSections, cloud?: ReturnType<typeof useCloudStore>) {
     const cloudStore = cloud ?? useCloudStore()
     try {
         error.value = ''

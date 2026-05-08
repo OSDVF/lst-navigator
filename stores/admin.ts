@@ -10,6 +10,7 @@ export const useAdmin = defineStore('admin', function () {
     const anonymize = useLocalStorage('anonymize', true, {initOnMounted: true})
     const eventClipboard = useLocalStorage<ScheduleItem | null>('eventClipboard', null, {initOnMounted: true})
     const feedbackConfigClipboard = useLocalStorage<FeedbackConfig | null>('feedbackConfigClipboard', null, {initOnMounted: true})
+    const onlyTaggedEvents = useLocalStorage('onlyTaggedEvents', true, { initOnMounted: true})
 
     return {
         anonymize,
@@ -17,6 +18,7 @@ export const useAdmin = defineStore('admin', function () {
         feedbackConfigClipboard,
         displayKind,
         editingFeedback: computed(() => editingFeedback.value && displayKind.value === 'individual'),
+        onlyTaggedEvents,
         setEditingFeedback(value: boolean) {
             editingFeedback.value = value
         },

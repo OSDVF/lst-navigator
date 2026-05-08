@@ -159,6 +159,7 @@ export type EventDescription<T = string> = {
 
     showFrom?: FirebaseDate,
     showTo?: FirebaseDate,
+    tags?: string[],
 
     transfers?: boolean,
     web: string

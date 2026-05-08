@@ -84,7 +84,21 @@
                     v-model.lazy='editedEvent.identifier' type='text' required
                     :disabled='action == Actions.Edit'></label><br>
             </small>
-            <label>Podtitulek&ensp;<input v-model.lazy='editedEvent.subtitle' type='text'></label><br><br>
+            <label>Podtitulek&ensp;<input v-model.lazy='editedEvent.subtitle' type='text'></label>
+            <div class="flex-center mt-1">
+                <label class="nowrap" for="icon">
+                    <abbr
+                        :title="'Štítky pomáhají odlišit události pro různé organizace nebo skupiny účastníků. Aplikace pod touto doménou ve výchozím stavu zobrazuje štítky: ' + (filterTags.length ? filterTags.join(', ') : 'všechny.')">
+                        <Icon name="mdi:tag" />&ensp;
+                        Štítky
+                    </abbr>
+                </label>&ensp;
+                <TagsSelect
+                    id="tags" v-model="editedEvent.tags" :options="allTags"
+                    @tag="(tag: string) => { allTags = [...allTags, tag]; editedEvent.tags.push(tag) }" />
+            </div>
+            <br>
+
             <label>
                 <Icon name="mdi:link" style="transform: rotate(45deg);" /> Web&ensp;<input
                     v-model.lazy='editedEvent.web' placeholder='https://msmladez.cz' type='url' required>
@@ -145,10 +159,12 @@
                 </div>
             </details>
 
-            <label for="participantSection" title="Uživatelé mohou zobrazit stav své přihlášky, skupinky a služby">
+            <label for="participantSection" title="Uživatelé mohou zobrazit stav své přihlášky, skupinky a služby.">
                 <Icon name="mdi:hail" /> Účastnická sekce
             </label>
-            <input id="participantSection" v-model="editedEvent.participantSection" type="checkbox" name="participantSection">
+            <input
+                id="participantSection" v-model="editedEvent.participantSection" type="checkbox"
+                name="participantSection">
 
             <label for="transfers">
                 <Icon name="mdi:leak" /> Povolit přenosy uživatelských dat
@@ -160,7 +176,6 @@
                 <Icon name="mdi:account-settings" /> Povolit uživatelům pokročilá nastavení
             </label>
             <input id="advanced" v-model="editedEvent.advanced" type="checkbox" name="advanced">
-            <br><br>
 
             <ClassicCKEditor v-model.lazy='editedEvent.description' placeholder="Popis události" />
 
@@ -224,7 +239,7 @@
             <hr>
         </form>
         <LazyDataTable
-            ref='table' :data='eventsIndexed' :options='{
+            v-if="showTable" ref='table' :data='eventsIndexed' :options='{
                 responsive: true,
                 select: true,
                 order: [[0, "desc"]]
@@ -235,9 +250,19 @@
                     <th>Titulek</th>
                     <th>Začátek</th>
                     <th>Konec</th>
+                    <th v-if="cloud.resolvedPermissions.superAdmin && !admin.onlyTaggedEvents">Štítky</th>
                 </tr>
             </thead>
         </LazyDataTable>
+        <Teleport v-if="mounted" to="#topNav">
+            <label>
+                <input
+                    v-model="admin.onlyTaggedEvents" type="checkbox"
+                    @change="showTable = false; nextTick(() => showTable = true)"> Jen se štítkem <code>{{
+                        config.public.filterTags
+                    }}</code>
+            </label>
+        </Teleport>
     </div>
 </template>
 
@@ -266,6 +291,7 @@ definePageMeta({
 })
 
 const oneDay = 1000 * 3600 * 24
+const admin = useAdmin()
 const cloud = useCloudStore()
 const error = ref()
 const gapi = useGapi()
@@ -275,7 +301,12 @@ enum Actions {
     Nothing, New, Edit, ConnectForm
 }
 const action = ref<Actions>(Actions.Nothing)
+const config = useRuntimeConfig()
+const filterTags = config.public.filterTags.split(',').map(t => t.trim()) ?? [] as string[]
 const form = useTemplateRef<InstanceType<typeof ImportForm>>('form')
+
+const mounted = ref(false)
+onMounted(() => mounted.value = true)
 
 const now = toFirebaseDate(new Date())!
 const editedEvent = ref({
@@ -300,6 +331,7 @@ const editedEvent = ref({
     showTo: '',
     subtitle: '',
     transfers: false,
+    tags: filterTags,
     web: '',
 })
 const customOrder = computed({
@@ -312,6 +344,17 @@ const customOrder = computed({
         } else if (!value) {
             editedEvent.value.order = ''
         }
+    },
+})
+
+const otherEventsTags = computed(() => [...new Set(cloud.eventsCollection.map(e => e.tags ?? []).flat().concat(filterTags)).values()])
+const _allTags = ref(otherEventsTags.value)
+const allTags = computed({
+    get() {
+        return _allTags.value
+    },
+    set(value: string[]) {
+        _allTags.value = [...new Set([..._allTags.value, ...value]).values()]
     },
 })
 
@@ -372,7 +415,6 @@ const imageExternalUrl = computed({
     },
 })
 
-const config = useRuntimeConfig()
 const storage = cloud.probe && config.public.storageEnabled && useFirebaseStorage()
 const fs = cloud.probe && useFirestore()
 
@@ -387,7 +429,7 @@ function uploadImage() {
 
 async function normalizeForms() {
     try {
-        if(!editedEvent.value.form) {
+        if (!editedEvent.value.form) {
             editedEvent.value.formDocument = ''
             return
         }
@@ -511,6 +553,7 @@ async function editEvent(createNew = false) {
         showTo: toFirebaseDate(new Date(editedEvent.value.showTo)) || deleteField(),
         subtitle: editedEvent.value.subtitle,
         transfers: editedEvent.value.transfers,
+        tags: editedEvent.value.tags,
         web: editedEvent.value.web,
     } as EventDescription<void>, { merge: true })
 
@@ -546,15 +589,17 @@ const eventsIndexed = computed(() => {
         for (const eventData of cloud.eventsCollection) {
             result.push([
                 eventData.id,
-                eventData.title,
+                eventData.title + ((eventData.formDocument && extractFormIdFromURL(eventData.formDocument)) ? useIconEl('form-select', 'Má přihlášku', 'background: #7346ba;margin-left:.5rem') : ''),
                 toJSDate(eventData.start)?.toLocaleDateString(lang.value),
                 toJSDate(eventData.end)?.toLocaleDateString(lang.value),
+                ...((cloud.resolvedPermissions.superAdmin && !admin.onlyTaggedEvents) ? [eventData.tags ?? ''] : ['']),
             ])
         }
     }
     return result
 })
 
+const showTable = ref(true)
 const table = ref<{ dt?: Api<typeof eventsIndexed.value> }>()
 const isSelection = ref(false)
 const importInto = computed(() => isSelection.value && action.value != Actions.New)
@@ -566,7 +611,7 @@ function selectionChanged() {
     if (table.value?.dt) {
         const data = table.value.dt.rows({ selected: true }).data()
         isSelection.value = data.length > 0
-        selectedTitle.value = isSelection.value ? data[0][1] : undefined
+        selectedTitle.value = isSelection.value ? cloud.eventsCollection.find(e=>e.id == data[0][0])?.title : undefined
     }
 
 }
@@ -606,6 +651,7 @@ async function startEditingSelected() {
                 showTo: selectedEvent.showTo ?? '',
                 start: selectedEvent.start,
                 subtitle: selectedEvent.subtitle,
+                tags: selectedEvent.tags || [],
                 transfers: selectedEvent.transfers ?? false,
                 web: selectedEvent.web,
             }

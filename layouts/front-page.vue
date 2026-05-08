@@ -36,7 +36,7 @@ const router = useRouter()
 const isServer = ref(import.meta.server)
 
 watchEffect(() => {
-    if (app.$needRefresh?.value) {
+    if (app.$needRefresh?.value || app.$pwa?.needRefresh) {
         router.push({
             path: '/update',
             query: {

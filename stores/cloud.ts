@@ -1,6 +1,6 @@
 // TODO feedback as subcollections
 import { defineStore, skipHydrate } from 'pinia'
-import { FieldValue, Firestore, writeBatch, type CollectionReference } from 'firebase/firestore'
+import { FieldValue, Firestore, query, where, writeBatch, type CollectionReference } from 'firebase/firestore'
 import { arrayUnion, collection, deleteField, doc } from 'firebase/firestore'
 import { setDoc as setDocT, useDocument as useDocumentT, useCollection as useCollectionT } from '~/utils/trace'
 import { updateCurrentUserProfile, useCurrentUser, useFirebaseAuth } from 'vuefire'
@@ -81,6 +81,7 @@ export function eventDocs(fs: Firestore, name: string): EventDocs {
  * Encapsulates all reactive communication with firestore
  */
 export const useCloudStore = defineStore('cloud', () => {
+    const adminSettings = useAdmin()
     const config = useRuntimeConfig()
     const firebaseApp = probe && useFirebaseApp()
     const settings = useSettings()
@@ -456,9 +457,9 @@ export const useCloudStore = defineStore('cloud', () => {
         if (newId) {
             feedback.dirtyTime.value = 0// force refresh from remote
             feedback.hydrate(feedback.online.value)
-            const nick = feedback.online.value[newId]
-            if (!userAuth.value && typeof nick !== 'undefined' && typeof nick.nickname == 'string') {
-                settings.userNickname.value = nick.nickname
+            const respondentInfo = feedback.online.value[newId]
+            if (!userAuth.value && typeof respondentInfo !== 'undefined' && typeof respondentInfo.nickname == 'string') {
+                settings.userNickname.value = respondentInfo.nickname
             }
         } else {// clear feedback if user is not logged in
             if (offlineFeedback.value[selectedEvent.value]) { offlineFeedback.value[selectedEvent.value] = {} }
@@ -663,7 +664,12 @@ export const useCloudStore = defineStore('cloud', () => {
         }).catch(e => { console.error(e); if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) } })
     }
 
-    const eventsCollection = useCollectionT<EventDescription<void>>(firestore ? knownCollection(firestore, 'events') : null, { maxRefDepth: 0, once: !!import.meta.server })
+    const filterTags = config.public.filterTags.split(',').map(t => t.trim())
+    const eventsCollection = useCollectionT<EventDescription<void>>(computed(() => firestore ?
+        (filterTags.length && (!resolvedPermissions.value.superAdmin || adminSettings.onlyTaggedEvents)) ?
+            query(knownCollection(firestore, 'events'), where('tags', 'array-contains-any', filterTags))
+            : knownCollection(firestore, 'events') : null), { maxRefDepth: 0, once: !!import.meta.server },
+    )
     const visibleEvents = computed(() => {
         const events: (EventDescription<void> & { id: string, a: boolean, f: boolean })[] = []
         for (const e of eventsCollection.value) {

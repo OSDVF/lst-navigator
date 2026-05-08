@@ -74,7 +74,6 @@ declare module '#app' {
     $deferredPrompt: Ref<BeforeInstallPromptEvent | null>
     $hydrated: Ref<boolean>,
     $installPromptSupport: () => boolean,
-    $pwa: PwaInjection,
     $location: string,
     $downloadingUpdate?: Ref<boolean>,
     $needRefresh?: Ref<boolean>,

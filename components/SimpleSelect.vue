@@ -4,32 +4,32 @@
         :deselect-label="p.deselectLabel ?? ''" :selected-label="p.selectedLabel ?? ''"
         :preselect-first="p.preselectFirst ?? true" :allow-empty="p.allowEmpty ?? false"
         :options="Object.keys(p.labels)" :searchable="p.searchable ?? false"
-        @update:model-value="(e: keyof Opts) => emit('update:modelValue', e)">
+        @update:model-value="(e: Model) => emit('update:modelValue', e)">
         <template #singleLabel="props">
-            <Icon :name="p.labels[props.option as keyof Opts].icon" />
-            <slot name="singleLabel" :option="props.option" :text="p.labels[props.option as keyof Opts].text">
+            <Icon v-if="p.labels[props.option as Opts].icon" :name="p.labels[props.option as Opts].icon!" />
+            <slot name="singleLabel" :option="props.option" :text="p.labels[props.option as Opts].text">
                 &nbsp;
-                {{ p.labels[props.option as keyof Opts].text }}
+                {{ p.labels[props.option as Opts].text }}
             </slot>
         </template>
         <template #option="props">
             <span class="flex-center">
-                <Icon :name="p.labels[props.option as keyof Opts].icon" />
-                <slot name="option" :option="props.option" :text="p.labels[props.option as keyof Opts].text">
+                <Icon v-if="p.labels[props.option as Opts].icon" :name="p.labels[props.option as Opts].icon!" />
+                <slot name="option" :option="props.option" :text="p.labels[props.option as Opts].text">
                     &nbsp;
-                    {{ p.labels[props.option as keyof Opts].text }}
+                    {{ p.labels[props.option as Opts].text }}
                 </slot>
             </span>
         </template>
     </Multiselect>
 </template>
 
-<script lang="ts" setup generic="Opts">
+<script lang="ts" setup generic="Opts extends keyof any, Model extends Opts | Opts[]">
 const p = defineProps<{
-    modelValue: keyof Opts,
+    modelValue: Model,
     labels: {
-        [key in keyof Opts]: {
-            icon: string,
+        [key in Opts]: {
+            icon?: string,
             text: string,
         }
     },
@@ -43,6 +43,6 @@ const p = defineProps<{
 }>()
 
 const emit = defineEmits<{
-    'update:modelValue': [value: keyof Opts],
+    'update:modelValue': [value: Model],
 }>()
 </script>

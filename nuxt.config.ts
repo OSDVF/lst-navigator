@@ -369,6 +369,7 @@ const config = defineNuxtConfig({
             longName: process.env.VITE_APP_NAME,
             defaultEvent,
             emulators,
+            filterTags: process.env.VITE_APP_FILTER_TAGS,
             frontPageImage: process.env.FRONT_PAGE_IMAGE,
             frontPageLink: process.env.FRONT_PAGE_LINK,
             frontPageTitle: process.env.FRONT_PAGE_TITLE,
