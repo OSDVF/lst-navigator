@@ -10,14 +10,14 @@
             <FormDocumentInput v-if="event" v-model="event!.formDocument" disabled :form-url="event?.form" />
             <ProgressBar v-if="ui.isLoading" />
 
-            <fieldset v-if="!internalSettings.secretsExist && !ui.isLoading" class="p">
+            <fieldset v-if="(!internalSettings.secretsExist || !applications.settings.value) && !ui.isLoading" class="p">
                 <legend>
-                    <Icon name="mdi:link-variant" /> Propojení přihlašovacího formuláře s aplikací
+                    <Icon name="mdi:link-variant" /> Propojte přihlašovací formulář s touto aplikací
                 </legend>
-                <span v-if="synced" style="color:green">
+                <span v-if="applications.settings.value" style="color:green">
                     <Icon name="mdi:check" />&nbsp;Synchronizováno
                 </span>
-                <template v-else-if="serviceAccountLoaded">
+                <template v-else-if="serviceAccountLoaded || internalSettings.secretsExist">
                     <button @click="sync().catch(e => error = e)">
                         <Icon name="mdi:sync" /> Synchronizovat
                     </button>&ensp;
@@ -51,7 +51,7 @@
             </fieldset>
         </template>
 
-        <main v-if="event && internalSettings.secretsExist" style="flex-grow:1">
+        <main v-if="event && internalSettings.secretsExist && applications.settings.value" style="flex-grow:1">
             <details class="border mt-2">
                 <summary>
                     <h3>
@@ -59,15 +59,24 @@
                     </h3>
                 </summary>
                 <p>
-                    <small v-if="!formData.revisionId" class="error"><Icon name="mdi:alert" /> Nelze upravovat, protože není přihlášen uživatel s Google účtem a právy na editaci formuláře. <br><br></small>
+                    <small v-if="!formData.revisionId" class="error">
+                        <Icon name="mdi:alert" /> Nelze upravovat, protože není přihlášen uživatel s Google účtem a
+                        právy na
+                        editaci formuláře. <br><br>
+                    </small>
                     <label class="inline-block">
                         <Icon name="mdi:vote-outline" /> Publikovaný&nbsp;
-                        <input id="publish" v-model="formData.publishSettings!.publishState!.isPublished" type="checkbox" name="publish" :disabled="!formData.revisionId">
+                        <input
+                            id="publish" v-model="formData.publishSettings!.publishState!.isPublished"
+                            type="checkbox" name="publish" :disabled="!formData.revisionId">
                     </label>
                     <br>
                     <label class="inline-block">
                         <Icon name="mdi:vote-outline" /> Přijímá odpovědi&nbsp;
-                        <input id="isAcceptingResponses" v-model="formData.publishSettings!.publishState!.isAcceptingResponses" type="checkbox" name="isAcceptingResponses" :disabled="!formData.revisionId">
+                        <input
+                            id="isAcceptingResponses"
+                            v-model="formData.publishSettings!.publishState!.isAcceptingResponses" type="checkbox"
+                            name="isAcceptingResponses" :disabled="!formData.revisionId">
                     </label>
                     <br>
                     <label class="inline-block">
@@ -77,7 +86,9 @@
                     <br>
                     <label class="inline-block">
                         <Icon name="mdi:email" /> Fromulář sbírá emaily&nbsp;
-                        <select id="emails" v-model="formData.settings!.emailCollectionType" name="emails" :disabled="!formData.revisionId">
+                        <select
+                            id="emails" v-model="formData.settings!.emailCollectionType" name="emails"
+                            :disabled="!formData.revisionId">
                             <option v-for="(desc, key) in emailCollectionTypes" :key="key" :value="key">{{ desc }}
                             </option>
                         </select>
@@ -104,7 +115,7 @@
                 <label>Jméno&nbsp;
                     <FormItemSelect
                         id="name" v-model="settings.fields.name" type="text"
-                        :real="!!applications.settings.value?.fields.name"
+                        :real="!!applications.settings.value?.fields?.name"
                         :placeholder="config.public.applicationDefaultNameField" name="name" :items="formQuestions"
                         @update:model-value="dirty = true" />
                 </label><br>
@@ -112,62 +123,69 @@
                     v-if="!Object.keys(emailCollectionTypes).includes(formData.settings!.emailCollectionType ?? '')">Email&nbsp;
                     <FormItemSelect
                         id="email" v-model="settings.fields.email" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.email" placeholder="E-mail" name="email"
+                        :real="!!applications.settings.value?.fields?.email" placeholder="E-mail" name="email"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Telefon&nbsp;
                     <FormItemSelect
                         id="name" v-model="settings.fields.phone" type="text"
-                        :real="!!applications.settings.value?.fields.phone"
+                        :real="!!applications.settings.value?.fields?.phone"
                         :placeholder="config.public.applicationDefaultPhoneField" name="phone" :items="formQuestions"
+                        @update:model-value="dirty = true" />
+                </label><br>
+                <label>Město / Bydliště&nbsp;
+                    <FormItemSelect
+                        id="town" v-model="settings.fields.town" type="text"
+                        :real="!!applications.settings.value?.fields?.town"
+                        :placeholder="config.public.applicationDefaultTownField" name="phone" :items="formQuestions"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Kategorie účastníka&nbsp;
                     <FormItemSelect
                         id="category" v-model="settings.fields.category" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.category"
+                        :real="!!applications.settings.value?.fields?.category"
                         :placeholder="config.public.applicationDefaultCategoryField" name="category"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Příjezd&nbsp;
                     <FormItemSelect
                         id="arrival" v-model="settings.fields.arrival" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.arrival"
+                        :real="!!applications.settings.value?.fields?.arrival"
                         :placeholder="config.public.applicationDefaultArrivalField" name="arrival"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Odjezd&nbsp;
                     <FormItemSelect
                         id="departure" v-model="settings.fields.departure" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.departure" type="text"
+                        :real="!!applications.settings.value?.fields?.departure" type="text"
                         :placeholder="config.public.applicationDefaultDepartureField" name="departure"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Další zakoupené položky&nbsp;
                     <FormItemSelect
                         id="extras" v-model="settings.fields.extras" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.extras"
+                        :real="!!applications.settings.value?.fields?.extras"
                         :placeholder="config.public.applicationDefaultExtrasField" name="extras"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>První jídlo&nbsp;
                     <FormItemSelect
                         id="firstMeal" v-model="settings.fields.firstMeal" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.firstMeal"
+                        :real="!!applications.settings.value?.fields?.firstMeal"
                         :placeholder="config.public.applicationDefaultFirstMealField" name="firstMeal"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Poslední jídlo&nbsp;
                     <FormItemSelect
                         id="lastMeal" v-model="settings.fields.lastMeal" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.lastMeal"
+                        :real="!!applications.settings.value?.fields?.lastMeal"
                         :placeholder="config.public.applicationDefaultLastMealField" name="lastMeal"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Strava&nbsp;
                     <FormItemSelect
                         id="food" v-model="settings.fields.food" :items="formQuestions"
-                        :real="!!applications.settings.value?.fields.food"
+                        :real="!!applications.settings.value?.fields?.food"
                         :placeholder="config.public.applicationDefaultFoodField" name="food"
                         @update:model-value="dirty = true" />
                 </label><br>
@@ -199,7 +217,9 @@
                 </div>
                 <div v-if="settings.values.mealNames?.length">
                     <h4>Rozvrh jídel</h4>
-                    <label title="První jídlo, které bude možné vybrat pokud někdo přijede už na první den akce">První jídlo na akci&nbsp;
+                    <label title="První jídlo, které bude možné vybrat pokud někdo přijede už na první den akce">První
+                        jídlo na
+                        akci&nbsp;
                         <FormItemSelect
                             id="eventFirstMeal" v-model="settings.values.eventFirstMeal" :items="settings.values.mealNames.map((m, i) => ({
                                 id: i,
@@ -208,7 +228,9 @@
                             :placeholder="settings.values.mealNames[parseInt(config.public.applicationDefaultEventFirstMealIndex) || 0]"
                             name="eventFirstMeal" by-id @update:model-value="dirty = true" />
                     </label><br>
-                    <label title="Poslední jídlo, které bude možné vybrat pokud někdo odjede až poslední den akce">Poslední jídlo na akci&nbsp;
+                    <label
+                        title="Poslední jídlo, které bude možné vybrat pokud někdo odjede až poslední den akce">Poslední
+                        jídlo na akci&nbsp;
                         <FormItemSelect
                             id="eventLstMeal" v-model="settings.values.eventLastMeal" :items="settings.values.mealNames.map((m, i) => ({
                                 id: i,
@@ -345,10 +367,10 @@
             <code class="error">{{ error }}</code>
             <br>
             <br>
-            <button @click="emit('return')">
-                <Icon name="mdi:cancel" /> Zpět
-            </button>
         </p>
+        <button v-if="error || !event || !internalSettings.secretsExist" @click="emit('return')">
+            <Icon name="mdi:cancel" /> Zpět
+        </button>
         <FormTemplateInfo
             v-if="showInfo"
             :class="['top-0', ...(windowSize.width.value > 700 ? ['sticky'] : ['fixed', 'right-0', 'mw-50-vw'])]"
@@ -358,14 +380,14 @@
 </template>
 
 <script setup lang="ts">
+import * as Sentry from '@sentry/nuxt'
+import { doc } from 'firebase/firestore'
+import type { Responses } from '~/form-connector/src/api'
 import type { ApplicationFormSecrets } from '~/form-connector/src/settings'
 import type { EventSettings } from '~/form-connector/src/types'
 import type { ApplicationFormSettings } from '~/types/cloud'
-import type { Responses } from '~/form-connector/src/api'
-import { setDoc as setDocT } from '~/utils/trace'
-import { doc } from 'firebase/firestore'
 import { useApplicationForm, useApplicationFormData } from '~/utils/applicationForm'
-import * as Sentry from '@sentry/nuxt'
+import { setDoc as setDocT } from '~/utils/trace'
 
 type ServiceAccount = {
     type: 'service_account',
@@ -543,6 +565,7 @@ const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 're
         food: config.public.applicationDefaultFoodField || '',
         name: config.public.applicationDefaultNameField || '',
         extras: config.public.applicationDefaultExtrasField || '',
+        town: config.public.applicationDefaultTownField || '',
     },
     mainOrg: config.public.organizerEmail,
     messageTemplate: '',
@@ -558,27 +581,31 @@ watch(applications.settings, doc => {
     }
 }, { immediate: true })
 
-async function save() {
+async function save(retur = true) {
     using _ = ui.loading()
     await setDocT(eventSettingsDoc, {
         ...toRaw(settings.value),
         responsesCollection: `applications/${cloud.selectedEvent}/responses`,
     } as EventSettings<string>, { merge: true })
-    emit('return')
+    if(retur) {
+        emit('return')
+    }
 }
-
-const synced = ref(false)
 
 async function sync() {
     using _ = ui.loading()
 
-    const response = await applFormApi.setSecrets(id, connectCode)
-    if (response.ok) {
-        error.value = undefined
-        synced.value = true
-    } else {
-        error.value = 'Nepodařilo se synchronizovat s formulářem: ' + response.error?.message
-        synced.value = false
+    if(!applications.settings.value) {
+        await save(false)
+    }
+
+    if(!internalSettings.value.secretsExist) {
+        const response = await applFormApi.setSecrets(id, connectCode)
+        if (response.ok) {
+            error.value = undefined
+        } else {
+            error.value = 'Nepodařilo se synchronizovat s formulářem: ' + response.error?.message
+        }
     }
 
     // TODO async encryption of SA

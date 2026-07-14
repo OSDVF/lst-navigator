@@ -365,6 +365,7 @@ const config = defineNuxtConfig({
             applicationDefaultTownField: process.env.APPLICATION_DEFAULT_TOWN_FIELD,
             applicationDefaultMealNames: process.env.APPLICATION_DEFAULT_MEAL_NAMES,
             applicationFormApi: process.env.APPLICATION_FORM_API,
+            applicationFormExecutive: process.env.APPLICATION_FORM_EXECUTIVE,
             title: process.env.VITE_APP_SHORT_NAME,
             longName: process.env.VITE_APP_NAME,
             defaultEvent,

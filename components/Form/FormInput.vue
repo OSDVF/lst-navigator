@@ -6,8 +6,8 @@
         <template v-if="formData?.info?.title">
             <NuxtLink
                 style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
-                class="inline-block dotted-underline" target="_blank" :href="model" title="Otevřít v nové záložce">{{
-                                                                                                                       formData.info.title }}
+                class="inline-block dotted-underline" target="_blank" :href="model" title="Otevřít v nové záložce">
+                {{ formData.info.title }}
                 <sup>
                     <Icon name="mdi:open-in-new" />
                 </sup>
@@ -24,27 +24,29 @@
             <Icon name="mdi:folder-google-drive" /> Vybrat z Disku
         </button>
 
-        <Icon
-            v-if="isFormDoc"
-            title="Byla zadána adresa souboru na Google Disku. Uživatelům bude zobrazen odkaz na vyplnění přihlášky."
-            name="mdi:google-drive" />
+        <template v-if="isFormDoc">
+            <Icon
+                title="Byla zadána adresa souboru na Google Disku. Uživatelům bude zobrazen odkaz na vyplnění přihlášky."
+                name="mdi:google-drive" />
 
-        <button v-if="isFormDoc && !cloud.user.hasAdminScopes" type="button" @click="useGapi().adminReauth()">
-            <Icon name="mdi:google" /> Udělit oprávnění
-        </button>
-        <sup v-else-if="!formData?.info?.title">
+            <button v-if="!cloud.user.hasAdminScopes" type="button" @click="useGapi().adminReauth()">
+                <Icon name="mdi:google" /> Udělit oprávnění
+            </button>
+        </template>
+        <sup v-else-if="!formData?.info?.title && model">
             <a rel="noreferrer noopener" target="_blank" :href="model" title="Otevřít v nové záložce">
                 <template v-if="disabled">Otevřít&nbsp;</template>
                 <Icon name="mdi:open-in-new" />
             </a>
         </sup>
-        <code v-if="cloud.user.error" class="error">{{ cloud.user.error }}</code>
+        <code v-if="error || cloud.user.error" class="error">{{ error || cloud.user.error }}</code>
     </span>
 </template>
 
 <script lang="ts" setup>
 import * as Sentry from '@sentry/nuxt'
 
+const error = ref()
 const model = defineModel<string>()
 const props = defineProps<{
     disabled?: boolean,
@@ -86,15 +88,17 @@ async function hydrateFormData() {
     }
     const gapi = useGapi()
     const client = await gapi.client()
-    const result = await client.forms.forms.get({
-        formId,
-        fields: 'info/*',
-    })
-    if ((result.status ?? 0) < 300) {
-        formData.value = result.result
+    {
+        const result = await client.forms.forms.get({
+            formId,
+            fields: 'info/*',
+        })
+        if ((result.status ?? 0) < 300) {
+            formData.value = result.result
+        }
     }
 }
-onMounted(()=>hydrateFormData().catch(e => {
+onMounted(() => hydrateFormData().catch(e => {
     console.error('Failed to load form data', e)
     Sentry.captureException(e)
 }))

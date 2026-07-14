@@ -28,7 +28,7 @@
         </button>
         <ImportForm
             v-if="cloud.resolvedPermissions.superAdmin && [Actions.Nothing, Actions.New].includes(action)"
-            ref="form" :truncate-option="importInto" @import="importJson" @error="e => error = e">
+            ref="form" :truncate-option="importInto" @import="importJson" @error="(e:any) => error = e">
             <template #legend>
                 {{ importText }}
             </template>
@@ -64,8 +64,6 @@
             @submit.prevent='editEvent(action == Actions.New)'>
             <h2>{{ {
                 [Actions.Edit]: 'Upravit', [Actions.New]: 'Nová událost', [Actions.Nothing]: '',
-                [Actions.ConnectForm]:
-                    'Propojit s přihláškou'
             }[action] }}</h2>
 
             <div style="float:right">
@@ -94,8 +92,8 @@
                     </abbr>
                 </label>&ensp;
                 <TagsSelect
-                    id="tags" v-model="editedEvent.tags" :allow-empty="!filterTags.length || cloud.resolvedPermissions.superAdmin"
-                    :options="allTags"
+                    id="tags" v-model="editedEvent.tags"
+                    :allow-empty="!filterTags.length || cloud.resolvedPermissions.superAdmin" :options="allTags"
                     @tag="(tag: string) => { allTags = [...allTags, tag]; editedEvent.tags.push(tag) }" />
             </div>
             <br>
