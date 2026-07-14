@@ -5,7 +5,7 @@
 
 ///
 /// Rating stars
-/// 
+///
 main .average-rating {
     &::before {
         //nuxt-rating has this class for some reason
@@ -296,8 +296,8 @@ fieldset {
 
     div.dt-button-collection {
         z-index: 5;
-        position: fixed;
-        margin-top: 0 !important;
+        //position: fixed;
+        //margin-top: 0 !important;
         max-height: 100vh;
         overflow-y: auto;
     }
@@ -314,6 +314,7 @@ fieldset {
         display: flex;
         padding-left: 1rem;
         padding-right: 1rem;
+        position: relative
     }
 
     @media screen and (max-width: 700px) {

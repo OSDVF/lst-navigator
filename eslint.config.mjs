@@ -23,5 +23,5 @@ export default withNuxt({
         'vue/multiline-html-element-content-newline': ['off'],
         'vue/max-attributes-per-line': ['off'],
     },
-    ignores: ['swenv.js'],
+    ignores: ['swenv.js', 'form-connector/**'],
 })

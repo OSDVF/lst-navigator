@@ -1,0 +1,41 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+{
+    "tab_size": 4,
+    "formatter": "language_server",
+    "languages": {
+        "JavaScript": {
+            "code_actions_on_format": {
+                "source.fixAll.eslint": true,
+            }
+        },
+        "TypeScript": {
+            "code_actions_on_format": {
+                "source.fixAll.eslint": true,
+            }
+        },
+        "Vue.js": {
+            "format_on_save": "off",
+            "formatter": [
+                {
+                    "language_server": {
+                        "name": "vue-language-server"
+                    }
+                },
+                {
+                    "language_server": {
+                        "name": "eslint"
+                    }
+                },
+                {
+                    "code_action": "source.fixAll.eslint"
+                },
+            ],
+            "code_actions_on_format": {
+                "source.fixAll.eslint": false,
+            }
+        }
+    }
+}

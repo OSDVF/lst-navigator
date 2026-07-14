@@ -2,21 +2,29 @@
     <div>
         <ProgressBar v-if="applications.loadingApplications" />
         <LazyDataTable
-            v-else-if="showTable" id="applications" ref="table" class="display compact fancy" :options="{
+            v-else-if="showTable" id="applications" ref="table" :class="{
+                display: true, compact: true, fancy: true, editMode
+            }" :options="{
                 deferRender: true,
                 responsive, colReorder: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: columnControl,
                 initComplete,
                 createdRow(this: { api(): Exclude<typeof table, null>['dt'] }, row: HTMLTableRowElement, d: typeof data[number], _i: number, cells: HTMLTableCellElement[]) {
                     row.classList.add(ApplicationStateUI[d.state].class)
+                    const _api = this
 
                     if (!isEmpty(d.overlays)) {
                         // eslint-disable-next-line vue/this-in-template
-                        Object.keys(d.overlays).map(o => maybe(maybeIndex(this.api().columns().dataSrc().indexOf(o)), i => {
-                            cells[i].classList.add('overlayed')
-                            cells[i].title ||= 'Hodnota upravena pro zobrazení. Původní hodnota: ' + d.original?.[o as keyof typeof d.original]
-                        }
-                        ))
+                        const overlayKeys = Object.keys(d.overlays)
+                        overlayKeys.concat(...expandMultiple ?
+                            overlayKeys.map(o => availableQuestions[parseIntOrNull((applications.settings?.fields[o] as string) ?? o) ?? d.questions.find(q => q.title == (applications.settings?.fields[o] ?? o))?.id ?? 0]
+                                ?.values.values().toArray().map(v => `${o}.${v}`)
+                            ) : []) // add expanded checkboxes to the search query
+                            .map(o => maybe(maybeIndex(_api.api().columns().dataSrc().indexOf(o)), i => {
+                                cells[i].classList.add('overlayed')
+                                cells[i].title ||= 'Hodnota upravena pro zobrazení. Původní hodnota: ' + get(d.original, o)
+                            }
+                            ))
                     }
                     cells.map(c => c.title ||= `${ApplicationStateUI[d.state].name} přihláška`)//cannot use for because Vue cripples local variables
                 },
@@ -33,7 +41,8 @@
                     keys: true,
                 },
                 scrollY: scrollY as any,
-            }" :data="data" :columns="columns" @select="selectionChanged" @deselect="selectionChanged" />
+            }" :data="data" :columns="columns" @dblclick="tableDblClick" @select="selectionChanged"
+            @deselect="selectionChanged" />
         <Teleport v-if="mounted" to="#topNav">
             <div ref="dtButtons" class="dtButtons">
                 <span>
@@ -70,6 +79,9 @@
             <template v-if="refreshResult.data">
                 Nové přihlášky: {{ refreshResult.data.new }} <br>
                 Změněné přihlášky: {{ refreshResult.data.changed }}
+                <br>
+                <small>Pokud někdo odeslal přihlášku teprve před pár minutami, může chvíli trvat, než se do
+                    zobrazovaných dat propíše.</small>
             </template>
             <template v-else>
                 Nová data se nepodařilo stáhnout
@@ -82,13 +94,14 @@
 </template>
 
 <script lang="ts" setup>
-import type { Api, ApiButton, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
+import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
 import type StateRestore from 'datatables.net-staterestore/types/StateRestore'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
-import { type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
+import { type QuestionResponse, type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
 import { SpecialApplicationFields } from '~/types/cloud'
 import { deleteField, doc, updateDoc } from 'firebase/firestore'
 import { setDoc as setDocT } from '~/utils/trace'
+import get from 'lodash.get'
 import mapValues from 'lodash.mapvalues'
 import isEmpty from 'lodash.isempty'
 import isMatchWith from 'lodash.ismatchwith'
@@ -180,17 +193,11 @@ const data = computed(() => {
         .filter(a => applications.includeCancelled ? true : ![ApplicationState.CANCELLED, ApplicationState.REJECTED].includes(a.record.state ?? ApplicationState.NEW))
         .map((a, i) => {
             const mappedTitles = Object.keys(a.mapped ?? {}).filter(k => typeof k == 'string')
-            const mappedEntries: [string, string | string[] | boolean | null][] = []
+            const mappedEntries: [string, string | string[] | { [multiresponse: string]: boolean } | boolean | null][] = []
             for (const t of mappedTitles) {
                 const responses = a.mapped![t]?.responses
                 if (Array.isArray(responses)) {
-                    if (expandMultiple.value) {
-                        for (const sub of responses) {
-                            mappedEntries.push([sub.toString(), true])
-                        }
-                    } else {
-                        mappedEntries.push([t, responses as string[] ?? null])
-                    }
+                    mappedEntries.push(multiExpansion(a, t, responses as string[]))
                 } else {
                     mappedEntries.push([t, responses?.toString() ?? null])
                 }
@@ -207,11 +214,27 @@ const data = computed(() => {
                 state: ApplicationState.NEW,
                 original: isEmpty(a.record.overlays) ? undefined : original,
                 ...original,
-                ...a.record.overlays,
+                ...mapObject(a.record.overlays ?? {}, (o, k) => Array.isArray(o) ? multiExpansion(a, k, o)[1] : o),
                 id: a.record.id, // is non-enumerable so must be listed explicitly
             }
         })
 })
+
+function multiExpansion(a: typeof applications.filteredMapped[number], t: string, responses: string[]): [string, string[]] {
+    if (expandMultiple.value) {
+        // TODO lookup availableQuestions with title or id
+        const entries = // populate all with false
+            ((availableQuestions.value[a.mapped?.[t]?.id ?? 0] ?? Object.entries(availableQuestions.value).find(([_, q]) => q.title == t)?.[1])
+                ?.values.values().toArray().map(v => [v, false]) ?? [])
+                // set the checked ones to true
+                .concat(responses.map(r => [r as string, true]))
+
+        return [t, entries.length ? Object.fromEntries(entries) : {}]
+    }
+    else {
+        return [t, responses ?? null]
+    }
+}
 
 async function refresh() {
     if (!cloud.eventDescription?.formDocument) {
@@ -329,27 +352,73 @@ function copySelected() {
 function responseDoc(id: string) {
     return doc(knownCollection(firestore, 'applications'), cloud.selectedEvent, 'responses', id)
 }
-async function editOverlay(this: ApiButton<typeof data.value>) {
+
+let dblClickActive = false
+async function tableDblClick(event: MouseEvent) {
+    if (!dblClickActive && editMode.value) {
+        dblClickActive = true
+        const cell = (event.target as HTMLElement).closest('td')
+        if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
+            table.value?.dt.cell(cell).select()
+            await editOverlay()
+        }
+        setTimeout(() => dblClickActive = false, 200)
+    }
+}
+
+async function editOverlay() {
     if ((selection.value?.data()?.length ?? 2) > 1) {
         alert('Vyberte jednu buňku')
         return
     }
     const ids = selection.value!.indexes()
-    const row = table.value?.dt.row(ids[0].row).data() as unknown as typeof data.value[number]//DT has bad return type definition
-    const col = table.value?.dt.column(ids[0].column).dataSrc()
-    if (typeof col != 'string' || !row) {
+    const response = table.value?.dt.row(ids[0].row).data() as unknown as typeof data.value[number]//DT has bad return type definition
+    let col = table.value?.dt.column(ids[0].column).dataSrc()
+    if (typeof col != 'string' || !response) {
         alert('Tuto buňku nelze upravit')
         return
     }
-    const d = responseDoc(row.id)
-    const p = prompt('Zadejte hodnotu pro přepsání, nebo hodnotu smažte pro vrácení hodnoty z přihlášky', selection.value!.data()?.[0])
+    const doc = responseDoc(response.id)
+    const selData = selection.value!.data()
+    let p: string | string[] | null = prompt('Zadejte hodnotu pro přepsání, nebo hodnotu smažte pro vrácení hodnoty z přihlášky', selData?.[0])
+
+    const dotIndex = col.indexOf('.')
     if (p == '') {
-        await updateDoc(d, {
+        if (expandMultiple.value && dotIndex != -1) {
+            // handle multiple checkbox response transformation
+            col = col.substring(0, dotIndex)
+        }
+        await updateDoc(doc, {
             [`overlays.${col}`]: deleteField(),
         })
     } else if (p) {
+        // handle multiple checkbox response transformation
+        if (expandMultiple.value && dotIndex != -1) {
+            // Transform from multiple to array
+            const sub = col.substring(dotIndex + 1)
+            col = col.substring(0, dotIndex)
+
+            const titleOrId = applications.settings?.fields[col] ?? parseIntOrNull(col) ?? col
+            const question = response.questions.find((q: QuestionResponse) => typeof titleOrId == 'string' ? (q.title == titleOrId) : (q.id == titleOrId))
+            if (question) {
+                // Find the index of this response in the availableQuestions values
+                if (p == 'true') {
+                    p = [...question.responses as string[], sub]
+                } else if (p) {
+                    p = (question.responses as string[]).filter((r: string) => r != sub)
+                }
+
+            }
+        } else {
+            // Only convert from string to array
+            const val = applications.settings!.fields[col] ?? parseIntOrNull(col) ?? col
+            const q = typeof val == 'number' ? availableQuestions.value[val] : Object.values(availableQuestions.value).find(a => a.title == val)
+            if (q && q.multi) {
+                p = p.split(',').map(s => s.trim())
+            }
+        }
         using _ = ui.loading()
-        await updateDoc(d, {
+        await updateDoc(doc, {
             [`overlays.${col}`]: p,
         })
     }
@@ -556,7 +625,7 @@ const buttons = computed(() => [
         ],
     }, {
         extend: 'print',
-        text: 'Ubytovací list',
+        text: 'Tabulka',
         autoClose: true,
         autoPrint: false,
         title: '',
@@ -576,17 +645,6 @@ const buttons = computed(() => [
                 extend: 'spacer', style: 'bar',
             },
             ...visibilityButtons,
-        ],
-    }, {
-        extend: 'collection',
-        text: '<span class=\'noinvert\'>🗒️</span> Data formuláře',
-        autoClose: true,
-        buttons: [
-            {
-                text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
-                titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
-                action: refresh,
-            }, ...questionControlColumns.value,
             {
                 text: 'Export',
                 extend: 'collection',
@@ -600,8 +658,43 @@ const buttons = computed(() => [
                 ],
             },
         ],
+    }, {
+        extend: 'collection',
+        text: '<span class=\'noinvert\'>🗒️</span> Formulář',
+        autoClose: true,
+        buttons: [
+            {
+                text: useIconEl('gear') + ' Upravit nastavení',
+                action: goToFormSettings,
+            },
+            {
+                text: useIconEl('edit') + ' Upravit formulář',
+                action: goToFormEdit,
+            },
+            {
+                text: useIconEl('show') + ' Zobrazit přihlášku',
+                action: goToFormResponsePage,
+            },
+            {
+                text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
+                titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
+                action: refresh,
+            }, ...questionControlColumns.value,
+        ],
     },
 ])
+
+function goToFormEdit() {
+    navigateTo(cloud.eventDescription?.formDocument, { external: true, open: { target: '_blank' } })
+}
+
+function goToFormResponsePage() {
+    navigateTo(cloud.eventDescription?.form, { external: true, open: { target: '_blank' } })
+}
+
+function goToFormSettings() {
+    navigateTo(`/${cloud.selectedEvent}/admin/events`)// TODO create a special page for form edit
+}
 
 function selectAll() {
     table.value?.dt.rows().select()
@@ -674,7 +767,13 @@ function renderBool(data: boolean) {
     return data ? '✔' : ''
 }
 function renderMultiBool(data: string[], type: string, row: string[]) {
-    data?.map(d => ellipsis.value(d, type, row)).join(',<br>')
+    if (typeof data == 'string') {
+        return ellipsis.value(data, type, row)
+    }
+    if (Array.isArray(data)) {
+        return data?.map(d => ellipsis.value(d, type, row)).join(',<br>')
+    }
+    return data
 }
 const columns = computed(() => {
     const fieldSettings = Object.keys(applications.settings?.fields ?? {})?.filter(k => !complexColumns.value.find(c => c.data == k))
@@ -685,7 +784,7 @@ const columns = computed(() => {
         if (q?.multi && expandMultiple.value) {
             q.values.forEach(v =>
                 fieldColumns.push({
-                    data: v,
+                    data: `${key}.${v}`,
                     className: 'multi',
                     title: ellipsis.value(v, 'display'),
                     columnControl: searchList,
@@ -708,7 +807,7 @@ const columns = computed(() => {
         ...complexColumns.value,
         // Form fields
         ...fieldColumns,
-        ...toAdd.value.map((k: any) => ({
+        ...toAdd.value.map((k: any) => ({ // TODO add multi for undescribed columns
             data: k, title: availableQuestions.value[k].title, visible: false, className: 'undescribed', name: k,
         })),// undescribed questions columns
         { data: null, title: 'Celkem', render: computeTotal, visible: false, className: 'print' },
@@ -781,6 +880,10 @@ onMounted(() => setTimeout(() => {
     td.email {
         text-decoration: line-through;
     }
+}
+
+.editMode td {
+    user-select: none;
 }
 
 td.overlayed {
