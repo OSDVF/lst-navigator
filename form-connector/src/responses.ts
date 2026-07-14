@@ -69,7 +69,7 @@ export function refreshResponses(form: GoogleAppsScript.Forms.Form, force: boole
     const settings = getEventSettings(form, fs)
 
     if (force || responsesSyncDirty(settings, form.getResponses())) {
-        return refreshResponsesData(form, fs, settings, undefined, dry)
+        return refreshResponsesData(form, fs, settings, undefined, dry) // TODO proč se neobnovuje when calle from live
     } else {
         return {
             new: 0,

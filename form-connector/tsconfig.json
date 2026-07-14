@@ -31,7 +31,8 @@
       "google-apps-script",
       "bun",
       "firestore_google-apps-script/typings/index.d.ts",
-      "./global.d.ts"
+      "./global.d.ts",
+      "@types/gapi.client.forms-v1",
     ]
   },
   "exclude": [

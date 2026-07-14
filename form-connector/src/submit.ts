@@ -190,6 +190,7 @@ export function resolveEmailContent(settings: ReturnType<typeof getEventSettings
         htmlBody,
         edited,
         inlineImages,
+        templateVars,
     }
 }
 
@@ -264,4 +265,3 @@ export function test() {
         response: response!,
     } as any)
 }
-

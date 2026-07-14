@@ -9,6 +9,7 @@
       },
       "devDependencies": {
         "@types/bun": "latest",
+        "@types/gapi.client.forms-v1": "^0.0.4",
         "@types/google-apps-script": "^2.0.8",
         "firestore_google-apps-script": "chikamichi/FirestoreGoogleAppsScript#typescript-export-types",
       },
@@ -21,9 +22,17 @@
     "firestore_google-apps-script",
   ],
   "packages": {
+    "@maxim_mazurok/gapi.client.discovery-v1": ["@maxim_mazurok/gapi.client.discovery-v1@0.5.20200806", "", { "dependencies": { "@types/gapi.client": "*", "@types/gapi.client.discovery-v1": "*" } }, "sha512-oVq9hnnI5VhAtsx55iJbPz8NRfJtWFpI1kINKeuygzCvsx90b1GQDeN3MDUvhADXiQ7+Izs316cqBnJjoDxCow=="],
+
+    "@maxim_mazurok/gapi.client.forms-v1": ["@maxim_mazurok/gapi.client.forms-v1@0.2.20260311", "", { "dependencies": { "@types/gapi.client": "*", "@types/gapi.client.discovery-v1": "*" } }, "sha512-kbaqHQhLUKMHpUpXZJz1VZdF1fnj2m33Jjmj/4fduMSAOvq/CilBKMVknOs88s6JRVnqNe1XpvGSnZFMNXzWLw=="],
+
     "@types/bun": ["@types/bun@1.3.9", "", { "dependencies": { "bun-types": "1.3.9" } }, "sha512-KQ571yULOdWJiMH+RIWIOZ7B2RXQGpL1YQrBtLIV3FqDcCu6FsbFUBwhdKUlCKUpS3PJDsHlJ1QKlpxoVR+xtw=="],
 
     "@types/gapi.client": ["@types/gapi.client@1.0.8", "", {}, "sha512-qJQUmmumbYym3Amax0S8CVzuSngcXsC1fJdwRS2zeW5lM63zXkw4wJFP+bG0jzgi0R6EsJKoHnGNVTDbOyG1ng=="],
+
+    "@types/gapi.client.discovery-v1": ["@types/gapi.client.discovery-v1@0.0.4", "", { "dependencies": { "@maxim_mazurok/gapi.client.discovery-v1": "latest" } }, "sha512-uevhRumNE65F5mf2gABLaReOmbFSXONuzFZjNR3dYv6BmkHg+wciubHrfBAsp3554zNo3Dcg6dUAlwMqQfpwjQ=="],
+
+    "@types/gapi.client.forms-v1": ["@types/gapi.client.forms-v1@0.0.4", "", { "dependencies": { "@maxim_mazurok/gapi.client.forms-v1": "latest" } }, "sha512-LKBFSV+UgwPqiQT6k1fTDIjnr5ZVbyCkL3hyw5IqrjfwWm7XUw07I9S6mjGPrsxs6UQv7H6FW3jfbyMeJlEIKw=="],
 
     "@types/google-apps-script": ["@types/google-apps-script@2.0.8", "", {}, "sha512-mGPmzzdgBu1DlwrjOhFQ8u0se6AF/z4OpaTzOGwNKxwXZjE7J+IssfE3oL24j/S/p6aFiSTIptHZvbyqeZD8vA=="],
 

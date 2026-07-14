@@ -11,6 +11,9 @@ export function useApplicationForm() {
             [formId]: secrets,
         })
     }
+    function getControls(formId: string) {
+        return fetchApi('getControls', { formId })
+    }
     function getInternal(formId: string) {
         return fetchApi('getInternal', {
             formId,
@@ -19,6 +22,11 @@ export function useApplicationForm() {
     function setInternal(formId: string, settings: InternalSettings) {
         return fetchApi('setInternal', {
             [formId]: settings,
+        })
+    }
+    function renderEmailTemplate(formId: string, responseId: string) {
+        return fetchApi('renderEmailTemplate', {
+            formId, responseId,
         })
     }
     function refreshResponses(formId: string, force?: boolean) {
@@ -32,7 +40,7 @@ export function useApplicationForm() {
         const res = await fetch(config.public.applicationFormApi, {
             method: 'POST',
             headers: {
-                'Content-Type': 'text/plain;charset=utf-8',
+                'Content-Type': 'text/plain',
             },
             body: JSON.stringify({
                 action,
@@ -46,14 +54,18 @@ export function useApplicationForm() {
             return json
         } catch (e) {
             console.error(e)
-            console.warn('API response ', await res.text())
+            if (!res.bodyUsed) {
+                console.warn('API response ', await res.text())
+            }
             throw e
         }
     }
 
     return {
+        getControls,
         getInternal,
         refreshResponses,
+        renderEmailTemplate,
         setInternal,
         setSecrets,
         fetch: fetchApi,
@@ -89,7 +101,7 @@ export async function useApplicationFormData(id: string, error?: MaybeRef) {
         const gapi = useGapi()
         const client = await gapi.client()
         const instance = getCurrentInstance()
-        if(instance && !instance.isMounted) {
+        if (instance && !instance.isMounted) {
             onMounted(hydrateFormData)
         } else {
             hydrateFormData()
