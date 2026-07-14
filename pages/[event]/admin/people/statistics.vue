@@ -94,7 +94,7 @@ const config = useRuntimeConfig()
 const foodTypes = computed(() => {
     const types = new Set<string>(['any'])
     for (const a of applications.filteredMapped) {
-        const r = a.mapped?.food?.responses
+        const r = a.record.overlays?.food || a.mapped?.food?.responses
         if (r) {
             types.add(r as string)
         }
@@ -165,7 +165,7 @@ const statistics = computed(() => {
             maybeIndex(n.findIndex(n => n == a.mapped?.firstMeal?.responses)) ?? eventFirstMeal,
             maybeIndex(n.findIndex(n => n == a.mapped?.lastMeal?.responses)) ?? eventLastMeal,
         ]) ?? [0, mealNames.length - 1]
-        const foodType = a.mapped?.food?.responses.toString() ?? foodTypes.value[0] ?? 'Jiné'
+        const foodType = (a.record.overlays?.food as string) ?? a.mapped?.food?.responses.toString() ?? foodTypes.value[0] ?? 'Jiné'
 
         for (let day: Date = new Date(arrival); day <= departure; day.setDate(day.getDate() + 1)) {
             const dayKey = day.getTime()
