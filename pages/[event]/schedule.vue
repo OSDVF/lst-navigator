@@ -1,6 +1,6 @@
 <template>
     <div style="padding: 4rem 0 3rem 0;">
-        <nav v-show="!keyboardVisible" role="navigation" class="days">
+        <nav v-show="!keyboardVisible" role="navigation" class="days navigation">
             <NuxtLink
                 v-for="(day, index) in cloud.days" :key="`day${index}`"
                 :class="dayIndex == index.toString() ? 'selected' : undefined" :to="(dayIndex == index.toString() && !router.currentRoute.value.params.item) ? undefined : {

@@ -7,7 +7,7 @@ nav {
     display: flex;
     justify-content: stretch;
 
-    .navigation &>a {
+    .navigation &>a, &.navigation>a {
         flex-grow: 1;
         padding: .5rem;
         text-align: center;

@@ -34,7 +34,7 @@
                 <slot />
             </main>
         </ErrorSolver>
-        <div ref="navigation" class="navigation">
+        <div ref="navigation" class="navigation bottom-0">
             <div class="flex-full">
                 <ProgressBar v-if="cloud.feedback.fetching" />
                 <nav v-if="cloud.feedback.fetchFailed" class="p-1">
@@ -79,7 +79,7 @@
         </div>
         <ProgressBar
             v-show="cloud.eventLoading || $downloadingUpdate || ui.isLoading || gapi.loading"
-            class="backgroundLoading" />
+            class="backgroundLoading bottom-0" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>

@@ -44,11 +44,13 @@
             <h4 v-if="subPart.title" class="mb-1">{{ subPart.title }}</h4>
             <fieldset v-for="(entry, eIndex) in subPart.entries" :key="`e${sIndex}${eIndex}`">
                 <legend v-if="entry.title">
-                    <h3>{{ entry.title }}<NuxtLink
-                        v-if="entry.time" title="Zobrazit v harmonogramu"
-                        :to="`/${cloud.selectedEvent}/schedule/${subPart.primaryIndex}/${entry.secondaryIndex}`"
-                        class="muted">&ensp;{{
-                            toHumanTime(entry.time) }}</NuxtLink>
+                    <h3>{{ entry.title }}
+                        <NuxtLink
+                            v-if="entry.time" title="Zobrazit v harmonogramu"
+                            :to="`/${cloud.selectedEvent}/schedule/${subPart.primaryIndex}/${entry.secondaryIndex}`"
+                            class="muted">&ensp;{{
+                                toHumanTime(entry.time) }}
+                        </NuxtLink>
                     </h3>
                 </legend>
                 <template v-if="entry.subtitle || entry.description">
@@ -173,16 +175,18 @@ onMounted(() => {
     }
 })
 
-const currentPart = computed(() => {
-    const config: FeedbackConfig | undefined = cloud.feedbackConfig?.[feedbackPartIndex]
-    type Entry = (Partial<ScheduleItem> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })
-    const subparts: { title: string, primaryIndex: number | string, entries: Entry[] }[] = reactive([])
 
-    if (config?.group) {
+const currentPart = computed(() => {
+    type Entry = (Partial<ScheduleItem> & { data: Feedback | null, secondaryIndex: number | string, selectOptions: string[] })
+
+    const currentConfig: FeedbackConfig | undefined = cloud.feedbackConfig?.[feedbackPartIndex]
+    const subparts: { title?: string, primaryIndex: number | string, entries: Entry[] }[] = reactive([])
+
+    if (currentConfig?.group) {
         for (const scheduleIndex in cloud.days) {
             const day = cloud.days[scheduleIndex]
             const entries: Entry[] = reactive([])
-            const exp: string = config.group!.toString()
+            const exp: string = currentConfig.group!.toString()
             function addScheduleItem(scheduleItem: ScheduleItem, index: number | string) {
                 entries.push({
                     ...scheduleItem,
@@ -203,14 +207,14 @@ const currentPart = computed(() => {
             else {
                 for (const eventIndex in day.program) {
                     const eventEntry = day.program[eventIndex]
-                    if (eventEntry.title?.match(config.group)) {
+                    if (eventEntry.title?.match(currentConfig.group)) {
                         addScheduleItem(eventEntry, eventIndex)
                     }
                 }
             }
             if (entries.length > 0) {
                 subparts.push({
-                    title: config.dayTitles !== false ? day.name : '',
+                    title: currentConfig.dayTitles !== false ? day.name : '',
                     primaryIndex: scheduleIndex,
                     entries,
                 })
@@ -218,26 +222,29 @@ const currentPart = computed(() => {
         }
     }
 
-    if (config?.individual) {
-        for (const individualQuest of config.individual) {
-            subparts.push({
+    if (currentConfig?.individual) {
+        const entries: Entry[] = reactive([])
+        for (const individualQuest of currentConfig.individual) {
+            entries.push({ // single entry
                 title: individualQuest.name,
-                primaryIndex: config.title,
-                entries: [{
-                    secondaryIndex: individualQuest.name,
-                    feedbackType: individualQuest.type,
-                    detailQuestion: individualQuest.description,
-                    selectOptions: individualQuest.questions,
-                    questions: individualQuest.questions,
-                    data: fromUpdatePayload(
-                        cloud.offlineFeedback?.[config.title]?.[individualQuest.name]?.[cloud.user.signatureId] ?? cloud.offlineFeedback?.[individualQuest.name]?.[0]?.[cloud.user.signatureId], {},
-                    ),
-                }],
+                secondaryIndex: individualQuest.name,
+                feedbackType: individualQuest.type,
+                detailQuestion: individualQuest.description,
+                selectOptions: individualQuest.questions,
+                questions: individualQuest.questions,
+                data: fromUpdatePayload(
+                    cloud.offlineFeedback?.[currentConfig.title]?.[individualQuest.name]?.[cloud.user.signatureId] ?? cloud.offlineFeedback?.[individualQuest.name]?.[0]?.[cloud.user.signatureId], {},
+                ),
             })
         }
+        subparts.push({
+            title: currentConfig.group ? 'Obecné otázky' : undefined,
+            primaryIndex: currentConfig.title,
+            entries,
+        })
     }
     return {
-        title: config?.title,
+        title: currentConfig?.title,
         subparts,
     }
 })

@@ -49,7 +49,7 @@
         </nav>
         <ProgressBar
             v-show="$downloadingUpdate?.value || isPageLoading.isLoading.value"
-            class="backgroundLoading" />
+            class="backgroundLoading bottom-0" />
     </main>
 </template>
 

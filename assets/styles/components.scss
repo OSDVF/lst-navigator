@@ -33,7 +33,6 @@ abbr[title] {
 
 .backgroundLoading,
 .navigation {
-    bottom: 0;
     left: 0;
     right: 0;
     position: fixed;
@@ -258,6 +257,7 @@ details.border {
 }
 
 fieldset {
+    border-color: #8c9e9e44;
 
     &:hover,
     &:focus,

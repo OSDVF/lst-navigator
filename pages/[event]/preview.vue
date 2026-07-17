@@ -2,7 +2,7 @@
     <article>
         <EventInfo />
 
-        <nav v-if="cloud.eventDescription.value" style="position: fixed;left:0;right:0;bottom:0;">
+        <nav v-if="cloud.eventDescription.value" style="position: fixed;left:0;right:0;bottom:0;" class="navigation">
             <NuxtLink v-if="cloud.visibleEvents.value.length > 1 || cloud.visibleEvents.value[0]?.id != cloud.selectedEvent.value" to="/">
                 <Icon name="mdi:apps" size="2rem" />
                 <Icon name="mdi:arrow-left" />&ensp;Události

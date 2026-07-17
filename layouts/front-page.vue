@@ -17,7 +17,7 @@
         </ErrorSolver>
         <ProgressBar
             v-show="isServer || ui.isLoading || cloud.eventLoading || $downloadingUpdate?.value"
-            class="backgroundLoading" />
+            class="backgroundLoading bottom-0" />
         <LazyClientOnly>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
         </LazyClientOnly>
