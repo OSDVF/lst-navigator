@@ -80,8 +80,11 @@
                 Nové přihlášky: {{ refreshResult.data.new }} <br>
                 Změněné přihlášky: {{ refreshResult.data.changed }}
                 <br>
-                <small>Pokud někdo odeslal přihlášku teprve před pár minutami, může chvíli trvat, než se do
-                    zobrazovaných dat propíše.</small>
+                <small>
+                    <Icon name="mdi:info" /> Pokud někdo odeslal přihlášku teprve před pár minutami, může chvíli trvat,
+                    než se do
+                    zobrazovaných dat propíše.
+                </small>
             </template>
             <template v-else>
                 Nová data se nepodařilo stáhnout
@@ -664,7 +667,7 @@ const buttons = computed(() => [
         autoClose: true,
         buttons: [
             {
-                text: useIconEl('gear') + ' Upravit nastavení',
+                text: useIconEl('gear') + ' Nastavení registrace',
                 action: goToFormSettings,
             },
             {
@@ -693,7 +696,7 @@ function goToFormResponsePage() {
 }
 
 function goToFormSettings() {
-    navigateTo(`/${cloud.selectedEvent}/admin/events`)// TODO create a special page for form edit
+    navigateTo(`/${cloud.selectedEvent}/admin/events/form`)
 }
 
 function selectAll() {

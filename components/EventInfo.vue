@@ -6,7 +6,7 @@
         </div>
         <h1>{{ cloud.eventDescription?.title }}<NuxtLink
             v-if="cloud.resolvedPermissions.editEvent" class="ml-2"
-            :to="`/${cloud.selectedEvent}/admin/events`" title="Nastavení událostí">
+            :to="`/${cloud.selectedEvent}/admin/events/edit`" title="Nastavení událostí">
             <button type="button" class="large">
                 <Icon name="mdi:pencil" class="baseline" /> Upravit
             </button>

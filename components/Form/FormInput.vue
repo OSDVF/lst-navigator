@@ -1,7 +1,7 @@
 <template>
     <span class="inline-flex align-items-center" style="gap: 5px">
         <label for="form" title="URL Google Formuláře nebo jakýkoliv odkaz">
-            <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> Přihláška
+            <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> Formulář
         </label>
         <template v-if="formData?.info?.title">
             <NuxtLink

@@ -1,10 +1,11 @@
+// TODO request logging with parameters
+
 import { useFirestore } from "./firestore";
 import { refreshResponses, type ResponseRecord } from "./responses";
 import {
     getEventSettings,
     getSecrets,
-    type ApplicationFormSecrets,
-    type SyncState,
+    type ApplicationFormSecrets
 } from "./settings";
 import { resolveEmailContent } from "./submit";
 import type { EmailTemplateVars } from "./types";

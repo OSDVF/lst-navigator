@@ -1,4 +1,4 @@
-import type { EventDescription, Feedback, FeedbackType, ScheduleDay, ScheduleItem } from '@/types/cloud'
+import type { EventDescription, Feedback, ScheduleDay, ScheduleItem } from '@/types/cloud'
 
 export type NotificationPayload = {
     title: string,
@@ -10,23 +10,11 @@ export type NotificationPayload = {
     date: string
 }
 
-// Format: 1700 => 17:00
-export function toHumanTime(time?: number) {
-    if (!time) { return '' }
-    const hours = Math.floor(time / 100)
-    const minutes = time % 100
-    return `${hours}:${minutes.toString().padStart(2, '0')}`
-}
-export function toHumanFeedback(feedback?: FeedbackType) {
-    if (!feedback) { return undefined }
-    return {
-        basic: '⭐⭐⭐⭐⭐',
-        complicated: 'Několik ⭐⭐⭐⭐⭐',
-        text: 'Textová otázka',
-        parallel: 'Paralelní programy',
-        multiple: 'Zaškrtávací políčka',
-        select: 'Výběr z možností',
-    }[feedback]
+// https://stackoverflow.com/a/11934819
+export function toTitleCase(s: string) {
+    return s.replace(/([^\s:-])([^\s:-]*)/g, function ($0, $1, $2) {
+        return $1.toUpperCase() + $2.toLowerCase()
+    })
 }
 
 export function isToday(scheduleDay: ScheduleDay) {
@@ -174,20 +162,6 @@ export function parseIntOrUndef(value?: string) {
     return isNaN(parsed) ? undefined : parsed
 }
 
-export function getBrowserDateFormat() {
-    return new Intl.DateTimeFormat((new Intl.NumberFormat()).resolvedOptions().locale).formatToParts(new Date()).map(obj => {
-        switch (obj.type) {
-        case 'day':
-            return 'DD'
-        case 'month':
-            return 'MM'
-        case 'year':
-            return 'YYYY'
-        default:
-            return obj.value
-        }
-    }).join('')
-}
 
 export function download(filename: string, text: string) {
     const element = document.createElement('a')

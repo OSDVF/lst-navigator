@@ -1,20 +1,27 @@
 <template>
     <SplitPage :split="showInfo">
         <template #header>
-            <h1>Nastavení přihlášky</h1>
-            <span class="button" @click="emit('edit')">
+            <h1>Nastavení registrace</h1>
+            <h3>Pro událost {{ cloud.eventDescription?.title }}</h3>
+            <NuxtLink :to="`/${cloud.eventDescription?.id}/admin/events/edit`" class="button">
                 <Icon name="mdi:pencil" />
-            </span>
-            <FormInput v-if="event" v-model="event!.form" disabled :document="event?.formDocument" />
+            </NuxtLink>
+            <FormInput
+                v-if="cloud.eventDescription" v-model="cloud.eventDescription.form" disabled
+                :document="cloud.eventDescription.formDocument" />
             <br>
-            <FormDocumentInput v-if="event" v-model="event!.formDocument" disabled :form-url="event?.form" />
+            <FormDocumentInput
+                v-if="cloud.eventDescription" v-model="cloud.eventDescription.formDocument" disabled
+                :form-url="cloud.eventDescription.form" />
             <ProgressBar v-if="ui.isLoading" />
 
-            <fieldset v-if="(!internalSettings.secretsExist || !applications.settings.value) && !ui.isLoading" class="p">
+            <fieldset
+                v-if="(!internalSettings.secretsExist || !applications.settings.value) && !ui.isLoading"
+                class="p">
                 <legend>
                     <Icon name="mdi:link-variant" /> Propojte přihlašovací formulář s touto aplikací
                 </legend>
-                <span v-if="applications.settings.value" style="color:green">
+                <span v-if="applications.settings.value && internalSettings.secretsExist" style="color:green">
                     <Icon name="mdi:check" />&nbsp;Synchronizováno
                 </span>
                 <template v-else-if="serviceAccountLoaded || internalSettings.secretsExist">
@@ -25,8 +32,8 @@
                     <details>
                         <summary>Synchronizovat manuálně</summary>
                         <small>Pokud se nepodaří synchronizovat automaticky, <a
-                            :href="event?.formDocument"
-                            target="_blank" rel="noreferrer noopener">otevřete dokument s přihláškou pro úpravy</a>,
+                            :href="cloud.eventDescription?.formDocument" target="_blank"
+                            rel="noreferrer noopener">otevřete dokument s přihláškou pro úpravy</a>,
                             klikněte na menu
                             <Icon name="mdi:puzzle" />&rightarrow;"🔌 Propojit s aplikací" a zadejte tento kód:
                         </small>
@@ -51,7 +58,7 @@
             </fieldset>
         </template>
 
-        <main v-if="event && internalSettings.secretsExist && applications.settings.value" style="flex-grow:1">
+        <main v-if="internalSettings.secretsExist && applications.settings.value" style="flex-grow:1">
             <details class="border mt-2">
                 <summary>
                     <h3>
@@ -358,9 +365,11 @@
                 <button type="button" class="large" @click="save().catch(e => error = e)">
                     <Icon name="mdi:check-all" class="noinvert mb-0.5e" style="color:green" /> Uložit
                 </button>
-                <button class="large" @click="emit('return')">
-                    <Icon name="mdi:cancel" class="mb-0.5e" /> Zahodit změny
-                </button>
+                <NuxtLink to="/admin/events">
+                    <button class="large">
+                        <Icon name="mdi:cancel" class="mb-0.5e" /> Zahodit změny
+                    </button>
+                </NuxtLink>
             </p>
         </main>
         <p v-else-if="error">
@@ -368,9 +377,11 @@
             <br>
             <br>
         </p>
-        <button v-if="error || !event || !internalSettings.secretsExist" @click="emit('return')">
-            <Icon name="mdi:cancel" /> Zpět
-        </button>
+        <NuxtLink to="/admin/events">
+            <button v-if="error || !cloud.eventDescription || !internalSettings.secretsExist">
+                <Icon name="mdi:cancel" /> Zpět
+            </button>
+        </NuxtLink>
         <FormTemplateInfo
             v-if="showInfo"
             :class="['top-0', ...(windowSize.width.value > 700 ? ['sticky'] : ['fixed', 'right-0', 'mw-50-vw'])]"
@@ -389,6 +400,12 @@ import type { ApplicationFormSettings } from '~/types/cloud'
 import { useApplicationForm, useApplicationFormData } from '~/utils/applicationForm'
 import { setDoc as setDocT } from '~/utils/trace'
 
+definePageMeta({
+    title: 'Nastavení registrace',
+    layout: 'admin',
+    middleware: ['auth'],
+})
+
 type ServiceAccount = {
     type: 'service_account',
     client_email: string,
@@ -400,11 +417,6 @@ const emailCollectionTypes = {
     RESPONDER_INPUT: 'Jakékoliv emaily',
 }
 
-const props = defineProps<{ eventId?: string }>()
-const emit = defineEmits<{
-    return: []
-    edit: []
-}>()
 const fieldsElement = useTemplateRef<HTMLDetailsElement>('fields')
 
 const cloud = useCloudStore()
@@ -413,7 +425,7 @@ const connectCode: ApplicationFormSecrets = {
     email: '',
     key: '',
     projectId: config.public.vuefire!.config!.projectId!,
-    remoteEventSettings: `applications/${props.eventId}`,
+    remoteEventSettings: `applications/${cloud.selectedEvent}`,
 }
 const serviceAccountLoaded = ref(false)
 const { open: openFD, onChange } = useFileDialog({
@@ -448,15 +460,12 @@ const clipboard = useClipboard({
 const copied = ref(false)
 const dirty = ref(false)
 const error = ref()
-const event = cloud.eventsCollection.find(e => e.id == props.eventId)
+
 let id: string
-if (!event) {
-    error.value = 'Událost nevybrána'
-}
-else if (!event.formDocument) {
+if (!cloud.eventDescription?.formDocument) {
     error.value = 'Událost nemá zadanou adresu dokumentu přihlášky'
 } else {
-    id = extractFormIdFromURL(event.formDocument) ?? ''
+    id = extractFormIdFromURL(cloud.eventDescription.formDocument) ?? ''
     if (!id) {
         error.value = 'Událost nemá správně zadanou adresu dokumentu přihlášky. Je třeba zadat odkaz na sdílení upravitelného souboru na Google Disku.'
     }
@@ -548,7 +557,7 @@ const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 're
     emailBody: '',
     emailHeadEdited: '',
     emailHeadNew: '',
-    eventName: event?.title || '',
+    eventName: cloud.eventDescription?.title || '',
     extras: [],
     values: {
         mealNames: config.public.applicationDefaultMealNames?.split(',').map(n => n.trim()) ?? [''],
@@ -556,7 +565,7 @@ const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 're
         eventLastMeal: parseInt(config.public.applicationDefaultEventLastMealIndex) || 0,
     },
     fields: {
-        arrival: config.public.applicationDefaultArrivalField || '',
+        arrival: config.public.applicationDefaultArrivalField || '',// TODO alert when field with the default title does not exist
         category: config.public.applicationDefaultCategoryField || '',
         departure: config.public.applicationDefaultDepartureField || '',
         firstMeal: config.public.applicationDefaultFirstMealField || '',
@@ -574,6 +583,7 @@ const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 're
     treatAllAsNew: false,
 })
 const showInfo = ref(false)
+// TODO select the event globally and use its applications store
 const applications = storeToRefs(useApplications())
 watch(applications.settings, doc => {
     if (doc) {
@@ -587,19 +597,21 @@ async function save(retur = true) {
         ...toRaw(settings.value),
         responsesCollection: `applications/${cloud.selectedEvent}/responses`,
     } as EventSettings<string>, { merge: true })
-    if(retur) {
-        emit('return')
+    if (retur) {
+        navigateTo(`/${cloud.selectedEvent}/admin/events`)
     }
 }
 
 async function sync() {
     using _ = ui.loading()
 
-    if(!applications.settings.value) {
+    // Phase 1: create document for application settings
+    if (!applications.settings.value) {
         await save(false)
     }
 
-    if(!internalSettings.value.secretsExist) {
+    // Phase 2: set secrets
+    if (!internalSettings.value.secretsExist) {
         const response = await applFormApi.setSecrets(id, connectCode)
         if (response.ok) {
             error.value = undefined
@@ -608,7 +620,7 @@ async function sync() {
         }
     }
 
-    // TODO async encryption of SA
+    // TODO asymmetric encryption of SA
 }
 
 const formData = await useApplicationFormData(id!, error)

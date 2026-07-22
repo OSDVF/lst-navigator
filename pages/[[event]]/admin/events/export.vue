@@ -31,6 +31,7 @@ import { EventSubcollectionsList, type EventSubcollection } from '~/types/cloud'
 
 definePageMeta({
     layout: 'admin',
+    middleware: ['auth'],
 })
 
 const cloud = useCloudStore()

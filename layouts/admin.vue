@@ -10,22 +10,24 @@
                     v-show="topNavHasChildren" name="mdi:menu" size="2rem" class="button" tabindex="0"
                     @click="open = !open" />
                 <label id="eventSelect" class="p-1 text-right">
-                    <span class="visible-md mr-1">
-                        <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
-                    </span>
-                    <select
-                        :value="cloud.eventDescription?.id ?? $config.public.defaultEvent" @change="e => $router.push({
-                            name: $route.name,
-                            path: $route.path,
-                            query: $route.query,
-                            params: {
-                                ...$route.params,
-                                event: (e.target as HTMLSelectElement).value
-                            }
-                        } as RouteLocationRaw)">
-                        <option v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id">{{
-                            event.title }}</option>
-                    </select>
+                    <template v-if="route.params.event">
+                        <span class="visible-md mr-1">
+                            <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
+                        </span>
+                        <select
+                            :value="cloud.eventDescription?.id" @change="e => $router.push({
+                                name: $route.name,
+                                path: $route.path,
+                                query: $route.query,
+                                params: {
+                                    ...$route.params,
+                                    event: (e.target as HTMLSelectElement).value
+                                }
+                            } as RouteLocationRaw)">
+                            <option v-for="event in cloud.eventsCollection" :key="event.id" :value="event.id">{{
+                                event.title }}</option>
+                        </select>
+                    </template>
                 </label>
                 <SettingsLink id="topSettingsLink" class="flex align-items-center" />
                 <div id="topNav" ref="topNav" class="flex justify-content-center flex-grow" />
@@ -68,9 +70,7 @@
                     <Icon name="mdi:calendar-arrow-left" size="1.8rem" />
                     <span class="text">Program</span>
                 </NuxtLink>
-                <NuxtLink
-                    v-if="cloud.resolvedPermissions.editEvent" :to="`/${cloud.selectedEvent}/admin/events`"
-                    no-prefetch>
+                <NuxtLink v-if="cloud.resolvedPermissions.editEvent" to="/admin/events" no-prefetch>
                     <Icon name="mdi:tag-edit" size="1.8rem" />
                     <span class="text">Správa akcí</span>
                 </NuxtLink>

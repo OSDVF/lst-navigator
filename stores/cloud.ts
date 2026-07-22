@@ -764,8 +764,11 @@ export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null,
 }
 
 export const retrySignInText = 'Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?'
-export function useSelectedEvent(router?: Router, config?: RuntimeConfig) {
+export function useSelectedEvent<Strict extends false>(router: Router | undefined, config: RuntimeConfig | undefined, strict: Strict): ComputedRef<string>
+export function useSelectedEvent<Strict extends true>(router: Router | undefined, config: RuntimeConfig | undefined, strict: Strict) : ComputedRef<string | undefined>
+export function useSelectedEvent(router?: Router, config?: RuntimeConfig) : ComputedRef<string>
+export function useSelectedEvent(router?: Router, config?: RuntimeConfig, strict = false) {
     const router2 = router ?? useRouter()
     const config2 = config ?? useRuntimeConfig()
-    return computed(() => router2.currentRoute.value.params.event as string || config2.public.defaultEvent)
+    return computed(() => router2.currentRoute.value.params.event as string || (strict ? undefined : config2.public.defaultEvent))
 }
