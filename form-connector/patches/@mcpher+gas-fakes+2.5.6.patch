@@ -1,0 +1,15 @@
+diff --git a/node_modules/@mcpher/gas-fakes/src/support/workersync/synchronizer.js b/node_modules/@mcpher/gas-fakes/src/support/workersync/synchronizer.js
+index 455c1c2..145b1d4 100644
+--- a/node_modules/@mcpher/gas-fakes/src/support/workersync/synchronizer.js
++++ b/node_modules/@mcpher/gas-fakes/src/support/workersync/synchronizer.js
+@@ -59,8 +59,8 @@ const worker = new Worker(path.resolve(__dirname, 'worker.js'), {
+ });
+ 
+ // Pipe worker's output directly. The patch above will handle filtering.
+-worker.stdout.pipe(process.stdout);
+-worker.stderr.pipe(process.stderr);
++worker.stdout?.pipe(process.stdout);
++worker.stderr?.pipe(process.stderr);
+ 
+ // It's crucial to listen for errors, otherwise a crash on worker startup
+ // will cause the main thread to hang indefinitely on Atomics.wait().

@@ -123,7 +123,7 @@
                     <FormItemSelect
                         id="name" v-model="settings.fields.name" type="text"
                         :real="!!applications.settings.value?.fields?.name"
-                        :placeholder="config.public.applicationDefaultNameField" name="name" :items="formQuestions"
+                        :placeholder="config.public.registrationDefaultNameField" name="name" :items="formQuestions"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label
@@ -137,63 +137,63 @@
                     <FormItemSelect
                         id="name" v-model="settings.fields.phone" type="text"
                         :real="!!applications.settings.value?.fields?.phone"
-                        :placeholder="config.public.applicationDefaultPhoneField" name="phone" :items="formQuestions"
+                        :placeholder="config.public.registrationDefaultPhoneField" name="phone" :items="formQuestions"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Město / Bydliště&nbsp;
                     <FormItemSelect
                         id="town" v-model="settings.fields.town" type="text"
                         :real="!!applications.settings.value?.fields?.town"
-                        :placeholder="config.public.applicationDefaultTownField" name="phone" :items="formQuestions"
+                        :placeholder="config.public.registrationDefaultTownField" name="phone" :items="formQuestions"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Kategorie účastníka&nbsp;
                     <FormItemSelect
                         id="category" v-model="settings.fields.category" :items="formQuestions"
                         :real="!!applications.settings.value?.fields?.category"
-                        :placeholder="config.public.applicationDefaultCategoryField" name="category"
+                        :placeholder="config.public.registrationDefaultCategoryField" name="category"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Příjezd&nbsp;
                     <FormItemSelect
                         id="arrival" v-model="settings.fields.arrival" :items="formQuestions"
                         :real="!!applications.settings.value?.fields?.arrival"
-                        :placeholder="config.public.applicationDefaultArrivalField" name="arrival"
+                        :placeholder="config.public.registrationDefaultArrivalField" name="arrival"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Odjezd&nbsp;
                     <FormItemSelect
                         id="departure" v-model="settings.fields.departure" :items="formQuestions"
                         :real="!!applications.settings.value?.fields?.departure" type="text"
-                        :placeholder="config.public.applicationDefaultDepartureField" name="departure"
+                        :placeholder="config.public.registrationDefaultDepartureField" name="departure"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Další zakoupené položky&nbsp;
                     <FormItemSelect
                         id="extras" v-model="settings.fields.extras" :items="formQuestions"
                         :real="!!applications.settings.value?.fields?.extras"
-                        :placeholder="config.public.applicationDefaultExtrasField" name="extras"
+                        :placeholder="config.public.registrationDefaultExtrasField" name="extras"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>První jídlo&nbsp;
                     <FormItemSelect
                         id="firstMeal" v-model="settings.fields.firstMeal" :items="formQuestions"
                         :real="!!applications.settings.value?.fields?.firstMeal"
-                        :placeholder="config.public.applicationDefaultFirstMealField" name="firstMeal"
+                        :placeholder="config.public.registrationDefaultFirstMealField" name="firstMeal"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Poslední jídlo&nbsp;
                     <FormItemSelect
                         id="lastMeal" v-model="settings.fields.lastMeal" :items="formQuestions"
                         :real="!!applications.settings.value?.fields?.lastMeal"
-                        :placeholder="config.public.applicationDefaultLastMealField" name="lastMeal"
+                        :placeholder="config.public.registrationDefaultLastMealField" name="lastMeal"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <label>Strava&nbsp;
                     <FormItemSelect
                         id="food" v-model="settings.fields.food" :items="formQuestions"
                         :real="!!applications.settings.value?.fields?.food"
-                        :placeholder="config.public.applicationDefaultFoodField" name="food"
+                        :placeholder="config.public.registrationDefaultFoodField" name="food"
                         @update:model-value="dirty = true" />
                 </label><br>
                 <h4>Názvy jídel ve dni</h4>
@@ -206,7 +206,7 @@
                         <FormItemSelect
                             v-model="settings.values.mealNames[index]" :searchable="false"
                             :real="!!applications.settings.value?.values.mealNames[index]" :items="mealNames"
-                            :placeholder="config.public.applicationDefaultMealNames?.split(',').map(t => t.trim())[0] ?? 'Snídaně'"
+                            :placeholder="config.public.registrationDefaultMealNames?.split(',').map(t => t.trim())[0] ?? 'Snídaně'"
                             @update:model-value="dirty = true" />
                     </label>
                     <span class="button" @click="settings.values.mealNames.splice(index, 1)">
@@ -232,7 +232,7 @@
                                 id: i,
                                 title: m
                             }))" :real="typeof applications.settings.value?.values.eventFirstMeal == 'number'"
-                            :placeholder="settings.values.mealNames[parseInt(config.public.applicationDefaultEventFirstMealIndex) || 0]"
+                            :placeholder="settings.values.mealNames[parseInt(config.public.registrationDefaultEventFirstMealIndex) || 0]"
                             name="eventFirstMeal" by-id @update:model-value="dirty = true" />
                     </label><br>
                     <label
@@ -243,7 +243,7 @@
                                 id: i,
                                 title: m
                             }))" :real="typeof applications.settings.value?.values.eventLastMeal == 'number'"
-                            :placeholder="settings.values.mealNames[parseInt(config.public.applicationDefaultEventLastMealIndex) || 0]"
+                            :placeholder="settings.values.mealNames[parseInt(config.public.registrationDefaultEventLastMealIndex) || 0]"
                             name="eventLastMeal" by-id @update:model-value="dirty = true" />
                     </label><br>
                 </div>
@@ -394,10 +394,10 @@
 import * as Sentry from '@sentry/nuxt'
 import { doc } from 'firebase/firestore'
 import type { Responses } from '~/form-connector/src/api'
-import type { ApplicationFormSecrets } from '~/form-connector/src/settings'
+import type { RegistrationFormSecrets } from '~/form-connector/src/settings'
 import type { EventSettings } from '~/form-connector/src/types'
-import type { ApplicationFormSettings } from '~/types/cloud'
-import { useApplicationForm, useApplicationFormData } from '~/utils/applicationForm'
+import type { RegistrationFormSettings } from '~/types/cloud'
+import { useRegistrationForm, useRegistrationFormData } from '~/utils/registrationForm'
 import { setDoc as setDocT } from '~/utils/trace'
 
 definePageMeta({
@@ -421,7 +421,7 @@ const fieldsElement = useTemplateRef<HTMLDetailsElement>('fields')
 
 const cloud = useCloudStore()
 const config = useRuntimeConfig()
-const connectCode: ApplicationFormSecrets = {
+const connectCode: RegistrationFormSecrets = {
     email: '',
     key: '',
     projectId: config.public.vuefire!.config!.projectId!,
@@ -472,7 +472,7 @@ if (!cloud.eventDescription?.formDocument) {
 }
 
 const eventSettingsDoc = doc(useFirestore(), connectCode.remoteEventSettings)
-const applFormApi = useApplicationForm()
+const applFormApi = useRegistrationForm()
 const ui = useUI()
 
 const internalSettings = ref<Responses['getInternal']>({//dummy value
@@ -545,11 +545,11 @@ const canEdit = computed({
     },
 })
 
-const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 'responsesCollection'>>({
-    accountNumber: config.public.applicationDefaultAccount || '',
+const settings = ref<Omit<(EventSettings<string> & RegistrationFormSettings), 'responsesCollection'>>({
+    accountNumber: config.public.registrationDefaultAccount || '',
     adminEmail: '',
-    bankCode: config.public.applicationDefaultBankCode || '',
-    currency: config.public.applicationDefaultCurrency || 'CZK',
+    bankCode: config.public.registrationDefaultBankCode || '',
+    currency: config.public.registrationDefaultCurrency || 'CZK',
     donationExpression: '',
     donationMessageTemplate: '',
     donationSymbolTemplate: '',
@@ -560,21 +560,21 @@ const settings = ref<Omit<(EventSettings<string> & ApplicationFormSettings), 're
     eventName: cloud.eventDescription?.title || '',
     extras: [],
     values: {
-        mealNames: config.public.applicationDefaultMealNames?.split(',').map(n => n.trim()) ?? [''],
-        eventFirstMeal: parseInt(config.public.applicationDefaultEventFirstMealIndex) || 0,
-        eventLastMeal: parseInt(config.public.applicationDefaultEventLastMealIndex) || 0,
+        mealNames: config.public.registrationDefaultMealNames?.split(',').map(n => n.trim()) ?? [''],
+        eventFirstMeal: parseInt(config.public.registrationDefaultEventFirstMealIndex) || 0,
+        eventLastMeal: parseInt(config.public.registrationDefaultEventLastMealIndex) || 0,
     },
     fields: {
-        arrival: config.public.applicationDefaultArrivalField || '',// TODO alert when field with the default title does not exist
-        category: config.public.applicationDefaultCategoryField || '',
-        departure: config.public.applicationDefaultDepartureField || '',
-        firstMeal: config.public.applicationDefaultFirstMealField || '',
-        lastMeal: config.public.applicationDefaultLastMealField || '',
-        phone: config.public.applicationDefaultPhoneField || '',
-        food: config.public.applicationDefaultFoodField || '',
-        name: config.public.applicationDefaultNameField || '',
-        extras: config.public.applicationDefaultExtrasField || '',
-        town: config.public.applicationDefaultTownField || '',
+        arrival: config.public.registrationDefaultArrivalField || '',// TODO alert when field with the default title does not exist
+        category: config.public.registrationDefaultCategoryField || '',
+        departure: config.public.registrationDefaultDepartureField || '',
+        firstMeal: config.public.registrationDefaultFirstMealField || '',
+        lastMeal: config.public.registrationDefaultLastMealField || '',
+        phone: config.public.registrationDefaultPhoneField || '',
+        food: config.public.registrationDefaultFoodField || '',
+        name: config.public.registrationDefaultNameField || '',
+        extras: config.public.registrationDefaultExtrasField || '',
+        town: config.public.registrationDefaultTownField || '',
     },
     mainOrg: config.public.organizerEmail,
     messageTemplate: '',
@@ -623,7 +623,7 @@ async function sync() {
     // TODO asymmetric encryption of SA
 }
 
-const formData = await useApplicationFormData(id!, error)
+const formData = await useRegistrationFormData(id!, error)
 
 const formQuestions = computed(() => formData.value.items?.filter(i => (i.questionItem && i.title)).map(i => ({
     id: parseInt(i.itemId ?? '', 16),
@@ -632,7 +632,7 @@ const formQuestions = computed(() => formData.value.items?.filter(i => (i.questi
 })))
 
 const mealNames = computed(() => {
-    const field = settings.value.fields.firstMeal ?? config.public.applicationDefaultFirstMealField
+    const field = settings.value.fields.firstMeal ?? config.public.registrationDefaultFirstMealField
     return formData.value.items?.find(i => typeof field == 'number' ? parseInt(i.itemId!, 16) == field : i.title == field)?.questionItem?.question?.choiceQuestion?.options?.map((o, i) => ({
         id: i,
         title: o.value ?? '',

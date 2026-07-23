@@ -3,7 +3,7 @@ import { findTriggers } from './triggers'
 import type Firestore from 'firestore_google-apps-script/Firestore'
 import type { Category, EventSettings, ExtraItem } from './types'
 
-export type ApplicationFormSecrets = {
+export type RegistrationFormSecrets = {
     email: string,
     projectId: string,
     key: string,
@@ -73,7 +73,7 @@ export function getEventSettings(form: GoogleAppsScript.Forms.Form, fs?: Firesto
         if (!secrets.remoteEventSettings) {
             throw new Error('Remote event settings document path not set')
         }
-        const fs2 = fs ?? useFirestore(formId, secrets as ApplicationFormSecrets)
+        const fs2 = fs ?? useFirestore(formId, secrets as RegistrationFormSecrets)
 
         const remote = fs2.getDocument(secrets.remoteEventSettings).obj as EventSettings<string> & SyncState
         Object.assign(settings, remote)
@@ -138,7 +138,7 @@ const dummyProperties = new Proxy<Record<string | symbol, any>>({}, {
     },
 })
 
-export function getSecrets(formId: string): Partial<ApplicationFormSecrets> {
+export function getSecrets(formId: string): Partial<RegistrationFormSecrets> {
     return {
         ...JSON.parse(PropertiesService.getScriptProperties().getProperty(formId) ?? '{}'),
         ...(PropertiesService.getDocumentProperties()?.getProperties() ?? {}),// the document properties (set for "active doc") override the script properties

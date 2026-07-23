@@ -3,9 +3,9 @@
         <Icon name="mdi:google-drive" /> Soubor s formulářem&ensp;
         <input
             id="formDocument" v-model.lazy="model"
-            :disabled="![applicationFormShortUrlPrefix, applicationFormDocumentPrefix].some(a => formUrl?.startsWith(a)) || disabled"
+            :disabled="![registrationFormShortUrlPrefix, registrationFormDocumentPrefix].some(a => formUrl?.startsWith(a)) || disabled"
             type="url"
-            :placeholder="formUrl?.startsWith(applicationFormDocumentPrefix) ? formUrl : 'https://docs.google.com/forms/...'"
+            :placeholder="formUrl?.startsWith(registrationFormDocumentPrefix) ? formUrl : 'https://docs.google.com/forms/...'"
             name="formDocument">
     </label>
     &ensp;
@@ -22,5 +22,5 @@ const { formUrl, disabled } = defineProps<{ formUrl?: string, disabled?: boolean
 const model = defineModel<string>()
 const dirty = ref(false)
 watch(model, () => dirty.value = true)
-const show = computed(() => (formUrl && !formUrl.startsWith(applicationFormDocumentPrefix)) || model.value || dirty.value)
+const show = computed(() => (formUrl && !formUrl.startsWith(registrationFormDocumentPrefix)) || model.value || dirty.value)
 </script>

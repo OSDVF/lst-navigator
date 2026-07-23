@@ -277,7 +277,7 @@ export const useCloudStore = defineStore('cloud', () => {
                 wasAuthenticated.value = true
                 if (config.public.debugUser) {
                     onSignIn(newUser)
-                } else if (typeof newUser.metadata.lastSignInTime != 'undefined') {
+                } else if (typeof newUser.metadata.lastSignInTime != 'undefined' && newUser.metadata.creationTime != newUser.metadata.lastSignInTime) {
                     // is already registered
                     watch(uInfo, () => onSignIn(newUser), { once: true })
                 } else {
@@ -356,10 +356,14 @@ export const useCloudStore = defineStore('cloud', () => {
         }) as (() => boolean)),
         hydrateFromCredential(result: UserCredential) {
             const credential = GoogleAuthProvider.credentialFromResult(result)
-            user.adminAuth.value = {
-                accessToken: credential!.accessToken!,
-                expirationTime: new Date().getTime() + (parseInt(result._tokenResponse.expiresIn!) * 1000),
-                scopes: JSON.parse(result._tokenResponse.rawUserInfo!).granted_scopes.split(' '),
+            if (credential) {
+                user.adminAuth.value = {
+                    accessToken: credential.accessToken!,
+                    expirationTime: new Date().getTime() + (parseInt(result._tokenResponse.expiresIn!) * 1000),
+                    scopes: JSON.parse(result._tokenResponse.rawUserInfo!).granted_scopes.split(' '),
+                }
+            } else {
+                console.trace('Could not hydrate from credential because it was not from Google auth provider')
             }
         },
         isGoogleSignedIn: computed(() => userAuth.value?.uid && userAuth.value?.providerData[0].providerId == GoogleAuthProvider.PROVIDER_ID),
@@ -398,8 +402,9 @@ export const useCloudStore = defineStore('cloud', () => {
         async register(email: string, password: string) {
             uPending.value = true
             try {
-                await createUserWithEmailAndPassword(auth!, email, password)
+                const credential = await createUserWithEmailAndPassword(auth!, email, password)
                 sendEmailVerification(auth!.currentUser!)
+                user.hydrateFromCredential(credential)
                 user.error.value = null
                 uPending.value = false
             } catch (reason: any) {
@@ -744,17 +749,17 @@ export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null,
             const v = newData[key] as any
             if (typeof v == 'object' && Object.hasOwn(v, '_methodName') && v) {
                 switch (v._methodName) {
-                case 'arrayUnion':
-                    console.debug('arrayUnion', data, previousData)
-                    newData[key] = union<any>(previousData[key] as any, v.Uu) as any
-                    break
-                case 'deleteField':
-                    console.debug('deleteField', data, previousData)
-                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                    delete newData[key]
-                    break
-                default:
-                    console.debug('unknown ' + v._methodName, data, previousData)
+                    case 'arrayUnion':
+                        console.debug('arrayUnion', data, previousData)
+                        newData[key] = union<any>(previousData[key] as any, v.Uu) as any
+                        break
+                    case 'deleteField':
+                        console.debug('deleteField', data, previousData)
+                        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                        delete newData[key]
+                        break
+                    default:
+                        console.debug('unknown ' + v._methodName, data, previousData)
                 }
             }
         }
@@ -765,8 +770,8 @@ export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null,
 
 export const retrySignInText = 'Nepodařilo se přihlásit pomocí vyskakovacího okna. Zkusit jiný způsob?'
 export function useSelectedEvent<Strict extends false>(router: Router | undefined, config: RuntimeConfig | undefined, strict: Strict): ComputedRef<string>
-export function useSelectedEvent<Strict extends true>(router: Router | undefined, config: RuntimeConfig | undefined, strict: Strict) : ComputedRef<string | undefined>
-export function useSelectedEvent(router?: Router, config?: RuntimeConfig) : ComputedRef<string>
+export function useSelectedEvent<Strict extends true>(router: Router | undefined, config: RuntimeConfig | undefined, strict: Strict): ComputedRef<string | undefined>
+export function useSelectedEvent(router?: Router, config?: RuntimeConfig): ComputedRef<string>
 export function useSelectedEvent(router?: Router, config?: RuntimeConfig, strict = false) {
     const router2 = router ?? useRouter()
     const config2 = config ?? useRuntimeConfig()

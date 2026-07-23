@@ -24,7 +24,7 @@
                 <Icon name='mdi:download' /> Export
             </button>
             <NuxtLink
-                v-if="config.public.featureForms && maybe(getSelectedEvent(true), d => d.formDocument ?? d.form)?.startsWith(applicationFormDocumentPrefix)"
+                v-if="config.public.featureForms && maybe(getSelectedEvent(true), d => d.formDocument ?? d.form)?.startsWith(registrationFormDocumentPrefix)"
                 :to="`/${getSelectedEvent(true)?.id}/admin/events/form`">
                 <button type="button">
                     <Icon name="mdi:form-select" style="color: #7346ba" /> Nastavení registrace

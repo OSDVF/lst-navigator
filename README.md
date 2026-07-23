@@ -59,10 +59,29 @@ NODE_TLS_REJECT_UNAUTHORIZED=0 bun dev
 ### Emulators
 
 ```bash
-bun emulator
+bun -b emulator
 ```
 
 Note the server runs behind HTTPS wihtout HTTP redirects (otherswise firebase auth won't work).
+
+> You can create multiple ENV files for developing with various environments (`.env.prod`, `.env.emulators`) and use them with
+> ```bash
+> bun dev --dotenv .env.emulators
+> ```
+> NOTE: If the `.env` does exist, it will always override everything, so use it as a baseline (common properties for all environments)
+> NOTE: To make `make-admin.ts` script work, some ENV must be set:
+> ```bash
+> FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
+> FIRESTORE_EMULATOR_HOST=localhost:8080
+> ```
+
+### Making a use super admin
+```bash
+bun make-admin.ts admin@example.com
+# or bun --env-file=.env.emulators make-admin.ts admin@example.com
+```
+
+See NOTES about emulators above.
 
 ## Production
 

@@ -1,9 +1,9 @@
 
 import type Firestore from 'firestore_google-apps-script/Firestore'
-import { getSecrets, type ApplicationFormSecrets } from './settings'
+import { getSecrets, type RegistrationFormSecrets } from './settings'
 
 let fs : undefined | Firestore
-export function useFirestore(formId: string, settings?: ApplicationFormSecrets) {
+export function useFirestore(formId: string, settings?: RegistrationFormSecrets) {
     const appSettings = settings ?? getSecrets(formId)
 
     if(!appSettings.email) {

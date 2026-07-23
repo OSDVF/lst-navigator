@@ -393,7 +393,7 @@ async function normalizeForms() {
             eventToEdit.value.formDocument = ''
             return
         }
-        const formDocUrlIsDoc = eventToEdit.value.formDocument.startsWith(applicationFormDocumentPrefix)
+        const formDocUrlIsDoc = eventToEdit.value.formDocument.startsWith(registrationFormDocumentPrefix)
         const formUrlIsDoc = typeof extractFormIdFromURL(eventToEdit.value.form) != 'undefined'
         if (!eventToEdit.value.formDocument && !formUrlIsDoc && !formDocUrlIsDoc) {
             return
@@ -421,7 +421,7 @@ async function normalizeForms() {
                 formId: id,
                 fields: 'responderUri,info',
             })
-            if (!eventToEdit.value.form.startsWith(applicationFormShortUrlPrefix)) {
+            if (!eventToEdit.value.form.startsWith(registrationFormShortUrlPrefix)) {
                 if (result.result.responderUri && result.result.info) {
                     if (eventToEdit.value.form != result.result.responderUri) {
                         if (confirm(`Zadaný odkaz na vyplnění přihlášky ${result.result.info.title} (${eventToEdit.value.form}) se liší od výchozí adresy uložené v dokumentu ${result.result.info.documentTitle} na Google Disku (${eventToEdit.value.formDocument}). ` +

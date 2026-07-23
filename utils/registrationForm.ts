@@ -1,12 +1,12 @@
 import * as Sentry from '@sentry/nuxt'
 
-import type { ApplicationFormSecrets } from '~/form-connector/src/settings'
+import type { RegistrationFormSecrets } from '~/form-connector/src/settings'
 import type { Action, Actions, ApiResponse, InternalSettings, Responses } from '~/form-connector/src/api'
 
-export function useApplicationForm() {
+export function useRegistrationForm() {
     const config = useRuntimeConfig()
 
-    function setSecrets(formId: string, secrets: ApplicationFormSecrets) {
+    function setSecrets(formId: string, secrets: RegistrationFormSecrets) {
         return fetchApi('setSecrets', {
             [formId]: secrets,
         })
@@ -37,7 +37,7 @@ export function useApplicationForm() {
     }
 
     async function fetchApi<A extends Action, T extends Actions[A]>(action: A, body: T): Promise<ApiResponse<Responses[A]>> {
-        const res = await fetch(config.public.applicationFormApi, {
+        const res = await fetch(config.public.registrationFormApi, {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain',
@@ -73,7 +73,7 @@ export function useApplicationForm() {
 }
 
 
-export async function useApplicationFormData(id: string, error?: MaybeRef) {
+export async function useRegistrationFormData(id: string, error?: MaybeRef) {
     const errorRef = maybe(error, e => toRef(e))
     const ui = useUI()
 

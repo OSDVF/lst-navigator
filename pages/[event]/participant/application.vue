@@ -25,7 +25,7 @@
             </p>
 
             <label v-if="applications.settings.fields.name">
-                {{ typeof applications.settings.fields.name == 'number' ? $config.public.applicationDefaultNameField :
+                {{ typeof applications.settings.fields.name == 'number' ? $config.public.registrationDefaultNameField :
                     applications.settings.fields.name }}
                 &nbsp;
                 <input v-model="name" type="text" name="name" required>

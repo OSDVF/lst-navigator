@@ -18,7 +18,7 @@
         </template>
         <input
             v-else id="form" v-model.lazy="model" :disabled="props.disabled" type="url" name="form"
-            :placeholder="applicationFormShortUrlPrefix">
+            :placeholder="registrationFormShortUrlPrefix">
 
         <button v-if="!disabled" type="button" @click="usePicker">
             <Icon name="mdi:folder-google-drive" /> Vybrat z Disku
@@ -54,7 +54,7 @@ const props = defineProps<{
 }>()
 const formData = ref<gapi.client.forms.Form>()
 const cloud = useCloudStore()
-const isFormDoc = computed(() => model.value?.startsWith(applicationFormDocumentPrefix))
+const isFormDoc = computed(() => model.value?.startsWith(registrationFormDocumentPrefix))
 
 async function usePicker() {
     const gapi = useGapi()
@@ -71,7 +71,7 @@ async function usePicker() {
             if (result[google.picker.Response.ACTION] == google.picker.Action.PICKED) {
                 const doc = result[google.picker.Response.DOCUMENTS]?.[0]
                 if (doc) {
-                    model.value = `${applicationFormDocumentPrefix}/${doc[google.picker.Document.ID]}/edit`
+                    model.value = `${registrationFormDocumentPrefix}/${doc[google.picker.Document.ID]}/edit`
                 }
             }
         }).build()

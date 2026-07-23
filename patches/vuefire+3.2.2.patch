@@ -3,14 +3,14 @@ index 05ebc4c..59b6fa8 100644
 --- a/node_modules/vuefire/dist/server/index.mjs
 +++ b/node_modules/vuefire/dist/server/index.mjs
 @@ -1,4 +1,12 @@
--import { getApps, initializeApp, cert, applicationDefault } from 'firebase-admin/app';
+-import { getApps, initializeApp, cert, registrationDefault } from 'firebase-admin/app';
 +import { createRequire } from 'node:module'
 +const require = createRequire(import.meta.url)
 +const {
 +  initializeApp: initializeAdminApp,
 +  cert,
 +  getApps: getAdminApps,
-+  applicationDefault,
++  registrationDefault,
 +} = require('firebase-admin/app')
 +
  import { consola } from 'consola';

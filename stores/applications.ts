@@ -3,7 +3,7 @@ import { setDoc as setDocT, useDocument as useDocumentT, useCollection as useCol
 import { ApplicationState, type QuestionResponse, type ResponseRecord } from '~/form-connector/src/responses'
 import type { SyncState } from '~/form-connector/src/settings'
 import type { EventSettings } from '~/form-connector/src/types'
-import type { Application, ApplicationFormSettings, EventDescription, SpecialApplicationFields, UserInfo } from '~/types/cloud'
+import type { Application, RegistrationFormSettings, EventDescription, SpecialApplicationFields, UserInfo } from '~/types/cloud'
 
 
 export const useApplications = defineStore('applications', () => {
@@ -16,7 +16,7 @@ export const useApplications = defineStore('applications', () => {
             includeMetadataChanges: false,
         },
     })
-    const settings = useDocumentT<EventSettings<string> & SyncState & ApplicationFormSettings>(computed(() => fs ? doc(knownCollection(fs, 'applications'), cloud.selectedEvent) : null))
+    const settings = useDocumentT<EventSettings<string> & SyncState & RegistrationFormSettings>(computed(() => fs ? doc(knownCollection(fs, 'applications'), cloud.selectedEvent) : null))
 
     const includeCancelled = ref(false)
     const filtered = computed(() => applications.value.filter(a => includeCancelled.value || a.state != ApplicationState.REJECTED))
@@ -26,12 +26,12 @@ export const useApplications = defineStore('applications', () => {
     })))
 
     type MappedRecord = {
-        [key in keyof ApplicationFormSettings['fields']]: QuestionResponse;
+        [key in keyof RegistrationFormSettings['fields']]: QuestionResponse;
     } & {
         [questionIndex: number]: QuestionResponse
     }
 
-    function mapFields(record: ResponseRecord, fields: ApplicationFormSettings['fields'], event?: EventDescription<void> | null): Partial<MappedRecord> {
+    function mapFields(record: ResponseRecord, fields: RegistrationFormSettings['fields'], event?: EventDescription<void> | null): Partial<MappedRecord> {
         const mapped: Partial<MappedRecord> = {}
         for (const key in fields) {
             const f = fields[key]
@@ -40,7 +40,7 @@ export const useApplications = defineStore('applications', () => {
             case 'arrival':
                 mapped[key] = event ? {
                     id: 0,
-                    title: config.public.applicationDefaultArrivalField,
+                    title: config.public.registrationDefaultArrivalField,
                     responses: event.start,
                     ...val,
                 } : val
@@ -48,7 +48,7 @@ export const useApplications = defineStore('applications', () => {
             case 'departure':
                 mapped[key] = event ? {
                     id: 0,
-                    title: config.public.applicationDefaultDepartureField,
+                    title: config.public.registrationDefaultDepartureField,
                     responses: event.end,
                     ...val,
                 } : val
@@ -69,8 +69,8 @@ export const useApplications = defineStore('applications', () => {
         }
 
         const a = applications ?? useApplications()
-        const nameField = a.settings?.fields.name ?? config.public.applicationDefaultNameField
-        const verifyField = differentEmail ? (a.settings?.fields.phone ?? config.public.applicationDefaultPhoneField) : (a.settings?.fields.name ?? config.public.applicationDefaultNameField)
+        const nameField = a.settings?.fields.name ?? config.public.registrationDefaultNameField
+        const verifyField = differentEmail ? (a.settings?.fields.phone ?? config.public.registrationDefaultPhoneField) : (a.settings?.fields.name ?? config.public.registrationDefaultNameField)
         const nameTrimmed = name.trim()
         const verifyTrimmed = verify.trim()
         const response = a.applications.find(ap => {

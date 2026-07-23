@@ -8,6 +8,7 @@
     "typecheck": "tsc"
   },
   "devDependencies": {
+    "@mcpher/gas-fakes": "^2.5.6",
     "@types/bun": "latest",
     "@types/gapi.client.forms-v1": "^0.0.4",
     "@types/google-apps-script": "^2.0.8",

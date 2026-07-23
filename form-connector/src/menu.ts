@@ -1,4 +1,4 @@
-import { getSecrets, type ApplicationFormSecrets, type EventSettingsTemplated } from './settings'
+import { getSecrets, type RegistrationFormSecrets, type EventSettingsTemplated } from './settings'
 import { sidebar } from './sidebar'
 import { findTriggers, registerAllTriggers} from './triggers'
 
@@ -81,7 +81,7 @@ export function _connect() {
     const result = ui.prompt('🔌 Propojit s aplikací', (appSettings.key && appSettings.remoteEventSettings) ? 'Již je propojeno.' : 'Zadejte kód vygenerovaný aplikací.', ui.ButtonSet.OK_CANCEL)
     if (result.getSelectedButton() == ui.Button.OK) {
         try {
-            const response = JSON.parse(result.getResponseText()) as ApplicationFormSecrets
+            const response = JSON.parse(result.getResponseText()) as RegistrationFormSecrets
             if (response.email && response.projectId && response.key && response.remoteEventSettings) {
                 for (const key in response) {
                     const val = response[key as keyof typeof response]

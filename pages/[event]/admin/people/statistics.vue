@@ -155,8 +155,8 @@ const statistics = computed(() => {
 
     const days: Record<number, Statistics> = {}
     const mealNames = applications.settings.values.mealNames
-    const eventFirstMeal = parseInt(config.public.applicationDefaultEventFirstMealIndex) || 0
-    const eventLastMeal = parseInt(config.public.applicationDefaultEventLastMealIndex) || (mealNames.length - 1)
+    const eventFirstMeal = parseInt(config.public.registrationDefaultEventFirstMealIndex) || 0
+    const eventLastMeal = parseInt(config.public.registrationDefaultEventLastMealIndex) || (mealNames.length - 1)
 
     for (const a of applications.filteredMapped) {
         const arrival = toJSDate(a.mapped?.arrival?.responses as string ?? cloud.eventDescription.start)

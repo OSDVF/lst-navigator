@@ -5,7 +5,7 @@ import { refreshResponses, type ResponseRecord } from "./responses";
 import {
     getEventSettings,
     getSecrets,
-    type ApplicationFormSecrets
+    type RegistrationFormSecrets
 } from "./settings";
 import { resolveEmailContent } from "./submit";
 import type { EmailTemplateVars } from "./types";
@@ -15,7 +15,7 @@ export type Actions = {
     getControls: {
         formId: string;
     };
-    getSettings: {
+    getSecrets: {
         formId: string;
     };
     getInternal: {
@@ -37,7 +37,7 @@ export type Actions = {
         [formId: string]: InternalSettings;
     };
     setSecrets: {
-        [formId: string]: ApplicationFormSecrets;
+        [formId: string]: RegistrationFormSecrets;
     };
     refreshResponses: {
         formId: string;
@@ -52,7 +52,7 @@ export type Actions = {
 export type Responses = {
     getControls: gapi.client.forms.Item[];
     /** AppSecrets.remoteEventSettings value */
-    getSettings: string;
+    getSecrets: string;
     getInternal: {
         secretsExist: boolean;
     } & InternalSettings;
@@ -199,7 +199,7 @@ function processRequest(action: Action, body: any) {
     switch (action) {
         case "setSecrets":
             return _setSecrets(body);
-        case "getSettings":
+        case "getSecrets":
             return _getSecrets(body);
         case "getInternal":
             return _getInternal(body);
@@ -726,7 +726,7 @@ function _setInternal(body: Record<string, InternalSettings>) {
     }
 }
 
-function _setSecrets(body: Record<string, ApplicationFormSecrets>) {
+function _setSecrets(body: Record<string, RegistrationFormSecrets>) {
     for (const key in body) {
         // TODO support multiple forms
         const secrets = body[key]!;

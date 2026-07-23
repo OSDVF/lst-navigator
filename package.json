@@ -11,6 +11,7 @@
     "build": "nuxt build",
     "dev": " NODE_TLS_REJECT_UNAUTHORIZED=0 nuxt dev --https --ssl-key keys/server.key --ssl-cert keys/server.crt",
     "emulator": "firebase emulators:start --import .output/emulator --export-on-exit .output/emulator",
+    "dev-forms": "cd form-connector && bun --watch emulator.ts",
     "generate": "bun -b build-static.mjs",
     "preview": "nuxt preview",
     "prepare": "nuxt prepare",

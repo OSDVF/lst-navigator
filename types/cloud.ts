@@ -25,7 +25,7 @@ export const SpecialApplicationFields = [
     'name'] as const
 
 export type SpecialApplicationFields = typeof SpecialApplicationFields[number]
-export type ApplicationFormSettings = {
+export type RegistrationFormSettings = {
     values: {
         /**
          * ordered by time of day.

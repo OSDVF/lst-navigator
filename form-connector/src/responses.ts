@@ -1,6 +1,6 @@
 import path from "path"
 import { useFirestore } from "./firestore"
-import { getEventSettings, getSecrets, type ApplicationFormSecrets, type EventSettingsTemplated, type SyncState } from "./settings"
+import { getEventSettings, getSecrets, type RegistrationFormSecrets, type EventSettingsTemplated, type SyncState } from "./settings"
 import type Firestore from "firestore_google-apps-script/Firestore"
 import isEqual from "lodash.isequal"
 
@@ -32,7 +32,7 @@ export type ResponseRecord = {
 export function updateResponse(form: GoogleAppsScript.Forms.Form, response: GoogleAppsScript.Forms.FormResponse, dry = false): boolean | undefined {
     const formId = form.getId()
     const secrets = getSecrets(formId)
-    const fs = useFirestore(formId, secrets as ApplicationFormSecrets)
+    const fs = useFirestore(formId, secrets as RegistrationFormSecrets)
     const settings = getEventSettings(form, fs)
 
     const resps = form.getResponses()
@@ -65,7 +65,7 @@ function responsesSyncDirty(settings: Partial<EventSettingsTemplated<GoogleAppsS
 export function refreshResponses(form: GoogleAppsScript.Forms.Form, force: boolean = false, dry = false) {
     const formId = form.getId()
     const secrets = getSecrets(formId)
-    const fs = useFirestore(formId, secrets as ApplicationFormSecrets)
+    const fs = useFirestore(formId, secrets as RegistrationFormSecrets)
     const settings = getEventSettings(form, fs)
 
     if (force || responsesSyncDirty(settings, form.getResponses())) {

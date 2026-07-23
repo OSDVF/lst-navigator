@@ -2,8 +2,8 @@ import { captureException } from '@sentry/nuxt'
 import { GoogleAuthProvider } from 'firebase/auth'
 import { skipHydrate } from 'pinia'
 
-export const applicationFormDocumentPrefix = 'https://docs.google.com/forms/d'
-export const applicationFormShortUrlPrefix = 'https://forms.gle/'
+export const registrationFormDocumentPrefix = 'https://docs.google.com/forms/d'
+export const registrationFormShortUrlPrefix = 'https://forms.gle/'
 
 const gapi = (import.meta.client ? await import('google-api-javascript-client') : { gapi: { client: {} } } as unknown as typeof import('google-api-javascript-client')).gapi
 export const useGapi = defineStore('gapi', () => {
