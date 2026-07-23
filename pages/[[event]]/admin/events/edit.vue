@@ -1,5 +1,7 @@
 <template>
-    <form class="p-2" @submit.prevent='editEvent(!editing)'>
+    <form
+        v-if="(editing && cloud.resolvedPermissions.editEvent) || cloud.resolvedPermissions.superAdmin" class="p-2"
+        @submit.prevent='editEvent(!editing)'>
         <h2>{{ editing ? 'Upravit událost' : 'Nová událost' }}</h2>
 
         <div style="float:right">
@@ -31,14 +33,14 @@
             <label class="nowrap" for="icon">
                 <Icon name="mdi:tag" />&ensp;
                 <abbr
-                    :title="'Štítky pomáhají odlišit události pro různé organizace nebo skupiny účastníků. Aplikace pod touto doménou ve výchozím stavu zobrazuje štítky: ' + (filterTags.length ? filterTags.join(', ') : 'všechny.')">
+                    :title="'Štítky pomáhají odlišit události pro různé organizace nebo skupiny účastníků. Aplikace pod touto doménou ve výchozím stavu zobrazuje štítky: ' + (cloud.filterTags.length ? cloud.filterTags.join(', ') : 'všechny.')">
                     Štítky
                 </abbr>
             </label>&ensp;
             <TagsSelect
                 id="tags" v-model="eventToEdit.tags"
-                :allow-empty="!filterTags.length || cloud.resolvedPermissions.superAdmin" :options="allTags"
-                @tag="(tag: string) => { allTags = [...allTags, tag]; eventToEdit.tags.push(tag) }" />
+                :allow-empty="!cloud.filterTags.length || cloud.resolvedPermissions.superAdmin" :options="cloud.allTags"
+                @tag="(tag: string) => { cloud.allTags = [...cloud.allTags, tag]; eventToEdit.tags.push(tag) }" />
         </div>
         <br>
 
@@ -177,13 +179,16 @@
         <button type='submit' class="large">
             <Icon name="material-symbols:save" /> Uložit
         </button>
-        <NuxtLink :to="`/${cloud.selectedEvent}/admin/events`">
+        <NuxtLink to="/admin/events">
             <button type="reset" class="large">
                 <Icon name="mdi:cancel" /> Zrušit
             </button>
         </NuxtLink>
         <CustomError />
     </form>
+    <article v-else>
+        Nedostatečná oprávnění
+    </article>
 </template>
 <script setup lang="ts">
 import { stringify } from 'devalue'
@@ -208,7 +213,6 @@ const config = useRuntimeConfig()
 const router = useRouter()
 const cloud = useCloudStore()
 
-const filterTags = config.public.filterTags.split(',').map(t => t.trim()) ?? [] as string[]
 const selectedEventId = useSelectedEvent(router, config, true)
 const selectedEvent = computed(() => {
     if (selectedEventId) {
@@ -243,40 +247,39 @@ const eventToEdit = ref({
     showTo: '',
     start: now,
     subtitle: '',
-    tags: filterTags,
+    tags: toRaw(cloud.filterTags),
     transfers: false,
     web: '',
 })
-
-onMounted(() => {
-    if (selectedEvent.value) {
+watch(selectedEvent, selectedEvent => {
+    if (selectedEvent) {
         eventToEdit.value = {
-            advanced: selectedEvent.value.advanced ?? false,
-            applicationsEnd: selectedEvent.value.applicationsEnd ?? '',
-            applicationsStart: selectedEvent.value.applicationsStart ?? '',
-            title: selectedEvent.value.title,
-            description: selectedEvent.value.description,
-            end: selectedEvent.value.end,
-            form: selectedEvent.value.form ?? '',
-            formDocument: selectedEvent.value.formDocument ?? '',
-            feedbackEnd: selectedEvent.value.feedbackEnd ?? '',
-            id: selectedEvent.value.id,
-            order: selectedEvent.value.order ?? '',
-            participantSection: selectedEvent.value.participantSection ?? false,
-            imageIdentifier: selectedEvent.value.image || {
+            advanced: selectedEvent.advanced ?? false,
+            applicationsEnd: selectedEvent.applicationsEnd ?? '',
+            applicationsStart: selectedEvent.applicationsStart ?? '',
+            title: selectedEvent.title,
+            description: selectedEvent.description,
+            end: selectedEvent.end,
+            form: selectedEvent.form ?? '',
+            formDocument: selectedEvent.formDocument ?? '',
+            feedbackEnd: selectedEvent.feedbackEnd ?? '',
+            id: selectedEvent.id,
+            order: selectedEvent.order ?? '',
+            participantSection: selectedEvent.participantSection ?? false,
+            imageIdentifier: selectedEvent.image || {
                 type: 'cloud',
                 data: '',
             },
-            showFrom: selectedEvent.value.showFrom ?? '',
-            showTo: selectedEvent.value.showTo ?? '',
-            start: selectedEvent.value.start,
-            subtitle: selectedEvent.value.subtitle,
-            tags: selectedEvent.value.tags || [],
-            transfers: selectedEvent.value.transfers ?? false,
-            web: selectedEvent.value.web,
+            showFrom: selectedEvent.showFrom ?? '',
+            showTo: selectedEvent.showTo ?? '',
+            start: selectedEvent.start,
+            subtitle: selectedEvent.subtitle,
+            tags: selectedEvent.tags || [],
+            transfers: selectedEvent.transfers ?? false,
+            web: selectedEvent.web,
         }
     }
-})
+}, { immediate: true })
 
 const customOrder = computed({
     get() {
@@ -294,16 +297,7 @@ const customOrder = computed({
 //
 // Tags
 //
-const otherEventsTags = computed(() => [...new Set(cloud.eventsCollection.map(e => e.tags ?? []).flat().concat(filterTags)).values()])
-const _allTags = ref(otherEventsTags.value)
-const allTags = computed({
-    get() {
-        return _allTags.value
-    },
-    set(value: string[]) {
-        _allTags.value = [...new Set([..._allTags.value, ...value]).values()]
-    },
-})
+
 
 //
 // Title
@@ -540,7 +534,7 @@ async function editEvent(createNew = false) {
 
     dummies.map(d => d && deleteDoc(d))
 
-    router.push(`${cloud.selectedEvent}/admin/events`)
+    router.push('/admin/events')
 }
 
 

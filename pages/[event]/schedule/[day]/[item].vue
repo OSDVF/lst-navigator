@@ -91,7 +91,7 @@ import { colorToHex, darkenColor } from '@/utils/colors'
 import { useCloudStore } from '@/stores/cloud'
 import type { Feedback } from '@/types/cloud'
 import { useSettings } from '@/stores/settings'
-import { toHumanTime, getParallelEvents } from '@/utils/utils'
+import { getParallelEvents } from '@/utils/utils'
 import { useLocalStorage } from '@vueuse/core'
 
 const route = useRoute()

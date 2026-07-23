@@ -431,8 +431,8 @@ export const useCloudStore = defineStore('cloud', () => {
                 } else {
                     // With emulators the popup version would throw cross-origin error
                     const result = await (user.auth.value ?
-                        ((useRedirect === true || config.public.emulators) ? reauthenticateWithRedirect : reauthenticateWithPopup)(user.auth.value!, googleAuthProvider, browserPopupRedirectResolver)
-                        : ((useRedirect === true || config.public.emulators) ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver))
+                        (useRedirect === true  ? reauthenticateWithRedirect : reauthenticateWithPopup)(user.auth.value!, googleAuthProvider, browserPopupRedirectResolver)
+                        : (useRedirect === true ? signInWithRedirect : signInWithPopup)(auth!, googleAuthProvider, browserPopupRedirectResolver))
                     user.hydrateFromCredential(result)
                 }
                 user.pendingPopup.value = false
@@ -669,9 +669,10 @@ export const useCloudStore = defineStore('cloud', () => {
         }).catch(e => { console.error(e); if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) } })
     }
 
-    const filterTags = config.public.filterTags.split(',').map(t => t.trim())
+    const _filterTags = config.public.filterTags.length > 0 ? config.public.filterTags.split(',').map(t => t.trim()) : null
+    const filterTags = _filterTags ?? [] as string[]
     const eventsCollection = useCollectionT<EventDescription<void>>(computed(() => firestore ?
-        (filterTags.length && (!resolvedPermissions.value.superAdmin || adminSettings.onlyTaggedEvents)) ?
+        (filterTags.length && (!resolvedPermissions.value.superAdmin || (filterTags.length && adminSettings.onlyTaggedEvents))) ?
             query(knownCollection(firestore, 'events'), where('tags', 'array-contains-any', filterTags))
             : knownCollection(firestore, 'events') : null), { maxRefDepth: 0, once: !!import.meta.server },
     )
@@ -693,7 +694,19 @@ export const useCloudStore = defineStore('cloud', () => {
     })
     const participantSectionVisible = computed(() => (eventDescription.value?.participantSection ?? true)
         && (eventDescription.value?.formDocument || (!eventDescription.value?.formDocument && (groups.value.length || duties.value.length))))
+
+    const otherEventsTags = computed(() => [...new Set(eventsCollection.value.map(e => e.tags ?? []).flat().concat(filterTags)).values()])
+    const _allTags = ref(otherEventsTags.value)
+    const allTags = computed({// somewhat goofy implementation that caches tags as they are added so they don't need to be updated from server
+        get() {
+            return _allTags.value
+        },
+        set(value: string[]) {
+            _allTags.value = [...new Set([..._allTags.value, ...value]).values()]
+        },
+    })
     return {
+        allTags,
         currentEventCollection,
         days,
         duties,
@@ -703,6 +716,7 @@ export const useCloudStore = defineStore('cloud', () => {
         eventsCollection,
         feedback: skipHydrate(feedback),
         feedbackConfig: feedbackConfig,
+        filterTags,
         groups,
         networkError: skipHydrate(eventDescription.error),
         notesCollection: skipHydrate(notesCollection),
@@ -749,17 +763,17 @@ export function fromUpdatePayload<T>(data: UpdatePayload<T> | FieldValue | null,
             const v = newData[key] as any
             if (typeof v == 'object' && Object.hasOwn(v, '_methodName') && v) {
                 switch (v._methodName) {
-                    case 'arrayUnion':
-                        console.debug('arrayUnion', data, previousData)
-                        newData[key] = union<any>(previousData[key] as any, v.Uu) as any
-                        break
-                    case 'deleteField':
-                        console.debug('deleteField', data, previousData)
-                        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                        delete newData[key]
-                        break
-                    default:
-                        console.debug('unknown ' + v._methodName, data, previousData)
+                case 'arrayUnion':
+                    console.debug('arrayUnion', data, previousData)
+                    newData[key] = union<any>(previousData[key] as any, v.Uu) as any
+                    break
+                case 'deleteField':
+                    console.debug('deleteField', data, previousData)
+                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                    delete newData[key]
+                    break
+                default:
+                    console.debug('unknown ' + v._methodName, data, previousData)
                 }
             }
         }

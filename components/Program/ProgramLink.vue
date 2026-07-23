@@ -84,7 +84,6 @@
 <script lang="ts" setup>
 // TODO: detailní feedback
 import type { FeedbackType, ScheduleItem } from '@/types/cloud'
-import { toHumanTime } from '@/utils/utils'
 
 const e = defineEmits<{
     moveUp: [entry: ScheduleItem, index: number],

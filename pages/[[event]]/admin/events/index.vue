@@ -1,6 +1,6 @@
 <template>
     <ProgressBar v-if='cloud.eventLoading' />
-    <div v-else>
+    <div v-else-if="cloud.resolvedPermissions.editEvent">
         <NuxtLink v-if='cloud.resolvedPermissions.superAdmin' to="/admin/events/edit">
             <button>
                 <Icon name='mdi:plus' /> Nová
@@ -60,7 +60,7 @@
                 </tr>
             </thead>
         </LazyDataTable>
-        <Teleport v-if="mounted" to="#topNav">
+        <Teleport v-if="mounted && cloud.allTags.length" to="#topNav">
             <label>
                 <input
                     v-model="admin.onlyTaggedEvents" type="checkbox"
@@ -70,6 +70,9 @@
             </label>
         </Teleport>
     </div>
+    <article v-else>
+        Nedostatečná oprávnění
+    </article>
 </template>
 
 <script setup lang='ts'>

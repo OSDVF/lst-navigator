@@ -28,7 +28,7 @@ export const useGapi = defineStore('gapi', () => {
     async function adminReauth() {
         if (!cloud.user.hasAdminScopes) {
             if (cloud.user.auth?.providerData[0].providerId != GoogleAuthProvider.PROVIDER_ID) {
-                if (confirm(`Tato funkce je dostupná pouze s přihlášením přes Google účet. Chcete se od účtu ${cloud.user.info?.email} odhlásit a přihlásit k jinému?`)) {
+                if (config.public.emulators || confirm(`Tato funkce je dostupná pouze s přihlášením přes Google účet. Chcete se od účtu ${cloud.user.info?.email} odhlásit a přihlásit k jinému?`)) {
                     await cloud.user.signOut()
                     navigateTo('/login?google&redirect=' + useRoute().fullPath)
                 }

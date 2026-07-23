@@ -95,7 +95,6 @@
 <script setup lang="ts">
 import type { FeedbackType, ScheduleItem } from '@/types/cloud'
 import { colorToHex } from '@/utils/colors'
-import { toHumanTime } from '@/utils/utils'
 const cloud = useCloudStore()
 const route = useRoute()
 const selectedDayIndex = computed(() => typeof route.params.day === 'string' ? parseInt(route.params.day) : 0)

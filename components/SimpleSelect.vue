@@ -6,18 +6,18 @@
         :options="Object.keys(p.labels)" :searchable="p.searchable ?? false"
         @update:model-value="(e: Model) => emit('update:modelValue', e)">
         <template #singleLabel="props">
-            <Icon v-if="p.labels[props.option as Opts].icon" :name="p.labels[props.option as Opts].icon!" />
+            <Icon v-if="p.labels[props.option as Opts]?.icon" :name="p.labels[props.option as Opts].icon!" />
             <slot name="singleLabel" :option="props.option" :text="p.labels[props.option as Opts].text">
                 &nbsp;
-                {{ p.labels[props.option as Opts].text }}
+                {{ p.labels[props.option as Opts].text ?? props.search }}
             </slot>
         </template>
         <template #option="props">
             <span class="flex-center">
-                <Icon v-if="p.labels[props.option as Opts].icon" :name="p.labels[props.option as Opts].icon!" />
-                <slot name="option" :option="props.option" :text="p.labels[props.option as Opts].text">
+                <Icon v-if="p.labels[props.option as Opts]?.icon" :name="p.labels[props.option as Opts].icon!" />
+                <slot name="option" :option="props.option" :text="p.labels[props.option as Opts]?.text">
                     &nbsp;
-                    {{ p.labels[props.option as Opts].text }}
+                    {{ p.labels[props.option as Opts]?.text ?? props.search }}
                 </slot>
             </span>
         </template>

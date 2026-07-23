@@ -1,4 +1,5 @@
 import type { EventDescription, Feedback, ScheduleDay, ScheduleItem } from '@/types/cloud'
+import type { FeedbackType } from '~/types/cloud'
 
 export type NotificationPayload = {
     title: string,
@@ -15,6 +16,18 @@ export function toTitleCase(s: string) {
     return s.replace(/([^\s:-])([^\s:-]*)/g, function ($0, $1, $2) {
         return $1.toUpperCase() + $2.toLowerCase()
     })
+}
+
+export function toHumanFeedback(feedback?: FeedbackType) {
+    if (!feedback) { return undefined }
+    return {
+        basic: '⭐⭐⭐⭐⭐',
+        complicated: 'Několik ⭐⭐⭐⭐⭐',
+        text: 'Textová otázka',
+        parallel: 'Paralelní programy',
+        multiple: 'Zaškrtávací políčka',
+        select: 'Výběr z možností',
+    }[feedback]
 }
 
 export function isToday(scheduleDay: ScheduleDay) {

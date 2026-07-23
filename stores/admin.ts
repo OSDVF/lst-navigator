@@ -5,12 +5,14 @@ import { useLocalStorage } from '@vueuse/core'
 export type DisplayKind = 'histogram' | 'individual'
 
 export const useAdmin = defineStore('admin', function () {
-    const displayKind = useLocalStorage<DisplayKind>('displayKind', 'histogram', {initOnMounted: true})
+    const config = useRuntimeConfig()
+
+    const displayKind = useLocalStorage<DisplayKind>('displayKind', 'histogram', { initOnMounted: true })
     const editingFeedback = useLocalStorage('editingFeedback', false, {initOnMounted: true})
     const anonymize = useLocalStorage('anonymize', true, {initOnMounted: true})
     const eventClipboard = useLocalStorage<ScheduleItem | null>('eventClipboard', null, {initOnMounted: true})
     const feedbackConfigClipboard = useLocalStorage<FeedbackConfig | null>('feedbackConfigClipboard', null, {initOnMounted: true})
-    const onlyTaggedEvents = useLocalStorage('onlyTaggedEvents', true, { initOnMounted: true})
+    const onlyTaggedEvents = useLocalStorage('onlyTaggedEvents', config.public.filterTags.length, { initOnMounted: true})
 
     return {
         anonymize,
