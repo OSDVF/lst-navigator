@@ -269,10 +269,16 @@ function _getControls(body: Record<string, string>) {
             const control: gapi.client.forms.Item &
                 Record<string, string | number | undefined> = {
                 itemId: item.getId().toString(16),
-                index: item.getIndex(),
-                type: item.getType(),
-                description: item.getHelpText(),
             };
+            
+            if (item.getTitle()) {
+                control.title = item.getTitle();
+            }
+            
+            if (item.getHelpText()) {
+                control.description = item.getHelpText();
+            }
+            
             switch (item.getType()) {
                 case FormApp.ItemType.CHECKBOX:
                     const CheckboxItem = item.asCheckboxItem();
@@ -281,13 +287,22 @@ function _getControls(body: Record<string, string>) {
                             questionId: CheckboxItem.getId().toString(16),
                             choiceQuestion: {
                                 options: (
-                                    CheckboxItem.getChoices().map((c) => ({
-                                        goToAction: navigationTypeToAction(
+                                    CheckboxItem.getChoices().map((c) => {
+                                        const option: gapi.client.forms.Option = {
+                                            value: c.getValue(),
+                                        };
+                                        const navAction = navigationTypeToAction(
                                             c.getPageNavigationType()
-                                        ),
-                                        goToSectionId: c.getGotoPage().getId().toString(16),
-                                        value: c.getValue(),
-                                    })) as gapi.client.forms.Option[]
+                                        );
+                                        if (navAction) {
+                                            option.goToAction = navAction;
+                                        }
+                                        const gotoPage = c.getGotoPage();
+                                        if (gotoPage) {
+                                            option.goToSectionId = gotoPage.getId().toString(16);
+                                        }
+                                        return option;
+                                    }) as gapi.client.forms.Option[]
                                 ).concat(
                                     ...(CheckboxItem.hasOtherOption()
                                         ? [
@@ -315,8 +330,11 @@ function _getControls(body: Record<string, string>) {
                             },
                         },
                         questions: CheckboxGridItem.getRows().map((r) => ({
+                            // NOTE: questionId is not available from FormApp API for grid rows.
+                            // Google Forms REST API generates unique IDs for each row, but
+                            // GoogleAppsScript FormApp doesn't expose them. Each row is a separate
+                            // Question object in the API response, but we cannot retrieve their IDs.
                             rowQuestion: {
-                                //TODO missing questionId and probably no way to get it
                                 title: r,
                             },
                         })),
@@ -360,11 +378,20 @@ function _getControls(body: Record<string, string>) {
                         question: {
                             questionId: ListItem.getId().toString(16),
                             choiceQuestion: {
-                                options: ListItem.getChoices().map((c) => ({
-                                    goToAction: navigationTypeToAction(c.getPageNavigationType()),
-                                    goToSectionId: c.getGotoPage().getId().toString(16),
-                                    value: c.getValue(),
-                                })),
+                                options: ListItem.getChoices().map((c) => {
+                                    const option: gapi.client.forms.Option = {
+                                        value: c.getValue(),
+                                    };
+                                    const navAction = navigationTypeToAction(c.getPageNavigationType());
+                                    if (navAction) {
+                                        option.goToAction = navAction;
+                                    }
+                                    const gotoPage = c.getGotoPage();
+                                    if (gotoPage) {
+                                        option.goToSectionId = gotoPage.getId().toString(16);
+                                    }
+                                    return option;
+                                }),
                                 type: "DROP_DOWN",
                             },
                             required: ListItem.isRequired(),
@@ -378,13 +405,22 @@ function _getControls(body: Record<string, string>) {
                             questionId: MultipleChoiceItem.getId().toString(16),
                             choiceQuestion: {
                                 options: (
-                                    MultipleChoiceItem.getChoices().map((c) => ({
-                                        goToAction: navigationTypeToAction(
+                                    MultipleChoiceItem.getChoices().map((c) => {
+                                        const option: gapi.client.forms.Option = {
+                                            value: c.getValue(),
+                                        };
+                                        const navAction = navigationTypeToAction(
                                             c.getPageNavigationType()
-                                        ),
-                                        goToSectionId: c.getGotoPage().getId().toString(16),
-                                        value: c.getValue(),
-                                    })) as gapi.client.forms.Option[]
+                                        );
+                                        if (navAction) {
+                                            option.goToAction = navAction;
+                                        }
+                                        const gotoPage = c.getGotoPage();
+                                        if (gotoPage) {
+                                            option.goToSectionId = gotoPage.getId().toString(16);
+                                        }
+                                        return option;
+                                    }) as gapi.client.forms.Option[]
                                 ).concat(
                                     ...(MultipleChoiceItem.hasOtherOption()
                                         ? [
@@ -446,7 +482,7 @@ function _getControls(body: Record<string, string>) {
                     const TextItem = item.asTextItem();
                     control.questionItem = {
                         question: {
-                            questionId: TextItem.getId().toString(),
+                            questionId: TextItem.getId().toString(16),
                             textQuestion: {
                                 paragraph: false,
                             },
@@ -478,8 +514,11 @@ function _getControls(body: Record<string, string>) {
                             },
                         },
                         questions: GridItem.getRows().map((r) => ({
+                            // NOTE: questionId is not available from FormApp API for grid rows.
+                            // Google Forms REST API generates unique IDs for each row, but
+                            // GoogleAppsScript FormApp doesn't expose them. Each row is a separate
+                            // Question object in the API response, but we cannot retrieve their IDs.
                             rowQuestion: {
-                                //TODO missing questionId and probably no way to get it
                                 title: r,
                             },
                         })),

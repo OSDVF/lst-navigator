@@ -12,6 +12,7 @@
     "dev": " NODE_TLS_REJECT_UNAUTHORIZED=0 nuxt dev --https --ssl-key keys/server.key --ssl-cert keys/server.crt",
     "emulator": "firebase emulators:start --import .output/emulator --export-on-exit .output/emulator",
     "dev-forms": "cd form-connector && bun --watch emulator.ts",
+    "dev-forms-gapi": "bun ./node_modules/gapi-forms-md/index.ts -d test/forms -p 4343",
     "generate": "bun -b build-static.mjs",
     "preview": "nuxt preview",
     "prepare": "nuxt prepare",
@@ -22,6 +23,7 @@
     "postinstall": "patch-package"
   },
   "devDependencies": {
+    "gapi-forms-md": "git+https://github.com/OSDVF/gapi-forms-md.git#main",
     "@diffx/debug-ref": "^0.0.6",
     "@dvcol/import-map-plugin": "^1.1.0",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
