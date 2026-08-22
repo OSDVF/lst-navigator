@@ -56,7 +56,7 @@
                 <EditProgram :value="editedEvent" />
                 <button type="submit" class="mt-1 large">
                     <Icon :name="editing ? 'mdi:pencil' : 'mdi:plus-circle'" />
-                    {{ editing ? 'Upravit' : 'Přidat' }}
+                    {{ editing ? 'Uložit' : 'Uložit a přidat' }}
                 </button>
                 <template v-if="!editing">
                     <input id="autoOrder" v-model="autoOrder" type="checkbox"> <label

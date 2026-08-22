@@ -1,14 +1,14 @@
 <template>
     <ImportForm
-        v-if="cloud.resolvedPermissions.superAdmin"
-        ref="form" :truncate-option="importInto" @import="importJson" @error="ui.showError">
+        v-if="cloud.resolvedPermissions.superAdmin" ref="form" :truncate-option="importInto"
+        :embedded="false" @import="importJson" @error="ui.showError">
         <template #legend>
-            {{ importText }}
+            <h3>{{ importText }}</h3>
         </template>
         <template #settings>
             <div>
                 <input id="shiftDateEnabled" v-model="shiftDateEnabled" type="checkbox">
-                <label for="shiftDateEnabled">Posunout datum události</label><br>
+                <label for="shiftDateEnabled">Posunout datum akce</label><br>
                 <template v-if="shiftDateEnabled">
                     <input id="shiftDate" v-model="shiftDate" type="date">&nbsp;
                     <DateFormat />
@@ -30,14 +30,14 @@ import { EventSubcollectionsList, type EventDescription, type ScheduleDay } from
 import { setDoc as setDocT } from '~/utils/trace'
 
 definePageMeta({
-    title: 'Import události',
+    title: 'Import akce',
     layout: 'admin',
     middleware: ['auth'],
 })
 
 const selectedEvent = useSelectedEvent(undefined, undefined, true)
 const importInto = computed(() => !!selectedEvent.value)
-const importText = computed(() => importInto.value ? 'Importovat do ' + (cloud.eventDescription?.title ?? '...') : 'Importovat novou')
+const importText = computed(() => importInto.value ? 'Importovat do ' + (cloud.eventDescription?.title ?? '...') : 'Importovat jako novou akci')
 const shiftDateEnabled = ref(false)
 const shiftDate = ref<string>()
 

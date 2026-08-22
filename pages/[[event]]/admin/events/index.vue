@@ -8,6 +8,7 @@
         </NuxtLink>
         <template
             v-if="isSelection && (cloud.resolvedPermissions.superAdmin || boolToNum(cloud.user.info?.permissions?.[getSelectedEvent(true)?.id ?? '']) >= UserLevel.Admin)">
+            &ensp;
             <NuxtLink
                 :to="{
                     name: 'event-admin-events-edit',
@@ -166,4 +167,5 @@ function deleteSelected() {
         }
     }
 }
+
 </script>

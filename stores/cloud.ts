@@ -669,7 +669,7 @@ export const useCloudStore = defineStore('cloud', () => {
         }).catch(e => { console.error(e); if (process.env.SENTRY_DISABLED !== 'true') { Sentry.captureException(e) } })
     }
 
-    const _filterTags = config.public.filterTags.length > 0 ? config.public.filterTags.split(',').map(t => t.trim()) : null
+    const _filterTags = (config.public.filterTags.length > 0) ? config.public.filterTags.split(',').map(t => t.trim()) : null
     const filterTags = _filterTags ?? [] as string[]
     const eventsCollection = useCollectionT<EventDescription<void>>(computed(() => firestore ?
         (filterTags.length && (!resolvedPermissions.value.superAdmin || (filterTags.length && adminSettings.onlyTaggedEvents))) ?

@@ -12,7 +12,7 @@ export const useAdmin = defineStore('admin', function () {
     const anonymize = useLocalStorage('anonymize', true, {initOnMounted: true})
     const eventClipboard = useLocalStorage<ScheduleItem | null>('eventClipboard', null, {initOnMounted: true})
     const feedbackConfigClipboard = useLocalStorage<FeedbackConfig | null>('feedbackConfigClipboard', null, {initOnMounted: true})
-    const onlyTaggedEvents = useLocalStorage('onlyTaggedEvents', config.public.filterTags.length, { initOnMounted: true})
+    const onlyTaggedEvents = useLocalStorage('onlyTaggedEvents', !!config.public.filterTags.length, { initOnMounted: true})
 
     return {
         anonymize,

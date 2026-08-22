@@ -1,10 +1,10 @@
 <template>
     <form class="inline" @submit.prevent="importJson(); importing = false">
-        <button type="button" @click="importing = !importing">
+        <button v-if="embedded ?? true" type="button" @click="importing = !importing">
             <Icon name="mdi:import" class="mr-0.5" />
             <slot>Import</slot>
         </button>
-        <fieldset v-if="importing">
+        <fieldset v-if="importing || !(embedded ?? true)">
             <legend>
                 <slot name="legend">Import</slot>
             </legend>
@@ -23,9 +23,9 @@
                 <br>
                 <div
                     v-if="importText !== null" v-no-overflow contenteditable
-                    :class="{ 'rich-editor': true, 'w-full': true, disabled: !!files?.length }" style="max-height: 100vh"
-                    placeholder="Vložit z textu" @blur="e => importText = (e.target as HTMLElement).innerText"
-                    v-text="importText" />
+                    :class="{ 'rich-editor': true, 'w-full': true, disabled: !!files?.length }"
+                    style="max-height: 100vh" placeholder="Vložit z textu"
+                    @blur="e => importText = (e.target as HTMLElement).innerText" v-text="importText" />
             </div>
             <br>
             <div>
@@ -61,6 +61,7 @@ const p = defineProps<{
     truncateOption?: boolean,
     truncateText?: string,
     union?: boolean,
+    embedded?: boolean,
 }>()
 
 const truncate = ref<boolean | undefined>(p.truncateDefault)

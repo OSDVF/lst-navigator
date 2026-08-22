@@ -4,8 +4,7 @@
             <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> Formulář
         </label>
         <template v-if="formData?.info?.title">
-            <NuxtLink
-                style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
+            <NuxtLink style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
                 class="inline-block dotted-underline" target="_blank" :href="model" title="Otevřít v nové záložce">
                 {{ formData.info.title }}
                 <sup>
@@ -16,8 +15,7 @@
                 <Icon name="mdi:close" />
             </span>
         </template>
-        <input
-            v-else id="form" v-model.lazy="model" :disabled="props.disabled" type="url" name="form"
+        <input v-else id="form" v-model.lazy="model" :disabled="props.disabled" type="url" name="form"
             :placeholder="registrationFormShortUrlPrefix">
 
         <button v-if="!disabled" type="button" @click="usePicker">
@@ -39,7 +37,7 @@
                 <Icon name="mdi:open-in-new" />
             </a>
         </sup>
-        <code v-if="error || cloud.user.error" class="error">{{ error || cloud.user.error }}</code>
+        <code v-if="error || cloud.user.error" class="error">Chyba: {{ error || cloud.user.error }}</code>
     </span>
 </template>
 
@@ -77,7 +75,7 @@ async function usePicker() {
         }).build()
     picker.setVisible(true)
 }
-async function hydrateFormData() {
+async function hydrateFormData(reauth = true) {
     if (!model.value || !cloud.user.adminAuth?.accessToken) {
         formData.value = undefined
         return
@@ -87,7 +85,7 @@ async function hydrateFormData() {
         return
     }
     const gapi = useGapi()
-    const client = await gapi.client()
+    const client = await gapi.client(reauth)
     {
         const result = await client.forms.forms.get({
             formId,
@@ -98,9 +96,12 @@ async function hydrateFormData() {
         }
     }
 }
-onMounted(() => hydrateFormData().catch(e => {
+onMounted(() => hydrateFormData(false).catch(catchHydrate))
+watch(model, () => hydrateFormData().catch(catchHydrate))
+
+function catchHydrate(e: any) {
     console.error('Failed to load form data', e)
     Sentry.captureException(e)
-}))
-watch(model, hydrateFormData)
+    error.value = (typeof e == 'object') ? (e.result?.error?.message || e) : e
+}
 </script>

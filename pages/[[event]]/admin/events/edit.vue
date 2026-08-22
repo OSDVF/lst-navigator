@@ -4,20 +4,26 @@
         @submit.prevent='editEvent(!editing)'>
         <h2>{{ editing ? 'Upravit událost' : 'Nová událost' }}</h2>
 
-        <div style="float:right">
+        <div style="float:right;text-align: right">
             <button type='submit' class="large">
                 <Icon name="material-symbols:save" /> Uložit
             </button>
             <NuxtLink
-                :to="{
-                    name: 'event-admin-events',
-                    params: {
-                        event: cloud.selectedEvent
-                    }
-                }
-                ">
+                :to="{name: 'event-admin-events'}">
                 <button type="reset" class="large">
                     <Icon name="mdi:cancel" /> Zrušit
+                </button>
+            </NuxtLink>
+            <br>
+            <NuxtLink
+                :to="{
+                    name: 'event-admin-events-import',
+                    params: {
+                        event: $router.currentRoute.value.params.event
+                    }
+                }">
+                <button type="button">
+                    <Icon name="mdi:import" class="mr-0.5" /> Importovat
                 </button>
             </NuxtLink>
         </div>
@@ -123,8 +129,6 @@
         </label>
         <input id="advanced" v-model="eventToEdit.advanced" type="checkbox" name="advanced">
 
-        <ClassicCKEditor v-model.lazy='eventToEdit.description' placeholder="Popis události" />
-
         <details :disabled='!!remoteImage.uploadTask.value' class="mt-2">
             <summary>
                 <Icon name="mdi:image" /> Obrázek
@@ -176,6 +180,9 @@
                     v-model.lazy='eventToEdit.imageIdentifier.data' type='text'></label>
             </p>
         </details>
+
+        <ClassicCKEditor v-model.lazy='eventToEdit.description' placeholder="Popis události" />
+
         <button type='submit' class="large">
             <Icon name="material-symbols:save" /> Uložit
         </button>

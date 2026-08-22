@@ -20,23 +20,34 @@
         <NuxtLink
             v-for="event in cloud.visibleEvents" :key="event.id" v-slot="link" :to="`/${event.id}/preview`"
             custom>
-            <EventCard :event="event" :link="link"/>
+            <EventCard :event="event" :link="link" />
         </NuxtLink>
         <p v-if="!cloud.visibleEvents.length">
-            <Icon name="mdi:info-outline" />&ensp;Momentálně nejsou dostupné žádné události k přihlášení, prohlížení, nebo zpětné
+            <Icon name="mdi:info-outline" />&ensp;Momentálně nejsou dostupné žádné události k přihlášení, prohlížení,
+            nebo
+            zpětné
             vazbě.
         </p>
         <details class="p-1 p" style="max-width: 800px">
             <summary class="a nomarker">Řešení potíží</summary>
-            Při problémech s aplikací zkuste <NuxtLink class="strong inline" to="/update" @click.stop.prevent="reload">obnovit aktuální verzi</NuxtLink>. <br>
+            Při problémech s aplikací zkuste <NuxtLink class="strong inline" to="/update" @click.stop.prevent="reload">
+                obnovit
+                aktuální verzi</NuxtLink>. <br>
             Pokud se aplikace nenačte, zkontrolujte, zda máte zapnutý JavaScript, případně adblocker, nebo napište na
             {{ $config.public.supportEmail }}
         </details>
         <small>
             <NuxtLink
-                v-if="!cloud.visibleEvents.length"
+                v-if="!cloud.visibleEvents.length || cloud.resolvedPermissions.editSchedule"
                 :to="`/${cloud.eventsCollection[0]?.id ?? cloud.selectedEvent}/admin`">
-                Administrace</NuxtLink>
+                <Icon name="mdi:tag-edit" />
+                Administrace
+            </NuxtLink>
+            &ensp;
+            <label v-if="cloud.resolvedPermissions.editSchedule">
+                <input v-model="admin.onlyTaggedEvents" type="checkbox"> Zobrazit jen události se štítkem
+                <code>{{ $config.public.filterTags }}</code>
+            </label>
         </small>
     </article>
 </template>
@@ -63,12 +74,13 @@ function reload() {
     location.reload(true)
 }
 
+const admin = useAdmin()
 const cloud = useCloudStore()
 const router = useRouter()
 
 // Replace the home page with the first and only available event
 watch(() => cloud.visibleEvents, e => {
-    if (e.length == 1) {
+    if (e.length == 1 && !cloud.user?.auth) {
         router.replace(`/${cloud.visibleEvents[0].id}/preview`)
     }
 }, { immediate: true })

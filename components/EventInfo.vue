@@ -12,7 +12,7 @@
             </button>
         </NuxtLink>
             <NuxtLink
-                v-if="cloud.visibleEvents.length > 1 || cloud.visibleEvents[0]?.id != cloud.selectedEvent"
+                v-if="cloud.visibleEvents.length > 1 || cloud.visibleEvents[0]?.id != cloud.selectedEvent || cloud.user?.auth"
                 class="button small" style="float:right" to="/">
                 <Icon name="mdi:apps" size="1.5rem" />
                 <Icon name="mdi:arrow-left" />&ensp;Všechny události

@@ -270,15 +270,15 @@ function _getControls(body: Record<string, string>) {
                 Record<string, string | number | undefined> = {
                 itemId: item.getId().toString(16),
             };
-            
+
             if (item.getTitle()) {
                 control.title = item.getTitle();
             }
-            
+
             if (item.getHelpText()) {
                 control.description = item.getHelpText();
             }
-            
+
             switch (item.getType()) {
                 case FormApp.ItemType.CHECKBOX:
                     const CheckboxItem = item.asCheckboxItem();

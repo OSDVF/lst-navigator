@@ -1,6 +1,5 @@
 import { captureException } from '@sentry/nuxt'
 import { GoogleAuthProvider } from 'firebase/auth'
-import { skipHydrate } from 'pinia'
 
 export const registrationFormDocumentPrefix = 'https://docs.google.com/forms/d'
 export const registrationFormShortUrlPrefix = 'https://forms.gle/'
@@ -40,7 +39,7 @@ export const useGapi = defineStore('gapi', () => {
         return true
     }
 
-    function load(): Promise<typeof gapi.client> {
+    function load(reauth = true): Promise<typeof gapi.client> {
         if (loaded.value) {
             return Promise.resolve(gapi.client)
         }
@@ -53,7 +52,7 @@ export const useGapi = defineStore('gapi', () => {
                         access_token: token,
                     } : null), { immediate: true })
                     gapi.client.setApiKey(config.public.vuefire!.config!.apiKey!)
-                    if (!await adminReauth()) {
+                    if (!reauth && !await adminReauth()) {
                         reject()
                         return
                     }
@@ -96,7 +95,7 @@ export const useGapi = defineStore('gapi', () => {
         error,
         loaded,
         loading,
-        client: skipHydrate(load),
+        client: (reauth = true) => load(reauth),
     }
 })
 

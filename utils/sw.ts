@@ -178,7 +178,7 @@ const FALLBACK_STRATEGY = new CacheFirst()
 const external = [
     'https://api.iconify.design/',
     'https://cdn.ckeditor.com',
-    'https://unpkg.com',
+    'https://cdn.jsdelivr.net',
 ]
 const dependencies = new Route(({ request }) => {
     return external.some(url => request.url.startsWith(url))
