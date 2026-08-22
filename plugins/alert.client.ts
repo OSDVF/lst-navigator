@@ -5,5 +5,8 @@ export default defineNuxtPlugin({
                 window.alert(message)
             }
         })
+        app.provide('confirm', function confirm(message?: string) {
+            return window.confirm(message)
+        })
     },
 })

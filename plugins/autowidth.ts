@@ -66,7 +66,7 @@ const checkWidth = (el: AutowidthInput) => {
         }
         if (parent.clientWidth) {
             const prev = parseFloat(el.style.maxWidth.substring(5)) || 0//remove calc(
-            const w = parent.clientWidth - el.offsetLeft + parent.offsetLeft
+            const w = Math.min(parent.clientWidth, window.innerWidth) - el.offsetLeft + parent.offsetLeft
             if (Math.abs(prev - w) >= options.overflowMinZone && (!prev || w < prev)) {
                 const comp = getComputedStyle(el)
                 el.style.maxWidth = `calc(${w}px - ${comp.marginRight} - ${comp.marginLeft})`

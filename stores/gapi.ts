@@ -52,8 +52,8 @@ export const useGapi = defineStore('gapi', () => {
                         access_token: token,
                     } : null), { immediate: true })
                     gapi.client.setApiKey(config.public.vuefire!.config!.apiKey!)
-                    if (!reauth && !await adminReauth()) {
-                        reject()
+                    if (!reauth || !await adminReauth()) {
+                        reject(new Error('reauth'))
                         return
                     }
 

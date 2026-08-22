@@ -414,7 +414,7 @@ export const useCloudStore = defineStore('cloud', () => {
             }
         },
         async signIn(useRedirect = false, secondAttempt = false, email?: string, password?: string, admin?: boolean): Promise<boolean> {
-            if (config.public.featureForms && !config.public.emulators && (router.currentRoute.value.fullPath.includes('admin') || admin)) {
+            if (!config.public.emulators && (admin || (config.public.featureForms && router.currentRoute.value.fullPath.includes('admin')))) {
                 const currentScopes = googleAuthProvider.getScopes()
                 for (const scope of scopes) {
                     if (!currentScopes.includes(scope)) {

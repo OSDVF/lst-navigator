@@ -2,7 +2,11 @@
     <label v-if="show" title="URL souboru s upravitelnou přihláškou na Google Disku">
         <Icon name="mdi:google-drive" /> Soubor s formulářem&ensp;
         <input
-            id="formDocument" v-model.lazy="model"
+            id="formDocument" ref="input" v-model.lazy="model" v-autowidth="{
+                overflowParent: false,
+                parentLevel: 2,
+                watchWindowSize: true,
+            }"
             :disabled="![registrationFormShortUrlPrefix, registrationFormDocumentPrefix].some(a => formUrl?.startsWith(a)) || disabled"
             type="url"
             :placeholder="formUrl?.startsWith(registrationFormDocumentPrefix) ? formUrl : 'https://docs.google.com/forms/...'"
@@ -19,6 +23,9 @@
 
 <script setup lang="ts">
 const { formUrl, disabled } = defineProps<{ formUrl?: string, disabled?: boolean }>()
+const input = useTemplateRef<HTMLInputElement>('input')
+defineExpose({ input })
+
 const model = defineModel<string>()
 const dirty = ref(false)
 watch(model, () => dirty.value = true)

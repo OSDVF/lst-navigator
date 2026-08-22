@@ -44,7 +44,7 @@
                 <form
                     v-show="changePermissionsVisible"
                     @submit.prevent="changePermissions(); changePermissionsVisible = false">
-                    <select v-model="targetPermission" required>
+                    <select v-model.number="targetPermission" required>
                         <option v-for="(name, type) in cloud.permissionNames" :key="type" :value="type">
                             {{ name }}
                         </option>
@@ -65,7 +65,7 @@
 
 <script setup lang="ts">
 import { doc } from 'firebase/firestore'
-import { setDoc, useCollection as useCollectionT } from '~/utils/trace'
+import { setDoc as setDocT, useCollection as useCollectionT } from '~/utils/trace'
 import { knownCollection, useCloudStore } from '@/stores/cloud'
 import { type UpdatePayload, type UserInfo, UserLevel, userLevelToIcon } from '@/types/cloud'
 import type { Api } from '@/types/datatables'
@@ -132,8 +132,8 @@ function changePermissions() {
         selectedRows.each(async (selectedRow) => {
             const uid = selectedRow[7]
             const userDoc = doc(knownCollection(firestore, 'users'), uid)
-            await setDoc(userDoc, {
-                permissions: targetPermission.value == UserLevel.SuperAdmin
+            await setDocT(userDoc, {
+                permissions: (targetPermission.value == UserLevel.SuperAdmin)
                     ? {
                         superAdmin: true,
                     }

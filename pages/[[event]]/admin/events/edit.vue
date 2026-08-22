@@ -8,8 +8,7 @@
             <button type='submit' class="large">
                 <Icon name="material-symbols:save" /> Uložit
             </button>
-            <NuxtLink
-                :to="{name: 'event-admin-events'}">
+            <NuxtLink :to="{ name: 'event-admin-events' }">
                 <button type="reset" class="large">
                     <Icon name="mdi:cancel" /> Zrušit
                 </button>
@@ -90,13 +89,26 @@
         &nbsp;
         <DateFormat /><br>
 
-        <details>
+        <details :open="formInputDetails">
             <summary>
-                <FormInput v-model="eventToEdit.form" :document="eventToEdit.formDocument" />
+                <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> Formulář
+                <FormInput
+                    ref="formInput" v-model.lazy="eventToEdit.form" :title='false'
+                    :document="eventToEdit.formDocument" @update:model-value="confirmUnlink" />
+
+                <small v-if="formInput?.formData?.responderUri != eventToEdit.form && eventToEdit.form.startsWith(registrationFormDocumentPrefix)" style="color:orange">
+                    &nbsp;
+                    <Icon name="mdi:warning" /> Odkaz na přihlášku nesouhlasí s propojeným dokumentem. <span
+                        class="dotted-underline button" tabindex="0"
+                        @click.stop.prevent="formInputDetails = true; nextTick(() => formDocumentInput?.input?.focus())">
+                        Podívejte se na zadaný dokument</span>
+                </small>
             </summary>
 
             <div class="mb-2 ml-2">
-                <FormDocumentInput v-model="eventToEdit.formDocument" :form-url="eventToEdit.form" /><br>
+                <FormDocumentInput
+                    ref="formDocumentInput" v-model="eventToEdit.formDocument"
+                    :form-url="eventToEdit.form" /><br>
 
                 <label>Začátek přihlašování&ensp;<input
                     v-model.lazy='eventToEdit.applicationsStart'
@@ -206,6 +218,7 @@ import { GoogleAuthProvider } from 'firebase/auth'
 import { captureException } from '@sentry/nuxt'
 import { arrayUnion, deleteField, doc, getDoc, type CollectionReference } from 'firebase/firestore'
 import type { EventDescription, ScheduleDay } from '~/types/cloud'
+import type { FormDocumentInput, FormInput } from '#components'
 
 definePageMeta({
     title: 'Úpravit akci',
@@ -215,6 +228,10 @@ definePageMeta({
 
 const now = toFirebaseDate(new Date())!
 const lang = useLang()
+
+const formInput = useTemplateRef<InstanceType<typeof FormInput>>('formInput')
+const formInputDetails = ref(false)
+const formDocumentInput = useTemplateRef<InstanceType<typeof FormDocumentInput>>('formDocumentInput')
 
 const config = useRuntimeConfig()
 const router = useRouter()
@@ -491,9 +508,7 @@ async function editEvent(createNew = false) {
     // normalize application form URL
     eventToEdit.value.formDocument = eventToEdit.value.formDocument.trim()
     eventToEdit.value.form = eventToEdit.value.form.trim()
-    if (config.public.featureForms) {
-        await normalizeForms()
-    }
+    await normalizeForms()
 
     const end = new Date(eventToEdit.value.end)
     await setDoc(docs.event, {// create /events/[event-name]
@@ -542,6 +557,15 @@ async function editEvent(createNew = false) {
     dummies.map(d => d && deleteDoc(d))
 
     router.push('/admin/events')
+}
+
+function confirmUnlink() {
+    const t = formInput.value?.formData?.info?.title
+    if (eventToEdit.value.formDocument && t) {
+        if (confirm(`Chcete zrušit propojení s původní přhláškou ${t}?`) === true) {
+            eventToEdit.value.formDocument = ''
+        }
+    }
 }
 
 

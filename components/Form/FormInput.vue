@@ -1,22 +1,26 @@
 <template>
     <span class="inline-flex align-items-center" style="gap: 5px">
-        <label for="form" title="URL Google Formuláře nebo jakýkoliv odkaz">
-            <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> Formulář
+        <label v-if="title ?? true" for="form" title="URL Google Formuláře nebo jakýkoliv odkaz">
+            <Icon name="mdi:form-select" style="color: #7346ba" class="noinvert" /> {{ typeof title == 'string' ? title
+                : 'Formulář' }}
         </label>
-        <template v-if="formData?.info?.title">
-            <NuxtLink style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
+        <template v-if="formData?.info?.title && model?.startsWith(registrationFormDocumentPrefix)">
+            <NuxtLink
+                style="text-overflow: ellipsis; white-space: nowrap; overflow: hidden;"
                 class="inline-block dotted-underline" target="_blank" :href="model" title="Otevřít v nové záložce">
                 {{ formData.info.title }}
                 <sup>
                     <Icon name="mdi:open-in-new" />
                 </sup>
             </NuxtLink>
-            <span class="button" title="Vymazat" @click="model = ''">
+            <span class="button" title="Vymazat" @click="model = ''; formData = undefined">
                 <Icon name="mdi:close" />
             </span>
         </template>
-        <input v-else id="form" v-model.lazy="model" :disabled="props.disabled" type="url" name="form"
-            :placeholder="registrationFormShortUrlPrefix">
+        <input
+            v-else id="form" v-model.lazy="model" v-autowidth title="URL Google Formuláře nebo jakýkoliv odkaz"
+            :disabled="props.disabled" type="url" name="form" :placeholder="registrationFormShortUrlPrefix"
+            @change="hydrateFormData().catch(catchHydrate)">
 
         <button v-if="!disabled" type="button" @click="usePicker">
             <Icon name="mdi:folder-google-drive" /> Vybrat z Disku
@@ -49,8 +53,14 @@ const model = defineModel<string>()
 const props = defineProps<{
     disabled?: boolean,
     document?: string,
+    title?: string | boolean,
 }>()
 const formData = ref<gapi.client.forms.Form>()
+
+defineExpose({
+    formData,
+})
+
 const cloud = useCloudStore()
 const isFormDoc = computed(() => model.value?.startsWith(registrationFormDocumentPrefix))
 
@@ -97,9 +107,13 @@ async function hydrateFormData(reauth = true) {
     }
 }
 onMounted(() => hydrateFormData(false).catch(catchHydrate))
-watch(model, () => hydrateFormData().catch(catchHydrate))
 
 function catchHydrate(e: any) {
+    if (e instanceof Error) {
+        if (e.message == 'reauth') {
+            return // Just wait for the user to click the button
+        }
+    }
     console.error('Failed to load form data', e)
     Sentry.captureException(e)
     error.value = (typeof e == 'object') ? (e.result?.error?.message || e) : e
