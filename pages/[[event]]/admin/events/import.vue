@@ -1,7 +1,7 @@
 <template>
     <ImportForm
         v-if="cloud.resolvedPermissions.superAdmin" ref="form" :truncate-option="importInto"
-        :embedded="false" @import="importJson" @error="ui.showError">
+        expanded @import="importJson" @error="ui.showError">
         <template #legend>
             <h3>{{ importText }}</h3>
         </template>

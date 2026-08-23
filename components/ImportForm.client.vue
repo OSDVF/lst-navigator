@@ -1,10 +1,10 @@
 <template>
     <form class="inline" @submit.prevent="importJson(); importing = false">
-        <button v-if="embedded ?? true" type="button" @click="importing = !importing">
+        <button v-if="!expanded" type="button" @click="importing = !importing">
             <Icon name="mdi:import" class="mr-0.5" />
             <slot>Import</slot>
         </button>
-        <fieldset v-if="importing || !(embedded ?? true)">
+        <fieldset v-if="importing || expanded">
             <legend>
                 <slot name="legend">Import</slot>
             </legend>
@@ -61,7 +61,7 @@ const p = defineProps<{
     truncateOption?: boolean,
     truncateText?: string,
     union?: boolean,
-    embedded?: boolean,
+    expanded?: boolean,
 }>()
 
 const truncate = ref<boolean | undefined>(p.truncateDefault)
