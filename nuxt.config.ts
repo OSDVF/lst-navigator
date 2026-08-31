@@ -1,6 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import fs from 'fs'
 import prismjs from 'vite-plugin-prismjs'
+import babelVite from 'vite-plugin-babel'
+import babelRoldown from '@rolldown/plugin-babel'
 import firebaseConfig from './firebase.json'
 
 import {
@@ -274,9 +276,22 @@ const config = defineNuxtConfig({
             prismjs({
                 languages: ['javascript', 'markup'],
             }),
+            babelVite({
+                babelConfig: {
+                    plugins: ['@babel/plugin-transform-explicit-resource-management'],
+                },
+            }),
         ],
+        optimizeDeps: {
+            rolldownOptions: {
+                plugins: [
+                    babelRoldown({
+                        plugins: ['@babel/plugin-transform-explicit-resource-management'],
+                    }),
+                ],
+            },
+        },
         build: {
-            target: 'esnext',
             modulePreload: false,
             minify: 'esbuild',
             rollupOptions: {

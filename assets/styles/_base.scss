@@ -6,13 +6,12 @@
 
     //dark mode
     &.dark {
-        //invert 
+        //invert
         filter: invert(100%);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         background: black;
         color: black;
-
 
         &>body>div#__nuxt {
 
@@ -31,6 +30,12 @@
         }
         .dataTable, .dtsr-confirmation {
             color: white;
+        }
+        @supports selector(::-webkit-scrollbar) {
+            button {
+                color: black;
+                background: white
+            }
         }
         .dt-input {
             --dt-html-background: #dddddd

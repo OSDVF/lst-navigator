@@ -291,8 +291,9 @@ onMounted(async () => {
 })
 
 </script>
+<style lang="scss">
+@use '@/assets/styles/constants' as c;
 
-<style>
 .ck-editor__top {
     max-width: 97vw;
 }
@@ -305,5 +306,10 @@ onMounted(async () => {
 .ck-editor {
     max-width: 97vw;
     width: 100%;
+
+    a {
+        border-bottom: 1.5px dotted black;
+        background: rgba($color: c.$link-background, $alpha: 0.2);
+    }
 }
 </style>
