@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="mt-5">
         <div class="caption header">
             <span>{{ day?.name ?? props.config?.name }}</span>
             <span class="actions">
@@ -149,7 +149,7 @@ function doSyncHeaders() {
     for (let i = 0; i < (syncHeader.value?.children?.length ?? 0); i++) {
         const headerElem = syncHeader.value?.children[i] as HTMLElement
         const rowsOrShit = Array.from(tableBody.value?.children ?? []) as HTMLElement[]
-        const cellElem = rowsOrShit.find(c => c.tagName === 'TR')?.children[i] as HTMLElement
+        const cellElem = rowsOrShit.find(c => c.tagName === 'TR' && !c.classList.contains('nosync'))?.children[i] as HTMLElement
         if (typeof cellElem === 'undefined') {
             return
         }

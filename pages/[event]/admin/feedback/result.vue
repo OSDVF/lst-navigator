@@ -260,21 +260,6 @@ $border-color: rgba(128, 128, 128, 0.657);
         }
     }
 
-    .caption {
-        font-size: 1.5em;
-        font-weight: bold;
-        padding: .5rem;
-        background-color: rgba(128, 128, 128, 0.2);
-        border-top-left-radius: 1rem;
-        border-top-right-radius: 1rem;
-
-        &.header {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-    }
-
     .bar-chart {
         height: 100px;
     }

@@ -1,7 +1,6 @@
 <template>
     <div>
-        <FeedbackResultPart
-            v-for="key in Object.keys(otherFeedback).filter(key => !!otherFeedback[key])"
+        <FeedbackResultPart v-for="key in Object.keys(otherFeedback).filter(key => !!otherFeedback[key])"
             :key="`p${key}`" :feedback-section="otherFeedback[key as any]" :section-key="key"
             :config="{ config: config[key], name: key }"
             @set-data="(data, eIndex, user) => cloudStore.feedback.set(key, eIndex, data, user)" />
@@ -14,13 +13,14 @@ import type { Feedback, FeedbackConfig } from '@/types/cloud'
 const cloudStore = useCloudStore()
 const otherFeedback = computed(() => {
     const result: { [key: string]: { [key: string | number]: { [user: string]: Feedback } } } = {}
-    const replies = cloudStore.feedback.online
-    if (replies) {
-        for (const key in replies) {
-            const val = replies[key]
-            const id = (val as any).id
-            if (typeof val === 'object' && isNaN(parseInt(id)) && Object.hasOwn(config.value, id)) {
-                result[id] = fromUpdatePayload(val, {})!
+    const sections = cloudStore.feedback.online
+    if (sections) {
+        for (const key in sections) {
+            const section = sections[key]
+            const id = (section as any).id
+            if (typeof section === 'object' && isNaN(parseInt(id)) && Object.hasOwn(config.value, id)) {
+                const questions = fromUpdatePayload(section, {})!
+                result[id] = Object.fromEntries(Object.keys(questions).toSorted().map(k => [k, (questions as any)[k]]))
             }
         }
     }

@@ -1,7 +1,7 @@
 <template>
-    <tr>
+    <tr class="nosync">
         <td
-            :colspan="Object.keys(replies).length" class="caption"
+            :colspan="Object.keys(replies).length" class="large caption"
             :title="stripHtml(config?.description ?? event?.description) || undefined" tabindex="0">
             <div v-if="link">
                 <NuxtLink :to="link" class="sticky left-0">
