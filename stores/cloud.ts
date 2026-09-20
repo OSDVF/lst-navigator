@@ -141,19 +141,19 @@ export const useCloudStore = defineStore('cloud', () => {
             const result: FeedbackSections = {}
             const replies = feedbackRepliesRaw.value as any
             if (replies) {
-                for (const val of replies) {
-                    const key = val.id
-                    if (typeof val === 'object' && val !== null) {
-                        for (const innerKey in val) {
+                for (const sections of replies) {
+                    const key = sections.id
+                    if (typeof sections === 'object' && sections !== null) {
+                        for (const innerKey in sections) {
                             const k = innerKey as keyof typeof replies
                             if (typeof replies[k] === 'object' && isNaN(parseInt(innerKey))) {
-                                val[k as keyof typeof val] = merge(val[k as keyof typeof val], replies[k][0])
+                                sections[k as keyof typeof sections] = merge(sections[k as keyof typeof sections], replies[k][0])
                                 // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
                                 delete replies[k]; delete result[innerKey]
                             }
                         }
                     }
-                    result[key] = val as any
+                    result[key] = sections as any
                 }
             }
             return result

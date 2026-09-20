@@ -1,6 +1,7 @@
 <template>
     <div>
-        <FeedbackResultPart v-for="key in Object.keys(otherFeedback).filter(key => !!otherFeedback[key])"
+        <FeedbackResultPart
+            v-for="key in Object.keys(otherFeedback).filter(key => !!otherFeedback[key])"
             :key="`p${key}`" :feedback-section="otherFeedback[key as any]" :section-key="key"
             :config="{ config: config[key], name: key }"
             @set-data="(data, eIndex, user) => cloudStore.feedback.set(key, eIndex, data, user)" />

@@ -40,7 +40,11 @@
         <table>
             <tbody>
                 <tr v-for="detailReply in repliesWithDetails" :key="`d${detailReply.i}`">
-                    <td v-if="!admin.anonymize.value" :title="detailReply.i">{{ getRespondentName(detailReply.i, cloud) }}</td>
+                    <td v-if="!admin.anonymize.value" :title="detailReply.i">
+                        {{
+                            getRespondentName(detailReply.i, cloud)
+                        }}
+                    </td>
                     <td>{{ detailReply.r.detail }}</td>
                 </tr>
             </tbody>
@@ -74,7 +78,9 @@ const admin = storeToRefs(useAdmin())
 const cloud = useCloudStore()
 
 const repliesWithDetails = computed(() => {
-    return Object.entries(props.replies).map(([i, r]) => ({ i, r })).filter(({ r }) => r.detail)
+    return Object.entries(props.replies).map(([i, r]) => ({ i, r }))
+        .filter(({ r }) => r.detail)
+        .sort((a, b) => a.i.localeCompare(b.i))
 })
 
 const complicatedReplies = computed(() => {
