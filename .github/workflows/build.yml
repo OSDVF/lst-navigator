@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - 
+      -
         name: Inject secrets
         run: echo '${{ secrets.DOTENV }}' > .env
 
@@ -20,7 +20,7 @@ jobs:
       - name: Inject firebase.json
         run: echo '${{ secrets.FIREBASE_CONFIG }}' > firebase.json
 
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
@@ -44,13 +44,10 @@ jobs:
 
       - name: Install dependencies
         run: bun install
-        
+
       - name: Run postinstall scripts
         run: bun pm trust --all
         continue-on-error: true
-
-      - name: Compile Sharp
-        run: npm rebuild --verbose sharp
 
       - name: SSG Generate
         run: bun generate ci
