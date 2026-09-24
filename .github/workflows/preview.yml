@@ -39,12 +39,9 @@ jobs:
           name: dist
           path: .output/public
 
-      - name: Inject source maps
-        run: node inject-sourcemaps.mjs
-
       - name: Inject firebase.json
         run: echo '${{ secrets.FIREBASE_CONFIG }}' > firebase.json
-          
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         id: hosting
@@ -83,19 +80,19 @@ jobs:
         with:
           service_account_key_json: ${{ secrets.DEPLOYMENT_ACCOUNT }}
           domain: ${{ steps.domain.outputs.DOMAIN }}
-          action: add 
+          action: add
 
       - uses: 'google-github-actions/auth@v2'
         name: Get Cloud Auth Token
         id: auth
-        with: 
+        with:
           token_format: 'access_token'
           project_id: ${{ secrets.FIREBASE_PROJECT }}
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_LST_NAVIGATOR }}
 
       - name: Update Recaptcha Authorized Domains
         uses: indiesdev/curl@v1.1
-        with: 
+        with:
           url: "https://recaptchaenterprise.googleapis.com/v1/projects/${{ secrets.FIREBASE_PROJECT }}/keys/${{ secrets.RECAPTCHA_SITE_KEY }}"
           params: '{ "updateMask": "webSettings.allowedDomains" }'
           method: PATCH
