@@ -26,7 +26,6 @@
     "@babel/plugin-transform-explicit-resource-management": "^8.0.1",
     "@diffx/debug-ref": "^0.0.6",
     "@dvcol/import-map-plugin": "^1.1.0",
-    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@nuxt/devtools": "^1.7.0",
     "@nuxt/eslint": "^0.7.5",
     "@nuxt/icon": "^1.10.3",
@@ -137,6 +136,7 @@
     "vite": "npm:rolldown-vite@latest"
   },
   "trustedDependencies": [
+    "@firebase/util",
     "@parcel/watcher",
     "@sentry/cli",
     "@swc/core",
@@ -146,6 +146,8 @@
     "es5-ext",
     "esbuild",
     "protobufjs",
+    "sharp",
+    "unrs-resolver",
     "vue-demi"
   ]
 }
