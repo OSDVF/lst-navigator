@@ -12,7 +12,8 @@
     "@types/bun": "latest",
     "@types/gapi.client.forms-v1": "^0.0.4",
     "@types/google-apps-script": "^2.0.8",
-    "firestore_google-apps-script": "chikamichi/FirestoreGoogleAppsScript#typescript-export-types"
+    "firestore_google-apps-script": "chikamichi/FirestoreGoogleAppsScript#typescript-export-types",
+    "replace-in-file": "^9.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"
