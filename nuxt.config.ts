@@ -117,6 +117,14 @@ const config = defineNuxtConfig({
                 entry.prefetch = false
             }
         },
+        'app:templatesGenerated'() {
+            setTimeout( () => {
+                console.log('Rewriting')
+                const workaround = '.nuxt/types/imports.d.ts'
+                const replaced = fs.readFileSync(workaround).toString().replaceAll('vue/index', 'vue')
+                fs.writeFileSync(workaround, replaced)
+            }, 1000)
+        },
     },
     icon: {
         serverBundle: 'remote',
