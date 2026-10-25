@@ -20,7 +20,7 @@
     "lint": "eslint .",
     "lintfix": "eslint . --fix",
     "typecheck": "nuxt typecheck",
-    "postinstall": "patch-package"
+    "tsc": "./node_modules/@typescript/native/bin/tsc"
   },
   "devDependencies": {
     "@babel/plugin-transform-explicit-resource-management": "^8.0.1",
@@ -86,12 +86,12 @@
     "nuxt-security": "^2.6.0",
     "nuxt-vitalizer": "^0.10.0",
     "nuxt-vuefire": "^1.0.4",
-    "patch-package": "^8.0.0",
     "sass": "^1.83.4",
     "sharp": "^0.33.5",
     "sharp-ico": "^0.1.5",
     "ts-json-schema-generator": "^2.5.0",
-    "typescript": "^5.9.3",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:typescript@^5.9.3",
     "unzipit": "^1.4.3",
     "vite-plugin-babel": "^1.7.3",
     "vite-plugin-externalize-dependencies": "^1.0.1",
@@ -100,7 +100,7 @@
     "vite-plugin-top-level-await": "^1.4.4",
     "vue-lazy-hydration": "^2.0.0-beta.4",
     "vue-multiselect": "^3.2.0",
-    "vue-tsc": "^3.2.5"
+    "vue-tsc": "<=3.2.5"
   },
   "dependencies": {
     "@peculiar/webcrypto": "^1.5.0",
@@ -150,5 +150,8 @@
     "sharp",
     "unrs-resolver",
     "vue-demi"
-  ]
+  ],
+  "patchedDependencies": {
+    "@vueuse/integrations@12.8.2": "patches/@vueuse%2Fintegrations@12.8.2.patch"
+  }
 }

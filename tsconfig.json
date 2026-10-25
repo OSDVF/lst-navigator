@@ -23,11 +23,11 @@
             "datatables.net-select-dt",
             "datatables.net-staterestore-dt",
             "datatables.net-keytable-dt",
-            "datatables.net-plugins/dataRender/ellipsis.d.ts"
+            "datatables.net-plugins/dataRender/ellipsis.d.ts",
         ],
     },
     "exclude": [
         "form-connector/**",
-        "dist/**"
+        "dist/**",
     ]
 }

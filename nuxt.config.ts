@@ -118,12 +118,12 @@ const config = defineNuxtConfig({
                 entry.prefetch = false
             }
         },
-        'app:templatesGenerated'() {
+        'app:templatesGenerated'() {// WORKAROUND: fix bad module resolution when using Bun
             setTimeout(() => {
-                console.log('Rewriting')
+                console.log('Applying Bun workarounds')
                 const workaround = '.nuxt/types/imports.d.ts'
                 const replaced = fs.readFileSync(workaround).toString().replaceAll('vue/index', 'vue')
-                fs.writeFileSync(workaround, replaced)
+                fs.writeFileSync(workaround, replaced.replaceAll('/vue-router.node', ''))
             }, 1000)
         },
     },

@@ -1,0 +1,84 @@
+diff --git a/Document.ts b/Document.ts
+index dcfb24e73fc953c36852f95f599e8c6c1eac2359..8b83703965561dab6c1d1446ca9f0ba66105f4f5 100644
+--- a/Document.ts
++++ b/Document.ts
+@@ -1,5 +1,6 @@
++/// <reference types="./typings/gapi.client.firestore" />
+ import FirestoreAPI = gapi.client.firestore;
+-import { FirestoreGoogleAppsScript as T } from './typings';
++import type { FirestoreGoogleAppsScript as T } from './typings';
+ import Util_ from './Util';
+ 
+ /**
+@@ -63,7 +64,7 @@ export default class Document implements FirestoreAPI.Document, FirestoreAPI.Map
+ 
+   static unwrapValue(obj: FirestoreAPI.Value): T.Value {
+     // eslint-disable-next-line prefer-const
+-    let [type, val]: [string, any] = Object.entries(obj)[0];
++    let [type, val]: [string, any] = Object.entries(obj)[0]!;
+     switch (type) {
+       case 'referenceValue':
+       case 'bytesValue':
+diff --git a/FirestoreDelete.ts b/FirestoreDelete.ts
+index 7dbb9f58ab1df72c66290126b9d4032210acb475..d6a26fd1bfdaad6de85fa334eda8a2c283432efc 100644
+--- a/FirestoreDelete.ts
++++ b/FirestoreDelete.ts
+@@ -1,3 +1,4 @@
++/// <reference types="./typings/gapi.client.firestore" />
+ import FirestoreAPI = gapi.client.firestore;
+ import Request from './Request';
+ 
+diff --git a/FirestoreRead.ts b/FirestoreRead.ts
+index 40071e07186b38382d5feda695428ba1c2031759..8831485832ac08bb57812dee508de2f0576b2222 100644
+--- a/FirestoreRead.ts
++++ b/FirestoreRead.ts
+@@ -1,3 +1,4 @@
++/// <reference types="./typings/gapi.client.firestore" />
+ import FirestoreAPI = gapi.client.firestore;
+ import Document from './Document';
+ import Request from './Request';
+diff --git a/FirestoreWrite.ts b/FirestoreWrite.ts
+index 964924b70a954e189d8d27fe9f798ab310eab247..2378fd151c75719698d738607839ed5473d26f53 100644
+--- a/FirestoreWrite.ts
++++ b/FirestoreWrite.ts
+@@ -1,3 +1,4 @@
++/// <reference types="./typings/gapi.client.firestore" />
+ import FirestoreAPI = gapi.client.firestore;
+ import Document from './Document';
+ import Request from './Request';
+diff --git a/Query.ts b/Query.ts
+index b072ca5e69b999083beab7210cf362c50d72c620..b37f910e18788915f4687c49fa450dc656373880 100644
+--- a/Query.ts
++++ b/Query.ts
+@@ -1,3 +1,4 @@
++/// <reference types="./typings/gapi.client.firestore" />
+ import FirestoreAPI = gapi.client.firestore;
+ import Document from './Document';
+ import Util_ from './Util';
+diff --git a/Util.ts b/Util.ts
+index 674fefb9ebc8c75828090ac1d541b72baeee4c33..9fa609c1d056a3dbf236fb76db159d6105e92aed 100644
+--- a/Util.ts
++++ b/Util.ts
+@@ -1,3 +1,4 @@
++/// <reference types="./typings/gapi.client.firestore" />
+ import FirestoreAPI = gapi.client.firestore;
+ export default class Util_ {
+   /**
+@@ -95,7 +96,7 @@ export default class Util_ {
+     const item = len && (len & 1) ^ isDocument ? splitPath.splice(len - 1, 1)[0] : '';
+ 
+     // Remainder of path is in splitPath. Put back together and return.
+-    return [splitPath.join('/'), item];
++    return [splitPath.join('/'), item!];
+   }
+ 
+   /**
+@@ -107,7 +108,7 @@ export default class Util_ {
+    */
+   static stripBasePath(path: string, docs: FirestoreAPI.Document[]): string[] {
+     return docs.map((doc: FirestoreAPI.Document) => {
+-      const ref: string = doc.name!.match(Util_.regexPath)![1]; // Gets the doc name field and extracts the relative path
++      const ref: string = doc.name!.match(Util_.regexPath)![1]!; // Gets the doc name field and extracts the relative path
+       return ref.substr(path.length + 1); // Skip over the given path to gain the ID values
+     });
+   }

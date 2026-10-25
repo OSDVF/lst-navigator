@@ -223,12 +223,14 @@ isSupported().then((supported) => {
             if (new Date().getTime() - eventTime.getTime() > 1000 * 60 * 10) { // 10 minutes timeout
                 return// discard old messages
             }
-            self.registration.showNotification(payload.notification?.title ?? swConfig.messaging.notifications_title ?? 'Notification',
+            const m = swConfig.messaging as {
+                [Key in keyof NotificationOptions as `notifications_${Key}`]: NotificationOptions[Key];
+            } & { notifications_title: string }
+            self.registration.showNotification(payload.notification?.title ?? m.notifications_title ?? 'Notification',
                 {
-                    title: swConfig.messaging.notifications_title,
-                    body: swConfig.messaging.notifications_body,
-                    image: swConfig.messaging.notifications_image,
-                    icon: swConfig.messaging.notifications_icon,
+                    title: m.notifications_title,
+                    body: m.notifications_body,
+                    icon: m.notifications_icon,
                     ...payload.notification,
                 })
 

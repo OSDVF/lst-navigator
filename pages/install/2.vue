@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 definePageMeta({
-    layout: 'install',
+    layout: 'install' as any,
 })
 const config = useRuntimeConfig()
 const supportsNotifications = ref(false)

@@ -1,3 +1,5 @@
+/// <reference types="./form-connector/global.d.ts" />
+
 import { idb } from '@composi/idb/types'
 import type { IdTokenResponse, StsTokenManager } from './types/auth'
 import type { JSONSchema7 } from 'json-schema'

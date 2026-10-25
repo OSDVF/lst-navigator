@@ -16,12 +16,15 @@
     "replace-in-file": "^9.0.0"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^7"
   },
   "trustedDependencies": [
     "firestore_google-apps-script"
   ],
   "dependencies": {
     "lodash.isequal": "^4.5.0"
+  },
+  "patchedDependencies": {
+    "firestore_google-apps-script@github:chikamichi/FirestoreGoogleAppsScript#ee794ac": "patches/firestore_google-apps-script@github%3Achikamichi%2FFirestoreGoogleAppsScript#ee794ac.patch"
   }
 }

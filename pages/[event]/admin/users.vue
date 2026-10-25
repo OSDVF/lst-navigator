@@ -84,7 +84,6 @@ const users = useCollectionT<UserInfo>(firestore ? knownCollection(firestore, 'u
         maxRefDepth: 0,
         wait: true,
         once: !!import.meta.server,
-        onError(e: any) { permissionError.value = e },
     })
 const usersPending = users.pending
 

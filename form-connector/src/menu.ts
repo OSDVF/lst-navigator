@@ -86,7 +86,7 @@ export function _connect() {
                 for (const key in response) {
                     const val = response[key as keyof typeof response]
                     if (val) {
-                        PropertiesService.getDocumentProperties().setProperty(key, val)
+                        PropertiesService.getDocumentProperties().setProperty(key, val as any)
                     }
                 }
                 ui.alert('Propojení bylo úspěšné!')

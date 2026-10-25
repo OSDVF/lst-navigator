@@ -14,14 +14,16 @@
             <br>
         </div>
         <p>
-            <NuxtLink to="/privacy?install=false"><Icon name="mdi:account-lock" /> Zobrazit zásady ochrany soukromí</NuxtLink>
+            <NuxtLink to="/privacy?install=false">
+                <Icon name="mdi:account-lock" /> Zobrazit zásady ochrany soukromí
+            </NuxtLink>
         </p>
     </article>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
-    layout: 'install',
+    layout: 'install' as any,
 })
 
 const config = useRuntimeConfig()

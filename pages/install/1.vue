@@ -68,7 +68,7 @@ const { $deferredPrompt, $installPromptSupport } = useNuxtApp()
 const browser = detect()
 
 definePageMeta({
-    layout: 'install',
+    layout: 'install' as any,
 })
 if (import.meta.browser) {
     const nextText = inject<Ref<string>>('nextText')

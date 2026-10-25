@@ -14,9 +14,7 @@
         </details>
         <ProgressBar v-if="applications.loadingApplications" />
         <LazyDataTable
-            v-else-if="showTable" id="applications" ref="table" :class="{
-                display: true, compact: true, fancy: true, editMode
-            }" :options="{
+            v-else-if="showTable" id="applications" ref="table" class="display compact fancy" :options="{
                 deferRender: true,
                 responsive, colReorder: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: columnControl,
@@ -49,7 +47,7 @@
                 },
                 select: {
                     style: 'os',
-                    items: editMode ? 'cell' : 'row',
+                    items: 'cell',
                     keys: true,
                 },
                 scrollY: scrollY as any,
@@ -67,12 +65,6 @@
                         <Icon name="mdi:filter-off" />
                     </button>
                 </span>
-                <label
-                    title="Přepne tabulku do módu, kdy můžete upravovat kolonky, ale reálná data z přihlášek zůstanou uložená původní"
-                    :class="'ml-1 inline-block' + (editMode ? ' strong' : '')"><input
-                        v-model="editMode"
-                        type="checkbox">
-                    Mód úprav</label>
                 <label class="ml-1 inline-block"><input v-model="applications.includeCancelled" type="checkbox">
                     Zobrazit i zrušené</label>
                 <label class="ml-1 inline-block"><input v-model="responsive" type="checkbox">
@@ -148,7 +140,6 @@ const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', false)
 const expandMultiple = useLocalStorage('expandMultiple', true)
 const czechDates = useLocalStorage('czechDates', false)
-const editMode = useLocalStorage('editMode', false)
 const showTable = ref(false)
 const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
@@ -383,7 +374,7 @@ async function reload<T>(between?: () => PromiseLike<T>) {
 const selection = ref<ApiRowsMethods<typeof data.value> | ApiCellsMethods<typeof data.value>>()
 function selectionChanged() {
     if (table.value) {
-        selection.value = editMode.value ? table.value.dt.cells({ selected: true }) : table.value.dt.rows({ selected: true })
+        selection.value = table.value.dt.cells({ selected: true })
         if (selection.value[0].length) {
             $('.selected-only').removeClass('disabled')
         } else {
@@ -399,21 +390,10 @@ function openEditLink() {
 }
 
 function copySelected() {
-    if (editMode.value) {
-        const cells = table.value?.dt.cells({ selected: true }).data().toArray().filter(c => !!c).map(c => `"${c.toString().replaceAll('"', '""')}"`)
-        if (cells && cells.length) {
-            const text = cells.length > 1 ? cells.join(',') : cells[0]
-            navigator.clipboard.writeText(text)
-        }
-    } else {
-        const rows = table.value?.dt.rows({ selected: true })
-        if (rows && rows.length) {
-            let text = ''
-            rows.every(function (rowIdx) {
-                text += this.cells(rowIdx, ':visible').data().map(c => `"${(c ?? '').toString().replaceAll('"', '""')}"`).join(',') + '\n'
-            })
-            navigator.clipboard.writeText(text)
-        }
+    const cells = table.value?.dt.cells({ selected: true }).data().toArray().filter(c => !!c).map(c => `"${c.toString().replaceAll('"', '""')}"`)
+    if (cells && cells.length) {
+        const text = cells.length > 1 ? cells.join(',') : cells[0]
+        navigator.clipboard.writeText(text)
     }
 }
 
@@ -423,7 +403,7 @@ function responseDoc(id: string) {
 
 let dblClickActive = false
 async function tableDblClick(event: MouseEvent) {
-    if (!dblClickActive && editMode.value) {
+    if (!dblClickActive) {
         dblClickActive = true
         const cell = (event.target as HTMLElement).closest('td')
         if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
@@ -663,7 +643,7 @@ const buttons = computed(() => [
                 },
             })) : undefined) ?? []),
         ],
-    }, ...(cloud.resolvedPermissions.editSchedule ? editMode.value ? [{
+    }, ...(cloud.resolvedPermissions.editSchedule ? [{
         text: useIconEl('edit'),
         titleAttr: 'Upravit hodnotu pro zobrazení (neovlivní původní data v přihlášce)',
         className: 'selected-only disabled',
@@ -686,7 +666,7 @@ const buttons = computed(() => [
                 autoClose: true,
             },
         ],
-    }] : []), {
+    }]), {
         text: useIconEl('content-copy'),
         className: 'selected-only disabled',
         titleAttr: 'Zkopíruje všechny vybrané buňky do schránky. Pokud je vybráno více buněk v jednom řádku, budou sloučeny do jedné buňky oddělené čárkou.',
@@ -977,13 +957,6 @@ function simpleHash(s: string) {
 }
 
 watchDebounced([responsive, columns, czechDates], (newVal, oldVal) => (!loadedDt.value || !app.$DataTable || isMatchWith(oldVal, newVal, (val) => typeof val == 'function' ? true : undefined)) ? null : reload(), { debounce: 500 })
-watchDebounced(editMode, val => {
-    if (table.value) {
-        table.value.dt.cells().deselect()
-        table.value.dt.rows().deselect()
-        table.value.dt.select.items(val ? 'cell' : 'row')
-    }
-}, { debounce: 500 })
 onMounted(() => setTimeout(() => {
     if (!showTable.value) {
         showTable.value = true
