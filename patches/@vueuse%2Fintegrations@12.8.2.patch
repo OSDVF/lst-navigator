@@ -1,0 +1,182 @@
+diff --git a/index.cjs b/index.cjs
+index 685aa8720387b35c87088e55b3d4de78ae1f760f..cb82735efe8bca1fd0a1f89145e08ed262fbe99e 100644
+--- a/index.cjs
++++ b/index.cjs
+@@ -534,7 +534,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -558,6 +558,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
+   return {
+     set: setData,
++    isRead,
+     isFinished,
+     data
+   };
+diff --git a/index.d.cts b/index.d.cts
+index ba9b256c2c89f402f513ba0f68cc6b547a701ee6..7ea6166b9134584330c0df28a85e31cc2f3b7b77 100644
+--- a/index.d.cts
++++ b/index.d.cts
+@@ -351,6 +351,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ }
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
++    isRead: Promise<boolean>;
+     isFinished: ShallowRef<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+diff --git a/index.d.mts b/index.d.mts
+index ba9b256c2c89f402f513ba0f68cc6b547a701ee6..7ea6166b9134584330c0df28a85e31cc2f3b7b77 100644
+--- a/index.d.mts
++++ b/index.d.mts
+@@ -351,6 +351,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ }
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
++    isRead: Promise<boolean>;
+     isFinished: ShallowRef<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+diff --git a/index.d.ts b/index.d.ts
+index ba9b256c2c89f402f513ba0f68cc6b547a701ee6..7ea6166b9134584330c0df28a85e31cc2f3b7b77 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -351,6 +351,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ }
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
++    isRead: Promise<boolean>;
+     isFinished: ShallowRef<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+diff --git a/index.iife.js b/index.iife.js
+index 20ea22801210f84e35f2f2a3dc65589f946dab78..605faf265538ac963bdc2c71f6a795e5656ecb8d 100644
+--- a/index.iife.js
++++ b/index.iife.js
+@@ -519,7 +519,7 @@
+       }
+       isFinished.value = true;
+     }
+-    read();
++    const isRead = read();
+     async function write() {
+       try {
+         if (data.value == null) {
+diff --git a/index.mjs b/index.mjs
+index 1f74eeb4969e5726b1f1bd59610095206b492dab..574c26094a8dc346cc5313caa1502a9cccad3d85 100644
+--- a/index.mjs
++++ b/index.mjs
+@@ -513,7 +513,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -537,6 +537,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
+   return {
+     set: setData,
++    isRead,
+     isFinished,
+     data
+   };
+diff --git a/useIDBKeyval.cjs b/useIDBKeyval.cjs
+index 0a10cd26d84e5d089ece69c18c906193bbb86204..6bf0cec402fe9cc2e3da5a5dc251646131cefe48 100644
+--- a/useIDBKeyval.cjs
++++ b/useIDBKeyval.cjs
+@@ -31,7 +31,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -55,6 +55,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
+   return {
+     set: setData,
++    isRead,
+     isFinished,
+     data
+   };
+diff --git a/useIDBKeyval.d.cts b/useIDBKeyval.d.cts
+index 1b24e7ed9cf750ddd7401a1f14f8b5f3c8f41036..0fe2241b43b200f56924725f16670d580cae3cff 100644
+--- a/useIDBKeyval.d.cts
++++ b/useIDBKeyval.d.cts
+@@ -29,6 +29,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ }
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
++    isRead: Promise<boolean>;
+     isFinished: ShallowRef<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+diff --git a/useIDBKeyval.d.mts b/useIDBKeyval.d.mts
+index 1b24e7ed9cf750ddd7401a1f14f8b5f3c8f41036..0fe2241b43b200f56924725f16670d580cae3cff 100644
+--- a/useIDBKeyval.d.mts
++++ b/useIDBKeyval.d.mts
+@@ -29,6 +29,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ }
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
++    isRead: Promise<boolean>;
+     isFinished: ShallowRef<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+diff --git a/useIDBKeyval.d.ts b/useIDBKeyval.d.ts
+index 1b24e7ed9cf750ddd7401a1f14f8b5f3c8f41036..0fe2241b43b200f56924725f16670d580cae3cff 100644
+--- a/useIDBKeyval.d.ts
++++ b/useIDBKeyval.d.ts
+@@ -29,6 +29,7 @@ interface UseIDBOptions extends ConfigurableFlush {
+ }
+ interface UseIDBKeyvalReturn<T> {
+     data: RemovableRef<T>;
++    isRead: Promise<boolean>;
+     isFinished: ShallowRef<boolean>;
+     set: (value: T) => Promise<void>;
+ }
+diff --git a/useIDBKeyval.iife.js b/useIDBKeyval.iife.js
+index e1503da1cb99de8f9e0bee29348d8d9c49da2764..27c7daae177eb478463df6903961ede7217b2fd4 100644
+--- a/useIDBKeyval.iife.js
++++ b/useIDBKeyval.iife.js
+@@ -28,7 +28,7 @@
+       }
+       isFinished.value = true;
+     }
+-    read();
++    const isRead = read();
+     async function write() {
+       try {
+         if (data.value == null) {
+diff --git a/useIDBKeyval.mjs b/useIDBKeyval.mjs
+index 0f27ae432353720f14bf17c240037a1f7cfdfee7..06e3e768be953195ecfb8a31827ef5b977148d3b 100644
+--- a/useIDBKeyval.mjs
++++ b/useIDBKeyval.mjs
+@@ -29,7 +29,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+     }
+     isFinished.value = true;
+   }
+-  read();
++  const isRead = read();
+   async function write() {
+     try {
+       if (data.value == null) {
+@@ -53,6 +53,7 @@ function useIDBKeyval(key, initialValue, options = {}) {
+   }
+   return {
+     set: setData,
++    isRead,
+     isFinished,
+     data
+   };

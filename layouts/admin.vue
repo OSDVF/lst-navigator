@@ -9,10 +9,10 @@
                 <Icon
                     v-show="topNavHasChildren" name="mdi:menu" size="2rem" class="button" tabindex="0"
                     @click="open = !open" />
-                <label id="eventSelect" class="p-1 text-right">
+                <label id="eventSelect" class="p-1 text-right nowrap" style="flex-shrink: 1;">
                     <template v-if="route.params.event">
                         <span class="visible-md mr-1">
-                            <Icon name="mdi:home-edit-outline" size="1.8rem" /> Vybraná akce
+                            <Icon name="mdi:home-edit-outline" size="1.8rem" /> {{ collapsedNav ? '' : 'Vybraná akce' }}
                         </span>
                         <select
                             :value="cloud.eventDescription?.id" @change="e => $router.push({
@@ -29,8 +29,10 @@
                         </select>
                     </template>
                 </label>
-                <SettingsLink id="topSettingsLink" class="flex align-items-center" />
-                <div id="topNav" ref="topNav" class="flex justify-content-center flex-grow" />
+                <div
+                    id="topNav" ref="topNav"
+                    :class="'flex justify-content-center flex-grow' + (collapsedNav ? ' flex-full' : '')" />
+                <SettingsLink id="topSettingsLink" :collapsed="collapsedNav" class="flex align-items-center" />
             </nav>
             <main @dblclick="open = false">
                 <slot />
@@ -94,6 +96,7 @@ const ui = useUI()
 const cloud = useCloudStore()
 const { $config, $downloadingUpdate } = useNuxtApp()
 const route = useRoute()
+const collapsedNav = computed(() => route.meta.topNav == 'collapsed')
 const gapi = useGapi()
 const open = ref(false)
 const topNav = useTemplateRef<HTMLDivElement>('topNav')

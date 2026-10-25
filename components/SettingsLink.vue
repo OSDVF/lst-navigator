@@ -2,12 +2,16 @@
     <NuxtLink :to="`/${cloud.selectedEvent}/settings`" :title="showImage ? 'Nastavení a účet' : undefined">
         <img v-show="showImage" ref="img" :src="cloud.user.auth?.photoURL ?? ''" class="noinvert round-full w-1_8" referrerPolicy="no-referrer" crossorigin="anonymous" @load="loaded = true">
         <Icon v-show="!showImage" name="mdi:cog" size="1.8rem" />
-        <span class="text">{{ cloud.user.auth?.displayName || 'Nastavení' }}</span>
+        <span class="text">{{ (collapsed ?? true) ? '' : (cloud.user.auth?.displayName || 'Nastavení') }}</span>
     </NuxtLink>
 </template>
 
 <script setup lang="ts">
 import { useCloudStore } from '@/stores/cloud'
+
+defineProps<{
+    collapsed?: boolean
+}>()
 
 const cloud = useCloudStore()
 const loaded = ref(false)

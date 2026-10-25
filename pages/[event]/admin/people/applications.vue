@@ -65,17 +65,6 @@
                         <Icon name="mdi:filter-off" />
                     </button>
                 </span>
-                <label class="ml-1 inline-block"><input v-model="applications.includeCancelled" type="checkbox">
-                    Zobrazit i zrušené</label>
-                <label class="ml-1 inline-block"><input v-model="responsive" type="checkbox">
-                    Rozbalovací řádky</label>
-                <label
-                    class="ml-1 inline-block"
-                    title="Otázky z formuláře, které obsahovaly zaškrtávací políčka, budou zobrazeny jako více sloupců"><input
-                        v-model="expandMultiple" type="checkbox">
-                    Zaškrtávací políčka zvlášť</label>
-                <label class="ml-1 inline-block"><input v-model="czechDates" type="checkbox">
-                    České datumy</label>
             </div>
         </Teleport>
 
@@ -101,7 +90,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
+import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns, FunctionButtonAction } from 'datatables.net-dt'
 import type StateRestore from 'datatables.net-staterestore/types/StateRestore'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
 import { type QuestionResponse, type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
@@ -123,6 +112,7 @@ declare module 'datatables.net' {
 
 definePageMeta({
     title: 'Přijaté přihlášky',
+    topNav: 'collapsed',
 })
 
 const mounted = ref(false)
@@ -360,11 +350,13 @@ function initComplete() {
     setTimeout(() => loadedDt.value = true, 500)
     filteredBy.value = {}
 }
+let reloaded = false
 async function reload<T>(between?: () => PromiseLike<T>) {
     if (!table.value) {
         return
     }
     showTable.value = false
+    reloaded = true
     if (between) {
         await between()
     }
@@ -611,140 +603,186 @@ function basicColumns(_: any, dt: Api<any>) {
     dt.columns(':not(.print, .always-visible)').visible(false)
 }
 const statesWokeUp = ref(false)
-const buttons = computed(() => [
-    {
-        extend: 'savedStates',
-        text: useIconEl('eye') + ' Zobrazení',
-        buttons: [
-            ...visibilityButtons,
-            ...questionControlColumns.value,
-            { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
-            { extend: 'spacer', style: 'bar' },
-            {
-                extend: 'createState', text: 'Uložit zobrazení', action: function (e, dt, node, config, cb) {
-                    statesWokeUp.value = true
-                    app.$DataTable.value!.ext.buttons.createState.action?.(e, dt, node, config, cb)
-                } as ButtonConfig['action'],
-            },
-            {
-                extend: 'removeAllStates', text: 'Smazat uložená zobrazení', action: function (e, dt, node, config, cb) {
-                    statesWokeUp.value = true
-                    app.$DataTable.value!.ext.buttons.removeAllStates.action?.(e, dt, node, config, cb)
-                } as ButtonConfig['action'],
-            },
-            { extend: 'spacer', style: 'bar' },
-            //Workaround for states buttons do not load at first run
-            ...((!statesWokeUp.value ? (table.value?.dt?.stateRestore?.states() as any)?.toArray()?.map((s: StateRestore) => ({
-                text: s.s.identifier,
-                split: ['updateState', 'renameState', 'removeState'],
-                _stateRestore: s,
-                action() {
-                    table.value!.dt.stateRestore.state(s.s.identifier)!.load()
-                },
-            })) : undefined) ?? []),
-        ],
-    }, ...(cloud.resolvedPermissions.editSchedule ? [{
-        text: useIconEl('edit'),
-        titleAttr: 'Upravit hodnotu pro zobrazení (neovlivní původní data v přihlášce)',
-        className: 'selected-only disabled',
-        action: editOverlay,
-    }] : [{
-        extend: 'collection',
-        text: 'Účastník',
-        className: 'selected-only disabled',
-        buttons: [
-            {
-                text: useIconEl('edit') + ' Upravit údaje',
-                action: openEditLink,
-            }, {
-                text: useIconEl('account-question') + ' Změnit stav',
-                extend: 'collection',
-                buttons: Object.entries(ApplicationStateUI).map(([key, val]) => ({
-                    text: useIconEl(val.icon) + ' ' + val.name,
-                    action: () => changeState(parseInt(key) as ApplicationState),
-                })),
-                autoClose: true,
-            },
-        ],
-    }]), {
-        text: useIconEl('content-copy'),
-        className: 'selected-only disabled',
-        titleAttr: 'Zkopíruje všechny vybrané buňky do schránky. Pokud je vybráno více buněk v jednom řádku, budou sloučeny do jedné buňky oddělené čárkou.',
-        action: copySelected,
-        split: [{
-            text: useIconEl('checkbox-multiple-marked-outline') + ' Vše',
-            titleAttr: 'Vybrat všechny',
-            action: selectAll,
-        }, {
-            text: useIconEl('checkbox-blank-off-outline') + ' Zrušit',
-            titleAttr: 'Zrušit výběr',
-            action: deselect,
+const checkedIcon = 'checkbox-marked-outline'
+const uncheckedIcon = 'checkbox-blank-outline'
+//DataTables has no checkbox button, so each toggle is a custom button whose icon reflects the current (un)checked state.
+function toggleCheckbox(config: ButtonConfig, checked: boolean) {
+    return {
+        text: checked
+            ? (useIconEl(checkedIcon) + '&nbsp;' + config.text)
+            : (useIconEl(uncheckedIcon) + '&nbsp;' + config.text),
+        action: (e: JQuery.Event,
+            dt: Api<typeof data.value>,
+            node: JQuery,
+            config2: ButtonConfig, callback: VoidFunction) => {
+
+            const icon = node.find('.icon')
+            const style = icon.attr('style') ?? ''
+            icon.attr('style', style.replace(checked ? checkedIcon : uncheckedIcon, checked ? uncheckedIcon : checkedIcon))
+            config.action?.(e, dt, node, config2, callback as any)
         },
-        ],
-    }, {
-        extend: 'print',
-        text: 'Tabulka',
-        autoClose: true,
-        autoPrint: false,
-        title: '',
-        exportOptions: {
-            columns: ':visible:not(.always-visible)',
-        },
-        split: [
-            {
-                extend: 'print',
-                autoPrint: false,
-                text: '<span class=\'noinvert\'>🖨️</span> Tisk',
-                title: '',
-                exportOptions: {
-                    columns: ':visible:not(.always-visible)',
+    }
+    return
+}
+const buttons
+    = computed(() => [
+        {
+            extend: 'savedStates',
+            text: useIconEl('eye') + ' Zobrazení',
+            buttons: [
+                //Zobrazit i zrušené
+                toggleCheckbox({
+                    text: 'Zobrazit i zrušené',
+                    titleAttr: 'Ovládá, zdali mají být zobrazeny zrušené a odmitné přihlášky',
+                    action() { applications.includeCancelled = !applications.includeCancelled },
+                }, applications.includeCancelled),
+                //Rozbalovací řádky
+                toggleCheckbox({
+                    text: 'Rozbalovací řádky',
+                    titleAttr: 'Ovládá, zdali mají být řádky rozbaleny podle délky',
+                    action() { responsive.value = !responsive.value },
+                }, responsive.value),
+                //Zaškrtávací políčka zvlášť
+                toggleCheckbox({
+                    text: 'Zaškrtávací políčka zvlášť',
+                    titleAttr: 'Otázky z formuláře, které obsahovaly zaškrtávací políčka, budou zobrazeny jako více sloupců',
+                    action() { expandMultiple.value = !expandMultiple.value },
+                }, expandMultiple.value),
+                //České datumy
+                toggleCheckbox({
+                    text: 'České datumy',
+                    titleAttr: 'Ovládá formát českých datumů (DD. MM. vs YYYY-MM-DD)',
+                    action() { czechDates.value = !czechDates.value },
+                }, czechDates.value),
+                ...visibilityButtons,
+                ...questionControlColumns.value,
+                { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
+                { extend: 'spacer', style: 'bar' },
+                {
+                    extend: 'createState', text: 'Uložit zobrazení', action: function (e, dt, node, config, cb) {
+                        statesWokeUp.value = true
+                        app.$DataTable.value!.ext.buttons.createState.action?.(e, dt, node, config, cb)
+                    } as ButtonConfig['action'],
                 },
-            }, {
-                extend: 'spacer', style: 'bar',
-            },
-            ...visibilityButtons,
-            {
-                text: 'Export',
-                extend: 'collection',
-                buttons: [{
-                    text: useIconEl('code-braces') + ' JSON',
-                    action: exportJson,
+                {
+                    extend: 'removeAllStates', text: 'Smazat uložená zobrazení', action: function (e, dt, node, config, cb) {
+                        statesWokeUp.value = true
+                        app.$DataTable.value!.ext.buttons.removeAllStates.action?.(e, dt, node, config, cb)
+                    } as ButtonConfig['action'],
+                },
+                { extend: 'spacer', style: 'bar' },
+                //Workaround for states buttons do not load at first run
+                ...((!statesWokeUp.value ? (table.value?.dt?.stateRestore?.states() as any)?.toArray()?.map((s: StateRestore) => ({
+                    text: s.s.identifier,
+                    split: ['updateState', 'renameState', 'removeState'],
+                    _stateRestore: s,
+                    action() {
+                        table.value!.dt.stateRestore.state(s.s.identifier)!.load()
+                    },
+                })) : undefined) ?? []),
+            ],
+        }, ...(cloud.resolvedPermissions.editSchedule ? [{
+            text: useIconEl('edit'),
+            titleAttr: 'Upravit hodnotu pro zobrazení (neovlivní původní data v přihlášce)',
+            className: 'selected-only disabled',
+            action: editOverlay,
+        }] : [{
+            extend: 'collection',
+            text: 'Účastník',
+            className: 'selected-only disabled',
+            buttons: [
+                {
+                    text: useIconEl('edit') + ' Upravit údaje',
+                    action: openEditLink,
                 }, {
-                    text: useIconEl('file-document-arrow-right') + ' CSV',
-                    action: exportCSV,
+                    text: useIconEl('account-question') + ' Změnit stav',
+                    extend: 'collection',
+                    buttons: Object.entries(ApplicationStateUI).map(([key, val]) => ({
+                        text: useIconEl(val.icon) + ' ' + val.name,
+                        action: () => changeState(parseInt(key) as ApplicationState),
+                    })),
+                    autoClose: true,
                 },
-                ],
+            ],
+        }]), {
+            text: useIconEl('content-copy'),
+            className: 'selected-only disabled',
+            titleAttr: 'Zkopíruje všechny vybrané buňky do schránky. Pokud je vybráno více buněk v jednom řádku, budou sloučeny do jedné buňky oddělené čárkou.',
+            action: copySelected,
+            split: [{
+                text: useIconEl('checkbox-multiple-marked-outline') + ' Vše',
+                titleAttr: 'Vybrat všechny',
+                action: selectAll,
+            }, {
+                text: useIconEl('checkbox-blank-off-outline') + ' Zrušit',
+                titleAttr: 'Zrušit výběr',
+                action: deselect,
             },
-        ],
-    }, {
-        extend: 'collection',
-        text: '<span class=\'noinvert\'>🗒️</span> Formulář',
-        autoClose: true,
-        buttons: [
-            {
-                text: useIconEl('gear') + ' Nastavení registrace',
-                action: goToFormSettings,
+            ],
+        }, {
+            extend: 'print',
+            text: 'Tabulka',
+            autoClose: true,
+            autoPrint: false,
+            title: '',
+            exportOptions: {
+                columns: ':visible:not(.always-visible)',
             },
-            {
-                text: useIconEl('edit') + ' Upravit formulář',
-                action: goToFormEdit,
-            },
-            {
-                text: useIconEl('show') + ' Zobrazit přihlášku',
-                action: goToFormResponsePage,
-            },
-            {
-                text: useIconEl('table-eye') + ' Zobrazit Google tabulku',
-                action: goToSpreadsheet,
-            },
-            {
-                text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
-                titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
-                action: refresh,
-            }, ...questionControlColumns.value,
-        ],
-    },
-])
+            split: [
+                {
+                    extend: 'print',
+                    autoPrint: false,
+                    text: '<span class=\'noinvert\'>🖨️</span> Tisk',
+                    title: '',
+                    exportOptions: {
+                        columns: ':visible:not(.always-visible)',
+                    },
+                }, {
+                    extend: 'spacer', style: 'bar',
+                },
+                ...visibilityButtons,
+                {
+                    text: 'Export',
+                    extend: 'collection',
+                    buttons: [{
+                        text: useIconEl('code-braces') + ' JSON',
+                        action: exportJson,
+                    }, {
+                        text: useIconEl('file-document-arrow-right') + ' CSV',
+                        action: exportCSV,
+                    },
+                    ],
+                },
+            ],
+        }, {
+            extend: 'collection',
+            text: '<span class=\'noinvert\'>🗒️</span> Formulář',
+            autoClose: true,
+            buttons: [
+                {
+                    text: useIconEl('gear') + ' Nastavení registrace',
+                    action: goToFormSettings,
+                },
+                {
+                    text: useIconEl('edit') + ' Upravit formulář',
+                    action: goToFormEdit,
+                },
+                {
+                    text: useIconEl('show') + ' Zobrazit přihlášku',
+                    action: goToFormResponsePage,
+                },
+                {
+                    text: useIconEl('table-eye') + ' Zobrazit Google tabulku',
+                    action: goToSpreadsheet,
+                },
+                {
+                    text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
+                    titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
+                    action: refresh,
+                }, ...questionControlColumns.value,
+            ],
+        },
+    ])
 
 function goToFormEdit() {
     navigateTo(cloud.eventDescription?.formDocument, { external: true, open: { target: '_blank' } })
@@ -809,29 +847,38 @@ function exportCSV() {
     csvExport(exportFileName('csv'), (m as any) ?? [], cols?.[0].map((i: number) => ({ key: dataSrcs[i], displayLabel: titles[i] })))
 }
 
-watchDebounced([buttons, showTable, windowSize.width, loadedDt], (newVal, oldVal) => {
-    if (oldVal && isMatchWith(newVal, oldVal, val => typeof val == 'function' ? true : undefined)) {
+// Basically watching for reload() and changes in these variables
+watchThrottled([buttons, showTable, windowSize.width, loadedDt], (newVal, oldVal) => {
+    if (oldVal && isMatchWith(newVal, oldVal, val => typeof val == 'function' ? true : undefined) && !reloaded) {
         return
     }
     if (table.value && showTable.value && dtButtons.value) {
         if (oldVal?.[1]) {
-            for (const b of table.value.dt.buttons().toArray()) {
+            const nowButtons = table.value.dt.buttons().toArray()
+            for (const b of nowButtons) {
                 table.value.dt.button(b.node).remove()
             }
         }
         nextTick(() => {
-            if (oldVal?.[1] && dtButtons.value?.querySelector('.dt-buttons')) {
+            const lastButtons = dtButtons.value?.querySelector('.dt-buttons')
+            if (oldVal?.[1] && lastButtons) {
                 for (const button of buttons.value) {
                     table.value!.dt.button().add(null as any, button as any)
                 }
+                lastButtons.classList.add('inline-block')
             }
             else {
                 new app.$DataTable.value!.Buttons(table.value!.dt, { buttons: buttons.value })
-                table.value!.dt.buttons().container().appendTo(dtButtons.value!)
+                const newButtons = table.value!.dt.buttons().container()
+                newButtons[0].classList.add('inline-block')
+                newButtons.appendTo(dtButtons.value!)
+            }
+            if (reloaded) {
+                setTimeout(() => reloaded = false, 500)
             }
         })
     }
-}, { debounce: 500, immediate: true })
+}, { throttle: 500, immediate: true })
 const searchList = windowSize.width.value > 700 ? [
     [
         'order',
@@ -956,12 +1003,16 @@ function simpleHash(s: string) {
     return hash
 }
 
-watchDebounced([responsive, columns, czechDates], (newVal, oldVal) => (!loadedDt.value || !app.$DataTable || isMatchWith(oldVal, newVal, (val) => typeof val == 'function' ? true : undefined)) ? null : reload(), { debounce: 500 })
+watchThrottled([responsive, columns, czechDates],
+    (newVal, oldVal) =>
+        (!loadedDt.value || !app.$DataTable || isMatchWith(oldVal, newVal, (val) =>
+            typeof val == 'function' ? true : undefined)) ? null : reload(), { throttle: 500 })
+
 onMounted(() => setTimeout(() => {
     if (!showTable.value) {
         showTable.value = true
     }
-}, 1000))
+}, 800))
 
 </script>
 
