@@ -3,6 +3,11 @@ import { findTriggers } from './triggers'
 import type Firestore from 'firestore_google-apps-script/Firestore'
 import type { Category, EventSettings, ExtraItem } from './types'
 
+export enum LogLevel {
+    OFF = 0,
+    ON  = 1
+}
+
 export type RegistrationFormSecrets = {
     email: string,
     projectId: string,
@@ -11,6 +16,7 @@ export type RegistrationFormSecrets = {
      * Path of a document in Firebase in which per-event additional settings are stored
      */
     remoteEventSettings: string,
+    logLevel: LogLevel
 }
 
 export type EventSettingsTemplated<T = GoogleAppsScript.HTML.HtmlTemplate> = EventSettings<T>
@@ -140,6 +146,7 @@ const dummyProperties = new Proxy<Record<string | symbol, any>>({}, {
 
 export function getSecrets(formId: string): Partial<RegistrationFormSecrets> {
     return {
+        ...(PropertiesService.getScriptProperties().getProperties() ?? {}),
         ...JSON.parse(PropertiesService.getScriptProperties().getProperty(formId) ?? '{}'),
         ...(PropertiesService.getDocumentProperties()?.getProperties() ?? {}),// the document properties (set for "active doc") override the script properties
     }

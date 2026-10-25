@@ -6,7 +6,7 @@ import type { Action, Actions, ApiResponse, InternalSettings, Responses } from '
 export function useRegistrationForm() {
     const config = useRuntimeConfig()
 
-    function setSecrets(formId: string, secrets: RegistrationFormSecrets) {
+    function setSecrets(formId: string, secrets: Partial<RegistrationFormSecrets>) {
         return fetchApi('setSecrets', {
             [formId]: secrets,
         })
@@ -49,13 +49,13 @@ export function useRegistrationForm() {
             redirect: 'follow',
             credentials: 'omit',
         })
+        const text = await res.text()
         try {
-            const json = await res.json()
-            return json
+            return JSON.parse(text)
         } catch (e) {
             console.error(e)
             if (!res.bodyUsed) {
-                console.warn('API response ', await res.text())
+                console.warn('API response ', text)
             }
             throw e
         }
@@ -73,7 +73,7 @@ export function useRegistrationForm() {
 }
 
 
-export async function useRegistrationFormData(id: string, error?: MaybeRef) {
+export async function useRegistrationFormData(id: MaybeRefOrGetter<string | undefined>, error?: MaybeRef) {
     const errorRef = maybe(error, e => toRef(e))
     const ui = useUI()
 
@@ -107,18 +107,24 @@ export async function useRegistrationFormData(id: string, error?: MaybeRef) {
             hydrateFormData()
         }
 
-        async function hydrateFormData() {
-            using _ = ui.loading()
-            const response = await client.forms.forms.get({
-                formId: id,
-                fields: wantedFields,
-            })
-            if ((response.status ?? 0) >= 400 && errorRef) {
-                errorRef.value = response.statusText
-            }
-            else {
-                _formData.value = response.result
-            }
+        function hydrateFormData() {
+            watch(toRef(id), async () => {
+                const v = toValue(id)
+                if (!v) {
+                    return
+                }
+                using _ = ui.loading()
+                const response = await client.forms.forms.get({
+                    formId: v,
+                    fields: wantedFields,
+                })
+                if ((response.status ?? 0) >= 400 && errorRef) {
+                    errorRef.value = response.statusText
+                }
+                else {
+                    _formData.value = response.result
+                }
+            }, { immediate: true })
         }
         const formData = computed({
             get() {
@@ -126,8 +132,12 @@ export async function useRegistrationFormData(id: string, error?: MaybeRef) {
             },
             set(newValue: gapi.client.forms.Form) {
                 ui.startLoading()
+                const v = toValue(id)
+                if (!v) {
+                    return
+                }
                 client.forms.forms.batchUpdate({
-                    formId: id,
+                    formId: v,
                     fields: wantedFields,
                 }, {
                     includeFormInResponse: true,

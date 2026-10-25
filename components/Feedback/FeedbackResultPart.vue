@@ -8,6 +8,40 @@
                 </button>
             </span>
         </div>
+        <div>
+            <template v-for="(filtersAnd, question) in filters">
+                <FilterBadge
+                    v-for="(filter, f) in filtersAnd" :id="`f-${sectionKey}-${question}`"
+                    :key="`f${question}${f}`"
+                    v-model="admin.feedbackFilters.value[cloud.selectedEvent][sectionKey][question][f].values"
+                    :disabled="filter.disabled" :title="question"
+                    @new="(regex) => admin.feedbackFilters.value[cloud.selectedEvent][sectionKey][question][f].values.push({
+                        value: regex,
+                        search: true,
+                    })"
+                    @delete="delete admin.feedbackFilters.value[cloud.selectedEvent][sectionKey][question][f]" />
+            </template>
+            <div class="inline-flex">
+                <SimpleSelect
+                    v-if="!newFilterProp" v-model.lazy="newFilterProp" placeholder="Filtrovat"
+                    style="min-width: 10rem"
+                    :labels="Object.fromEntries(Object.entries(feedbackSection).map(([k, v]) => {
+                        const kNum = parseIntOrNull(k) ?? k
+                        return [kNum, { text: typeof kNum == 'number' ? (event?.[kNum]?.title ?? kNum.toString()) : kNum }]
+                    }))" />
+                <FilterBadge
+                    v-else v-model="newFilterVal"
+                    :title="!isNaN(parseInt(newFilterProp as string)) ? (event?.[newFilterProp as number].title ?? newFilterProp.toString()) : newFilterProp as string"
+                    :options="tabulated.replies[newFilterProp]
+                        .flatMap(f => (f ? flattenFeedback(f,newFilterProp as string) : [])
+                            .map(f => ({ value: f, search: false })))
+                        .filter((item,i,arr)=> arr
+                            .findIndex(a=>a.value == item.value && a.search == item.search) == i)" />
+                <span class="button" tabindex="0" title="Přidat filtr" @click="addFilter">
+                    <Icon name="mdi:filter-plus" />
+                </span>
+            </div>
+        </div>
         <code v-if="error" class="error" tabindex="0" title="Chyba">{{ error }}</code>
         <header
             ref="syncHeader" :style="{
@@ -29,7 +63,8 @@
             </template>
             <template v-else>
                 <div v-for="respondent in tabulated.respondents" :key="respondent" class="th">
-                    <span :title="respondent">{{ admin.anonymize.value ? respondent : getRespondentName(respondent, cloud) }}</span>
+                    <span :title="respondent">{{ admin.anonymize.value ? respondent : getRespondentName(respondent,
+                                                                                                        cloud) }}</span>
                     <button
                         title="Smazat respondentovy odpovědi v této kategorii"
                         @click.exact="deleteRespondentSection(respondent)"
@@ -76,7 +111,6 @@
 </template>
 
 <script setup lang="ts">
-import { useAdmin } from '@/stores/admin'
 import { csvExportFeedback } from '~/utils/csvExport'
 import type { Feedback, FeedbackConfig, FeedbackQuestionsCustom, FeedbackQuestionsProgram, TabulatedFeedback, UpdatePayload } from '@/types/cloud'
 
@@ -144,6 +178,50 @@ const tabulated = computed<TabulatedFeedback>(() => {
         respondents: resultRespondents,
     }
 })
+
+const newFilterProp = ref<string | number>('')
+const newFilterVal = ref<{
+    value: string,
+    search: boolean,
+}[]>([])
+
+const filters = computed(() => {
+    return admin.feedbackFilters.value[cloud.selectedEvent]?.[props.sectionKey] ?? []
+})
+
+function addFilter() {
+    if (!newFilterVal.value || !newFilterProp.value) {
+        return
+    }
+
+    if (!admin.feedbackFilters.value[cloud.selectedEvent]) {
+        admin.feedbackFilters.value[cloud.selectedEvent] = {}
+    }
+    if (!admin.feedbackFilters.value[cloud.selectedEvent][props.sectionKey]) {
+        admin.feedbackFilters.value[cloud.selectedEvent][props.sectionKey] = {}
+    }
+    if (!admin.feedbackFilters.value[cloud.selectedEvent][props.sectionKey][newFilterProp.value]) {
+        admin.feedbackFilters.value[cloud.selectedEvent][props.sectionKey][newFilterProp.value] = []
+    }
+    admin.feedbackFilters.value[cloud.selectedEvent][props.sectionKey][newFilterProp.value].push({
+        values: [],
+        disabled: false,
+    })
+    newFilterProp.value = ''
+}
+
+function flattenFeedback(f: Feedback, partName: string) {
+    if(f.select) {
+        return f.basic ? [f.select, f.basic.toString()] : [f.select]
+    }
+    if(f.complicated?.length) {
+        return f.complicated.map((c,i)=> `${props.config?.config[partName].questions?.[i] ?? defaultQuestions[i]}: ${c ?? 'NIC'}`)
+    }
+    if(f.basic) {
+        return f.detail ? [f.detail, f.basic.toString()] : [f.basic.toString()]
+    }
+    return []
+}
 
 function doSyncHeaders() {
     for (let i = 0; i < (syncHeader.value?.children?.length ?? 0); i++) {

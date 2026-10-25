@@ -13,7 +13,7 @@
                     <Icon name="mdi:open-in-new" />
                 </sup>
             </NuxtLink>
-            <span class="button" title="Vymazat" @click="model = ''; formData = undefined">
+            <span v-if="!disabled" class="button" title="Vymazat" @click="model = ''; formData = undefined">
                 <Icon name="mdi:close" />
             </span>
         </template>

@@ -1,5 +1,17 @@
 <template>
     <div>
+        <p v-if="secretsError" class="error">
+            Registrační formulář je <NuxtLink :to="formSettings">třeba propojit s aplikací.</NuxtLink>
+        </p>
+        <details v-if="!isEmpty(filteredBy)">
+            <summary>
+                Na tabulku jsou aplikovány filtry
+            </summary>
+            <FilterBadge
+                v-for="(values, key) in filteredBy" :key="`filter${key}`"
+                :model-value="values.map((v: string) => ({ value: v }))"
+                :title="decodeHTMLEntities(stripHtml(columns[key].title))" @delete="deleteFilter(key)" />
+        </details>
         <ProgressBar v-if="applications.loadingApplications" />
         <LazyDataTable
             v-else-if="showTable" id="applications" ref="table" :class="{
@@ -10,15 +22,15 @@
                 columnControl: columnControl,
                 initComplete,
                 createdRow(this: { api(): Exclude<typeof table, null>['dt'] }, row: HTMLTableRowElement, d: typeof data[number], _i: number, cells: HTMLTableCellElement[]) {
-                    row.classList.add(ApplicationStateUI[d.state].class)
+                    row.classList.add(ApplicationStateUI[d.state as ApplicationState].class)
                     const _api = this
 
                     if (!isEmpty(d.overlays)) {
                         // eslint-disable-next-line vue/this-in-template
                         const overlayKeys = Object.keys(d.overlays)
                         overlayKeys.concat(...expandMultiple ?
-                            overlayKeys.map(o => availableQuestions[parseIntOrNull((applications.settings?.fields[o] as string) ?? o) ?? d.questions.find(q => q.title == (applications.settings?.fields[o] ?? o))?.id ?? 0]
-                                ?.values.values().toArray().map(v => `${o}.${v}`)
+                            overlayKeys.map(o => availableQuestions[parseIntOrNull((applications.settings?.fields[o] as string) ?? o) ?? d.questions.find((q: QuestionResponse) => q.title == (applications.settings?.fields[o] ?? o))?.id ?? 0]
+                                ?.values.values().toArray().map((v: string) => `${o}.${simpleHash(v)}`)
                             ) : []) // add expanded checkboxes to the search query
                             .map(o => maybe(maybeIndex(_api.api().columns().dataSrc().indexOf(o)), i => {
                                 cells[i].classList.add('overlayed')
@@ -26,7 +38,7 @@
                             }
                             ))
                     }
-                    cells.map(c => c.title ||= `${ApplicationStateUI[d.state].name} přihláška`)//cannot use for because Vue cripples local variables
+                    cells.map(c => c.title ||= `${ApplicationStateUI[d.state as ApplicationState].name} přihláška`)//cannot use for because Vue cripples local variables
                 },
                 layout: {
                     topEnd: null,
@@ -51,7 +63,7 @@
                         @input="isSearching = true">
                     <button
                         class="dt-button" :disabled="!isSearching"
-                        @click="table?.dt.columns().columnControl.searchClear(); searchDebounced = ''; table?.dt.draw()">
+                        @click="table?.dt.columns().columnControl.searchClear(); search = ''; table?.dt.draw()">
                         <Icon name="mdi:filter-off" />
                     </button>
                 </span>
@@ -109,6 +121,7 @@ import mapValues from 'lodash.mapvalues'
 import isEmpty from 'lodash.isempty'
 import isMatchWith from 'lodash.ismatchwith'
 import pickBy from 'lodash.pickby'
+import { SecretsError } from '~/form-connector/src/errors'
 
 declare module 'datatables.net' {
     interface ApiButtonMethods<T> extends Omit<Api<T>, 'trigger'> {
@@ -128,6 +141,7 @@ const api = useRegistrationForm()
 const cloud = useCloudStore()
 const dtButtons = useTemplateRef<HTMLDivElement>('dtButtons')
 const firestore = useFirestore()
+const formSettings = computed(() => `/${cloud.selectedEvent}/admin/events/form`)
 const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const ui = useUI()
 const windowSize = useWindowSize()
@@ -140,9 +154,11 @@ const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
 const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
 const layoutRowHeight = ref(30)
 const isSearching = ref(false)
+const filteredBy = ref<Record<number, string[]>>({})
 const search = ref('')
 const searchDebounced = refDebounced(search, 500)
 const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
+const secretsError = ref(false)
 
 watch(searchDebounced, val => {
     if (table.value) {
@@ -187,10 +203,11 @@ const availableQuestions = computed(() => {
     return result
 })
 const toAdd = computed(() => Object.keys(availableQuestions.value).filter((k: any) => !Object.values(applications.settings?.fields ?? {}).some(f => typeof f == 'number' && f == parseInt(k) || f == availableQuestions.value[k].title)))
-const refreshResult = ref<ApiResponse<Responses['refreshResponses']>>({
-    ok: false,
-})
-const table = useTemplateRef<{ dt: Api<typeof data.value> }>('table')
+const refreshResult
+    = ref<ApiResponse<Responses['refreshResponses']>>({
+        ok: false,
+    })
+const table = useTemplateRef<HTMLDivElement & { dt: Api<typeof data.value> }>('table')
 const data = computed(() => {
     return applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp)
         .filter(a => applications.includeCancelled ? true : ![ApplicationState.CANCELLED, ApplicationState.REJECTED].includes(a.record.state ?? ApplicationState.NEW))
@@ -200,13 +217,23 @@ const data = computed(() => {
             for (const t of mappedTitles) {
                 const responses = a.mapped![t]?.responses
                 if (Array.isArray(responses)) {
-                    mappedEntries.push(multiExpansion(a, t, responses as string[]))
+                    mappedEntries.push(multiExpansion(a.mapped?.[t]?.id ?? 0, t, responses as string[]))
                 } else {
                     mappedEntries.push([t, responses?.toString() ?? null])
                 }
             }
             const original = {
-                ...Object.fromEntries(toAdd.value.map(k => [k, a.record.questions.find(q => q.id == parseInt(k))?.responses.toString() ?? null])),// arbitrary questions
+                // undescribed questions, hidden by default
+                ...Object.fromEntries(toAdd.value.map(k => {
+                    const q = a.record.questions.find(q => q.id == parseInt(k))
+                    if (q && Array.isArray(q.responses)) {
+                        return multiExpansion(q.id ?? 0, k, q.responses as string[])//Hope it will not be recursive array / checkbox matrix question
+                    }
+                    else {
+                        return [k, q?.responses.toString() ?? null]
+                    }
+                })),
+
                 ...mapValues(applications.settings?.fields, () => null), // fallback blank values
                 ...Object.fromEntries(mappedEntries),
                 ...a.record,
@@ -217,20 +244,20 @@ const data = computed(() => {
                 state: ApplicationState.NEW,
                 original: isEmpty(a.record.overlays) ? undefined : original,
                 ...original,
-                ...mapObject(a.record.overlays ?? {}, (o, k) => Array.isArray(o) ? multiExpansion(a, k, o)[1] : o),
+                ...mapObject(a.record.overlays ?? {}, (o, k) => Array.isArray(o) ? multiExpansion(a.mapped?.[k]?.id ?? 0, k, o)[1] : o),
                 id: a.record.id, // is non-enumerable so must be listed explicitly
             }
         })
 })
 
-function multiExpansion(a: typeof applications.filteredMapped[number], t: string, responses: string[]): [string, string[]] {
+function multiExpansion(id: number, t: string, responses: string[]): [string, string[]] {
     if (expandMultiple.value) {
         // TODO lookup availableQuestions with title or id
         const entries = // populate all with false
-            ((availableQuestions.value[a.mapped?.[t]?.id ?? 0] ?? Object.entries(availableQuestions.value).find(([_, q]) => q.title == t)?.[1])
-                ?.values.values().toArray().map(v => [v, false]) ?? [])
+            ((availableQuestions.value[id] ?? Object.entries(availableQuestions.value).find(([_, q]) => q.title == t)?.[1])
+                ?.values.values().toArray().map(v => [simpleHash(v), false]) ?? [])
                 // set the checked ones to true
-                .concat(responses.map(r => [r as string, true]))
+                .concat(responses.map(r => [simpleHash(r as string), true]))
 
         return [t, entries.length ? Object.fromEntries(entries) : {}]
     }
@@ -240,6 +267,7 @@ function multiExpansion(a: typeof applications.filteredMapped[number], t: string
 }
 
 async function refresh() {
+    secretsError.value = false
     if (!cloud.eventDescription?.formDocument) {
         alert('Událost nemá nastavenou URL přihlášky')
         return
@@ -253,6 +281,9 @@ async function refresh() {
     }
 
     refreshResult.value = await api.refreshResponses(formId, true)
+    if (refreshResult.value.error?.http == SecretsError.code) {
+        secretsError.value = true
+    }
     table.value?.dt?.draw()
     table.value?.dt?.responsive.recalc()
 }
@@ -289,7 +320,35 @@ watch([() => table.value?.dt, scrollY, keyboardVisible], (_, [oldDt]) => {
             }
         })
         table.value.dt.on('stateRestore-change', () => {
-            nextTick(() => table.value!.dt.button('SaveStateRestore:name').text('Zobrazení'))
+            nextTick(() => table.value!.dt.button('SaveStateRestore:name').text(useIconEl('eye') + ' Zobrazení'))
+        })
+        table.value.dt.on('search.dt', function () {
+            table.value!.dt.columns().every(function (col) {
+                const f = this.search.fixed('dtcc') || this.search.fixed('dtcc-list')
+                if (f) {
+                    if (typeof f == 'string') {//switch on SearchInputColumn<any[]> subtypes
+                        filteredBy.value[col] = [f]
+                    } else if (f instanceof RegExp) {
+                        filteredBy.value[col] = [f.source]
+                    } else if (typeof f == 'function') { // try columnControl settings
+                        nextTick(() => {
+                            const cc = (table.value!.dt.state() as any).columnControl[col]
+                            if (cc.searchInput) {
+                                filteredBy.value[col] = [`${cc.searchInput.logic}(${cc.searchInput.value})`]
+                            } else if (cc.searchList) {
+                                filteredBy.value[col] = cc.searchList
+                            }
+                        })
+                    } else {
+                        filteredBy.value[col] = ['[neznámý filtr]']
+                    }
+                    this.header().classList.add('filtered')
+                } else {
+                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                    delete filteredBy.value[col]
+                    this.header().classList.remove('filtered')
+                }
+            })
         })
         table.value.dt.columns().every(function () {
             this.header().addEventListener('dblclick', () => {
@@ -301,8 +360,14 @@ watch([() => table.value?.dt, scrollY, keyboardVisible], (_, [oldDt]) => {
         })
     }
 })
+function deleteFilter(col: `${number}`) {
+    const c = table.value!.dt.column(col)
+    c.columnControl.searchClear()
+    c.search('').table().draw()
+}
 function initComplete() {
     setTimeout(() => loadedDt.value = true, 500)
+    filteredBy.value = {}
 }
 async function reload<T>(between?: () => PromiseLike<T>) {
     if (!table.value) {
@@ -497,17 +562,26 @@ const questionControlColumns = computed(() => {
     const toRemove = Object.keys(availableQuestions.value).filter((a: any) => Object.entries(applications.settings?.fields ?? {}).some(([k, v]) => (typeof v == 'number' && v == a) || (v == availableQuestions.value[a].title && !SpecialApplicationFields.includes(k as any))))
     return [
         {
-            text: useIconEl('add') + ' Přidat otázku jako sloupec',
+            text: useIconEl('eye') + ' Odkrýt sloupce',
             extend: 'collection',
             buttons: toAdd.value.length ? [{
                 text: useIconEl('check-all') + ' Všechny',
                 action() {
                     table.value?.dt.columns('.undescribed').visible(true)
                 },
+            }, {
+                extend: 'spacer',
             }].concat(toAdd.value.map((id: any) => ({
-                text: availableQuestions.value[id].title,
+                text: `${availableQuestions.value[id].multi ? (useIconEl('format-list-bulleted') + ' ') : ''}${availableQuestions.value[id].title}`,
                 action() {
-                    table.value?.dt.column(`${id}:name`).visible(true)
+                    if (expandMultiple.value && availableQuestions.value[id].multi) {
+                        for (const v of availableQuestions.value[id].values) {
+                            table.value?.dt.column(`${id}.${simpleHash(v)}:name`).visible(true)
+                        }
+                    } else {
+                        table.value?.dt.column(`${id}:name`).visible(true)
+                    }
+                    undescribedVisible.add(id)
                 },
             }))) : [{
                 text: '&ensp;V tabulce jsou již všechny otázky z přihlášky&ensp;',
@@ -515,7 +589,7 @@ const questionControlColumns = computed(() => {
                 style: 'empty',
             }],
         }, {
-            text: useIconEl('remove') + ' Odebrat sloupec',
+            text: useIconEl('eye-off') + ' Odebrat sloupec',
             titleAttr: 'Odebere natrvalo sloupec pro všechny uživatele',
             extend: 'collection',
             buttons: toRemove.length ? [{
@@ -560,10 +634,11 @@ const statesWokeUp = ref(false)
 const buttons = computed(() => [
     {
         extend: 'savedStates',
-        text: 'Zobrazení',
+        text: useIconEl('eye') + ' Zobrazení',
         buttons: [
-            { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
             ...visibilityButtons,
+            ...questionControlColumns.value,
+            { extend: 'colvis', text: 'Sloupce', columns: ':not(.always-visible)' },
             { extend: 'spacer', style: 'bar' },
             {
                 extend: 'createState', text: 'Uložit zobrazení', action: function (e, dt, node, config, cb) {
@@ -679,6 +754,10 @@ const buttons = computed(() => [
                 action: goToFormResponsePage,
             },
             {
+                text: useIconEl('table-eye') + ' Zobrazit Google tabulku',
+                action: goToSpreadsheet,
+            },
+            {
                 text: useIconEl('cog-refresh') + ' Aktualizovat data z formuláře',
                 titleAttr: 'Stáhne všechny odeslané přihlášky a jejich změny do interní databáze',
                 action: refresh,
@@ -694,9 +773,27 @@ function goToFormEdit() {
 function goToFormResponsePage() {
     navigateTo(cloud.eventDescription?.form, { external: true, open: { target: '_blank' } })
 }
+async function goToSpreadsheet() {
+    if (!cloud.eventDescription?.formDocument) {
+        alert('FormID není')
+        return
+    }
+    const gapi
+        = useGapi()
+    const client = await gapi.client()
+    const infoRequest = await client.forms.forms.get({
+        formId: extractFormIdFromURL(cloud.eventDescription.formDocument)!,
+        fields: 'linkedSheetId',
+    })
+    if (infoRequest.result.linkedSheetId) {
+        navigateTo(`https://docs.google.com/spreadsheets/d/${infoRequest.result.linkedSheetId}`, { external: true, open: { target: '_blank' } })
+    } else {
+        alert('Tento formulář nemá přiřazenou google tabulku')
+    }
+}
 
 function goToFormSettings() {
-    navigateTo(`/${cloud.selectedEvent}/admin/events/form`)
+    navigateTo(formSettings.value)
 }
 
 function selectAll() {
@@ -778,6 +875,7 @@ function renderMultiBool(data: string[], type: string, row: string[]) {
     }
     return data
 }
+const undescribedVisible = new Set<string>()
 const columns = computed(() => {
     const fieldSettings = Object.keys(applications.settings?.fields ?? {})?.filter(k => !complexColumns.value.find(c => c.data == k))
     const fieldColumns: ConfigColumns[] = []
@@ -787,7 +885,7 @@ const columns = computed(() => {
         if (q?.multi && expandMultiple.value) {
             q.values.forEach(v =>
                 fieldColumns.push({
-                    data: `${key}.${v}`,
+                    data: `${key}.${simpleHash(v)}`,
                     className: 'multi',
                     title: ellipsis.value(v, 'display'),
                     columnControl: searchList,
@@ -804,15 +902,33 @@ const columns = computed(() => {
             })
         }
     }
-
+    const undescribedColumns: ConfigColumns[] = []
+    for (const k of toAdd.value) {
+        const q = availableQuestions.value[k as any]//TODO type check
+        if (q.multi && expandMultiple.value) {
+            q.values.forEach(v =>
+                undescribedColumns.push({
+                    data: `${k}.${simpleHash(v)}`,
+                    name: `${k}.${simpleHash(v)}`,
+                    className: 'multi undescribed',
+                    title: ellipsis.value(v, 'display'),
+                    columnControl: searchList,
+                    render: renderBool,
+                    visible: undescribedVisible.has(k),
+                }),
+            )
+        } else {
+            undescribedColumns.push({
+                data: k, title: q.title, visible: undescribedVisible.has(k), className: 'undescribed', name: k,
+            })
+        }
+    }
     return [
         // Special form fields
         ...complexColumns.value,
         // Form fields
         ...fieldColumns,
-        ...toAdd.value.map((k: any) => ({ // TODO add multi for undescribed columns
-            data: k, title: availableQuestions.value[k].title, visible: false, className: 'undescribed', name: k,
-        })),// undescribed questions columns
+        ...undescribedColumns,// undescribed questions columns
         { data: null, title: 'Celkem', render: computeTotal, visible: false, className: 'print' },
         { data: 'paid', title: 'Převodem', render: renderUndefined, className: 'print' },
         { data: 'remaining', title: 'Zbývá', render: renderUndefined, className: 'print' },
@@ -847,6 +963,17 @@ function renderUndefined(data?: string) {
 
 function computeTotal(row: typeof data.value[0]) {
     return ((parseInt(row.paid as any) ?? 0) + parseInt(row.remaining ?? 0 as any)) || ''
+}
+/**
+ * Random hash function for creating identifiers for individual checkbox question responses
+ */
+function simpleHash(s: string) {
+    let hash = 0
+    for (let i = 0; i < s.length; i++) {
+        hash = (hash << 5) - hash + s.charCodeAt(i)
+        hash |= 0
+    }
+    return hash
 }
 
 watchDebounced([responsive, columns, czechDates], (newVal, oldVal) => (!loadedDt.value || !app.$DataTable || isMatchWith(oldVal, newVal, (val) => typeof val == 'function' ? true : undefined)) ? null : reload(), { debounce: 500 })
@@ -908,5 +1035,9 @@ td.overlayed {
         gap: .8rem;
         flex-wrap: wrap;
     }
+}
+
+.filtered .dtcc-button-icon line {
+    stroke: orange
 }
 </style>

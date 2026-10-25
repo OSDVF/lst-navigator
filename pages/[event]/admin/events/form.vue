@@ -3,16 +3,16 @@
         <template #header>
             <h1>Nastavení registrace</h1>
             <h3>Pro událost {{ cloud.eventDescription?.title }}</h3>
-            <NuxtLink :to="`/${cloud.eventDescription?.id}/admin/events/edit`" class="button">
-                <Icon name="mdi:pencil" />
-            </NuxtLink>
             <FormInput
                 v-if="cloud.eventDescription" v-model="cloud.eventDescription.form" disabled
                 :document="cloud.eventDescription.formDocument" />
+            <NuxtLink :to="`/${cloud.eventDescription?.id}/admin/events/edit`" class="button">
+                <Icon name="mdi:pencil" />
+            </NuxtLink>
             <br>
             <FormDocumentInput
-                v-if="cloud.eventDescription" v-model="cloud.eventDescription.formDocument" disabled
-                :form-url="cloud.eventDescription.form" />
+                v-if="cloud.eventDescription" v-model="cloud.eventDescription.formDocument" label-class="muted"
+                disabled :form-url="cloud.eventDescription.form" />
             <ProgressBar v-if="ui.isLoading" />
 
             <fieldset
@@ -25,12 +25,15 @@
                     <Icon name="mdi:check" />&nbsp;Synchronizováno
                 </span>
                 <template v-else-if="serviceAccountLoaded || internalSettings.secretsExist">
-                    <button @click="sync().catch(e => error = e)">
+                    <button class="large mt-1" @click="sync().catch(e => error = e)">
                         <Icon name="mdi:sync" /> Synchronizovat
                     </button>&ensp;
+                    <span class="button" tabindex="0" @click="openFD()">
+                        Vybrat jiný soubor
+                    </span>
                     <br>
                     <details>
-                        <summary>Synchronizovat manuálně</summary>
+                        <summary><small><span class="muted">nebo</span> synchronizovat manuálně</small></summary>
                         <small>Pokud se nepodaří synchronizovat automaticky, <a
                             :href="cloud.eventDescription?.formDocument" target="_blank"
                             rel="noreferrer noopener">otevřete dokument s přihláškou pro úpravy</a>,
@@ -118,6 +121,19 @@
                 <p>
                     <small>Zadejte názvy otázek z formuláře, podle kterých budou přiřazeny data k jednotlivým
                         účastníkům.</small>
+                </p>
+                <p>
+                    <small class="text-warning">
+                        <Icon name="mdi:info" /> Políčka, která označíte, budou zobrazena jako sloupce v tabulce s
+                        účastníky. Z
+                        ostatních se stanou
+                        <Icon name="mdi:eye-off" /> skryté sloupce.
+                    </small>
+                </p>
+                <p v-if="Object.keys(settings.fields).some(f => !settings.fields[f])">
+                    <small>
+                        <Icon name="mdi:warning" /> Některá důležitá políčka ještě nejsou přiřazena.
+                    </small>
                 </p>
                 <label>Jméno&nbsp;
                     <FormItemSelect
@@ -421,7 +437,7 @@ const fieldsElement = useTemplateRef<HTMLDetailsElement>('fields')
 
 const cloud = useCloudStore()
 const config = useRuntimeConfig()
-const connectCode: RegistrationFormSecrets = {
+const connectCode: Omit<RegistrationFormSecrets, 'logLevel'> = {
     email: '',
     key: '',
     projectId: config.public.vuefire!.config!.projectId!,
@@ -461,16 +477,6 @@ const copied = ref(false)
 const dirty = ref(false)
 const error = ref()
 
-let id: string
-if (!cloud.eventDescription?.formDocument) {
-    error.value = 'Událost nemá zadanou adresu dokumentu přihlášky'
-} else {
-    id = extractFormIdFromURL(cloud.eventDescription.formDocument) ?? ''
-    if (!id) {
-        error.value = 'Událost nemá správně zadanou adresu dokumentu přihlášky. Je třeba zadat odkaz na sdílení upravitelného souboru na Google Disku.'
-    }
-}
-
 const eventSettingsDoc = doc(useFirestore(), connectCode.remoteEventSettings)
 const applFormApi = useRegistrationForm()
 const ui = useUI()
@@ -493,8 +499,36 @@ onBeforeRouteLeave(() => {
     }
 })
 
+onMounted(() => {
+    window.addEventListener('beforeunload', beforeunload)
+})
 
-onMounted(async () => {
+onBeforeUnmount(() => {
+    window.removeEventListener('beforeunload', beforeunload)
+})
+
+const id = computed(() => {
+    const formDocument = cloud.eventDescription?.formDocument
+    if (!formDocument) {
+        // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+        error.value = 'Událost nemá zadanou adresu dokumentu přihlášky'
+        return
+    } else {
+        const id = extractFormIdFromURL(formDocument) ?? ''
+        if (!id) {
+            // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+            error.value = 'Událost nemá správně zadanou adresu dokumentu přihlášky. Je třeba zadat odkaz na sdílení upravitelného souboru na Google Disku.'
+        }
+        // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+        error.value = undefined
+        return id
+    }
+})
+
+watch(id, async (id) => {
+    if (!id) {
+        return
+    }
     using _ = ui.loading()
     const response = await applFormApi.getInternal(id)
     if (response.ok && response.data) {
@@ -504,31 +538,15 @@ onMounted(async () => {
         console.error(response.error)
         error.value = response.error?.message || response.error?.code || response.error?.http
     }
-    window.addEventListener('beforeunload', beforeunload)
-})
+}, { immediate: true })
 
-onBeforeUnmount(() => {
-    window.removeEventListener('beforeunload', beforeunload)
-})
-const stop = watch(() => (internalSettings.value.secretsExist && !ui.isLoading), l => {
-    if (l) {
-        nextTick(() => {
-            if ((!Object.keys(emailCollectionTypes).includes(formData.value.settings?.emailCollectionType ?? '') && !settings.value.fields.email ||
-                !settings.value.fields.name
-            ) && fieldsElement.value) {
-                fieldsElement.value.open = true
-            }
-        })
-        stop()
-    }
-})
 const canEdit = computed({
     get() {
         return internalSettings.value?.canEditResponse
     },
     set(value: boolean) {
         ui.startLoading()
-        applFormApi.setInternal(id, {
+        applFormApi.setInternal(id.value!, {
             canEditResponse: value,
         }).then(response => {
             if (response.ok) {
@@ -612,7 +630,7 @@ async function sync() {
 
     // Phase 2: set secrets
     if (!internalSettings.value.secretsExist) {
-        const response = await applFormApi.setSecrets(id, connectCode)
+        const response = await applFormApi.setSecrets(id.value!, connectCode)
         if (response.ok) {
             error.value = undefined
         } else {
@@ -623,7 +641,8 @@ async function sync() {
     // TODO asymmetric encryption of SA
 }
 
-const formData = await useRegistrationFormData(id!, error)
+const formData
+    = await useRegistrationFormData(id, error)
 
 const formQuestions = computed(() => formData.value.items?.filter(i => (i.questionItem && i.title)).map(i => ({
     id: parseInt(i.itemId ?? '', 16),
@@ -637,6 +656,19 @@ const mealNames = computed(() => {
         id: i,
         title: o.value ?? '',
     }))
+})
+
+const stop = watch(() => (internalSettings.value.secretsExist && !ui.isLoading), l => {
+    if (l) {
+        nextTick(() => {
+            if ((!Object.keys(emailCollectionTypes).includes(formData.value.settings?.emailCollectionType ?? '') && !settings.value.fields.email ||
+                !settings.value.fields.name
+            ) && fieldsElement.value) {
+                fieldsElement.value.open = true
+            }
+        })
+        stop()
+    }
 })
 </script>
 

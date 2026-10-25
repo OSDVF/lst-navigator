@@ -1,10 +1,10 @@
-// TODO request logging with parameters
-
+import { ApiError, SecretsError } from "./errors";
 import { useFirestore } from "./firestore";
 import { refreshResponses, type ResponseRecord } from "./responses";
 import {
     getEventSettings,
     getSecrets,
+    LogLevel,
     type RegistrationFormSecrets
 } from "./settings";
 import { resolveEmailContent } from "./submit";
@@ -37,7 +37,7 @@ export type Actions = {
         [formId: string]: InternalSettings;
     };
     setSecrets: {
-        [formId: string]: RegistrationFormSecrets;
+        [formId: string]: Partial<RegistrationFormSecrets>;
     };
     refreshResponses: {
         formId: string;
@@ -116,11 +116,15 @@ export function doGet(e: GoogleAppsScript.Events.DoGet) {
         return processRequest(e.pathInfo as Action, body);
     } catch (e) {
         console.error(e);
+        let http = 500
+        if (e instanceof ApiError) {
+            http = e.code
+        }
         return createResonse({
             ok: false,
             error: {
-                code: "Internal Server Error",
-                http: 500,
+                code: e instanceof ApiError ? e.name : "Internal Server Error",
+                http,
                 message:
                     typeof e == "object"
                         ? e && "message" in e
@@ -157,11 +161,15 @@ export function doPost(e: GoogleAppsScript.Events.DoPost) {
         return processRequest(postData.action, postData.body);
     } catch (e) {
         console.error(e);
+        let http = 500
+        if (e instanceof ApiError) {
+            http = e.code
+        }
         return createResonse({
             ok: false,
             error: {
-                code: "Internal Server Error",
-                http: 500,
+                code: e instanceof ApiError ? e.name : "Internal Server Error",
+                http,
                 message:
                     typeof e == "object"
                         ? e && "message" in e
@@ -180,6 +188,11 @@ export function doPost(e: GoogleAppsScript.Events.DoPost) {
 }
 
 function processRequest(action: Action, body: any) {
+    const logLevel = PropertiesService.getScriptProperties().getProperty('logLevel' as keyof RegistrationFormSecrets)
+    if (logLevel != null && parseInt(logLevel) == LogLevel.ON) {
+        console.trace("action", action, body)
+    }
+
     if (
         typeof action != "string" ||
         !action ||
@@ -765,10 +778,10 @@ function _setInternal(body: Record<string, InternalSettings>) {
     }
 }
 
-function _setSecrets(body: Record<string, RegistrationFormSecrets>) {
+function _setSecrets(body: Record<string, Partial<RegistrationFormSecrets>>) {
     for (const key in body) {
         // TODO support multiple forms
-        const secrets = body[key]!;
+        const secrets = {...getSecrets(key), ...body[key]!};
         if (
             "email" in secrets &&
             typeof secrets.email == "string" &&
@@ -780,8 +793,7 @@ function _setSecrets(body: Record<string, RegistrationFormSecrets>) {
                 key,
                 JSON.stringify(secrets)
             );
-
-            const fs = useFirestore(key, secrets);
+            const fs = useFirestore(key, secrets as RegistrationFormSecrets);
             const remoteSettings = fs.getDocument(secrets.remoteEventSettings);
             const ok = !!remoteSettings;
             return createResonse({ ok });

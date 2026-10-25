@@ -4,6 +4,7 @@ import prismjs from 'vite-plugin-prismjs'
 import babelVite from 'vite-plugin-babel'
 import babelRoldown from '@rolldown/plugin-babel'
 import firebaseConfig from './firebase.json'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 import {
     installStepCount,
@@ -61,7 +62,7 @@ const config = defineNuxtConfig({
     },
     build: {
         transpile: [
-            'lru-cache',
+            'lru-cache', 'google-api-javascript-client',
         ],
     },
     compatibilityDate: '2026-02-26',
@@ -118,7 +119,7 @@ const config = defineNuxtConfig({
             }
         },
         'app:templatesGenerated'() {
-            setTimeout( () => {
+            setTimeout(() => {
                 console.log('Rewriting')
                 const workaround = '.nuxt/types/imports.d.ts'
                 const replaced = fs.readFileSync(workaround).toString().replaceAll('vue/index', 'vue')
@@ -281,6 +282,7 @@ const config = defineNuxtConfig({
     },
     vite: {
         plugins: [
+            nodePolyfills({ include: ['util'] }),
             prismjs({
                 languages: ['javascript', 'markup'],
             }),

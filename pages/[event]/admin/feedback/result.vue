@@ -21,14 +21,14 @@
                 </template>
             </SimpleSelect>
             <NuxtLink
-                :to="`/${cloud.selectedEvent}/admin/feedback/result/program`" class="p-1 inline-flex align-items-center tab"
-                title="Části programu">
+                :to="`/${cloud.selectedEvent}/admin/feedback/result/program`"
+                class="p-1 inline-flex align-items-center tab" title="Části programu">
                 <Icon name="mdi:calendar" />
                 <span class="sm-hide">Části programu</span>
             </NuxtLink>
             <NuxtLink
-                :to="`/${cloud.selectedEvent}/admin/feedback/result/other`" class="p-1 inline-flex align-items-center tab"
-                title="Ostatní otázky">
+                :to="`/${cloud.selectedEvent}/admin/feedback/result/other`"
+                class="p-1 inline-flex align-items-center tab" title="Ostatní otázky">
                 <Icon name="mdi:form-select" />
                 <span class="sm-hide">Ostatní otázky</span>
             </NuxtLink>
@@ -68,7 +68,9 @@
                         <input id="anonymize" v-model="admin.anonymize" type="checkbox" name="anonymize"><label
                             for="anonymize">Plně anonymizovat</label>
                     </div>
-                    <button @click="deleteAll"><Icon name="mdi:delete"/> Smazat odpovědi</button>
+                    <button @click="deleteAll">
+                        <Icon name="mdi:delete" /> Smazat odpovědi
+                    </button>
                 </div>
                 <div>
                     <span style="color:blue">
@@ -90,6 +92,13 @@
                         &block;&block;
                     </span> &ensp; Výběr
                 </div>
+            </div>
+            <div>
+                <template v-for="filters in allFilters">
+                    <FilterBadge
+                        v-for="(filter, i) in filters" :key="`${filters.title}${i}`" :disabled="(filter as any).disabled" :value="(filter as any).values" :title="filters.title"
+                        tabindex="0" @click="scrollToFilter(filters.section, filters.question)" />
+                </template>
             </div>
             <template v-if="typeof cloud.days?.findLast(() => true) === 'string'">
                 Načítání
@@ -123,6 +132,33 @@ const admin = useAdmin()
 const respondents = useFeedbackRespondents()
 const zoomFactor = ref(1)
 
+const allFilters = computed(() => {
+    const r: {
+        title: string,
+        section: string,
+        question: string | number,
+        filters: typeof admin.feedbackFilters[string][number][number],
+    }[] = []
+    for (const s in admin.feedbackFilters[cloud.selectedEvent]) {
+        const section = admin.feedbackFilters[cloud.selectedEvent][s]
+        for (const q in section) {
+            const question = section[q]
+            r.push({
+                section: s,
+                title: `${s}-${q}`,
+                question: q,
+                filters: question,
+            })
+        }
+    }
+    return r
+})
+
+function scrollToFilter(section: string, question: string | number) {
+    const el = document.getElementById(`f-${section}-${question}`)
+    el?.scrollIntoView()
+}
+
 const displayKindOptions = {
     histogram: {
         icon: 'mdi:chart-histogram',
@@ -137,7 +173,7 @@ const displayKindOptions = {
 const showRespondents = ref(false)
 
 function deleteAll() {
-    if(confirm('Chcete smazat všechny odpovědi respondentů u této akce?')) {
+    if (confirm('Chcete smazat všechny odpovědi respondentů u této akce?')) {
         return cloud.feedback.clear()
     }
 }

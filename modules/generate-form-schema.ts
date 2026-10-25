@@ -7,7 +7,7 @@ export default defineNuxtModule({
     },
     async setup() {
         try {
-            console.log('Generationg JSON schema from application form defined types...')
+            console.log('Generating JSON schema from application form defined types...')
             const schema = JSON.stringify(tsj.createGenerator({
                 path: './form-connector/src/types.ts',
                 type: '*',
