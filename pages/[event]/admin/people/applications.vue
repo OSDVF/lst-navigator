@@ -7,14 +7,13 @@
             <summary>
                 Na tabulku jsou aplikovány filtry
             </summary>
-            <FilterBadge
-                v-for="(values, key) in filteredBy" :key="`filter${key}`"
+            <FilterBadge v-for="(values, key) in filteredBy" :key="`filter${key}`"
                 :model-value="values.map((v: string) => ({ value: v }))"
                 :title="decodeHTMLEntities(stripHtml(columns[key].title))" @delete="deleteFilter(key)" />
         </details>
         <ProgressBar v-if="applications.loadingApplications" />
-        <LazyDataTable
-            v-else-if="showTable" id="applications" ref="table" class="display compact fancy" :options="{
+        <LazyDataTable v-else-if="showTable" id="applications" ref="table" class="display compact fancy"
+            ondragstart="return false;" ondrop="return false;" :options="{
                 deferRender: true,
                 responsive, colReorder: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: columnControl,
@@ -46,7 +45,7 @@
                     handler: false
                 },
                 select: {
-                    style: 'os',
+                    style: 'api',
                     items: 'cell',
                     keys: true,
                 },
@@ -56,11 +55,9 @@
         <Teleport v-if="mounted" to="#topNav">
             <div ref="dtButtons" class="dtButtons">
                 <span>
-                    <input
-                        v-model="searchDebounced" type="search" placeholder="Hledat..." class="dt-search dt-input"
+                    <input v-model="searchDebounced" type="search" placeholder="Hledat..." class="dt-search dt-input"
                         @input="isSearching = true">
-                    <button
-                        class="dt-button" :disabled="!isSearching"
+                    <button class="dt-button" :disabled="!isSearching"
                         @click="table?.dt.columns().columnControl.searchClear(); search = ''; table?.dt.draw()">
                         <Icon name="mdi:filter-off" />
                     </button>
@@ -90,7 +87,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, ConfigColumns, FunctionButtonAction } from 'datatables.net-dt'
+import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, CellIdx, ConfigColumns } from 'datatables.net-dt'
 import type StateRestore from 'datatables.net-staterestore/types/StateRestore'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
 import { type QuestionResponse, type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
@@ -107,6 +104,9 @@ import { SecretsError } from '~/form-connector/src/errors'
 declare module 'datatables.net' {
     interface ApiButtonMethods<T> extends Omit<Api<T>, 'trigger'> {
         collectionRebuild(config: ButtonConfig[]): ApiButtons<T>
+    }
+    interface ApiRow<T> {
+        (): ApiRowMethods<T>
     }
 }
 
@@ -140,6 +140,7 @@ const search = ref('')
 const searchDebounced = refDebounced(search, 500)
 const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
 const secretsError = ref(false)
+const sweepMode = ref(false)
 
 watch(searchDebounced, val => {
     if (table.value) {
@@ -284,7 +285,7 @@ watch([() => table.value?.dt, scrollY, keyboardVisible], (_, [oldDt]) => {
     }
     if (table.value?.dt && !oldDt) {
         table.value.dt.on('draw.dt', () => {
-            //extract filterf from column control extension
+            //extract filter from column control extension
             const glob = !!table.value!.dt.search()
             // No point in wasting clock cycles if we already know it will be enabled
             if (!glob) {
@@ -363,10 +364,184 @@ async function reload<T>(between?: () => PromiseLike<T>) {
     nextTick(() => showTable.value = true)
 }
 
-const selection = ref<ApiRowsMethods<typeof data.value> | ApiCellsMethods<typeof data.value>>()
-function selectionChanged() {
-    if (table.value) {
+const selectedRow = 'selected-row'
+const selection
+    = ref<ApiRowsMethods<typeof data.value> | ApiCellsMethods<typeof data.value>>()
+
+// --- Drag area selection (plain HTML DOM events) --------------------------------------
+// As the hand sweeps across the rendered table, a "pass-over" event fires on every cell
+// node it crosses. Desktop uses mouse events (`mouseover`); touchscreens use pointer
+// events (`pointerover`) — so we listen on both families to cover keyboard + touchscreen.
+// We attach on the stable table element so swept cells are recorded by coordinate; the
+// lift-off event (`mouseup` / `pointerend`) ends the region and commits the cell block to a
+// persistent set of "row|column" keys that accumulate ("multiple areas") across drags.
+// On touchscreens the first anchor is gated with a short delay so an accidental scroll tap
+// doesn't lock in a region immediately.
+const DRAG_DOWN_EVENTS = ['pointerstart', 'mousedown'] as const   // marks the start of a drag
+const DRAG_ROW_EVENTS = ['pointerover', 'mouseover'] as const     // swept cells during a drag
+const DRAG_LIFT_EVENTS = ['mouseup', 'pointerend'] as const        // ends a drag on lift-off
+const DRAG_TouchDelay = 300 // ms ignored right after touch-start (lets scrolling pass)
+function isTouchscreen() {
+    return typeof (globalThis as any).beforeinstallprompt !== 'undefined'
+}
+// pressed cell indices [row,column] swept during a drag and persisted across drags (multiple areas)
+const dragKeys: Array<[number, number]> = []  // dragged cells, committed on lift-off; deduped on insert
+const pastRegions: [number, number][] = []
+let dragStartedAt: number | null = null         // touch-delay anchor timer, set by the down event
+let dragActive = false                          // a drag is in progress; sweeps before it are ignored
+// does this exact [row,column] already appear in dragKeys? (arrays compare by value, not reference)
+function dragHasKey(r: number, c: number): boolean {
+    for (const k of dragKeys) { if (k[0] === r && k[1] === c) { return true } }
+    return false
+}
+function dragResolveCell(dt: any, node: HTMLElement): { row: number; column: number } | null {
+    const tr = node.closest?.('tr') as HTMLElement | null
+    if (!tr) { return null }
+    // the rendered cell node carries its column index (_DT_CellIndex), so we can select cells individually
+    const cell = (node instanceof HTMLTableCellElement ? node : node.closest?.('td') as HTMLTableCellElement | null) as HTMLTableCellElement | null
+    if (!cell || !('_DT_CellIndex' in cell)) { return null }
+    return (cell as any)._DT_CellIndex
+}
+// commit pressed indices as an exact per-cell union (grouped by row so each `.select()` hits
+// exactly those cells in the row). Multiple `.select()` calls union into DataTables' selected
+// state, and persisted keys across drags keep disconnected areas. selectionChanged re-syncs the
+// CSS from that state. Indices were resolved at start/record, so this just groups them — no cell
+// re-resolution here. Fires on lift-off only.
+function dragFinalize(dt: Api<typeof data.value>, e: Event) {
+    // An accidental touch tap that lifted too fast must not lock anything in; prior drags stay selected.
+    if (isTouchscreen() && dragStartedAt != null
+        && performance.now() - dragStartedAt < DRAG_TouchDelay) { dragActive = false; dragStartedAt = null; return }
+    if (!dragKeys.length) { dragStartedAt = null; dragActive = false; return }
+    if (sweepMode.value) {
+        for (const [r, col] of dragKeys) {
+            dt.cells(r, col).select()
+        }
+    } else {
+        const node = resolveDragNode(e.target as HTMLElement | null)
+        if (node) { dragRecordCell(node) }
+
+        const bb = boundingRect(dragKeys)
+        const cols = [...new Array(bb.maxCol - bb.minCol + 1).keys().map(k => k + bb.minCol)]
+        const clear = e instanceof MouseEvent && !e.shiftKey && !e.ctrlKey
+
+        const sel = selection.value?.toArray()
+        const selectedSingle = dragKeys.length == 1
+            && sel?.some((ss: CellIdx[]) => ss.find((s: CellIdx) => s.row == dragKeys[0][0]))
+            && sel.some((ss: CellIdx[]) => ss.find((s: CellIdx) => s.column == dragKeys[0][1]))
+        if (clear) {
+            dt.cells({ page: 'all' }).deselect()
+            dt.rows({ page: 'all' }).deselect()
+        }
+        if (selectedSingle) {//deselect single already selected cell
+            const coords = dragKeys[0]
+            nextTick(() => {
+                selectionChangedDisabled = true
+                dt.cell(...coords)!.deselect()
+                selectionChangedDisabled = false
+                selectionChanged(true)
+            })
+        } else {
+            for (let r = bb.minRow; r <= bb.maxRow; r++) {
+                dt.cells(r, cols).select()
+            }
+        }
+
+        dragKeys.splice(0)
+    }
+    dragActive = false; dragStartedAt = null
+}
+// record a pressed cell's index [row,column] during an active drag. The down seeds the first
+// index; sweeps add more — cells resolve here, never at finalize. Sweeps before the down event
+// (e.g. incidental pointer sweeps while not dragging) are ignored.
+function dragRecordCell(node: HTMLElement) {
+    if (!dragActive) { return }
+    const now = performance.now()
+    // gate anchors set by the down event; ignore crosses within DRAG_TouchDelay so a scroll
+    // tap isn't read as a sweep
+    if (isTouchscreen() && dragStartedAt != null && now - dragStartedAt < DRAG_TouchDelay) { return }
+    const idx = dragResolveCell(table.value?.dt as any, node)
+    if (!idx || idx.row < 0 || idx.column < 0) { return }
+    if (!dragHasKey(idx.row, idx.column)) { dragKeys.push([idx.row, idx.column]) }
+}
+// attach all drag listeners once to the whole table element instead of per row node.
+// A drag is a three-part gesture on DOM events:
+//   * DOWN  (`pointerstart` / `mousedown`): the moment the user places their finger/hand on
+//           the screen. This anchors the touch-clock and seeds the first cell so the region
+//           begins from where they start, not from an ambiguous `-over`.
+//   * ROW   (`pointerover` / `mouseover`): every cell swept over between down and lift;
+//           recorded only while a drag is active.
+//   * LIFT  (`mouseup` / `pointerend`): ends the region and commits the cell block exactly
+//           once. Keeping listeners on the one stable table node means no per-draw rebuild.
+const dragTableHooked = new WeakSet<HTMLElement>()
+function resolveDragNode(target: HTMLElement | null) {
+    const node = target?.closest('td')
+    return node instanceof HTMLTableCellElement ? node : null
+}
+function dragWireTable() {
+    const el = table.value?.dt?.table()?.node() as HTMLElement | null
+    if (!el || typeof el.addEventListener !== 'function' || dragTableHooked.has(el)) { return }
+    dragTableHooked.add(el)
+    // down: start a drag. Anchor the touch-clock here (not on the first `-over`) so incidental
+    // sweeps while not dragging are ignored, and seed the starting cell into the region.
+    const start = (e: Event) => {
+        dragActive = true
+        if (isTouchscreen()) { dragStartedAt = performance.now(); return }
+        // desktop anchors on the down event and records the pressed cell straight away
+        const node = resolveDragNode(e.target as HTMLElement | null)
+        if (node) { dragRecordCell(node) }
+    }
+    // sweep: record each crossed cell, but only inside an active drag.
+    const sweep = (e: Event) => {
+        if (!sweepMode.value) {
+            return
+        }
+        const node = resolveDragNode(e.target as HTMLElement | null)
+        if (node) { dragRecordCell(node) }
+    }
+    for (const ev of DRAG_DOWN_EVENTS) { el.addEventListener(ev, start) }
+    for (const ev of DRAG_ROW_EVENTS) { el.addEventListener(ev, sweep) }
+    // lift: finalize the in-progress region once on lift-off. Mouse users fire `mouseup`;
+    // touchusers fire `pointerend`.
+    for (const ev of DRAG_LIFT_EVENTS) {
+        el.addEventListener(ev, (e) => {
+            const dt = table.value?.dt as any
+            if (dt) { dragFinalize(dt, e) }
+        })
+    }
+}
+// listeners live on the stable table node so they need no rebuild; just ensure dt is ready.
+function dragWireTableInit() { nextTick(() => { const dt = table.value?.dt as any; if (dt) { dragWireTable() } }) }
+dragWireTableInit()
+// call again after a draw to re-anchor listeners in case the whole table node was replaced
+// (reloaded). Idempotent per node via the WeakSet guard.
+let selectionChangedDisabled = false;
+watch([() => table.value?.dt], () => { dragWireTable() }, { immediate: true })
+function selectionChanged(ignoreFocused?: boolean) {
+    if (table.value && !selectionChangedDisabled) {
+        selectionChangedDisabled = true;
+        using _ = disposeBy(() => selectionChangedDisabled = false)
+        const focused = table.value.dt.cell('.focused')
+        // convert rows to cells
+        const selectedRows = table.value.dt.rows({ selected: true })
+        //table.value.dt.cells(selectedRows.indexes() as any, table.value.dt.columns()[0]).select()
+        selectedRows.deselect()// deselect rows selected by keyboard
+
+        if (!ignoreFocused) {
+            focused.select()
+        }
+
         selection.value = table.value.dt.cells({ selected: true })
+        // resolve selected rows
+        const rows = new Set<number>()
+        selection.value.each?.((value: CellIdx[]) => {
+            for (const cell of value) {
+                rows.add(cell.row)
+            }
+        })
+
+        $('.' + selectedRow).removeClass(selectedRow)
+        table.value.dt.rows([...rows]).nodes().each(n => n.classList.add(selectedRow))
+
         if (selection.value[0].length) {
             $('.selected-only').removeClass('disabled')
         } else {
@@ -375,9 +550,12 @@ function selectionChanged() {
     }
 }
 function openEditLink() {
-    const link = selection.value?.data()?.[0].editLink
-    if (link) {
-        window.open(link, '_blank', 'noopener,noreferrer')
+    const row = selection.value?.[0][0].row
+    if (typeof row != undefined) {
+        const link = (table.value?.dt.row(row).data() as typeof data.value[number]).editLink
+        if (link) {
+            window.open(link, '_blank', 'noopener,noreferrer')
+        }
     }
 }
 
@@ -622,7 +800,6 @@ function toggleCheckbox(config: ButtonConfig, checked: boolean) {
             config.action?.(e, dt, node, config2, callback as any)
         },
     }
-    return
 }
 const buttons
     = computed(() => [
@@ -686,13 +863,9 @@ const buttons
             titleAttr: 'Upravit hodnotu pro zobrazení (neovlivní původní data v přihlášce)',
             className: 'selected-only disabled',
             action: editOverlay,
-        }] : [{
-            extend: 'collection',
-            text: 'Účastník',
-            className: 'selected-only disabled',
-            buttons: [
+            split: [
                 {
-                    text: useIconEl('edit') + ' Upravit údaje',
+                    text: useIconEl('edit') + ' Upravit přihlášku',
                     action: openEditLink,
                 }, {
                     text: useIconEl('account-question') + ' Změnit stav',
@@ -703,8 +876,8 @@ const buttons
                     })),
                     autoClose: true,
                 },
-            ],
-        }]), {
+            ]
+        }] : []), {
             text: useIconEl('content-copy'),
             className: 'selected-only disabled',
             titleAttr: 'Zkopíruje všechny vybrané buňky do schránky. Pokud je vybráno více buněk v jednom řádku, budou sloučeny do jedné buňky oddělené čárkou.',
@@ -721,7 +894,7 @@ const buttons
             ],
         }, {
             extend: 'print',
-            text: 'Tabulka',
+            text: 'Ubytovací list',
             autoClose: true,
             autoPrint: false,
             title: '',
@@ -815,11 +988,12 @@ function goToFormSettings() {
 }
 
 function selectAll() {
-    table.value?.dt.rows().select()
+    table.value?.dt.cells({ page: 'all' }).select()
 }
 
 function deselect() {
     table.value?.dt.rows().deselect()
+    table.value?.dt.cells().deselect()
 }
 
 function selectedMapped(pickKeys?: (val: typeof data.value[number], key: string) => boolean) {
@@ -1036,7 +1210,7 @@ onMounted(() => setTimeout(() => {
     }
 }
 
-.editMode td {
+#applications td {
     user-select: none;
 }
 
@@ -1063,5 +1237,17 @@ td.overlayed {
 
 .filtered .dtcc-button-icon line {
     stroke: orange
+}
+
+.selected-row {
+    position: relative;
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(to right, #00000023, transparent)
+    }
 }
 </style>

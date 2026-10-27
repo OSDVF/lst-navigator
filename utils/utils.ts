@@ -295,3 +295,33 @@ export function assignDeepIfTruish<T extends object, U>(target: T, source: U): T
 export function useIconEl(name: string, title?: string, style?: string) {
     return `<span tabindex='0' title='${title ?? ''}' class='icon' style='--icon: url(https://api.iconify.design/mdi/${name}.svg);${style ?? ''}'></span>`
 }
+
+export function boundingRect(cells: [number, number][]) {
+    let minCol = Infinity
+    let maxCol = -1
+    let minRow = Infinity
+    let maxRow = -1
+    for (const [r, c] of cells) {
+        if (r < minRow) {
+            minRow = r
+        }
+        if (r > maxRow) {
+            maxRow = r
+        }
+        if (c < minCol) {
+            minCol = c
+        }
+        if (c > maxCol) {
+            maxCol = c
+        }
+    }
+    return {minRow, minCol, maxRow, maxCol}
+}
+
+export function disposeBy<T extends Function>(callback: T) {
+    return {
+        [Symbol.dispose]() {
+            callback()
+        },
+    }
+}

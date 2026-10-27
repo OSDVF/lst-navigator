@@ -117,6 +117,7 @@ definePageMeta({
     title: 'Výsledky zpětné vazby',
     layout: 'admin',
     middleware: ['auth'],
+    topNav: 'collapsed',
 })
 
 const router = useRouter()
