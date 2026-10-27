@@ -7,13 +7,15 @@
             <summary>
                 Na tabulku jsou aplikovány filtry
             </summary>
-            <FilterBadge v-for="(values, key) in filteredBy" :key="`filter${key}`"
+            <FilterBadge
+                v-for="(values, key) in filteredBy" :key="`filter${key}`"
                 :model-value="values.map((v: string) => ({ value: v }))"
                 :title="decodeHTMLEntities(stripHtml(columns[key].title))" @delete="deleteFilter(key)" />
         </details>
         <ProgressBar v-if="applications.loadingApplications" />
-        <LazyDataTable v-else-if="showTable" id="applications" ref="table" class="display compact fancy"
-            ondragstart="return false;" ondrop="return false;" @contextmenu="contextMenu" :options="{
+        <LazyDataTable
+            v-else-if="showTable" id="applications" ref="table" class="display compact fancy"
+            ondragstart="return false;" ondrop="return false;" :options="{
                 deferRender: true,
                 responsive, colReorder: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: columnControl,
@@ -50,14 +52,16 @@
                     keys: true,
                 },
                 scrollY: scrollY as any,
-            }" :data="data" :columns="columns" @dblclick="tableDblClick" @select="selectionChanged(false)"
-            @deselect="selectionChanged(false)" />
+            }" :data="data" :columns="columns" @contextmenu="contextMenu" @dblclick="tableDblClick"
+            @select="selectionChanged(false)" @deselect="selectionChanged(false)" />
         <Teleport v-if="mounted" to="#topNav">
             <div ref="dtButtons" class="dtButtons">
                 <span>
-                    <input v-model="searchDebounced" type="search" placeholder="Hledat..." class="dt-search dt-input"
+                    <input
+                        v-model="searchDebounced" type="search" placeholder="Hledat..." class="dt-search dt-input"
                         @input="isSearching = true">
-                    <button class="dt-button" :disabled="!isSearching"
+                    <button
+                        class="dt-button" :disabled="!isSearching"
                         @click="table?.dt.columns().columnControl.searchClear(); search = ''; table?.dt.draw()">
                         <Icon name="mdi:filter-off" />
                     </button>
@@ -83,8 +87,16 @@
         <p v-else-if="refreshResult.error" class="error">
             <code>{{ refreshResult.error?.message || refreshResult.error?.code || refreshResult.error?.http }}</code>
         </p>
-        <Teleport to="#overlay" v-if="signatureEnabled">
-            <SignatureDraw ref="signature" />
+        <Teleport v-if="signatureEnabled" to="#overlay">
+            <div class="signature-overlay">
+                <div class="signature-container">
+                    <SignatureDraw ref="signature" />
+                    <div class="signature-buttons">
+                        <button @click="signatureEnabled = false">Zrušit</button>
+                        <button @click="saveSignature">Uložit</button>
+                    </div>
+                </div>
+            </div>
         </Teleport>
     </div>
 </template>
@@ -122,7 +134,7 @@ definePageMeta({
 const mounted = ref(false)
 onMounted(() => {
     mounted.value = true
-    hasTouchscreen.value = window.matchMedia("(any-pointer: coarse)").matches
+    hasTouchscreen.value = window.matchMedia('(any-pointer: coarse)').matches
 })
 const app = useNuxtApp()
 const applications = useApplications()
@@ -150,7 +162,42 @@ const secretsError = ref(false)
 const sweepMode = ref(false)
 const signature = useTemplateRef<InstanceType<typeof SignatureDraw>>('signature')
 const signatureEnabled = ref(false)
+const signResponseId = ref<string | null>(null)
 const hasTouchscreen = ref(false)
+
+function signRow(id: string) {
+    ui.overlayEnabled = true
+    signResponseId.value = id
+    signatureEnabled.value = true
+}
+
+async function saveSignature() {
+    if (!signResponseId.value) { return }
+    const imageData = signature.value?.getImage()
+    if (!imageData) {
+        alert('Podpis je prázdný')
+        return
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = imageData.width
+    canvas.height = imageData.height
+    const ctx = canvas.getContext('2d')
+    if (ctx) {
+        ctx.putImageData(imageData, 0, 0)
+        // Compress and convert to base64
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.4)
+
+        using _ = ui.loading()
+        await setDocT(responseDoc(signResponseId.value), {
+            signature: dataUrl,
+        }, { merge: true })
+    }
+
+    signatureEnabled.value = false
+    signResponseId.value = null
+    signature.value?.clear()
+}
 
 watch(searchDebounced, val => {
     if (table.value) {
@@ -525,11 +572,11 @@ function contextMenu(e: Event) {
 
 // call again after a draw to re-anchor listeners in case the whole table node was replaced
 // (reloaded). Idempotent per node via the WeakSet guard.
-let selectionChangedDisabled = false;
+let selectionChangedDisabled = false
 watch([() => table.value?.dt], () => { dragWireTable() }, { immediate: true })
 function selectionChanged(ignoreFocused?: boolean) {
     if (table.value && !selectionChangedDisabled) {
-        selectionChangedDisabled = true;
+        selectionChangedDisabled = true
         using _ = disposeBy(() => selectionChangedDisabled = false)
         const focused = table.value.dt.cells('.focus')
         // convert rows to cells
@@ -562,7 +609,7 @@ function selectionChanged(ignoreFocused?: boolean) {
 }
 function openEditLink() {
     const row = selection.value?.[0][0].row
-    if (typeof row != undefined) {
+    if (typeof row != 'undefined') {
         const link = (table.value?.dt.row(row).data() as typeof data.value[number]).editLink
         if (link) {
             window.open(link, '_blank', 'noopener,noreferrer')
@@ -824,6 +871,16 @@ const buttons
                     titleAttr: 'Ovládá, zdali mají být zobrazeny zrušené a odmitné přihlášky',
                     action() { applications.includeCancelled = !applications.includeCancelled },
                 }, applications.includeCancelled),
+                {
+                    text: 'Podepsat',
+                    action: () => {
+                        const rows = table.value?.dt.rows('.' + selectedRow)
+                        const id = rows?.data()[0].id
+                        if (id) {
+                            signRow(id)
+                        }
+                    },
+                },
                 //Rozbalovací řádky
                 toggleCheckbox({
                     text: 'Rozbalovací řádky',
@@ -891,7 +948,7 @@ const buttons
                     })),
                     autoClose: true,
                 },
-            ]
+            ],
         }] : []), {
             text: useIconEl('content-copy'),
             className: 'selected-only disabled',
@@ -1163,7 +1220,7 @@ const columns = computed(() => {
             visible: false,
         },
         { data: 'edits', title: 'Počet úprav', visible: false },
-        { data: null, title: 'Podpis', render: () => '', className: 'print', visible: false },
+        { data: 'signature', title: 'Podpis', render: (data: string) => data ? `<img src="${data}">` : '', className: 'print', visible: false },
     ].map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
 function renderState(data: ApplicationState) {
@@ -1206,6 +1263,34 @@ onMounted(() => setTimeout(() => {
 </script>
 
 <style lang="scss">
+.signature-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.signature-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90vw;
+    max-width: 500px;
+    height: auto;
+}
+
+.signature-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
 .confirmed td {
     background: #00800038
 }

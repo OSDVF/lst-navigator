@@ -1,8 +1,8 @@
 <template>
-    <div id="overlay" v-if="ui.overlayEnabled">
+    <div v-if="ui.overlayEnabled" id="overlay">
         <LazyClientOnly>
-            <div role="dialog" v-if="ui.overlayText">
-                <Icon :name="ui.overlayIconName ?? undefined" v-if="ui.overlayIconName" />
+            <div v-if="ui.overlayText" role="dialog">
+                <Icon v-if="ui.overlayIconName" :name="ui.overlayIconName ?? undefined" />
                 {{ ui.overlayTitleText }}<span>{{ ui.overlayText }}</span>
             </div>
             <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />

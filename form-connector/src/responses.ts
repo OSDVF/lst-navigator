@@ -27,6 +27,7 @@ export type ResponseRecord = {
     questions: QuestionResponse[],
     timestamp: number,
     state?: ApplicationState,
+    signature?: string,
 }
 
 export function updateResponse(form: GoogleAppsScript.Forms.Form, response: GoogleAppsScript.Forms.FormResponse, dry = false): boolean | undefined {
