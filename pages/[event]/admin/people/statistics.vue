@@ -32,33 +32,35 @@
                         @click="sendWhereNotSent">💌</button>
                 </label>
             </div>
-            <table class="borders collapse cell-p-1 col-stripes">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>{{ "\u{1F9D1}\u{200D}\u{1F4BC}" }}</th>
-                        <th v-for="(stat, key) in statisticsKeys" :key="`h${key}`" :colspan="stat.length">
-                            {{ key }}
-                        </th>
-                    </tr>
-                    <tr>
-                        <th />
-                        <th />
-                        <template v-for="(stat, key) in statisticsKeys" :key="`h${key}`">
-                            <th v-for="key2 in stat" :key="`h${key}${key2}`">{{ key2 == 'any' ? 'Celkem' : key2 }}</th>
-                        </template>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="day in statistics" :key="day.date.getTime()" class="info">
-                        <td>{{ day.date.getDate() }}.{{ day.date.getMonth() + 1 }}.</td>
-                        <td>{{ day.people }}</td>
-                        <template v-for="(stat, key) in day.statistics" :key="`${day.date.getTime()}${key}`">
-                            <td v-for="val in stat" :key="`${day.date.getTime()}${key}${val}`">{{ val || '' }}</td>
-                        </template>
-                    </tr>
-                </tbody>
-            </table>
+            <div style="overflow-x: auto;width:100%">
+                <table class="borders collapse cell-p-1 col-stripes">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>{{ "\u{1F9D1}\u{200D}\u{1F4BC}" }}</th>
+                            <th v-for="(stat, key) in statisticsKeys" :key="`h${key}`" :colspan="stat.length">
+                                {{ key }}
+                            </th>
+                        </tr>
+                        <tr>
+                            <th />
+                            <th />
+                            <template v-for="(stat, key) in statisticsKeys" :key="`h${key}`">
+                                <th v-for="key2 in stat" :key="`h${key}${key2}`">{{ key2 == 'any' ? 'Celkem' : key2 }}</th>
+                            </template>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="day in statistics" :key="day.date.getTime()" class="info">
+                            <td>{{ day.date.getDate() }}.{{ day.date.getMonth() + 1 }}.</td>
+                            <td>{{ day.people }}</td>
+                            <template v-for="(stat, key) in day.statistics" :key="`${day.date.getTime()}${key}`">
+                                <td v-for="val in stat" :key="`${day.date.getTime()}${key}${val}`">{{ val || '' }}</td>
+                            </template>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <h3>Délka pobytu</h3>
             <table class="borders collapse cell-p-1 col-stripes">
                 <thead>
