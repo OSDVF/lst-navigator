@@ -82,9 +82,7 @@
         <ProgressBar
             v-show="cloud.eventLoading || $downloadingUpdate || ui.isLoading || gapi.loading"
             class="backgroundLoading bottom-0" />
-        <LazyClientOnly>
-            <vue-easy-lightbox :visible="ui.visibleRef" :imgs="ui.imagesRef" @hide="ui.visibleRef = false" />
-        </LazyClientOnly>
+        <Overlay />
     </div>
 </template>
 

@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div :class="{ selecting }">
         <p v-if="secretsError" class="error">
             Registrační formulář je <NuxtLink :to="formSettings">třeba propojit s aplikací.</NuxtLink>
         </p>
@@ -13,7 +13,7 @@
         </details>
         <ProgressBar v-if="applications.loadingApplications" />
         <LazyDataTable v-else-if="showTable" id="applications" ref="table" class="display compact fancy"
-            ondragstart="return false;" ondrop="return false;" :options="{
+            ondragstart="return false;" ondrop="return false;" @contextmenu="contextMenu" :options="{
                 deferRender: true,
                 responsive, colReorder: true, stateRestore: true, scroller: true, scrollCollapse: true, keys: true,
                 columnControl: columnControl,
@@ -50,8 +50,8 @@
                     keys: true,
                 },
                 scrollY: scrollY as any,
-            }" :data="data" :columns="columns" @dblclick="tableDblClick" @select="selectionChanged"
-            @deselect="selectionChanged" />
+            }" :data="data" :columns="columns" @dblclick="tableDblClick" @select="selectionChanged(false)"
+            @deselect="selectionChanged(false)" />
         <Teleport v-if="mounted" to="#topNav">
             <div ref="dtButtons" class="dtButtons">
                 <span>
@@ -83,6 +83,9 @@
         <p v-else-if="refreshResult.error" class="error">
             <code>{{ refreshResult.error?.message || refreshResult.error?.code || refreshResult.error?.http }}</code>
         </p>
+        <Teleport to="#overlay" v-if="signatureEnabled">
+            <SignatureDraw ref="signature" />
+        </Teleport>
     </div>
 </template>
 
@@ -90,6 +93,7 @@
 import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, CellIdx, ConfigColumns } from 'datatables.net-dt'
 import type StateRestore from 'datatables.net-staterestore/types/StateRestore'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
+import type { SignatureDraw } from '#components'
 import { type QuestionResponse, type ResponseRecord, ApplicationState } from '~/form-connector/src/responses'
 import { SpecialApplicationFields } from '~/types/cloud'
 import { deleteField, doc, updateDoc } from 'firebase/firestore'
@@ -116,7 +120,10 @@ definePageMeta({
 })
 
 const mounted = ref(false)
-onMounted(() => mounted.value = true)
+onMounted(() => {
+    mounted.value = true
+    hasTouchscreen.value = window.matchMedia("(any-pointer: coarse)").matches
+})
 const app = useNuxtApp()
 const applications = useApplications()
 const api = useRegistrationForm()
@@ -141,6 +148,9 @@ const searchDebounced = refDebounced(search, 500)
 const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
 const secretsError = ref(false)
 const sweepMode = ref(false)
+const signature = useTemplateRef<InstanceType<typeof SignatureDraw>>('signature')
+const signatureEnabled = ref(false)
+const hasTouchscreen = ref(false)
 
 watch(searchDebounced, val => {
     if (table.value) {
@@ -375,20 +385,11 @@ const selection
 // We attach on the stable table element so swept cells are recorded by coordinate; the
 // lift-off event (`mouseup` / `pointerend`) ends the region and commits the cell block to a
 // persistent set of "row|column" keys that accumulate ("multiple areas") across drags.
-// On touchscreens the first anchor is gated with a short delay so an accidental scroll tap
-// doesn't lock in a region immediately.
-const DRAG_DOWN_EVENTS = ['pointerstart', 'mousedown'] as const   // marks the start of a drag
-const DRAG_ROW_EVENTS = ['pointerover', 'mouseover'] as const     // swept cells during a drag
-const DRAG_LIFT_EVENTS = ['mouseup', 'pointerend'] as const        // ends a drag on lift-off
-const DRAG_TouchDelay = 300 // ms ignored right after touch-start (lets scrolling pass)
-function isTouchscreen() {
-    return typeof (globalThis as any).beforeinstallprompt !== 'undefined'
-}
+
 // pressed cell indices [row,column] swept during a drag and persisted across drags (multiple areas)
 const dragKeys: Array<[number, number]> = []  // dragged cells, committed on lift-off; deduped on insert
-const pastRegions: [number, number][] = []
-let dragStartedAt: number | null = null         // touch-delay anchor timer, set by the down event
-let dragActive = false                          // a drag is in progress; sweeps before it are ignored
+let dragActive = false               // a drag is in progress; sweeps before it are ignored
+const selecting = ref(false)
 // does this exact [row,column] already appear in dragKeys? (arrays compare by value, not reference)
 function dragHasKey(r: number, c: number): boolean {
     for (const k of dragKeys) { if (k[0] === r && k[1] === c) { return true } }
@@ -407,22 +408,19 @@ function dragResolveCell(dt: any, node: HTMLElement): { row: number; column: num
 // state, and persisted keys across drags keep disconnected areas. selectionChanged re-syncs the
 // CSS from that state. Indices were resolved at start/record, so this just groups them — no cell
 // re-resolution here. Fires on lift-off only.
-function dragFinalize(dt: Api<typeof data.value>, e: Event) {
-    // An accidental touch tap that lifted too fast must not lock anything in; prior drags stay selected.
-    if (isTouchscreen() && dragStartedAt != null
-        && performance.now() - dragStartedAt < DRAG_TouchDelay) { dragActive = false; dragStartedAt = null; return }
-    if (!dragKeys.length) { dragStartedAt = null; dragActive = false; return }
+function dragFinalize(dt: Api<typeof data.value>, e: PointerEvent) {
+    if (!dragKeys.length) { dragActive = false; return }
     if (sweepMode.value) {
         for (const [r, col] of dragKeys) {
             dt.cells(r, col).select()
         }
     } else {
-        const node = resolveDragNode(e.target as HTMLElement | null)
-        if (node) { dragRecordCell(node) }
+        const node = resolveDragNode(e)
+        if (node) { dragRecordCell(node, e) }
 
         const bb = boundingRect(dragKeys)
         const cols = [...new Array(bb.maxCol - bb.minCol + 1).keys().map(k => k + bb.minCol)]
-        const clear = e instanceof MouseEvent && !e.shiftKey && !e.ctrlKey
+        const clear = !e.shiftKey && !e.ctrlKey && !selecting.value
 
         const sel = selection.value?.toArray()
         const selectedSingle = dragKeys.length == 1
@@ -432,7 +430,8 @@ function dragFinalize(dt: Api<typeof data.value>, e: Event) {
             dt.cells({ page: 'all' }).deselect()
             dt.rows({ page: 'all' }).deselect()
         }
-        if (selectedSingle) {//deselect single already selected cell
+        if (selectedSingle) {// deselect single already selected cell
+            // TODO togglable selection for multiple cell areas
             const coords = dragKeys[0]
             nextTick(() => {
                 selectionChangedDisabled = true
@@ -448,33 +447,34 @@ function dragFinalize(dt: Api<typeof data.value>, e: Event) {
 
         dragKeys.splice(0)
     }
-    dragActive = false; dragStartedAt = null
+    dragActive = false
 }
 // record a pressed cell's index [row,column] during an active drag. The down seeds the first
 // index; sweeps add more — cells resolve here, never at finalize. Sweeps before the down event
 // (e.g. incidental pointer sweeps while not dragging) are ignored.
-function dragRecordCell(node: HTMLElement) {
+function dragRecordCell(node: HTMLTableCellElement, e: PointerEvent) {
     if (!dragActive) { return }
-    const now = performance.now()
-    // gate anchors set by the down event; ignore crosses within DRAG_TouchDelay so a scroll
-    // tap isn't read as a sweep
-    if (isTouchscreen() && dragStartedAt != null && now - dragStartedAt < DRAG_TouchDelay) { return }
-    const idx = dragResolveCell(table.value?.dt as any, node)
+
+    const idx = dragResolveCell(table.value!.dt as any, node)
     if (!idx || idx.row < 0 || idx.column < 0) { return }
-    if (!dragHasKey(idx.row, idx.column)) { dragKeys.push([idx.row, idx.column]) }
+    if (!dragHasKey(idx.row, idx.column)) {
+        dragKeys.push([idx.row, idx.column])
+        $(table.value!.dt.table().node()).find('.focus').removeClass('focus')
+        node.classList.add('focus')
+    }
 }
 // attach all drag listeners once to the whole table element instead of per row node.
 // A drag is a three-part gesture on DOM events:
-//   * DOWN  (`pointerstart` / `mousedown`): the moment the user places their finger/hand on
+//   * DOWN  `pointerdown`: the moment the user places their finger/hand on
 //           the screen. This anchors the touch-clock and seeds the first cell so the region
 //           begins from where they start, not from an ambiguous `-over`.
-//   * ROW   (`pointerover` / `mouseover`): every cell swept over between down and lift;
+//   * ROW   `pointerover`: every cell swept over between down and lift;
 //           recorded only while a drag is active.
-//   * LIFT  (`mouseup` / `pointerend`): ends the region and commits the cell block exactly
+//   * LIFT  `pointerup`: ends the region and commits the cell block exactly
 //           once. Keeping listeners on the one stable table node means no per-draw rebuild.
 const dragTableHooked = new WeakSet<HTMLElement>()
-function resolveDragNode(target: HTMLElement | null) {
-    const node = target?.closest('td')
+function resolveDragNode(e: PointerEvent) {
+    const node = document.elementFromPoint(e.clientX, e.clientY)?.closest('td') ?? (e.target as HTMLElement)?.closest('td')
     return node instanceof HTMLTableCellElement ? node : null
 }
 function dragWireTable() {
@@ -483,35 +483,46 @@ function dragWireTable() {
     dragTableHooked.add(el)
     // down: start a drag. Anchor the touch-clock here (not on the first `-over`) so incidental
     // sweeps while not dragging are ignored, and seed the starting cell into the region.
-    const start = (e: Event) => {
-        dragActive = true
-        if (isTouchscreen()) { dragStartedAt = performance.now(); return }
-        // desktop anchors on the down event and records the pressed cell straight away
-        const node = resolveDragNode(e.target as HTMLElement | null)
-        if (node) { dragRecordCell(node) }
-    }
-    // sweep: record each crossed cell, but only inside an active drag.
-    const sweep = (e: Event) => {
-        if (!sweepMode.value) {
+    const start = async (e: PointerEvent) => {
+        const node = resolveDragNode(e)
+        if (e.pointerType != 'mouse' && !selecting.value) {
+            if (node) {
+                selectionChangedDisabled = true
+                deselect()
+                table.value!.dt.cell(node).select()
+                selectionChangedDisabled = false
+            }
             return
         }
-        const node = resolveDragNode(e.target as HTMLElement | null)
-        if (node) { dragRecordCell(node) }
+        dragActive = true
+        // desktop anchors on the down event and records the pressed cell straight away
+        if (node) { dragRecordCell(node, e) }
     }
-    for (const ev of DRAG_DOWN_EVENTS) { el.addEventListener(ev, start) }
-    for (const ev of DRAG_ROW_EVENTS) { el.addEventListener(ev, sweep) }
-    // lift: finalize the in-progress region once on lift-off. Mouse users fire `mouseup`;
-    // touchusers fire `pointerend`.
-    for (const ev of DRAG_LIFT_EVENTS) {
-        el.addEventListener(ev, (e) => {
-            const dt = table.value?.dt as any
-            if (dt) { dragFinalize(dt, e) }
-        })
+    // sweep: record each crossed cell, but only inside an active drag.
+    const sweep = (e: PointerEvent) => {
+        if (!sweepMode.value && !selecting.value) {
+            return
+        }
+        const node = resolveDragNode(e)
+        if (node) { dragRecordCell(node, e) }
     }
+    el.addEventListener('pointerdown', start)
+    el.addEventListener('pointerenter', sweep)
+    // lift: finalize the in-progress region once on lift-off
+    el.addEventListener('pointerup', (e) => {
+        const dt = table.value?.dt as any
+        if (dt) { dragFinalize(dt, e) }
+    })
+
 }
 // listeners live on the stable table node so they need no rebuild; just ensure dt is ready.
 function dragWireTableInit() { nextTick(() => { const dt = table.value?.dt as any; if (dt) { dragWireTable() } }) }
 dragWireTableInit()
+
+function contextMenu(e: Event) {
+    e.preventDefault()
+}
+
 // call again after a draw to re-anchor listeners in case the whole table node was replaced
 // (reloaded). Idempotent per node via the WeakSet guard.
 let selectionChangedDisabled = false;
@@ -520,7 +531,7 @@ function selectionChanged(ignoreFocused?: boolean) {
     if (table.value && !selectionChangedDisabled) {
         selectionChangedDisabled = true;
         using _ = disposeBy(() => selectionChangedDisabled = false)
-        const focused = table.value.dt.cell('.focused')
+        const focused = table.value.dt.cells('.focus')
         // convert rows to cells
         const selectedRows = table.value.dt.rows({ selected: true })
         //table.value.dt.cells(selectedRows.indexes() as any, table.value.dt.columns()[0]).select()
@@ -858,7 +869,11 @@ const buttons
                     },
                 })) : undefined) ?? []),
             ],
-        }, ...(cloud.resolvedPermissions.editSchedule ? [{
+        }, ...(hasTouchscreen.value ? [{
+            text: useIconEl(selecting.value ? 'selection-remove' : 'selection-drag'),
+            titleAttr: selecting.value ? 'Přestat vybírat' : 'Vybrat buňky',
+            action() { selecting.value = !selecting.value },
+        }] : []), ...(cloud.resolvedPermissions.editSchedule ? [{
             text: useIconEl('edit'),
             titleAttr: 'Upravit hodnotu pro zobrazení (neovlivní původní data v přihlášce)',
             className: 'selected-only disabled',
@@ -1249,5 +1264,9 @@ td.overlayed {
         z-index: -1;
         background: linear-gradient(to right, #00000023, transparent)
     }
+}
+
+.selecting * {
+    touch-action: none;
 }
 </style>

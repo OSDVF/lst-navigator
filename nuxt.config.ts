@@ -238,6 +238,7 @@ const config = defineNuxtConfig({
             contentSecurityPolicy: {
                 'img-src': false,//TODO include origins used by events
                 'script-src': false,
+                'script-src-attr': ['\'unsafe-hashes\' \'sha256-2rvfFrggTCtyF5WOiTri1gDS8Boibj4Njn0e+VCBmDI=\''],
                 'frame-ancestors': [
                     '\'self\'', 'https://www.google.com',
                 ],

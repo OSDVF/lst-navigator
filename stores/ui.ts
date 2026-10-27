@@ -1,8 +1,21 @@
 import { defineStore } from 'pinia'
 
+/**
+ * Custom content for a teleported overlay dialog.
+ * A plain `string` is used verbatim; the object form adds an optional title and an icon (mdi name).
+ */
+export type OverlayContent = string | {
+    icon?: string
+    title?: string
+    text: string
+}
+
 export const useUI = defineStore('ui', () => {
     const imagesRef = ref<string[] | string>([])
     const visibleRef = ref(false)
+    const overlayEnabled = ref(false)
+    const overlayContent
+        = ref<OverlayContent | null>(null)
     const error = ref()
     const ignorable = ref(false)
     const _defaultIgnoreText = 'Přesto pokračovat'
@@ -28,6 +41,22 @@ export const useUI = defineStore('ui', () => {
     function showLightBox(images: string[] | string) {
         imagesRef.value = images
         visibleRef.value = true
+    }
+
+    /**
+     * Enable the teleported overlay dialog. Pass custom content to display instead of the default.
+     * Paired with the `Overlay` component's `<Teleport>`. Call `clearOverlay()` to turn it off again.
+     */
+    function showOverlay(content?: OverlayContent) {
+        if (content !== undefined) {
+            overlayContent.value = content
+        }
+        overlayEnabled.value = true
+    }
+
+    function clearOverlay() {
+        overlayEnabled.value = false
+        overlayContent.value = null
     }
 
     /**
@@ -60,7 +89,7 @@ export const useUI = defineStore('ui', () => {
         ignoreText.value = _defaultIgnoreText
     }
 
-    useRouter().afterEach(()=>error)
+    useRouter().afterEach(() => error)
 
     return {
         clearError,
@@ -73,9 +102,24 @@ export const useUI = defineStore('ui', () => {
         loading,
         loadingCount,
         imagesRef,
+        overlayEnabled,
+        overlayText: computed<string>(() => {
+            const c = overlayContent.value
+            return typeof c === 'string' ? c : ((c && typeof c === 'object') ? c.text ?? '' : '')
+        }),
+        overlayTitleText: computed<string>(() => {
+            const c = overlayContent.value
+            return (c && typeof c === 'object') ? c.title ?? '' : ''
+        }),
+        overlayIconName: computed<string | null>(() => {
+            const c = overlayContent.value
+            return (c && typeof c === 'object' && c.icon) ? c.icon : null
+        }),
         isLoading: computed(() => loadingCount.value > 0),
         showError,
         showLightBox,
+        showOverlay,
+        clearOverlay,
         showIgnorableError,
         visibleRef,
     }
