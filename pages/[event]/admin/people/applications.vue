@@ -165,10 +165,14 @@ const signatureEnabled = ref(false)
 const signResponseId = ref<string | null>(null)
 const hasTouchscreen = ref(false)
 
-function signRow(id: string) {
-    ui.overlayEnabled = true
+async function signRow(id: string, existingSignature?: string) {
     signResponseId.value = id
     signatureEnabled.value = true
+    ui.overlayEnabled = true
+    if (existingSignature) {
+        await nextTick()
+        signature.value?.loadImage(existingSignature)
+    }
 }
 
 async function saveSignature() {
@@ -184,6 +188,8 @@ async function saveSignature() {
     canvas.height = imageData.height
     const ctx = canvas.getContext('2d')
     if (ctx) {
+        ctx.fillStyle = 'white'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
         ctx.putImageData(imageData, 0, 0)
         // Compress and convert to base64
         const dataUrl = canvas.toDataURL('image/jpeg', 0.4)
@@ -463,7 +469,7 @@ function dragFinalize(dt: Api<typeof data.value>, e: PointerEvent) {
         }
     } else {
         const node = resolveDragNode(e)
-        if (node) { dragRecordCell(node, e) }
+        if (node) { dragRecordCell(node) }
 
         const bb = boundingRect(dragKeys)
         const cols = [...new Array(bb.maxCol - bb.minCol + 1).keys().map(k => k + bb.minCol)]
@@ -499,7 +505,7 @@ function dragFinalize(dt: Api<typeof data.value>, e: PointerEvent) {
 // record a pressed cell's index [row,column] during an active drag. The down seeds the first
 // index; sweeps add more — cells resolve here, never at finalize. Sweeps before the down event
 // (e.g. incidental pointer sweeps while not dragging) are ignored.
-function dragRecordCell(node: HTMLTableCellElement, e: PointerEvent) {
+function dragRecordCell(node: HTMLTableCellElement) {
     if (!dragActive) { return }
 
     const idx = dragResolveCell(table.value!.dt as any, node)
@@ -543,7 +549,7 @@ function dragWireTable() {
         }
         dragActive = true
         // desktop anchors on the down event and records the pressed cell straight away
-        if (node) { dragRecordCell(node, e) }
+        if (node) { dragRecordCell(node) }
     }
     // sweep: record each crossed cell, but only inside an active drag.
     const sweep = (e: PointerEvent) => {
@@ -551,7 +557,7 @@ function dragWireTable() {
             return
         }
         const node = resolveDragNode(e)
-        if (node) { dragRecordCell(node, e) }
+        if (node) { dragRecordCell(node) }
     }
     el.addEventListener('pointerdown', start)
     el.addEventListener('pointerenter', sweep)
@@ -875,9 +881,9 @@ const buttons
                     text: 'Podepsat',
                     action: () => {
                         const rows = table.value?.dt.rows('.' + selectedRow)
-                        const id = rows?.data()[0].id
-                        if (id) {
-                            signRow(id)
+                        const data = rows?.data()[0]
+                        if (data) {
+                            signRow(data.id, data.signature)
                         }
                     },
                 },

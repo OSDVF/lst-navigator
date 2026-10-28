@@ -1,12 +1,7 @@
 <template>
     <canvas
-        ref="canvas"
-        class="signature-canvas"
-        @pointerdown="startDrawing"
-        @pointermove="draw"
-        @pointerup="stopDrawing"
-        @pointercancel="stopDrawing"
-    ></canvas>
+        ref="canvas" class="signature-canvas" @pointerdown="startDrawing" @pointermove="draw"
+        @pointerup="stopDrawing" @pointercancel="stopDrawing" />
 </template>
 
 <script lang="ts" setup>
@@ -30,7 +25,7 @@ let yMin = Infinity
 let yMax = -Infinity
 
 function setupContext() {
-    if (!context || !canvas.value) return
+    if (!context || !canvas.value) { return }
     context.strokeStyle = props.color
     context.lineWidth = props.lineWidth
     context.lineCap = 'round'
@@ -38,7 +33,7 @@ function setupContext() {
 }
 
 function updateBounds(x: number, y: number) {
-    if (!canvas.value) return
+    if (!canvas.value) { return }
     const pad = Math.ceil(props.lineWidth / 2) + 2
     xMin = Math.max(0, Math.min(xMin, Math.floor(x - pad)))
     xMax = Math.min(canvas.value.width, Math.max(xMax, Math.ceil(x + pad)))
@@ -47,7 +42,7 @@ function updateBounds(x: number, y: number) {
 }
 
 function resizeCanvas() {
-    if (!canvas.value) return
+    if (!canvas.value) { return }
     const rect = canvas.value.getBoundingClientRect()
     const width = Math.floor(rect.width) || 300
     const height = Math.floor(rect.height) || 150
@@ -66,6 +61,9 @@ function resizeCanvas() {
         canvas.value.width = width
         canvas.value.height = height
         setupContext()
+        // Ensure white background
+        context!.fillStyle = 'white'
+        context!.fillRect(0, 0, width, height)
 
         if (savedImage && context) {
             context.putImageData(savedImage, 0, 0)
@@ -76,7 +74,7 @@ function resizeCanvas() {
 let resizeObserver: ResizeObserver | undefined
 
 onMounted(() => {
-    if (!canvas.value) return
+    if (!canvas.value) { return }
     context = canvas.value.getContext('2d') ?? undefined
     resizeCanvas()
 
@@ -95,7 +93,7 @@ watch(() => [props.color, props.lineWidth], () => {
 })
 
 function getCanvasCoords(event: PointerEvent) {
-    if (!canvas.value) return { x: 0, y: 0 }
+    if (!canvas.value) { return { x: 0, y: 0 } }
     const rect = canvas.value.getBoundingClientRect()
     return {
         x: event.clientX - rect.left,
@@ -104,7 +102,7 @@ function getCanvasCoords(event: PointerEvent) {
 }
 
 function startDrawing(event: PointerEvent) {
-    if (!canvas.value || !context) return
+    if (!canvas.value || !context) { return }
     canvas.value.setPointerCapture(event.pointerId)
     isDrawing = true
     const { x, y } = getCanvasCoords(event)
@@ -122,7 +120,7 @@ function startDrawing(event: PointerEvent) {
 }
 
 function draw(event: PointerEvent) {
-    if (!isDrawing || !context) return
+    if (!isDrawing || !context) { return }
     const { x, y } = getCanvasCoords(event)
 
     context.beginPath()
@@ -138,7 +136,7 @@ function draw(event: PointerEvent) {
 }
 
 function stopDrawing(event: PointerEvent) {
-    if (!isDrawing || !canvas.value) return
+    if (!isDrawing || !canvas.value) { return }
     isDrawing = false
     try {
         canvas.value.releasePointerCapture(event.pointerId)
@@ -148,8 +146,9 @@ function stopDrawing(event: PointerEvent) {
 }
 
 function clear() {
-    if (!canvas.value || !context) return
-    context.clearRect(0, 0, canvas.value.width, canvas.value.height)
+    if (!canvas.value || !context) { return }
+    context.fillStyle = 'white'
+    context.fillRect(0, 0, canvas.value.width, canvas.value.height)
     xMin = Infinity
     xMax = -Infinity
     yMin = Infinity
@@ -165,13 +164,34 @@ function getImage(): ImageData | undefined {
     return context.getImageData(xMin, yMin, width, height)
 }
 
+function loadImage(dataUrl: string) {
+    if (!canvas.value || !context) {return}
+    const img = new Image()
+    img.onload = () => {
+        clear()
+        // Ensure background is not forced black by something unexpected
+        context!.save()
+        context!.fillStyle = '#ffffff'
+        context!.fillRect(0, 0, canvas.value!.width, canvas.value!.height)
+        context!.drawImage(img, 0, 0)
+        context!.restore()
+        
+        xMin = 0
+        yMin = 0
+        xMax = img.width
+        yMax = img.height
+    }
+    img.src = dataUrl
+}
+
 defineExpose({
     getImage,
     clear,
+    loadImage,
 })
 </script>
 
-<style scoped>
+<style>
 .signature-canvas {
     touch-action: none;
     user-select: none;
