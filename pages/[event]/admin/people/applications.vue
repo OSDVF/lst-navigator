@@ -93,6 +93,7 @@
                     <SignatureDraw ref="signature" />
                     <div class="signature-buttons">
                         <button @click="signatureEnabled = false">Zrušit</button>
+                        <button @click="signature?.clear()">Smazat</button>
                         <button @click="saveSignature">Uložit</button>
                     </div>
                 </div>
@@ -179,25 +180,29 @@ async function saveSignature() {
     if (!signResponseId.value) { return }
     const imageData = signature.value?.getImage()
     if (!imageData) {
-        alert('Podpis je prázdný')
-        return
-    }
-
-    const canvas = document.createElement('canvas')
-    canvas.width = imageData.width
-    canvas.height = imageData.height
-    const ctx = canvas.getContext('2d')
-    if (ctx) {
-        ctx.fillStyle = 'white'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.putImageData(imageData, 0, 0)
-        // Compress and convert to base64
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.4)
+        if (!confirm('Podpis je prázdný. Chcete jej smazat?')) { return }
 
         using _ = ui.loading()
-        await setDocT(responseDoc(signResponseId.value), {
-            signature: dataUrl,
-        }, { merge: true })
+        await updateDoc(responseDoc(signResponseId.value), {
+            signature: deleteField(),
+        })
+    } else {
+        const canvas = document.createElement('canvas')
+        canvas.width = imageData.width
+        canvas.height = imageData.height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+            ctx.fillStyle = 'white'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+            ctx.putImageData(imageData, 0, 0)
+            // Compress and convert to base64
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.4)
+
+            using _ = ui.loading()
+            await updateDoc(responseDoc(signResponseId.value), {
+                signature: dataUrl,
+            })
+        }
     }
 
     signatureEnabled.value = false
