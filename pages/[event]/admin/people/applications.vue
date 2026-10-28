@@ -645,9 +645,15 @@ async function tableDblClick(event: MouseEvent) {
     if (!dblClickActive) {
         dblClickActive = true
         const cell = (event.target as HTMLElement).closest('td')
-        if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
-            table.value?.dt.cell(cell).select()
-            await editOverlay()
+        if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell && 'column' in cell._DT_CellIndex) {
+            const colData = table.value?.dt.column(cell._DT_CellIndex.column).dataSrc()
+            if (colData === 'signature') {
+                const rowData = table.value!.dt.row(cell._DT_CellIndex.row).data() as any
+                signRow(rowData.id, rowData.signature)
+            } else {
+                table.value?.dt.cell(cell).select()
+                await editOverlay()
+            }
         }
         setTimeout(() => dblClickActive = false, 200)
     }
