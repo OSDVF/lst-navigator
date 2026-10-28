@@ -646,14 +646,8 @@ async function tableDblClick(event: MouseEvent) {
         dblClickActive = true
         const cell = (event.target as HTMLElement).closest('td') as HTMLTableCellElement
         if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
-            const colData = table.value?.dt.column((cell as any)._DT_CellIndex.column).dataSrc()
-            if (colData === 'signature') {
-                const rowData = table.value!.dt.row((cell as any)._DT_CellIndex.row).data() as any
-                signRow(rowData.id, rowData.signature)
-            } else {
-                table.value?.dt.cell(cell).select()
-                await editOverlay()
-            }
+            table.value?.dt.cell(cell).select()
+            await editOverlay()
         }
         setTimeout(() => dblClickActive = false, 200)
     }
@@ -672,6 +666,10 @@ async function editOverlay() {
         return
     }
     const doc = responseDoc(response.id)
+    if (col === 'signature') {
+        signRow(response.id, response.signature)
+        return
+    }
     const selData = selection.value!.data()
     let p: string | string[] | null = prompt('Zadejte hodnotu pro přepsání, nebo hodnotu smažte pro vrácení hodnoty z přihlášky', selData?.[0])
 
