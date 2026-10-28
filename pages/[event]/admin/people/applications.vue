@@ -644,11 +644,11 @@ let dblClickActive = false
 async function tableDblClick(event: MouseEvent) {
     if (!dblClickActive) {
         dblClickActive = true
-        const cell = (event.target as HTMLElement).closest('td')
-        if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell && 'column' in cell._DT_CellIndex) {
-            const colData = table.value?.dt.column(cell._DT_CellIndex.column).dataSrc()
+        const cell = (event.target as HTMLElement).closest('td') as HTMLTableCellElement
+        if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
+            const colData = table.value?.dt.column((cell as any)._DT_CellIndex.column).dataSrc()
             if (colData === 'signature') {
-                const rowData = table.value!.dt.row(cell._DT_CellIndex.row).data() as any
+                const rowData = table.value!.dt.row((cell as any)._DT_CellIndex.row).data() as any
                 signRow(rowData.id, rowData.signature)
             } else {
                 table.value?.dt.cell(cell).select()
@@ -750,6 +750,7 @@ const complexColumns = computed(() => [
         data: 'email',
         title: 'E-mail',
         className: 'print email',
+        visible: false,
     },
     {
         data: 'name',
@@ -759,6 +760,7 @@ const complexColumns = computed(() => [
         data: 'town',
         title: 'Město',
         className: 'print',
+        visible: false,
     }, {
         data: 'arrival',
         title: 'Příjezd',
@@ -776,6 +778,7 @@ const complexColumns = computed(() => [
         title: 'Telefon',
         render: renderPhone,
         className: 'hover-visible-trigger',
+        visible: false,
     },
 ])
 
@@ -888,16 +891,6 @@ const buttons
                     titleAttr: 'Ovládá, zdali mají být zobrazeny zrušené a odmitné přihlášky',
                     action() { applications.includeCancelled = !applications.includeCancelled },
                 }, applications.includeCancelled),
-                {
-                    text: 'Podepsat',
-                    action: () => {
-                        const rows = table.value?.dt.rows('.' + selectedRow)
-                        const data = rows?.data()[0]
-                        if (data) {
-                            signRow(data.id, data.signature)
-                        }
-                    },
-                },
                 //Rozbalovací řádky
                 toggleCheckbox({
                     text: 'Rozbalovací řádky',
@@ -964,6 +957,15 @@ const buttons
                         action: () => changeState(parseInt(key) as ApplicationState),
                     })),
                     autoClose: true,
+                }, {
+                    text: useIconEl('signature-freehand') + ' Podepsat',
+                    action: () => {
+                        const rows = table.value?.dt.rows('.' + selectedRow)
+                        const data = rows?.data()[0]
+                        if (data) {
+                            signRow(data.id, data.signature)
+                        }
+                    },
                 },
             ],
         }] : []), {
@@ -1189,6 +1191,7 @@ const columns = computed(() => {
                 title: q?.title ?? val.toString(),
                 columnControl: (q?.values.size ?? 0) < 5 ? searchList : undefined,
                 render: q?.multi ? renderMultiBool : ellipsis.value ?? '',
+                visible: false,
             })
         }
     }
@@ -1237,7 +1240,7 @@ const columns = computed(() => {
             visible: false,
         },
         { data: 'edits', title: 'Počet úprav', visible: false },
-        { data: 'signature', title: 'Podpis', render: (data: string) => data ? `<img src="${data}">` : '', className: 'print', visible: false },
+        { data: 'signature', title: 'Podpis', render: (data: string) => data ? `<img src="${data}">` : '', className: 'print' },
     ].map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
 function renderState(data: ApplicationState) {
