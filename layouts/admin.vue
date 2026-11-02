@@ -82,7 +82,7 @@
         <ProgressBar
             v-show="cloud.eventLoading || $downloadingUpdate || ui.isLoading || gapi.loading"
             class="backgroundLoading bottom-0" />
-        <Overlay />
+        <DialogOverlay />
     </div>
 </template>
 

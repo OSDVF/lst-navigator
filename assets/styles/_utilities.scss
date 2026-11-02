@@ -16,355 +16,364 @@
 }
 
 .disabled {
-  pointer-events: none;
-  opacity: .8
+    pointer-events: none;
+    opacity: .8
 }
 
 .inline {
-  display: inline;
+    display: inline;
 }
 
 .inline-block {
-  display: inline-block;
+    display: inline-block;
 }
 
 .inline-flex {
-  display: inline-flex;
+    display: inline-flex;
 }
 
 .align-top {
-  vertical-align: top;
+    vertical-align: top;
 }
 
 .border-0 {
-  border: 0
+    border: 0
 }
 
 .border-between:not(:last-child) {
-  border-right: 1px solid gray;
+    border-right: 1px solid gray;
 }
 
 .mr-1 {
-  margin-right: 1rem;
+    margin-right: 1rem;
 }
 
 .dotted-underline {
-  border-bottom: 1px dotted black;
+    border-bottom: 1px dotted black;
 }
 
 .large {
-  font-size: large
+    font-size: large
 }
 
 .strong {
-  font-weight: 550;
+    font-weight: 550;
 }
 
 form.large {
 
-  input,
-  button {
-    font-size: large;
-  }
+    input,
+    button {
+        font-size: large;
+    }
 }
 
 .m-auto {
-  margin: auto
+    margin: auto
 }
 
 .m-left-auto {
-  margin-left: auto;
+    margin-left: auto;
 }
 
 .p-0_2 {
-  padding: 0.2rem;
+    padding: 0.2rem;
 }
 
 $spaceamount: .45;
 $helpercount: 6;
 $sides: (
-  top,
-  bottom,
-  left,
-  right
+    top,
+    bottom,
+    left,
+    right
 ); // Leave this variable alone
 
 @for $i from 0 to $helpercount {
-  $value: $i * $spaceamount;
+    $value: $i * $spaceamount;
 
-  .m-#{$i} {
-    margin: #{$value}rem !important;
-  }
-
-  .p-#{$i} {
-    padding: #{$value}rem !important;
-  }
-
-  table.cell-p-#{$i} {
-
-    td,
-    th {
-      padding: #{calc($value / 2)}rem
-    }
-  }
-
-  @each $side in $sides {
-    .m#{string.slice($side, 0, 1)}-#{$i} {
-      margin-#{$side}: #{$value}rem !important;
+    .m-#{$i} {
+        margin: #{$value}rem !important;
     }
 
-    .p#{string.slice($side, 0, 1)}-#{$i} {
-      padding-#{$side}: #{$value}rem !important;
+    .p-#{$i} {
+        padding: #{$value}rem !important;
     }
-  }
+
+    table.cell-p-#{$i} {
+
+        td,
+        th {
+            padding: #{calc($value / 2)}rem
+        }
+    }
+
+    @each $side in $sides {
+        .m#{string.slice($side, 0, 1)}-#{$i} {
+            margin-#{$side}: #{$value}rem !important;
+        }
+
+        .p#{string.slice($side, 0, 1)}-#{$i} {
+            padding-#{$side}: #{$value}rem !important;
+        }
+    }
 }
 
 .mr-0\.5 {
-  margin-right: .1rem;
+    margin-right: .1rem;
 }
 
 .mb-0\.5e {
-  margin-bottom: .2em;
+    margin-bottom: .2em;
 }
 
 @media screen and (max-width: 640px) {
-  .sm-hide {
-    display: none;
-  }
+    .sm-hide {
+        display: none;
+    }
 
 }
 
 .baseline,
 .iconify.baseline {
-  vertical-align: baseline;
+    vertical-align: baseline;
 }
 
 .clear {
-  clear: both;
+    clear: both;
 }
 
 .editable {
-  font-size: 1rem;
-  border: 0;
-  background: #00000000;
-  text-overflow: ellipsis;
-  max-width: 100%;
+    font-size: 1rem;
+    border: 0;
+    background: #00000000;
+    text-overflow: ellipsis;
+    max-width: 100%;
 
-  .dark & {
-    color: black
-  }
+    .dark & {
+        color: black
+    }
 
-  &:hover {
-    outline: 1px auto;
-  }
+    &:hover {
+        outline: 1px auto;
+    }
 }
 
 .d-block {
-  display: block;
+    display: block;
 }
 
 .nowrap {
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 .h3 {
-  font-size: 1.5rem;
+    font-size: 1.5rem;
 }
 
 .small {
-  font-size: small;
+    font-size: small;
 }
 
 .scroll-x {
-  overflow-x: auto;
+    overflow-x: auto;
 }
 
 .scroll-y {
-  overflow-y: auto;
+    overflow-y: auto;
+}
+
+.overflow-hidden {
+    overflow: hidden;
+}
+
+.hover-overlay:hover {
+    overflow: visible;
+    z-index: 1
 }
 
 $stripes: #67676723;
 
 .stripes {
-  tr:nth-child(even) {
-    background-color: $stripes
-  }
+    tr:nth-child(even) {
+        background-color: $stripes
+    }
 }
 
 .col-stripes {
 
-  td,
-  th {
-    &:not([colspan]):nth-child(even) {
-      background-color: $stripes
+    td,
+    th {
+        &:not([colspan]):nth-child(even) {
+            background-color: $stripes
+        }
     }
-  }
 }
 
 .min-h-2_5 {
-  min-height: 2.5rem;
+    min-height: 2.5rem;
 }
 
 .min-h-full {
-  min-height: 100vh;
+    min-height: 100vh;
 }
 
 .h-full {
-  height: 100%;
+    height: 100%;
 }
 
 .w-full {
-  width: 100%;
+    width: 100%;
 }
 
 .mh-5 {
-  max-height: 5rem;
+    max-height: 5rem;
 }
 
 .focus-expand:focus {
-  max-height: unset;
+    max-height: unset;
 }
 
 .fixed {
-  position: fixed
+    position: fixed
 }
 
 .flex {
-  display: flex;
+    display: flex;
 }
 
 .flex-col {
-  flex-direction: column;
+    flex-direction: column;
 }
 
 .flex-wrap {
-  flex-wrap: wrap;
+    flex-wrap: wrap;
 }
 
 .flex-grow>* {
-  flex-grow: 1;
+    flex-grow: 1;
 }
 
 .flex-full {
-  flex-basis: 100%;
+    flex-basis: 100%;
 }
 
 .flex-center {
-  display: flex;
-  align-items: center;
+    display: flex;
+    align-items: center;
 }
 
 .justify-content-center {
-  justify-content: center;
+    justify-content: center;
 }
 
 .justify-content-between {
-  justify-content: space-between;
+    justify-content: space-between;
 }
 
 .align-items-start {
-  align-items: start;
+    align-items: start;
 }
 
 .align-items-center {
-  align-items: center;
+    align-items: center;
 }
 
 .relative {
-  position: relative
+    position: relative
 }
 
 .round-full {
-  border-radius: 100%;
+    border-radius: 100%;
 }
 
 .round-1 {
-  border-radius: .5rem;
+    border-radius: .5rem;
 }
 
 .visible-md {
-  display: none;
+    display: none;
 
-  @media screen and (min-width:700px) {
-    display: unset
-  }
+    @media screen and (min-width:700px) {
+        display: unset
+    }
 
 }
 
 .visible-if-only:not(:only-child) {
-  display: none;
+    display: none;
 }
 
 .only-hover-visible {
-  opacity: 0;
+    opacity: 0;
 
-  &:hover,
-  &:focus,
-  &:focus-within {
-    opacity: 1;
-  }
+    &:hover,
+    &:focus,
+    &:focus-within {
+        opacity: 1;
+    }
 }
 
 .hover-visible-trigger {
 
-  &:hover,
-  &:focus,
-  &:focus-within {
-    .only-hover-visible {
-      opacity: 1;
+    &:hover,
+    &:focus,
+    &:focus-within {
+        .only-hover-visible {
+            opacity: 1;
+        }
     }
-  }
 }
 
 .sticky {
-  position: sticky;
+    position: sticky;
 }
 
 .w-1_8 {
-  width: 1.8rem;
+    width: 1.8rem;
 }
 
 .mw-full {
-  max-width: 100%;
+    max-width: 100%;
 }
 
 .mw-50-vw {
-  max-width: 50vw;
+    max-width: 50vw;
 }
 
 .absolute {
-  position: absolute;
+    position: absolute;
 }
 
 .left-0 {
-  left: 0
+    left: 0
 }
 
 .right-0 {
-  right: 0;
+    right: 0;
 }
 
 .bottom-0 {
-  bottom: 0;
+    bottom: 0;
 }
 
 .bottom-25 {
-  bottom: 25%;
+    bottom: 25%;
 }
 
 .text-right {
-  text-align: right;
+    text-align: right;
 }
 
 .top-0 {
-  top: 0
+    top: 0
 }
 
 .top,
 .iconify.top {
-  vertical-align: top;
+    vertical-align: top;
 }
 
 .z--1 {
-  z-index: -1;
+    z-index: -1;
 }

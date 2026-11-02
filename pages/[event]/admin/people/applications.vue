@@ -87,7 +87,7 @@
         <p v-else-if="refreshResult.error" class="error">
             <code>{{ refreshResult.error?.message || refreshResult.error?.code || refreshResult.error?.http }}</code>
         </p>
-        <Teleport v-if="signatureEnabled" to="#overlay">
+        <Teleport v-if="signatureEnabled" to="#overlay" defer>
             <div class="signature-overlay">
                 <div class="signature-container">
                     <SignatureDraw ref="signature" />
@@ -97,6 +97,24 @@
                         <button @click="saveSignature">Uložit</button>
                     </div>
                 </div>
+            </div>
+        </Teleport>
+        <Teleport v-if="contextMenuState.open" to="#overlay" defer>
+            <div class="context-menu-backdrop" @click="contextMenuState.open = false" />
+            <div class="context-menu" :style="{ top: contextMenuState.y + 'px', left: contextMenuState.x + 'px' }">
+                <button v-if="contextMenuState.column !== 'signature'" @click="() => editOverlay()">Upravit
+                    hodnotu</button>
+                <button @click="openEditLink()">Upravit přihlášku</button>
+                <div class="divider" />
+                <div class="submenu">
+                    <button
+                        v-for="(state, key) in ApplicationStateUI" :key="key + 'a'"
+                        @click="() => changeState(parseInt(key))">
+                        {{ state.name }}
+                    </button>
+                </div>
+                <div class="divider" />
+                <button @click="signRow(contextMenuState.row.id, contextMenuState.row.signature)">Podepsat</button>
             </div>
         </Teleport>
     </div>
@@ -167,6 +185,7 @@ const signResponseId = ref<string | null>(null)
 const hasTouchscreen = ref(false)
 
 async function signRow(id: string, existingSignature?: string) {
+    contextMenuState.value.open = false
     signResponseId.value = id
     signatureEnabled.value = true
     ui.overlayEnabled = true
@@ -432,9 +451,10 @@ async function reload<T>(between?: () => PromiseLike<T>) {
     nextTick(() => showTable.value = true)
 }
 
-const selectedRow = 'selected-row'
-const selection
-    = ref<ApiRowsMethods<typeof data.value> | ApiCellsMethods<typeof data.value>>()
+const selectedRowClass = 'selected-row'
+const selectedCell
+    = ref<ApiCellsMethods<typeof data.value>>()
+const selectedRowsData = ref<typeof data.value>()
 
 // --- Drag area selection (plain HTML DOM events) --------------------------------------
 // As the hand sweeps across the rendered table, a "pass-over" event fires on every cell
@@ -480,7 +500,7 @@ function dragFinalize(dt: Api<typeof data.value>, e: PointerEvent) {
         const cols = [...new Array(bb.maxCol - bb.minCol + 1).keys().map(k => k + bb.minCol)]
         const clear = !e.shiftKey && !e.ctrlKey && !selecting.value
 
-        const sel = selection.value?.toArray()
+        const sel = selectedCell.value?.toArray()
         const selectedSingle = dragKeys.length == 1
             && sel?.some((ss: CellIdx[]) => ss.find((s: CellIdx) => s.row == dragKeys[0][0]))
             && sel.some((ss: CellIdx[]) => ss.find((s: CellIdx) => s.column == dragKeys[0][1]))
@@ -577,12 +597,31 @@ function dragWireTable() {
 function dragWireTableInit() { nextTick(() => { const dt = table.value?.dt as any; if (dt) { dragWireTable() } }) }
 dragWireTableInit()
 
-function contextMenu(e: Event) {
+/** ui.overlayEnabled = true must be set before the context menu opens */
+const contextMenuState = ref<{ x: number, y: number, row: typeof data.value[number], open: boolean, column: string }>({ x: 0, y: 0, row: null, open: false, column: '' })
+
+function contextMenu(e: MouseEvent) {
     e.preventDefault()
+    const cell = (e.target as HTMLElement).closest('td')
+    if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
+        const idx = (cell._DT_CellIndex as CellIdx)
+        const row = table.value?.dt.row(idx.row)
+        if (row) {
+            const indexes = selectedCell.value?.indexes().toArray()// ensure the cell with the context menu is selected or select it
+            if (!selectedCell.value?.length || !indexes!.some(i => i.row == idx.row && i.column == idx.column)) {
+                deselect()
+                table.value!.dt.cell(cell).select()
+            }
+            ui.overlayEnabled = true
+            contextMenuState.value = { x: e.clientX, y: e.clientY, row, open: true, column: table.value!.dt.column(idx.column).dataSrc().toString() }
+            nextTick(() => {
+                dragKeys.splice(0)
+                dragActive = false
+            })
+        }
+    }
 }
 
-// call again after a draw to re-anchor listeners in case the whole table node was replaced
-// (reloaded). Idempotent per node via the WeakSet guard.
 let selectionChangedDisabled = false
 watch([() => table.value?.dt], () => { dragWireTable() }, { immediate: true })
 function selectionChanged(ignoreFocused?: boolean) {
@@ -592,26 +631,28 @@ function selectionChanged(ignoreFocused?: boolean) {
         const focused = table.value.dt.cells('.focus')
         // convert rows to cells
         const selectedRows = table.value.dt.rows({ selected: true })
-        //table.value.dt.cells(selectedRows.indexes() as any, table.value.dt.columns()[0]).select()
+        //table.value.dt.cells(selectedRowClasss.indexes() as any, table.value.dt.columns()[0]).select()
         selectedRows.deselect()// deselect rows selected by keyboard
 
         if (!ignoreFocused) {
             focused.select()
         }
 
-        selection.value = table.value.dt.cells({ selected: true })
+        selectedCell.value = table.value.dt.cells({ selected: true })
         // resolve selected rows
         const rows = new Set<number>()
-        selection.value.each?.((value: CellIdx[]) => {
+        selectedCell.value.each?.((value: CellIdx[]) => {
             for (const cell of value) {
                 rows.add(cell.row)
             }
         })
 
-        $('.' + selectedRow).removeClass(selectedRow)
-        table.value.dt.rows([...rows]).nodes().each(n => n.classList.add(selectedRow))
+        $('.' + selectedRowClass).removeClass(selectedRowClass)
+        const rowsApi = table.value.dt.rows([...rows])
+        rowsApi.nodes().each(n => n.classList.add(selectedRowClass))
+        selectedRowsData.value = rowsApi.data().toArray() as typeof data.value
 
-        if (selection.value[0].length) {
+        if (selectedCell.value[0].length) {
             $('.selected-only').removeClass('disabled')
         } else {
             $('.selected-only').addClass('disabled')
@@ -619,9 +660,13 @@ function selectionChanged(ignoreFocused?: boolean) {
     }
 }
 function openEditLink() {
-    const row = selection.value?.[0][0].row
-    if (typeof row != 'undefined') {
-        const link = (table.value?.dt.row(row).data() as typeof data.value[number]).editLink
+    contextMenuState.value.open = false
+    if (selectedRowsData.value) {
+        if ((selectedCell.value?.data()?.length ?? 2) > 1) {
+            alert('Vyberte jednoho účastníka')
+            return
+        }
+        const link = selectedRowsData.value[0]?.editLink
         if (link) {
             window.open(link, '_blank', 'noopener,noreferrer')
         }
@@ -644,7 +689,7 @@ let dblClickActive = false
 async function tableDblClick(event: MouseEvent) {
     if (!dblClickActive) {
         dblClickActive = true
-        const cell = (event.target as HTMLElement).closest('td') as HTMLTableCellElement
+        const cell = (event.target as HTMLElement).closest('td')
         if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
             table.value?.dt.cell(cell).select()
             await editOverlay()
@@ -654,11 +699,12 @@ async function tableDblClick(event: MouseEvent) {
 }
 
 async function editOverlay() {
-    if ((selection.value?.data()?.length ?? 2) > 1) {
+    contextMenuState.value.open = false
+    if ((selectedCell.value?.data()?.length ?? 2) > 1) {
         alert('Vyberte jednu buňku')
         return
     }
-    const ids = selection.value!.indexes()
+    const ids = selectedCell.value!.indexes()
     const response = table.value?.dt.row(ids[0].row).data() as unknown as typeof data.value[number]//DT has bad return type definition
     let col = table.value?.dt.column(ids[0].column).dataSrc()
     if (typeof col != 'string' || !response) {
@@ -670,7 +716,7 @@ async function editOverlay() {
         signRow(response.id, response.signature)
         return
     }
-    const selData = selection.value!.data()
+    const selData = selectedCell.value!.data()
     let p: string | string[] | null = prompt('Zadejte hodnotu pro přepsání, nebo hodnotu smažte pro vrácení hodnoty z přihlášky', selData?.[0])
 
     const dotIndex = col.indexOf('.')
@@ -716,13 +762,15 @@ async function editOverlay() {
 }
 
 function changeState(state: ApplicationState) {
-    const id = selection.value?.data()?.[0].id
-    if (!id) {
+    contextMenuState.value.open = false
+    if (!selectedRowsData.value) {
         return
     }
-    setDocT(responseDoc(id), {
-        state,
-    } as ResponseRecord, { merge: true })
+    for (const row of selectedRowsData.value) {
+        setDocT(responseDoc(row.id), {
+            state,
+        } as ResponseRecord, { merge: true })
+    }
 }
 
 const ellipsis = computed(() => app.$DataTable.value?.render.ellipsis(20) ?? ((data: string) => data))
@@ -958,7 +1006,7 @@ const buttons
                 }, {
                     text: useIconEl('signature-freehand') + ' Podepsat',
                     action: () => {
-                        const rows = table.value?.dt.rows('.' + selectedRow)
+                        const rows = table.value?.dt.rows('.' + selectedRowClass)
                         const data = rows?.data()[0]
                         if (data) {
                             signRow(data.id, data.signature)
@@ -1086,7 +1134,7 @@ function deselect() {
 }
 
 function selectedMapped(pickKeys?: (val: typeof data.value[number], key: string) => boolean) {
-    const selected = selection.value?.data() ?? table.value?.dt.rows().data()
+    const selected = selectedCell.value?.data() ?? table.value?.dt.rows().data()
     return selected?.toArray().map((o: typeof data.value[number]) => pickBy(o, pickKeys ?? ((_, key) => {
         const a = applications.filtered.find(a => a.id == o.id)!
         return key in a
@@ -1238,7 +1286,7 @@ const columns = computed(() => {
             visible: false,
         },
         { data: 'edits', title: 'Počet úprav', visible: false },
-        { data: 'signature', title: 'Podpis', render: (data: string) => data ? `<img src="${data}">` : '', className: 'print' },
+        { data: 'signature', title: 'Podpis', render: (data: string) => data ? `<img class="absolute top-0 w-full" src="${data}">` : '', className: 'print m-0 relative overflow-hidden hover-overlay' },
     ].map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
 function renderState(data: ApplicationState) {
@@ -1307,6 +1355,45 @@ onMounted(() => setTimeout(() => {
     display: flex;
     justify-content: space-between;
     margin-top: 10px;
+}
+
+.context-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 0;
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.context-menu button {
+    padding: 8px 15px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.context-menu button:hover {
+    background: #f0f0f0;
+}
+
+.divider {
+    border-top: 1px solid #eee;
+    margin: 5px 0;
 }
 
 .confirmed td {

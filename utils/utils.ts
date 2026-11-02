@@ -318,7 +318,7 @@ export function boundingRect(cells: [number, number][]) {
     return {minRow, minCol, maxRow, maxCol}
 }
 
-export function disposeBy<T extends Function>(callback: T) {
+export function disposeBy<T extends () => void>(callback: T) {
     return {
         [Symbol.dispose]() {
             callback()

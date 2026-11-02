@@ -35,7 +35,8 @@ definePageMeta({
 })
 
 const cloud = useCloudStore()
-const event = cloud.eventsCollection.find(e => e.id == cloud.selectedEvent)
+const event
+    = computed(() => cloud.eventsCollection.find(e => e.id == cloud.selectedEvent))
 const fs = useFirestore()
 
 const selected: Ref<{
@@ -50,14 +51,14 @@ const selected: Ref<{
 const anySelected = computed(() => Object.values(selected.value).reduce((a, b) => a || b, false))
 
 async function exportEvent() {
-    if (event) {
+    if (event.value) {
         const subdocs: { [key in EventSubcollection]?: any } = {}
         for (const sub of EventSubcollectionsList) {
             if (!selected.value[sub]) {
                 continue
             }
 
-            const subcol = await useCollectionT(collection(fs, 'events', event.id, sub), { once: true, wait: true }).promise.value
+            const subcol = await useCollectionT(collection(fs, 'events', event.value.id, sub), { once: true, wait: true }).promise.value
 
             if (subcol) {
                 subdocs[sub] ??= {}
@@ -69,9 +70,9 @@ async function exportEvent() {
                 }
             }
         }
-        download(`${event.id}-event-${new Date().toLocaleString(navigator.language, { timeStyle: 'short', dateStyle: 'short' }).replace(':', '-')}.json`, JSON.stringify({
-            [event.id]: {
-                ...(selected.value.meta ? (await getDocCacheOr(doc(fs, 'events', event.id))).data() : {}),
+        download(`${event.value.id}-event-${new Date().toLocaleString(navigator.language, { timeStyle: 'short', dateStyle: 'short' }).replace(':', '-')}.json`, JSON.stringify({
+            [event.value.id]: {
+                ...(selected.value.meta ? (await getDocCacheOr(doc(fs, 'events', event.value.id))).data() : {}),
                 ...subdocs,
             },
         }))
