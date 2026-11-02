@@ -69,6 +69,7 @@ const config = defineNuxtConfig({
     css: [
         '~/assets/styles/_index.scss',
         '~/assets/styles/components.scss',
+        '~/assets/styles/table.scss',
     ],
     devServerHandlers: [
         {

@@ -114,14 +114,14 @@
                     </button>
                 </div>
                 <div class="divider" />
-                <button @click="signRow(contextMenuState.row.id, contextMenuState.row.signature)">Podepsat</button>
+                <button @click="selectedRowsData?.[0]?.id ? signRow(selectedRowsData[0].id, selectedRowsData[0].signature) : null">Podepsat</button>
             </div>
         </Teleport>
     </div>
 </template>
 
 <script lang="ts" setup>
-import type { Api, ApiCellsMethods, ApiRowsMethods, ButtonConfig, CellIdx, ConfigColumns } from 'datatables.net-dt'
+import type { Api, ButtonConfig, ConfigColumns } from 'datatables.net-dt'
 import type StateRestore from 'datatables.net-staterestore/types/StateRestore'
 import type { ApiResponse, Responses } from '~/form-connector/src/api'
 import type { SignatureDraw } from '#components'
@@ -135,6 +135,9 @@ import isEmpty from 'lodash.isempty'
 import isMatchWith from 'lodash.ismatchwith'
 import pickBy from 'lodash.pickby'
 import { SecretsError } from '~/form-connector/src/errors'
+import { useTableUtils } from '~/utils/table/tableUtils'
+import { simpleHash, renderPhone, toggleCheckbox, renderBool, renderUndefined, renderSent, renderState } from '~/utils/table/render'
+import { useTableContextMenu } from '~/utils/table/contextMenu'
 
 declare module 'datatables.net' {
     interface ApiButtonMethods<T> extends Omit<Api<T>, 'trigger'> {
@@ -162,27 +165,39 @@ const cloud = useCloudStore()
 const dtButtons = useTemplateRef<HTMLDivElement>('dtButtons')
 const firestore = useFirestore()
 const formSettings = computed(() => `/${cloud.selectedEvent}/admin/events/form`)
-const keyboardVisible = inject<Ref<boolean>>('keyboardVisible')
 const ui = useUI()
 const windowSize = useWindowSize()
 const responsive = useLocalStorage('responsive', false)
 const expandMultiple = useLocalStorage('expandMultiple', true)
 const czechDates = useLocalStorage('czechDates', false)
 const showTable = ref(false)
-const navigation = inject<Ref<HTMLDivElement | null>>('navigation')
-const navigationSize = useElementSize(navigation, undefined, { box: 'border-box' })
-const layoutRowHeight = ref(30)
-const isSearching = ref(false)
-const filteredBy = ref<Record<number, string[]>>({})
 const search = ref('')
 const searchDebounced = refDebounced(search, 500)
-const scrollY = computed(() => (windowSize.height.value - navigationSize.height.value - layoutRowHeight.value - 120))
 const secretsError = ref(false)
-const sweepMode = ref(false)
 const signature = useTemplateRef<InstanceType<typeof SignatureDraw>>('signature')
 const signatureEnabled = ref(false)
 const signResponseId = ref<string | null>(null)
 const hasTouchscreen = ref(false)
+
+const table = useTemplateRef<HTMLDivElement & { dt: Api<typeof data.value> }>('table')
+const {
+    cancelDrag,
+    loadedDt,
+    isSearching,
+    filteredBy,
+    scrollY,
+    selecting,
+    selectedCell,
+    selectedRowsData,
+    selectedRowClass,
+    selectionChanged,
+    deselect,
+} = useTableUtils(table)
+
+const {
+    contextMenu,
+    contextMenuState,
+} = useTableContextMenu(table, selectedCell, cancelDrag)
 
 async function signRow(id: string, existingSignature?: string) {
     contextMenuState.value.open = false
@@ -276,7 +291,6 @@ const refreshResult
     = ref<ApiResponse<Responses['refreshResponses']>>({
         ok: false,
     })
-const table = useTemplateRef<HTMLDivElement & { dt: Api<typeof data.value> }>('table')
 const data = computed(() => {
     return applications.filteredMapped.toSorted((a, b) => a.record.timestamp - b.record.timestamp)
         .filter(a => applications.includeCancelled ? true : ![ApplicationState.CANCELLED, ApplicationState.REJECTED].includes(a.record.state ?? ApplicationState.NEW))
@@ -362,73 +376,7 @@ watch(() => applications.loadingApplications, l => {
     }
 }, { immediate: true })
 onMounted(() => table.value?.dt?.responsive.recalc())
-const loadedDt = ref(false)
-watch([() => table.value?.dt, scrollY, keyboardVisible], (_, [oldDt]) => {
-    const layoutRow = document.querySelector('.dt-layout-row')
-    const scrollBody = document.querySelector('.dt-scroll-body') as HTMLDivElement
-    if (layoutRow && scrollBody) {
-        layoutRowHeight.value = layoutRow.scrollHeight
-        scrollBody.style.maxHeight = `${scrollY.value}px`
-    }
-    if (table.value?.dt && !oldDt) {
-        table.value.dt.on('draw.dt', () => {
-            //extract filter from column control extension
-            const glob = !!table.value!.dt.search()
-            // No point in wasting clock cycles if we already know it will be enabled
-            if (!glob) {
-                isSearching.value = false
-                table.value!.dt.columns().every(function () {
-                    if (this.search.fixed('dtcc') ||
-                        this.search.fixed('dtcc-list')
-                    ) {
-                        isSearching.value = true
-                    }
-                })
-            } else {
-                isSearching.value = true
-            }
-        })
-        table.value.dt.on('stateRestore-change', () => {
-            nextTick(() => table.value!.dt.button('SaveStateRestore:name').text(useIconEl('eye') + ' Zobrazení'))
-        })
-        table.value.dt.on('search.dt', function () {
-            table.value!.dt.columns().every(function (col) {
-                const f = this.search.fixed('dtcc') || this.search.fixed('dtcc-list')
-                if (f) {
-                    if (typeof f == 'string') {//switch on SearchInputColumn<any[]> subtypes
-                        filteredBy.value[col] = [f]
-                    } else if (f instanceof RegExp) {
-                        filteredBy.value[col] = [f.source]
-                    } else if (typeof f == 'function') { // try columnControl settings
-                        nextTick(() => {
-                            const cc = (table.value!.dt.state() as any).columnControl[col]
-                            if (cc.searchInput) {
-                                filteredBy.value[col] = [`${cc.searchInput.logic}(${cc.searchInput.value})`]
-                            } else if (cc.searchList) {
-                                filteredBy.value[col] = cc.searchList
-                            }
-                        })
-                    } else {
-                        filteredBy.value[col] = ['[neznámý filtr]']
-                    }
-                    this.header().classList.add('filtered')
-                } else {
-                    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                    delete filteredBy.value[col]
-                    this.header().classList.remove('filtered')
-                }
-            })
-        })
-        table.value.dt.columns().every(function () {
-            this.header().addEventListener('dblclick', () => {
-                const val = prompt('Zadejte nový název sloupce')
-                if (val) {
-                    this.title(val)
-                }
-            })
-        })
-    }
-})
+
 function deleteFilter(col: `${number}`) {
     const c = table.value!.dt.column(col)
     c.columnControl.searchClear()
@@ -451,214 +399,6 @@ async function reload<T>(between?: () => PromiseLike<T>) {
     nextTick(() => showTable.value = true)
 }
 
-const selectedRowClass = 'selected-row'
-const selectedCell
-    = ref<ApiCellsMethods<typeof data.value>>()
-const selectedRowsData = ref<typeof data.value>()
-
-// --- Drag area selection (plain HTML DOM events) --------------------------------------
-// As the hand sweeps across the rendered table, a "pass-over" event fires on every cell
-// node it crosses. Desktop uses mouse events (`mouseover`); touchscreens use pointer
-// events (`pointerover`) — so we listen on both families to cover keyboard + touchscreen.
-// We attach on the stable table element so swept cells are recorded by coordinate; the
-// lift-off event (`mouseup` / `pointerend`) ends the region and commits the cell block to a
-// persistent set of "row|column" keys that accumulate ("multiple areas") across drags.
-
-// pressed cell indices [row,column] swept during a drag and persisted across drags (multiple areas)
-const dragKeys: Array<[number, number]> = []  // dragged cells, committed on lift-off; deduped on insert
-let dragActive = false               // a drag is in progress; sweeps before it are ignored
-const selecting = ref(false)
-// does this exact [row,column] already appear in dragKeys? (arrays compare by value, not reference)
-function dragHasKey(r: number, c: number): boolean {
-    for (const k of dragKeys) { if (k[0] === r && k[1] === c) { return true } }
-    return false
-}
-function dragResolveCell(dt: any, node: HTMLElement): { row: number; column: number } | null {
-    const tr = node.closest?.('tr') as HTMLElement | null
-    if (!tr) { return null }
-    // the rendered cell node carries its column index (_DT_CellIndex), so we can select cells individually
-    const cell = (node instanceof HTMLTableCellElement ? node : node.closest?.('td') as HTMLTableCellElement | null) as HTMLTableCellElement | null
-    if (!cell || !('_DT_CellIndex' in cell)) { return null }
-    return (cell as any)._DT_CellIndex
-}
-// commit pressed indices as an exact per-cell union (grouped by row so each `.select()` hits
-// exactly those cells in the row). Multiple `.select()` calls union into DataTables' selected
-// state, and persisted keys across drags keep disconnected areas. selectionChanged re-syncs the
-// CSS from that state. Indices were resolved at start/record, so this just groups them — no cell
-// re-resolution here. Fires on lift-off only.
-function dragFinalize(dt: Api<typeof data.value>, e: PointerEvent) {
-    if (!dragKeys.length) { dragActive = false; return }
-    if (sweepMode.value) {
-        for (const [r, col] of dragKeys) {
-            dt.cells(r, col).select()
-        }
-    } else {
-        const node = resolveDragNode(e)
-        if (node) { dragRecordCell(node) }
-
-        const bb = boundingRect(dragKeys)
-        const cols = [...new Array(bb.maxCol - bb.minCol + 1).keys().map(k => k + bb.minCol)]
-        const clear = !e.shiftKey && !e.ctrlKey && !selecting.value
-
-        const sel = selectedCell.value?.toArray()
-        const selectedSingle = dragKeys.length == 1
-            && sel?.some((ss: CellIdx[]) => ss.find((s: CellIdx) => s.row == dragKeys[0][0]))
-            && sel.some((ss: CellIdx[]) => ss.find((s: CellIdx) => s.column == dragKeys[0][1]))
-        if (clear) {
-            dt.cells({ page: 'all' }).deselect()
-            dt.rows({ page: 'all' }).deselect()
-        }
-        if (selectedSingle) {// deselect single already selected cell
-            // TODO togglable selection for multiple cell areas
-            const coords = dragKeys[0]
-            nextTick(() => {
-                selectionChangedDisabled = true
-                dt.cell(...coords)!.deselect()
-                selectionChangedDisabled = false
-                selectionChanged(true)
-            })
-        } else {
-            for (let r = bb.minRow; r <= bb.maxRow; r++) {
-                dt.cells(r, cols).select()
-            }
-        }
-
-        dragKeys.splice(0)
-    }
-    dragActive = false
-}
-// record a pressed cell's index [row,column] during an active drag. The down seeds the first
-// index; sweeps add more — cells resolve here, never at finalize. Sweeps before the down event
-// (e.g. incidental pointer sweeps while not dragging) are ignored.
-function dragRecordCell(node: HTMLTableCellElement) {
-    if (!dragActive) { return }
-
-    const idx = dragResolveCell(table.value!.dt as any, node)
-    if (!idx || idx.row < 0 || idx.column < 0) { return }
-    if (!dragHasKey(idx.row, idx.column)) {
-        dragKeys.push([idx.row, idx.column])
-        $(table.value!.dt.table().node()).find('.focus').removeClass('focus')
-        node.classList.add('focus')
-    }
-}
-// attach all drag listeners once to the whole table element instead of per row node.
-// A drag is a three-part gesture on DOM events:
-//   * DOWN  `pointerdown`: the moment the user places their finger/hand on
-//           the screen. This anchors the touch-clock and seeds the first cell so the region
-//           begins from where they start, not from an ambiguous `-over`.
-//   * ROW   `pointerover`: every cell swept over between down and lift;
-//           recorded only while a drag is active.
-//   * LIFT  `pointerup`: ends the region and commits the cell block exactly
-//           once. Keeping listeners on the one stable table node means no per-draw rebuild.
-const dragTableHooked = new WeakSet<HTMLElement>()
-function resolveDragNode(e: PointerEvent) {
-    const node = document.elementFromPoint(e.clientX, e.clientY)?.closest('td') ?? (e.target as HTMLElement)?.closest('td')
-    return node instanceof HTMLTableCellElement ? node : null
-}
-function dragWireTable() {
-    const el = table.value?.dt?.table()?.node() as HTMLElement | null
-    if (!el || typeof el.addEventListener !== 'function' || dragTableHooked.has(el)) { return }
-    dragTableHooked.add(el)
-    // down: start a drag. Anchor the touch-clock here (not on the first `-over`) so incidental
-    // sweeps while not dragging are ignored, and seed the starting cell into the region.
-    const start = async (e: PointerEvent) => {
-        const node = resolveDragNode(e)
-        if (e.pointerType != 'mouse' && !selecting.value) {
-            if (node) {
-                selectionChangedDisabled = true
-                deselect()
-                table.value!.dt.cell(node).select()
-                selectionChangedDisabled = false
-            }
-            return
-        }
-        dragActive = true
-        // desktop anchors on the down event and records the pressed cell straight away
-        if (node) { dragRecordCell(node) }
-    }
-    // sweep: record each crossed cell, but only inside an active drag.
-    const sweep = (e: PointerEvent) => {
-        if (!sweepMode.value && !selecting.value) {
-            return
-        }
-        const node = resolveDragNode(e)
-        if (node) { dragRecordCell(node) }
-    }
-    el.addEventListener('pointerdown', start)
-    el.addEventListener('pointerenter', sweep)
-    // lift: finalize the in-progress region once on lift-off
-    el.addEventListener('pointerup', (e) => {
-        const dt = table.value?.dt as any
-        if (dt) { dragFinalize(dt, e) }
-    })
-
-}
-// listeners live on the stable table node so they need no rebuild; just ensure dt is ready.
-function dragWireTableInit() { nextTick(() => { const dt = table.value?.dt as any; if (dt) { dragWireTable() } }) }
-dragWireTableInit()
-
-/** ui.overlayEnabled = true must be set before the context menu opens */
-const contextMenuState = ref<{ x: number, y: number, row: typeof data.value[number], open: boolean, column: string }>({ x: 0, y: 0, row: null, open: false, column: '' })
-
-function contextMenu(e: MouseEvent) {
-    e.preventDefault()
-    const cell = (e.target as HTMLElement).closest('td')
-    if (cell instanceof HTMLTableCellElement && '_DT_CellIndex' in cell) {
-        const idx = (cell._DT_CellIndex as CellIdx)
-        const row = table.value?.dt.row(idx.row)
-        if (row) {
-            const indexes = selectedCell.value?.indexes().toArray()// ensure the cell with the context menu is selected or select it
-            if (!selectedCell.value?.length || !indexes!.some(i => i.row == idx.row && i.column == idx.column)) {
-                deselect()
-                table.value!.dt.cell(cell).select()
-            }
-            ui.overlayEnabled = true
-            contextMenuState.value = { x: e.clientX, y: e.clientY, row, open: true, column: table.value!.dt.column(idx.column).dataSrc().toString() }
-            nextTick(() => {
-                dragKeys.splice(0)
-                dragActive = false
-            })
-        }
-    }
-}
-
-let selectionChangedDisabled = false
-watch([() => table.value?.dt], () => { dragWireTable() }, { immediate: true })
-function selectionChanged(ignoreFocused?: boolean) {
-    if (table.value && !selectionChangedDisabled) {
-        selectionChangedDisabled = true
-        using _ = disposeBy(() => selectionChangedDisabled = false)
-        const focused = table.value.dt.cells('.focus')
-        // convert rows to cells
-        const selectedRows = table.value.dt.rows({ selected: true })
-        //table.value.dt.cells(selectedRowClasss.indexes() as any, table.value.dt.columns()[0]).select()
-        selectedRows.deselect()// deselect rows selected by keyboard
-
-        if (!ignoreFocused) {
-            focused.select()
-        }
-
-        selectedCell.value = table.value.dt.cells({ selected: true })
-        // resolve selected rows
-        const rows = new Set<number>()
-        selectedCell.value.each?.((value: CellIdx[]) => {
-            for (const cell of value) {
-                rows.add(cell.row)
-            }
-        })
-
-        $('.' + selectedRowClass).removeClass(selectedRowClass)
-        const rowsApi = table.value.dt.rows([...rows])
-        rowsApi.nodes().each(n => n.classList.add(selectedRowClass))
-        selectedRowsData.value = rowsApi.data().toArray() as typeof data.value
-
-        if (selectedCell.value[0].length) {
-            $('.selected-only').removeClass('disabled')
-        } else {
-            $('.selected-only').addClass('disabled')
-        }
-    }
-}
 function openEditLink() {
     contextMenuState.value.open = false
     if (selectedRowsData.value) {
@@ -828,10 +568,6 @@ const complexColumns = computed(() => [
     },
 ])
 
-function renderPhone(number: string) {
-    return `${number} <a class="only-hover-visible" href="tel:${number}">${useIconEl('phone')}</a>`
-}
-
 const questionControlColumns = computed(() => {
     const toRemove = Object.keys(availableQuestions.value).filter((a: any) => Object.entries(applications.settings?.fields ?? {}).some(([k, v]) => (typeof v == 'number' && v == a) || (v == availableQuestions.value[a].title && !SpecialApplicationFields.includes(k as any))))
     return [
@@ -905,26 +641,7 @@ function basicColumns(_: any, dt: Api<any>) {
     dt.columns(':not(.print, .always-visible)').visible(false)
 }
 const statesWokeUp = ref(false)
-const checkedIcon = 'checkbox-marked-outline'
-const uncheckedIcon = 'checkbox-blank-outline'
-//DataTables has no checkbox button, so each toggle is a custom button whose icon reflects the current (un)checked state.
-function toggleCheckbox(config: ButtonConfig, checked: boolean) {
-    return {
-        text: checked
-            ? (useIconEl(checkedIcon) + '&nbsp;' + config.text)
-            : (useIconEl(uncheckedIcon) + '&nbsp;' + config.text),
-        action: (e: JQuery.Event,
-            dt: Api<typeof data.value>,
-            node: JQuery,
-            config2: ButtonConfig, callback: VoidFunction) => {
 
-            const icon = node.find('.icon')
-            const style = icon.attr('style') ?? ''
-            icon.attr('style', style.replace(checked ? checkedIcon : uncheckedIcon, checked ? uncheckedIcon : checkedIcon))
-            config.action?.(e, dt, node, config2, callback as any)
-        },
-    }
-}
 const buttons
     = computed(() => [
         {
@@ -1128,11 +845,6 @@ function selectAll() {
     table.value?.dt.cells({ page: 'all' }).select()
 }
 
-function deselect() {
-    table.value?.dt.rows().deselect()
-    table.value?.dt.cells().deselect()
-}
-
 function selectedMapped(pickKeys?: (val: typeof data.value[number], key: string) => boolean) {
     const selected = selectedCell.value?.data() ?? table.value?.dt.rows().data()
     return selected?.toArray().map((o: typeof data.value[number]) => pickBy(o, pickKeys ?? ((_, key) => {
@@ -1200,10 +912,6 @@ const searchList = windowSize.width.value > 700 ? [
     ],
 ] : undefined
 
-
-function renderBool(data: boolean) {
-    return data ? '✔' : ''
-}
 function renderMultiBool(data: string[], type: string, row: string[]) {
     if (typeof data == 'string') {
         return ellipsis.value(data, type, row)
@@ -1213,6 +921,7 @@ function renderMultiBool(data: string[], type: string, row: string[]) {
     }
     return data
 }
+
 const undescribedVisible = new Set<string>()
 const columns = computed(() => {
     const fieldSettings = Object.keys(applications.settings?.fields ?? {})?.filter(k => !complexColumns.value.find(c => c.data == k))
@@ -1289,30 +998,9 @@ const columns = computed(() => {
         { data: 'signature', title: 'Podpis', render: (data: string) => data ? `<img class="absolute top-0 w-full" src="${data}">` : '', className: 'print m-0 relative overflow-hidden hover-overlay' },
     ].map(c => ({ defaultContent: '', render: ellipsis.value, ...c }))
 })
-function renderState(data: ApplicationState) {
-    return ApplicationStateUI[data].name
-}
-function renderSent(data: boolean) {
-    return data ? '✔' : '<span class=\'muted\' title=\'Neodeslán\'>❌</span>'
-}
-
-function renderUndefined(data?: string) {
-    return data || ''
-}
 
 function computeTotal(row: typeof data.value[0]) {
     return ((parseInt(row.paid as any) ?? 0) + parseInt(row.remaining ?? 0 as any)) || ''
-}
-/**
- * Random hash function for creating identifiers for individual checkbox question responses
- */
-function simpleHash(s: string) {
-    let hash = 0
-    for (let i = 0; i < s.length; i++) {
-        hash = (hash << 5) - hash + s.charCodeAt(i)
-        hash |= 0
-    }
-    return hash
 }
 
 watchThrottled([responsive, columns, czechDates],
@@ -1324,139 +1012,6 @@ onMounted(() => setTimeout(() => {
     if (!showTable.value) {
         showTable.value = true
     }
-}, 800))
+}, 700))
 
 </script>
-
-<style lang="scss">
-.signature-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.signature-container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    width: 90vw;
-    max-width: 500px;
-    height: auto;
-}
-
-.signature-buttons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-}
-
-.context-menu-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1000;
-}
-
-.context-menu {
-    position: fixed;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px 0;
-    z-index: 1001;
-    display: flex;
-    flex-direction: column;
-    min-width: 150px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.context-menu button {
-    padding: 8px 15px;
-    border: none;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-}
-
-.context-menu button:hover {
-    background: #f0f0f0;
-}
-
-.divider {
-    border-top: 1px solid #eee;
-    margin: 5px 0;
-}
-
-.confirmed td {
-    background: #00800038
-}
-
-.rejected td {
-    background: #ff000023
-}
-
-.cancelled {
-    color: gray;
-}
-
-.cancelled,
-.rejected {
-    td.email {
-        text-decoration: line-through;
-    }
-}
-
-#applications td {
-    user-select: none;
-}
-
-td.overlayed {
-    position: relative;
-
-    &::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-
-        background: #00ffff40;
-    }
-}
-
-.dtButtons {
-    @media screen and (max-width: 700px) {
-        display: flex;
-        gap: .8rem;
-        flex-wrap: wrap;
-    }
-}
-
-.filtered .dtcc-button-icon line {
-    stroke: orange
-}
-
-.selected-row {
-    position: relative;
-
-    &::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        z-index: -1;
-        background: linear-gradient(to right, #00000023, transparent)
-    }
-}
-
-.selecting * {
-    touch-action: none;
-}
-</style>
